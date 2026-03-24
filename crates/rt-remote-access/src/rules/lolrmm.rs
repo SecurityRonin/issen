@@ -7,6 +7,37 @@
 use std::path::Path;
 
 use serde::Deserialize;
+use thiserror::Error;
+
+// ---------------------------------------------------------------------------
+// Error type
+// ---------------------------------------------------------------------------
+
+/// Errors returned by LOLRMM YAML loading functions.
+#[derive(Debug, Error)]
+pub enum LolrmmError {
+    /// Failed to read a YAML file from disk.
+    #[error("failed to read {path}: {source}")]
+    Io {
+        path: String,
+        source: std::io::Error,
+    },
+    /// Failed to parse YAML content into a [`LolrmmDefinition`].
+    #[error("failed to parse {path}: {source}")]
+    Parse {
+        path: String,
+        source: serde_yaml::Error,
+    },
+    /// Failed to read a directory listing.
+    #[error("failed to read directory {path}: {source}")]
+    DirectoryRead {
+        path: String,
+        source: std::io::Error,
+    },
+    /// An error occurred while iterating directory entries.
+    #[error("directory iteration error: {0}")]
+    DirectoryEntry(std::io::Error),
+}
 
 // ---------------------------------------------------------------------------
 // Top-level definition
@@ -360,12 +391,17 @@ where
 ///
 /// # Errors
 ///
-/// Returns an error message if the file cannot be read or parsed.
-pub fn load_lolrmm_file(path: &Path) -> Result<LolrmmDefinition, String> {
-    let content = std::fs::read_to_string(path)
-        .map_err(|e| format!("failed to read {}: {e}", path.display()))?;
-    serde_yaml::from_str::<LolrmmDefinition>(&content)
-        .map_err(|e| format!("failed to parse {}: {e}", path.display()))
+/// Returns [`LolrmmError::Io`] if the file cannot be read, or
+/// [`LolrmmError::Parse`] if the YAML content is invalid.
+pub fn load_lolrmm_file(path: &Path) -> Result<LolrmmDefinition, LolrmmError> {
+    let content = std::fs::read_to_string(path).map_err(|e| LolrmmError::Io {
+        path: path.display().to_string(),
+        source: e,
+    })?;
+    serde_yaml::from_str::<LolrmmDefinition>(&content).map_err(|e| LolrmmError::Parse {
+        path: path.display().to_string(),
+        source: e,
+    })
 }
 
 /// Load all `.yaml` / `.yml` files from a directory.
@@ -380,14 +416,16 @@ pub fn load_lolrmm_file(path: &Path) -> Result<LolrmmDefinition, String> {
 /// Returns an error message if the directory cannot be read.
 pub fn load_lolrmm_directory(
     dir: &Path,
-) -> Result<Vec<(std::path::PathBuf, LolrmmDefinition)>, String> {
-    let entries = std::fs::read_dir(dir)
-        .map_err(|e| format!("failed to read directory {}: {e}", dir.display()))?;
+) -> Result<Vec<(std::path::PathBuf, LolrmmDefinition)>, LolrmmError> {
+    let entries = std::fs::read_dir(dir).map_err(|e| LolrmmError::DirectoryRead {
+        path: dir.display().to_string(),
+        source: e,
+    })?;
 
     let mut definitions = Vec::new();
 
     for entry in entries {
-        let entry = entry.map_err(|e| format!("directory iteration error: {e}"))?;
+        let entry = entry.map_err(LolrmmError::DirectoryEntry)?;
         let path = entry.path();
 
         let is_yaml = path
