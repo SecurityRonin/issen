@@ -527,4 +527,52 @@ mod tests {
         let result = load_lolrmm_directory(&dir);
         assert!(result.is_err(), "loading nonexistent directory should fail");
     }
+
+    #[test]
+    fn test_load_full_lolrmm_catalog() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("data")
+            .join("lolrmm");
+        if !dir.exists() {
+            eprintln!("Skipping: LOLRMM data not vendored yet");
+            return;
+        }
+        let defs = load_lolrmm_directory(&dir).expect("load");
+        assert!(defs.len() > 200, "Expected 200+ tools, got {}", defs.len());
+
+        let names: Vec<&str> = defs.iter().map(|d| d.name.as_str()).collect();
+        assert!(names.contains(&"AnyDesk"), "AnyDesk should be in catalog");
+        assert!(
+            names.contains(&"TeamViewer"),
+            "TeamViewer should be in catalog"
+        );
+    }
+
+    #[test]
+    fn test_load_custom_vpn_definitions() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("data")
+            .join("custom");
+        if !dir.exists() {
+            eprintln!("Skipping: custom VPN data not present");
+            return;
+        }
+        let defs = load_lolrmm_directory(&dir).expect("load custom");
+        assert_eq!(
+            defs.len(),
+            3,
+            "Expected 3 custom VPN/ZTNA definitions, got {}",
+            defs.len()
+        );
+
+        let names: Vec<&str> = defs.iter().map(|d| d.name.as_str()).collect();
+        assert!(names.contains(&"Tailscale"), "Tailscale should be present");
+        assert!(names.contains(&"WireGuard"), "WireGuard should be present");
+        assert!(names.contains(&"OpenVPN"), "OpenVPN should be present");
+
+        // Verify VPN category
+        for def in &defs {
+            assert_eq!(def.category, "VPN", "{} should have VPN category", def.name);
+        }
+    }
 }
