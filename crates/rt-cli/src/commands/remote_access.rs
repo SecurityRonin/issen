@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use rt_remote_access::model::RemoteAccessCategory;
 use rt_remote_access::providers::filesystem::FilesystemProvider;
 use rt_remote_access::providers::CompositeArtifactProvider;
 use rt_remote_access::ScanConfig;
@@ -9,7 +10,7 @@ pub fn run(
     evidence_path: &Path,
     rules_dir: Option<&Path>,
     custom_rules: Option<&Path>,
-    _categories: Option<&str>,
+    categories: Option<&str>,
     format: &str,
     db: Option<&Path>,
 ) -> Result<()> {
@@ -20,10 +21,30 @@ pub fn run(
     let mut composite = CompositeArtifactProvider::new();
     composite.add_provider(Box::new(FilesystemProvider::new(evidence_path)));
 
+    let categories = categories.map(|s| {
+        s.split(',')
+            .filter_map(|c| match c.trim().to_lowercase().as_str() {
+                "rmm" | "commercial_rmm" => Some(RemoteAccessCategory::CommercialRmm),
+                "builtin" | "builtin_remote" => Some(RemoteAccessCategory::BuiltInRemoteAccess),
+                "vpn" | "vpn_ztna" => Some(RemoteAccessCategory::VpnZtna),
+                "tunneling" => Some(RemoteAccessCategory::Tunneling),
+                "lateral" | "lateral_movement" => Some(RemoteAccessCategory::LateralMovement),
+                "c2" | "c2_framework" => Some(RemoteAccessCategory::C2Framework),
+                "webshell" | "web_shell" => Some(RemoteAccessCategory::WebShell),
+                "firewall" | "firewall_config" => Some(RemoteAccessCategory::FirewallConfig),
+                "hardware" | "hardware_remote" => Some(RemoteAccessCategory::HardwareRemote),
+                other => {
+                    eprintln!("Warning: unknown category '{other}', skipping");
+                    None
+                }
+            })
+            .collect()
+    });
+
     let config = ScanConfig {
         lolrmm_dir: rules_dir.map(std::path::PathBuf::from),
         custom_rules_dir: custom_rules.map(std::path::PathBuf::from),
-        categories: None,
+        categories,
     };
 
     let result = rt_remote_access::scan(&composite, &config);

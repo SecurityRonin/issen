@@ -1224,6 +1224,20 @@ fn test_remote_access_empty_dir() {
 }
 
 #[test]
+fn test_remote_access_categories_filter() {
+    let dir = TempDir::new().expect("tmpdir");
+    rt_cmd()
+        .args([
+            "remote-access",
+            &dir.path().to_string_lossy(),
+            "--categories",
+            "rmm,builtin",
+        ])
+        .assert()
+        .success();
+}
+
+#[test]
 fn test_remote_access_json_format() {
     let dir = TempDir::new().expect("tmpdir");
     rt_cmd()
