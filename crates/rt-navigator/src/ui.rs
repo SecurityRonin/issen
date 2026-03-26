@@ -52,13 +52,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     draw_header(frame, chunks[0], app);
 
     // Split main area if detail panel is active
-    let has_anomalies = !app.entries.is_empty()
-        && !app
-            .anomaly_index
-            .for_node(app.entries[app.selected])
-            .is_empty();
-
-    if app.show_detail_panel && has_anomalies {
+    if app.show_detail_panel && !app.entries.is_empty() {
         let main_chunks = Layout::horizontal([
             Constraint::Percentage(60), // file list
             Constraint::Percentage(40), // detail panel
@@ -176,6 +170,7 @@ fn draw_file_list(frame: &mut Frame, area: Rect, app: &mut App) {
     let header = Row::new(vec![
         Cell::from(" Name"),
         Cell::from("Size"),
+        Cell::from("Attr"),
         Cell::from("Modified"),
         Cell::from("Created"),
         Cell::from("MFT#"),
@@ -243,9 +238,17 @@ fn draw_file_list(frame: &mut Frame, area: Rect, app: &mut App) {
                 .to_string();
             let mft_num = node.mft_entry.to_string();
 
+            let attrs = node.format_attributes();
+            let attr_style = if node.is_hidden() || node.is_system() {
+                Style::default().fg(Color::Yellow)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+
             Row::new(vec![
                 Cell::from(name_text).style(name_style),
                 Cell::from(size_text).style(Style::default().fg(Color::Green)),
+                Cell::from(attrs).style(attr_style),
                 Cell::from(modified).style(Style::default().fg(Color::DarkGray)),
                 Cell::from(created).style(Style::default().fg(Color::DarkGray)),
                 Cell::from(mft_num).style(Style::default().fg(Color::DarkGray)),
@@ -256,6 +259,7 @@ fn draw_file_list(frame: &mut Frame, area: Rect, app: &mut App) {
     let widths = [
         Constraint::Min(30),
         Constraint::Length(10),
+        Constraint::Length(6),
         Constraint::Length(19),
         Constraint::Length(19),
         Constraint::Length(8),
@@ -293,12 +297,12 @@ fn draw_detail_panel(frame: &mut Frame, area: Rect, app: &mut App) {
         return;
     }
     let idx = app.entries[app.selected];
+    let node = app.tree.node(idx);
     let anomalies = app.anomaly_index.for_node(idx);
-    let node_name = &app.tree.node(idx).name;
 
     let mut lines = vec![
         Line::from(Span::styled(
-            format!(" {node_name}"),
+            format!(" {}", node.name),
             Style::default()
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
@@ -306,53 +310,159 @@ fn draw_detail_panel(frame: &mut Frame, area: Rect, app: &mut App) {
         Line::from(""),
     ];
 
-    for (i, anomaly) in anomalies.iter().enumerate() {
-        let severity_color = match anomaly.severity {
-            Severity::Critical => Color::Red,
-            Severity::High => Color::LightRed,
-            Severity::Medium => Color::Yellow,
-            Severity::Low => Color::Blue,
-            Severity::Informational => Color::DarkGray,
+    // -- File info section ---------------------------------------------------
+    let fmt = "%Y-%m-%d %H:%M:%S";
+    let dim = Style::default().fg(Color::DarkGray);
+    let label = Style::default().fg(Color::Cyan);
+    let val = Style::default().fg(Color::White);
+
+    lines.push(Line::from(vec![
+        Span::styled(" MFT# ", label),
+        Span::styled(node.mft_entry.to_string(), val),
+        Span::styled("  Attr ", label),
+        Span::styled(node.format_attributes(), val),
+    ]));
+
+    if !node.is_dir {
+        lines.push(Line::from(vec![
+            Span::styled(" Size ", label),
+            Span::styled(format_size(node.size), val),
+        ]));
+    }
+
+    // $SI timestamps
+    lines.push(Line::from(Span::styled(" $SI Timestamps", label)));
+    lines.push(Line::from(vec![
+        Span::styled("  Created  ", dim),
+        Span::styled(node.si_timestamps.created.format(fmt).to_string(), val),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  Modified ", dim),
+        Span::styled(node.si_timestamps.modified.format(fmt).to_string(), val),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  Accessed ", dim),
+        Span::styled(node.si_timestamps.accessed.format(fmt).to_string(), val),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  MFT Mod  ", dim),
+        Span::styled(
+            node.si_timestamps.entry_modified.format(fmt).to_string(),
+            val,
+        ),
+    ]));
+
+    // $FN timestamps (only shown when they differ from $SI — forensic indicator)
+    if let Some(fn_ts) = &node.fn_timestamps {
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled(
+            " $FN Timestamps (kernel-managed)",
+            Style::default()
+                .fg(Color::LightRed)
+                .add_modifier(Modifier::BOLD),
+        )));
+
+        let warn = Style::default().fg(Color::LightRed);
+        let ok = val;
+
+        let c_style = if fn_ts.created != node.si_timestamps.created {
+            warn
+        } else {
+            ok
+        };
+        let m_style = if fn_ts.modified != node.si_timestamps.modified {
+            warn
+        } else {
+            ok
+        };
+        let a_style = if fn_ts.accessed != node.si_timestamps.accessed {
+            warn
+        } else {
+            ok
+        };
+        let e_style = if fn_ts.entry_modified != node.si_timestamps.entry_modified {
+            warn
+        } else {
+            ok
         };
 
         lines.push(Line::from(vec![
-            Span::styled(
-                format!(" [{}] ", anomaly.rule_id),
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                format!("{}", anomaly.severity),
-                Style::default()
-                    .fg(severity_color)
-                    .add_modifier(Modifier::BOLD),
-            ),
+            Span::styled("  Created  ", dim),
+            Span::styled(fn_ts.created.format(fmt).to_string(), c_style),
         ]));
+        lines.push(Line::from(vec![
+            Span::styled("  Modified ", dim),
+            Span::styled(fn_ts.modified.format(fmt).to_string(), m_style),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("  Accessed ", dim),
+            Span::styled(fn_ts.accessed.format(fmt).to_string(), a_style),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("  MFT Mod  ", dim),
+            Span::styled(fn_ts.entry_modified.format(fmt).to_string(), e_style),
+        ]));
+    }
+
+    // -- Anomalies section ---------------------------------------------------
+    if !anomalies.is_empty() {
+        lines.push(Line::from(""));
         lines.push(Line::from(Span::styled(
-            format!("  Category: {}", anomaly.category),
-            Style::default().fg(Color::White),
-        )));
-        lines.push(Line::from(Span::styled(
-            format!("  {}", anomaly.description),
-            Style::default().fg(Color::White),
-        )));
-        lines.push(Line::from(Span::styled(
-            format!("  Evidence: {}", anomaly.evidence),
-            Style::default().fg(Color::DarkGray),
+            " Anomalies",
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         )));
 
-        if i < anomalies.len() - 1 {
-            lines.push(Line::from(""));
+        for anomaly in anomalies {
+            let severity_color = match anomaly.severity {
+                Severity::Critical => Color::Red,
+                Severity::High => Color::LightRed,
+                Severity::Medium => Color::Yellow,
+                Severity::Low => Color::Blue,
+                Severity::Informational => Color::DarkGray,
+            };
+
+            lines.push(Line::from(vec![
+                Span::styled(
+                    format!(" [{}] ", anomaly.rule_id),
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(
+                    format!("{}", anomaly.severity),
+                    Style::default()
+                        .fg(severity_color)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]));
+            lines.push(Line::from(Span::styled(
+                format!("  {}", anomaly.description),
+                val,
+            )));
+            lines.push(Line::from(Span::styled(
+                format!("  Evidence: {}", anomaly.evidence),
+                dim,
+            )));
         }
     }
+
+    let title = if anomalies.is_empty() {
+        " Details "
+    } else {
+        " Details + Anomalies "
+    };
+    let border_color = if anomalies.is_empty() {
+        Color::Cyan
+    } else {
+        Color::Yellow
+    };
 
     let detail = Paragraph::new(lines)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Yellow))
-                .title(" Anomalies "),
+                .border_style(Style::default().fg(border_color))
+                .title(title),
         )
         .wrap(ratatui::widgets::Wrap { trim: false });
 

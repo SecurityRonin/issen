@@ -302,17 +302,11 @@ impl App {
         self.handle_normal_key(key)
     }
 
-    fn handle_normal_key(&mut self, key: KeyEvent) -> Action {
+    /// Handle pure navigation keys (arrows, page, Ctrl-B/F).
+    /// Shared between normal mode and search mode.
+    fn handle_nav_key(&mut self, key: KeyEvent) -> Action {
         let count = self.entries.len();
-
         match key.code {
-            // Quit
-            KeyCode::Char('q') | KeyCode::Esc => return Action::Quit,
-            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                return Action::Quit;
-            }
-
-            // Movement
             KeyCode::Up | KeyCode::Char('k') => {
                 self.selected = self.selected.saturating_sub(1);
             }
@@ -337,6 +331,9 @@ impl App {
                     self.selected = (self.selected + self.visible_height).min(count - 1);
                 }
             }
+            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                return Action::Quit;
+            }
             KeyCode::PageUp => {
                 self.selected = self.selected.saturating_sub(self.visible_height);
             }
@@ -344,6 +341,48 @@ impl App {
                 if count > 0 {
                     self.selected = (self.selected + self.visible_height).min(count - 1);
                 }
+            }
+            // Tree-style arrows in search: expand/collapse to reveal context
+            KeyCode::Right => {
+                if !self.entries.is_empty() {
+                    let idx = self.entries[self.selected];
+                    if self.tree.node(idx).is_dir && self.collapsed.contains(&idx) {
+                        self.collapsed.remove(&idx);
+                        self.refresh_entries();
+                    }
+                }
+            }
+            KeyCode::Left => {
+                self.jump_to_parent_in_tree();
+            }
+            _ => {}
+        }
+        Action::Continue
+    }
+
+    fn handle_normal_key(&mut self, key: KeyEvent) -> Action {
+        match key.code {
+            // Quit
+            KeyCode::Char('q') | KeyCode::Esc => return Action::Quit,
+            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                return Action::Quit;
+            }
+
+            // Movement (delegate to shared nav handler)
+            KeyCode::Up
+            | KeyCode::Down
+            | KeyCode::Home
+            | KeyCode::End
+            | KeyCode::PageUp
+            | KeyCode::PageDown
+            | KeyCode::Left => {
+                return self.handle_nav_key(key);
+            }
+            KeyCode::Char('k' | 'j' | 'g' | 'G') => {
+                return self.handle_nav_key(key);
+            }
+            KeyCode::Char('b' | 'f') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                return self.handle_nav_key(key);
             }
 
             // Navigation
@@ -353,7 +392,7 @@ impl App {
             KeyCode::Backspace => {
                 self.navigate_back();
             }
-            // Tree-style h/l/arrows: collapse/expand, fall through to navigate
+            // Tree-style h/l: collapse/expand, fall through to navigate
             KeyCode::Char('l') | KeyCode::Right => {
                 if !self.entries.is_empty() {
                     let idx = self.entries[self.selected];
@@ -365,7 +404,7 @@ impl App {
                     }
                 }
             }
-            KeyCode::Char('h') | KeyCode::Left => {
+            KeyCode::Char('h') => {
                 self.jump_to_parent_in_tree();
             }
 
@@ -426,7 +465,22 @@ impl App {
                 self.search_query.pop();
                 self.schedule_search();
             }
+            // Navigation keys pass through to normal handler while searching.
+            KeyCode::Up
+            | KeyCode::Down
+            | KeyCode::Left
+            | KeyCode::Right
+            | KeyCode::PageUp
+            | KeyCode::PageDown
+            | KeyCode::Home
+            | KeyCode::End => {
+                return self.handle_nav_key(key);
+            }
             KeyCode::Char(c) => {
+                // Ctrl-B / Ctrl-F pass through as page up/down.
+                if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(c, 'b' | 'f' | 'c') {
+                    return self.handle_nav_key(key);
+                }
                 self.search_query.push(c);
                 self.schedule_search();
             }
@@ -1061,6 +1115,49 @@ mod tests {
         assert_eq!(app.search_query, "main");
         app.handle_key(key(KeyCode::Backspace));
         assert_eq!(app.search_query, "mai");
+    }
+
+    #[test]
+    fn arrow_keys_work_during_search() {
+        let mut app = test_app();
+        app.handle_key(key(KeyCode::Char('/')));
+        app.handle_key(key(KeyCode::Char('a')));
+        assert!(app.searching);
+        assert_eq!(app.selected, 0);
+        // Down arrow should move cursor even while searching
+        app.handle_key(key(KeyCode::Down));
+        assert_eq!(app.selected, 1);
+        assert!(app.searching); // still in search mode
+        assert_eq!(app.search_query, "a"); // query unchanged
+                                           // Up arrow
+        app.handle_key(key(KeyCode::Up));
+        assert_eq!(app.selected, 0);
+    }
+
+    #[test]
+    fn ctrl_f_works_during_search() {
+        let mut app = test_app();
+        app.visible_height = 2;
+        app.handle_key(key(KeyCode::Char('/')));
+        app.handle_key(key(KeyCode::Char('x')));
+        assert!(app.searching);
+        // Ctrl-F should page down
+        app.handle_key(key_ctrl('f'));
+        assert_eq!(app.selected, 2); // moved by visible_height
+        assert!(app.searching);
+        assert_eq!(app.search_query, "x"); // query unchanged (not 'xf')
+    }
+
+    #[test]
+    fn ctrl_b_works_during_search() {
+        let mut app = test_app();
+        app.visible_height = 2;
+        app.selected = 2;
+        app.handle_key(key(KeyCode::Char('/')));
+        // Ctrl-B should page up
+        app.handle_key(key_ctrl('b'));
+        assert_eq!(app.selected, 0);
+        assert!(app.searching);
     }
 
     #[test]

@@ -31,6 +31,47 @@ pub struct FileNode {
     pub usn_change_count: u32,
 }
 
+// NTFS file attribute flag constants.
+const ATTR_READONLY: u32 = 0x0001;
+const ATTR_HIDDEN: u32 = 0x0002;
+const ATTR_SYSTEM: u32 = 0x0004;
+const ATTR_ARCHIVE: u32 = 0x0020;
+const ATTR_COMPRESSED: u32 = 0x0800;
+const ATTR_ENCRYPTED: u32 = 0x4000;
+
+impl FileNode {
+    /// Format NTFS file attribute flags as a compact string.
+    ///
+    /// Each flag is a single letter: `R`ead-only, `H`idden, `S`ystem,
+    /// `A`rchive, `C`ompressed, `E`ncrypted. Absent flags show as `-`.
+    ///
+    /// Example: `--S-C-` means System + Compressed.
+    #[must_use]
+    pub fn format_attributes(&self) -> String {
+        let a = self.file_attributes;
+        let mut s = String::with_capacity(6);
+        s.push(if a & ATTR_READONLY != 0 { 'R' } else { '-' });
+        s.push(if a & ATTR_HIDDEN != 0 { 'H' } else { '-' });
+        s.push(if a & ATTR_SYSTEM != 0 { 'S' } else { '-' });
+        s.push(if a & ATTR_ARCHIVE != 0 { 'A' } else { '-' });
+        s.push(if a & ATTR_COMPRESSED != 0 { 'C' } else { '-' });
+        s.push(if a & ATTR_ENCRYPTED != 0 { 'E' } else { '-' });
+        s
+    }
+
+    /// Returns `true` if the Hidden flag is set.
+    #[must_use]
+    pub fn is_hidden(&self) -> bool {
+        self.file_attributes & ATTR_HIDDEN != 0
+    }
+
+    /// Returns `true` if the System flag is set.
+    #[must_use]
+    pub fn is_system(&self) -> bool {
+        self.file_attributes & ATTR_SYSTEM != 0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -119,5 +160,57 @@ mod tests {
         };
         assert!(node.is_dir);
         assert_eq!(node.size, 0);
+    }
+
+    // -- Attribute flags tests ------------------------------------------------
+
+    fn node_with_attrs(attrs: u32) -> FileNode {
+        FileNode {
+            name: "test".to_string(),
+            mft_entry: 1,
+            parent_entry: 5,
+            is_dir: false,
+            size: 100,
+            si_timestamps: default_timestamps(),
+            fn_timestamps: None,
+            file_attributes: attrs,
+            usn_change_count: 0,
+        }
+    }
+
+    #[test]
+    fn format_attributes_none() {
+        assert_eq!(node_with_attrs(0).format_attributes(), "------");
+    }
+
+    #[test]
+    fn format_attributes_all() {
+        let attrs = 0x0001 | 0x0002 | 0x0004 | 0x0020 | 0x0800 | 0x4000;
+        assert_eq!(node_with_attrs(attrs).format_attributes(), "RHSACE");
+    }
+
+    #[test]
+    fn format_attributes_hidden_system() {
+        assert_eq!(
+            node_with_attrs(0x0002 | 0x0004).format_attributes(),
+            "-HS---"
+        );
+    }
+
+    #[test]
+    fn format_attributes_archive_only() {
+        assert_eq!(node_with_attrs(0x0020).format_attributes(), "---A--");
+    }
+
+    #[test]
+    fn is_hidden_flag() {
+        assert!(!node_with_attrs(0).is_hidden());
+        assert!(node_with_attrs(0x0002).is_hidden());
+    }
+
+    #[test]
+    fn is_system_flag() {
+        assert!(!node_with_attrs(0).is_system());
+        assert!(node_with_attrs(0x0004).is_system());
     }
 }
