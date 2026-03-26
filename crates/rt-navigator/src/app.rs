@@ -90,6 +90,8 @@ pub struct App {
     pre_search_selected: usize,
     /// Saved `path_stack` before entering search mode.
     pre_search_path_stack: Vec<(usize, usize)>,
+    /// Saved `collapsed` set before entering search mode.
+    pre_search_collapsed: HashSet<usize>,
     /// Background search engine.
     search_engine: SearchEngine,
     /// Whether a search query is pending (waiting for debounce).
@@ -139,6 +141,7 @@ impl App {
             pre_search_dir: root,
             pre_search_selected: 0,
             pre_search_path_stack: Vec::new(),
+            pre_search_collapsed: HashSet::new(),
             search_engine,
             pending_search: false,
             last_keystroke: None,
@@ -439,16 +442,18 @@ impl App {
         self.pre_search_dir = self.current_dir;
         self.pre_search_selected = self.selected;
         self.pre_search_path_stack = self.path_stack.clone();
+        self.pre_search_collapsed = self.collapsed.clone();
         self.search_query.clear();
         self.search_results.clear();
         self.search_cursor = 0;
     }
 
-    /// Cancel search and restore pre-search position.
+    /// Cancel search and restore pre-search position (including collapse state).
     fn cancel_search(&mut self) {
         self.current_dir = self.pre_search_dir;
         self.selected = self.pre_search_selected;
         self.path_stack = std::mem::take(&mut self.pre_search_path_stack);
+        self.collapsed = std::mem::take(&mut self.pre_search_collapsed);
         self.search_query.clear();
         self.search_results.clear();
         self.refresh_entries();
@@ -460,10 +465,11 @@ impl App {
         self.search_results.clear();
 
         if self.search_query.is_empty() {
-            // Restore pre-search view.
+            // Restore pre-search view (including collapse state).
             self.current_dir = self.pre_search_dir;
             self.selected = self.pre_search_selected;
             self.path_stack = self.pre_search_path_stack.clone();
+            self.collapsed = self.pre_search_collapsed.clone();
             self.refresh_entries();
             return;
         }
@@ -502,6 +508,7 @@ impl App {
             self.current_dir = self.pre_search_dir;
             self.selected = self.pre_search_selected;
             self.path_stack = self.pre_search_path_stack.clone();
+            self.collapsed = self.pre_search_collapsed.clone();
             self.refresh_entries();
             self.search_results.clear();
             return;
@@ -537,22 +544,17 @@ impl App {
 
     /// Jump the view to the current search result.
     ///
-    /// Navigates to the result's parent directory so the header shows
-    /// path context (explaining *why* the search matched).
+    /// Expands all ancestor folders from `current_dir` down to the target
+    /// so the match becomes visible in the tree, then moves the cursor.
+    /// Does NOT change `current_dir` — the user stays in the same root.
     fn jump_to_search_result(&mut self) {
         if self.search_results.is_empty() {
             return;
         }
         let target = self.search_results[self.search_cursor];
-        let parent_entry = self.tree.node(target).parent_entry;
-
-        if let Some(&parent_idx) = self.tree.entry_to_idx(parent_entry) {
-            self.path_stack.clear();
-            self.current_dir = parent_idx;
-            self.ensure_expanded_to(target);
-            self.refresh_entries();
-            self.selected = self.entries.iter().position(|&e| e == target).unwrap_or(0);
-        }
+        self.ensure_expanded_to(target);
+        self.refresh_entries();
+        self.selected = self.entries.iter().position(|&e| e == target).unwrap_or(0);
     }
 
     /// Jump to next search match.
@@ -984,9 +986,16 @@ mod tests {
         }
         app.incremental_search(); // Synchronous fallback for tests
         assert!(!app.search_results.is_empty());
-        // Jumps to parent of main.rs — header shows /src for context
-        assert_eq!(app.current_path(), "/src");
+        // Stays at root — ancestors expanded in-place, cursor on match
+        assert_eq!(app.current_path(), "/");
         assert_eq!(app.tree.node(app.entries[app.selected]).name, "main.rs");
+        // src/ should have been expanded to reveal main.rs
+        let src_idx = app
+            .entries
+            .iter()
+            .find(|&&i| app.tree.node(i).name == "src")
+            .unwrap();
+        assert!(!app.collapsed.contains(src_idx));
     }
 
     #[test]
@@ -999,8 +1008,8 @@ mod tests {
         }
         app.incremental_search(); // Synchronous fallback for tests
         assert_eq!(app.search_results.len(), 1);
-        // Jumps to parent of readme.txt — header shows /docs
-        assert_eq!(app.current_path(), "/docs");
+        // Stays at root — docs/ expanded to reveal readme.txt
+        assert_eq!(app.current_path(), "/");
         assert_eq!(app.tree.node(app.entries[app.selected]).name, "readme.txt");
     }
 
@@ -1009,16 +1018,21 @@ mod tests {
         let mut app = test_app();
         let orig_dir = app.current_dir;
         let orig_selected = app.selected;
+        let orig_entries_len = app.entries.len(); // all collapsed = 3
         app.handle_key(key(KeyCode::Char('/')));
         for c in "main.rs".chars() {
             app.handle_key(key(KeyCode::Char(c)));
         }
         app.incremental_search(); // Synchronous fallback for tests
+                                  // Search expanded src/ to reveal main.rs
+        assert!(app.entries.len() > orig_entries_len);
         app.handle_key(key(KeyCode::Esc));
         assert_eq!(app.current_dir, orig_dir);
         assert_eq!(app.selected, orig_selected);
         assert!(app.search_query.is_empty());
         assert!(app.search_results.is_empty());
+        // Collapse state restored — back to original entry count
+        assert_eq!(app.entries.len(), orig_entries_len);
     }
 
     #[test]
@@ -1031,8 +1045,8 @@ mod tests {
         app.incremental_search(); // Synchronous fallback for tests
         app.handle_key(key(KeyCode::Enter));
         assert!(!app.searching);
-        // Confirms at /src with main.rs selected
-        assert_eq!(app.current_path(), "/src");
+        // Stays at root with main.rs selected (src/ expanded in-place)
+        assert_eq!(app.current_path(), "/");
         assert_eq!(app.search_query, "main.rs");
         assert_eq!(app.tree.node(app.entries[app.selected]).name, "main.rs");
     }
@@ -1228,20 +1242,29 @@ mod tests {
     }
 
     #[test]
-    fn search_jumps_to_parent_dir() {
+    fn search_expands_ancestors_to_reveal_match() {
         let mut app = test_app();
         // Folders default collapsed: docs/, src/, config.toml = 3
-        assert_eq!(app.entries.len(), 3); // docs collapsed
-                                          // Search for readme.txt (inside docs/)
+        assert_eq!(app.entries.len(), 3);
+        // Search for readme.txt (inside collapsed docs/)
         app.handle_key(key(KeyCode::Char('/')));
         for c in "readme".chars() {
             app.handle_key(key(KeyCode::Char(c)));
         }
         app.incremental_search();
         assert!(!app.search_results.is_empty());
-        // Should navigate to /docs (parent of readme.txt) for context
-        assert_eq!(app.current_path(), "/docs");
+        // Stays at root — docs/ expanded in-place to reveal readme.txt
+        assert_eq!(app.current_path(), "/");
         assert_eq!(app.tree.node(app.entries[app.selected]).name, "readme.txt");
+        // docs/ should be expanded now
+        let docs_idx = app
+            .entries
+            .iter()
+            .find(|&&i| app.tree.node(i).name == "docs")
+            .unwrap();
+        assert!(!app.collapsed.contains(docs_idx));
+        // More entries visible (docs/ expanded)
+        assert!(app.entries.len() > 3);
     }
 
     // -- Debounce / schedule tests --------------------------------------------
