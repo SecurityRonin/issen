@@ -122,6 +122,12 @@ impl FileTree {
 // ---------------------------------------------------------------------------
 
 impl FileTree {
+    /// Number of nodes in the tree (files + directories).
+    #[must_use]
+    pub fn node_count(&self) -> usize {
+        self.nodes.len()
+    }
+
     #[must_use]
     pub fn root_idx(&self) -> Option<usize> {
         self.root_idx

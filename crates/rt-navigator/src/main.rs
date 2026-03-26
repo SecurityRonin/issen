@@ -107,6 +107,17 @@ fn main() -> Result<()> {
         let usn_index = heuristics::check_usn_stream(&usn_records, Some(&tree));
         anomaly_index.merge(usn_index);
     }
+
+    // -- Tier 2: content-aware checks (requires volume root) -----------------
+    if let Some(ref volume_root) = sources.volume_root {
+        let reader = heuristics::FsFileReader::new(volume_root.clone(), &tree);
+        let file_entries: Vec<usize> = (0..tree.node_count())
+            .filter(|&i| !tree.node(i).is_dir)
+            .collect();
+        heuristics::run_tier2(&tree, &file_entries, &reader, &mut anomaly_index);
+        eprintln!("  Tier 2 content checks complete.");
+    }
+
     if anomaly_index.flagged_count() > 0 {
         eprintln!("  {} anomalies detected.", anomaly_index.flagged_count());
     }

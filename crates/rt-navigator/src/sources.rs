@@ -32,6 +32,9 @@ pub struct ArtifactSources {
     pub logfile: Option<PathBuf>,
     /// Path to `$UsnJrnl:$J` (optional).
     pub usn_journal: Option<PathBuf>,
+    /// Volume root directory (set when a folder is scanned, `None` for direct
+    /// file paths). Used by Tier 2 content-aware heuristics.
+    pub volume_root: Option<PathBuf>,
 }
 
 // ---------------------------------------------------------------------------
@@ -52,6 +55,7 @@ impl ArtifactSources {
                 mft_mirror: None,
                 logfile: None,
                 usn_journal: None,
+                volume_root: None,
             });
         }
 
@@ -78,6 +82,7 @@ impl ArtifactSources {
             mft_mirror: mft_mirror.filter(|p| p.exists()).map(Path::to_path_buf),
             logfile: logfile.filter(|p| p.exists()).map(Path::to_path_buf),
             usn_journal: usn_journal.filter(|p| p.exists()).map(Path::to_path_buf),
+            volume_root: None,
         })
     }
 
@@ -96,6 +101,7 @@ impl ArtifactSources {
             mft_mirror: Self::find_first(dir, MFTMIRR_NAMES),
             logfile: Self::find_first(dir, LOGFILE_NAMES),
             usn_journal: Self::find_first(dir, USNJRNL_NAMES),
+            volume_root: Some(dir.to_path_buf()),
         })
     }
 
@@ -227,6 +233,45 @@ mod tests {
     fn explicit_with_missing_mft_errors() {
         let result = ArtifactSources::from_explicit(Path::new("/nonexistent"), None, None, None);
         assert!(result.is_err());
+    }
+
+    // -- volume_root tests ---------------------------------------------------
+
+    #[test]
+    fn scan_folder_sets_volume_root() {
+        let tmp = TempDir::new().unwrap();
+        touch(tmp.path(), "$MFT");
+
+        let sources = ArtifactSources::resolve_path(tmp.path()).unwrap();
+        assert_eq!(
+            sources.volume_root.as_deref(),
+            Some(tmp.path()),
+            "scan_folder should set volume_root to the scanned directory"
+        );
+    }
+
+    #[test]
+    fn direct_file_has_no_volume_root() {
+        let tmp = TempDir::new().unwrap();
+        let mft_path = touch(tmp.path(), "my_mft");
+
+        let sources = ArtifactSources::resolve_path(&mft_path).unwrap();
+        assert!(
+            sources.volume_root.is_none(),
+            "resolve_path with a direct file should leave volume_root as None"
+        );
+    }
+
+    #[test]
+    fn explicit_flags_have_no_volume_root() {
+        let tmp = TempDir::new().unwrap();
+        let mft = touch(tmp.path(), "mft");
+
+        let sources = ArtifactSources::from_explicit(&mft, None, None, None).unwrap();
+        assert!(
+            sources.volume_root.is_none(),
+            "from_explicit should leave volume_root as None"
+        );
     }
 
     #[test]
