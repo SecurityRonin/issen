@@ -57,7 +57,11 @@ fn shannon_entropy(data: &[u8]) -> f64 {
 }
 
 fn file_extension(name: &str) -> Option<String> {
-    name.rsplit('.').next().map(str::to_lowercase)
+    let dot_pos = name.rfind('.')?;
+    if dot_pos == 0 {
+        return None; // ".hidden" has no extension
+    }
+    Some(name[dot_pos + 1..].to_lowercase())
 }
 
 fn check_mg_001(
@@ -412,6 +416,30 @@ mod tests {
             }
         }
         assert!(shannon_entropy(&data) > 7.9);
+    }
+
+    // --- file_extension ---
+
+    #[test]
+    fn file_extension_normal() {
+        assert_eq!(file_extension("report.docx"), Some("docx".to_string()));
+        assert_eq!(file_extension("PHOTO.JPG"), Some("jpg".to_string()));
+    }
+
+    #[test]
+    fn file_extension_no_dot() {
+        assert_eq!(file_extension("Makefile"), None);
+        assert_eq!(file_extension("README"), None);
+    }
+
+    #[test]
+    fn file_extension_hidden_file() {
+        assert_eq!(file_extension(".gitignore"), None);
+    }
+
+    #[test]
+    fn file_extension_double_ext() {
+        assert_eq!(file_extension("archive.tar.gz"), Some("gz".to_string()));
     }
 
     // --- Tier 2 gate ---

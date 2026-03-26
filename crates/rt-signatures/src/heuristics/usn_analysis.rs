@@ -25,9 +25,13 @@ pub fn check_usn_stream(records: &[UsnRecordV2], tree: Option<&FileTree>) -> Ano
     index
 }
 
+/// Mask a file reference number to 48-bit MFT entry number (strip sequence).
+const FRN_MASK: u64 = 0x0000_FFFF_FFFF_FFFF;
+
 /// Resolve a file reference number to a tree index, falling back to root (0).
 fn resolve_idx(frn: u64, tree: Option<&FileTree>) -> usize {
-    tree.and_then(|t| t.entry_to_idx(frn).copied()).unwrap_or(0)
+    tree.and_then(|t| t.entry_to_idx(frn & FRN_MASK).copied())
+        .unwrap_or(0)
 }
 
 /// HEUR-USN-001: Secure deletion pattern (`SDelete` / `CCleaner`).
@@ -202,16 +206,16 @@ fn check_usn_004(records: &[UsnRecordV2], tree: &FileTree, index: &mut AnomalyIn
     let mut seen = std::collections::HashSet::new();
 
     for rec in records {
-        let frn = rec.file_reference_number;
-        if seen.contains(&frn) {
+        let mft_entry = rec.file_reference_number & FRN_MASK;
+        if seen.contains(&mft_entry) {
             continue;
         }
-        seen.insert(frn);
+        seen.insert(mft_entry);
 
-        if tree.entry_to_idx(frn).is_none() {
+        if tree.entry_to_idx(mft_entry).is_none() {
             // File no longer in MFT — attach to parent if possible, else root.
             let parent_idx = tree
-                .entry_to_idx(rec.parent_file_reference_number)
+                .entry_to_idx(rec.parent_file_reference_number & FRN_MASK)
                 .copied()
                 .unwrap_or(0);
             index.add(
@@ -222,8 +226,9 @@ fn check_usn_004(records: &[UsnRecordV2], tree: &FileTree, index: &mut AnomalyIn
                     rule_id: "HEUR-USN-004",
                     description: "USN record references deleted/reallocated MFT entry".to_string(),
                     evidence: format!(
-                        "ghost_frn={frn}, file_name={}, parent_frn={}",
-                        rec.file_name, rec.parent_file_reference_number
+                        "ghost_entry={mft_entry}, file_name={}, parent_frn={}",
+                        rec.file_name,
+                        rec.parent_file_reference_number & FRN_MASK
                     ),
                 },
             );
@@ -594,5 +599,60 @@ mod tests {
         )];
         let index = check_usn_stream(&records, None);
         assert_eq!(index.flagged_count(), 0);
+    }
+
+    // --- FRN masking (sequence number in upper 16 bits) ---
+
+    #[test]
+    fn resolve_idx_masks_frn_to_48_bits() {
+        let tree = make_tree();
+        // FRN 100 exists in tree. Add sequence number in upper bits.
+        let frn_with_seq = 0x0003_0000_0000_0064; // entry 100, seq 3
+        let records = vec![make_usn_record(
+            "report.docx",
+            frn_with_seq,
+            10,
+            UsnReasonFlags::FILE_CREATE,
+            BASE_FILETIME,
+            1000,
+        )];
+        let index = check_usn_stream(&records, Some(&tree));
+        // Should NOT be flagged as ghost — entry 100 exists in tree.
+        let has_004 = (0..3).any(|idx| {
+            index
+                .for_node(idx)
+                .iter()
+                .any(|a| a.rule_id == "HEUR-USN-004")
+        });
+        assert!(
+            !has_004,
+            "existing entry with sequence bits should not be a ghost"
+        );
+    }
+
+    #[test]
+    fn usn_004_ghost_with_sequence_bits() {
+        let tree = make_tree();
+        // FRN 999 does NOT exist in tree, even after masking.
+        let frn_with_seq = 0x0005_0000_0000_03E7; // entry 999, seq 5
+        let parent_with_seq = 0x0002_0000_0000_000A; // entry 10, seq 2
+        let records = vec![make_usn_record(
+            "deleted.exe",
+            frn_with_seq,
+            parent_with_seq,
+            UsnReasonFlags::FILE_DELETE,
+            BASE_FILETIME,
+            1000,
+        )];
+        let index = check_usn_stream(&records, Some(&tree));
+        // Parent entry 10 (Users dir) exists — ghost should attach there.
+        let parent_idx = *tree.entry_to_idx(10).unwrap();
+        assert!(
+            index
+                .for_node(parent_idx)
+                .iter()
+                .any(|a| a.rule_id == "HEUR-USN-004"),
+            "ghost with sequence bits should resolve parent via masked FRN"
+        );
     }
 }

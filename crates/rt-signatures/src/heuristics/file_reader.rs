@@ -1,7 +1,9 @@
 //! File content access abstraction for Tier 2 checks.
 
-use rt_mft_tree::tree::FileTree;
+use std::io::Read;
 use std::path::PathBuf;
+
+use rt_mft_tree::tree::FileTree;
 
 /// Abstract access to file content for Tier 2 heuristic checks.
 pub trait FileReader {
@@ -32,8 +34,11 @@ impl FileReader for FsFileReader<'_> {
         let rel = cached.strip_prefix('/').unwrap_or(cached);
         let full_path = self.volume_root.join(rel);
 
-        let data = std::fs::read(&full_path).ok()?;
-        Some(data[..n.min(data.len())].to_vec())
+        let mut file = std::fs::File::open(&full_path).ok()?;
+        let mut buf = vec![0u8; n];
+        let bytes_read = file.read(&mut buf).ok()?;
+        buf.truncate(bytes_read);
+        Some(buf)
     }
 
     fn is_available(&self) -> bool {

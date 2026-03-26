@@ -3942,6 +3942,7 @@ dependencies = [
  "ratatui",
  "rt-mft-tree",
  "rt-parser-usnjrnl",
+ "rt-signatures",
  "tempfile",
 ]
 
