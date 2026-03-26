@@ -3920,6 +3920,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rt-mft-tree"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "indicatif",
+ "mft",
+ "tempfile",
+]
+
+[[package]]
 name = "rt-navigator"
 version = "0.1.0"
 dependencies = [

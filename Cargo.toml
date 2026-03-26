@@ -15,6 +15,7 @@ members = [
     "crates/rt-report",
     "crates/rt-cli",
     "crates/rt-navigator",
+    "crates/rt-mft-tree",
     "xtask",
 ]
 
@@ -39,6 +40,7 @@ rt-parser-evtx    = { path = "crates/parsers/rt-parser-evtx" }
 rt-report         = { path = "crates/rt-report" }
 rt-signatures = { path = "crates/rt-signatures" }
 rt-remote-access = { path = "crates/rt-remote-access" }
+rt-mft-tree      = { path = "crates/rt-mft-tree" }
 
 # External dependencies
 duckdb       = { version = "1", features = ["bundled"] }
