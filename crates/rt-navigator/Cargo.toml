@@ -12,7 +12,7 @@ name = "rt-nav"
 path = "src/main.rs"
 
 [dependencies]
-mft = { workspace = true }
+rt-mft-tree = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true }
 anyhow = { workspace = true }

@@ -18,12 +18,11 @@ use crossterm::event::{self, Event};
 
 mod app;
 mod sources;
-mod tree;
 mod ui;
 
 use app::{Action, App};
+use rt_mft_tree::tree::FileTree;
 use sources::ArtifactSources;
-use tree::FileTree;
 
 #[derive(Parser)]
 #[command(

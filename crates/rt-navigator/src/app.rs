@@ -2,7 +2,7 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::tree::FileTree;
+use rt_mft_tree::tree::FileTree;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -163,8 +163,8 @@ impl App {
             nb.is_dir.cmp(&na.is_dir).then_with(|| match mode {
                 SortMode::Name => na.name.to_lowercase().cmp(&nb.name.to_lowercase()),
                 SortMode::Size => na.size.cmp(&nb.size),
-                SortMode::Modified => nb.modified.cmp(&na.modified),
-                SortMode::Created => nb.created.cmp(&na.created),
+                SortMode::Modified => nb.si_timestamps.modified.cmp(&na.si_timestamps.modified),
+                SortMode::Created => nb.si_timestamps.created.cmp(&na.si_timestamps.created),
             })
         });
     }
@@ -281,9 +281,10 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tree::{FileNode, FileTree};
     use chrono::{TimeZone, Utc};
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+    use rt_mft_tree::node::{FileNode, NtfsTimestamps};
+    use rt_mft_tree::tree::FileTree;
 
     fn ts(y: i32, m: u32, d: u32) -> chrono::DateTime<Utc> {
         Utc.with_ymd_and_hms(y, m, d, 0, 0, 0).unwrap()
@@ -296,10 +297,14 @@ mod tests {
             parent_entry: parent,
             is_dir: true,
             size: 0,
-            modified: ts(2024, 1, 1),
-            accessed: ts(2024, 1, 1),
-            created: ts(2024, 1, 1),
-            mft_modified: ts(2024, 1, 1),
+            si_timestamps: NtfsTimestamps {
+                modified: ts(2024, 1, 1),
+                accessed: ts(2024, 1, 1),
+                created: ts(2024, 1, 1),
+                entry_modified: ts(2024, 1, 1),
+            },
+            fn_timestamps: None,
+            file_attributes: 0,
             usn_change_count: 0,
         }
     }
@@ -311,10 +316,14 @@ mod tests {
             parent_entry: parent,
             is_dir: false,
             size,
-            modified: ts(2024, 6, 15),
-            accessed: ts(2024, 6, 15),
-            created: ts(2024, 1, 1),
-            mft_modified: ts(2024, 6, 15),
+            si_timestamps: NtfsTimestamps {
+                modified: ts(2024, 6, 15),
+                accessed: ts(2024, 6, 15),
+                created: ts(2024, 1, 1),
+                entry_modified: ts(2024, 6, 15),
+            },
+            fn_timestamps: None,
+            file_attributes: 0,
             usn_change_count: 0,
         }
     }

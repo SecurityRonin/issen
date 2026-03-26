@@ -3939,8 +3939,8 @@ dependencies = [
  "clap",
  "crossterm 0.28.1",
  "indicatif",
- "mft",
  "ratatui",
+ "rt-mft-tree",
  "rt-parser-usnjrnl",
  "tempfile",
 ]

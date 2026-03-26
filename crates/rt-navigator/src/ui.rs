@@ -167,8 +167,16 @@ fn draw_file_list(frame: &mut Frame, area: Rect, app: &App) {
                 format_size(node.size)
             };
 
-            let modified = node.modified.format("%Y-%m-%d %H:%M:%S").to_string();
-            let created = node.created.format("%Y-%m-%d %H:%M:%S").to_string();
+            let modified = node
+                .si_timestamps
+                .modified
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            let created = node
+                .si_timestamps
+                .created
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
             let mft_num = node.mft_entry.to_string();
 
             Row::new(vec![
