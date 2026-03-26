@@ -1,0 +1,28 @@
+[package]
+name = "rt-navigator"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "MFT-based forensic file navigator for RapidTriage"
+repository.workspace = true
+
+[[bin]]
+name = "rt-nav"
+path = "src/main.rs"
+
+[dependencies]
+mft = { workspace = true }
+chrono = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+indicatif = { workspace = true }
+rt-parser-usnjrnl = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true
