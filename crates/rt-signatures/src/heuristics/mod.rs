@@ -4,12 +4,14 @@ pub mod entry_checks;
 pub mod file_reader;
 pub mod magic_table;
 pub mod tree_checks;
+pub mod usn_analysis;
 
 pub use anomaly::{Anomaly, AnomalyCategory, AnomalyIndex, HeuristicsConfig};
 pub use content_checks::run_tier2;
 pub use entry_checks::check_entry;
 pub use file_reader::{FileReader, FsFileReader, NoFileReader};
 pub use tree_checks::check_tree;
+pub use usn_analysis::check_usn_stream;
 
 use rt_mft_tree::tree::FileTree;
 
