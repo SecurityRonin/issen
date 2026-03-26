@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 
 use crate::node::FileNode;
+use crate::trigram::TrigramIndex;
 
 const ROOT_MFT_ENTRY: u64 = 5;
 
@@ -16,6 +17,8 @@ pub struct FileTree {
     paths: Vec<String>,
     /// Pre-computed lowercased paths for O(0-alloc) search.
     paths_lower: Vec<String>,
+    /// Trigram index for fast substring search over paths.
+    trigram_index: TrigramIndex,
     pub total_mft_entries: u64,
     pub allocated_entries: usize,
 }
@@ -103,6 +106,7 @@ impl FileTree {
         }
 
         let paths_lower: Vec<String> = paths.iter().map(|p| p.to_lowercase()).collect();
+        let trigram_index = TrigramIndex::build(&paths_lower);
 
         Self {
             nodes,
@@ -111,6 +115,7 @@ impl FileTree {
             root_idx,
             paths,
             paths_lower,
+            trigram_index,
             total_mft_entries: allocated as u64,
             allocated_entries: allocated,
         }
@@ -164,6 +169,20 @@ impl FileTree {
     #[must_use]
     pub fn search(&self, query: &str) -> Vec<usize> {
         let query_lower = query.to_lowercase();
+
+        // Try trigram-accelerated search for queries >= 3 chars
+        if let Some(candidates) = self.trigram_index.candidates(&query_lower) {
+            return candidates
+                .into_iter()
+                .filter(|&idx| {
+                    self.nodes[idx].mft_entry != ROOT_MFT_ENTRY
+                        && self.paths_lower[idx].contains(&query_lower)
+                })
+                .take(Self::MAX_SEARCH_RESULTS)
+                .collect();
+        }
+
+        // Fallback: linear scan for short queries (< 3 chars)
         (0..self.nodes.len())
             .filter(|&idx| {
                 if self.nodes[idx].mft_entry == ROOT_MFT_ENTRY {
@@ -179,6 +198,24 @@ impl FileTree {
     #[must_use]
     pub fn cached_path_lower(&self, idx: usize) -> &str {
         &self.paths_lower[idx]
+    }
+
+    /// Get a reference to the trigram index (for background search).
+    #[must_use]
+    pub fn trigram_index(&self) -> &TrigramIndex {
+        &self.trigram_index
+    }
+
+    /// Get a reference to the lowercase paths (for background search).
+    #[must_use]
+    pub fn paths_lower(&self) -> &[String] {
+        &self.paths_lower
+    }
+
+    /// Check if a node index is the root entry.
+    #[must_use]
+    pub fn is_root(&self, idx: usize) -> bool {
+        self.nodes[idx].mft_entry == ROOT_MFT_ENTRY
     }
 
     #[must_use]
@@ -483,6 +520,30 @@ mod tests {
     fn entry_to_idx_unknown_entry() {
         let tree = FileTree::from_nodes(sample_nodes());
         assert!(tree.entry_to_idx(99999).is_none());
+    }
+
+    // -- trigram integration tests -------------------------------------------
+
+    #[test]
+    fn search_uses_trigram_index_for_long_queries() {
+        let tree = FileTree::from_nodes(sample_nodes());
+        // "system32" is 8 chars, should use trigram path
+        let results = tree.search("system32");
+        assert!(results.len() >= 3); // dir + 2 files
+        for &idx in &results {
+            assert!(tree.cached_path(idx).to_lowercase().contains("system32"));
+        }
+    }
+
+    #[test]
+    fn search_falls_back_for_short_queries() {
+        let tree = FileTree::from_nodes(sample_nodes());
+        // "ex" is 2 chars, falls back to linear scan
+        let results = tree.search("ex");
+        assert!(!results.is_empty());
+        for &idx in &results {
+            assert!(tree.cached_path(idx).to_lowercase().contains("ex"));
+        }
     }
 
     // -- Cached path index tests ---------------------------------------------
