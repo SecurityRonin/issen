@@ -49,7 +49,27 @@ pub fn draw(frame: &mut Frame, app: &App) {
     .split(frame.area());
 
     draw_header(frame, chunks[0], app);
-    draw_file_list(frame, chunks[1], app);
+
+    // Split main area if detail panel is active
+    let has_anomalies = !app.entries.is_empty()
+        && !app
+            .anomaly_index
+            .for_node(app.entries[app.selected])
+            .is_empty();
+
+    if app.show_detail_panel && has_anomalies {
+        let main_chunks = Layout::horizontal([
+            Constraint::Percentage(60), // file list
+            Constraint::Percentage(40), // detail panel
+        ])
+        .split(chunks[1]);
+
+        draw_file_list(frame, main_chunks[0], app);
+        draw_detail_panel(frame, main_chunks[1], app);
+    } else {
+        draw_file_list(frame, chunks[1], app);
+    }
+
     draw_footer(frame, chunks[2], app);
 }
 
@@ -227,6 +247,81 @@ fn draw_file_list(frame: &mut Frame, area: Rect, app: &App) {
 }
 
 // ---------------------------------------------------------------------------
+// Anomaly detail panel
+// ---------------------------------------------------------------------------
+
+fn draw_detail_panel(frame: &mut Frame, area: Rect, app: &App) {
+    if app.entries.is_empty() {
+        return;
+    }
+    let idx = app.entries[app.selected];
+    let anomalies = app.anomaly_index.for_node(idx);
+    let node_name = &app.tree.node(idx).name;
+
+    let mut lines = vec![
+        Line::from(Span::styled(
+            format!(" {node_name}"),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+    ];
+
+    for (i, anomaly) in anomalies.iter().enumerate() {
+        let severity_color = match anomaly.severity {
+            Severity::Critical => Color::Red,
+            Severity::High => Color::LightRed,
+            Severity::Medium => Color::Yellow,
+            Severity::Low => Color::Blue,
+            Severity::Informational => Color::DarkGray,
+        };
+
+        lines.push(Line::from(vec![
+            Span::styled(
+                format!(" [{}] ", anomaly.rule_id),
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", anomaly.severity),
+                Style::default()
+                    .fg(severity_color)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]));
+        lines.push(Line::from(Span::styled(
+            format!("  Category: {}", anomaly.category),
+            Style::default().fg(Color::White),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("  {}", anomaly.description),
+            Style::default().fg(Color::White),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("  Evidence: {}", anomaly.evidence),
+            Style::default().fg(Color::DarkGray),
+        )));
+
+        if i < anomalies.len() - 1 {
+            lines.push(Line::from(""));
+        }
+    }
+
+    let detail = Paragraph::new(lines)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Yellow))
+                .title(" Anomalies "),
+        )
+        .wrap(ratatui::widgets::Wrap { trim: false });
+
+    frame.render_widget(detail, area);
+}
+
+// ---------------------------------------------------------------------------
 // Footer
 // ---------------------------------------------------------------------------
 
@@ -252,7 +347,7 @@ fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
     };
 
     let help =
-        " \u{2191}\u{2193}/jk: Nav  Enter/l: Open  Bksp/h: Back  s: Sort  /: Search  f: Flagged  ^N/^P: Pg  g/G: Top/End  q: Quit";
+        " \u{2191}\u{2193}/jk: Nav  Enter/l: Open  Bksp/h: Back  s: Sort  /: Search  f: Flagged  a: Detail  ^N/^P: Pg  g/G: Top/End  q: Quit";
 
     let mut lines = vec![
         Line::from(Span::styled(stats, Style::default().fg(Color::Green))),

@@ -67,6 +67,8 @@ pub struct App {
     pub searching: bool,
     /// Whether to show only flagged entries.
     pub flagged_filter: bool,
+    /// Whether to show the anomaly detail panel.
+    pub show_detail_panel: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -90,6 +92,7 @@ impl App {
             search_query: String::new(),
             searching: false,
             flagged_filter: false,
+            show_detail_panel: false,
         };
         app.refresh_entries();
         Ok(app)
@@ -253,6 +256,11 @@ impl App {
             KeyCode::Char('f') => {
                 self.flagged_filter = !self.flagged_filter;
                 self.refresh_entries();
+            }
+
+            // Anomaly detail panel
+            KeyCode::Char('a') => {
+                self.show_detail_panel = !self.show_detail_panel;
             }
 
             _ => {}
@@ -729,6 +737,16 @@ mod tests {
         assert!(app.flagged_filter);
         app.handle_key(key(KeyCode::Char('f')));
         assert!(!app.flagged_filter);
+    }
+
+    #[test]
+    fn a_key_toggles_detail_panel() {
+        let mut app = test_app();
+        assert!(!app.show_detail_panel);
+        app.handle_key(key(KeyCode::Char('a')));
+        assert!(app.show_detail_panel);
+        app.handle_key(key(KeyCode::Char('a')));
+        assert!(!app.show_detail_panel);
     }
 
     #[test]

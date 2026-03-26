@@ -1,6 +1,7 @@
 //! Anomaly data model and index for forensic heuristic findings.
 
 use std::collections::HashMap;
+use std::fmt;
 
 use crate::matching::results::Severity;
 
@@ -17,6 +18,23 @@ pub enum AnomalyCategory {
     GhostFile,
     SuspiciousSize,
     MftIntegrity,
+}
+
+impl fmt::Display for AnomalyCategory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Timestomping => write!(f, "Timestomping"),
+            Self::SuspiciousLocation => write!(f, "Suspicious Location"),
+            Self::ExtensionMismatch => write!(f, "Extension Mismatch"),
+            Self::HighEntropy => write!(f, "High Entropy"),
+            Self::SecureDeletion => write!(f, "Secure Deletion"),
+            Self::RansomwarePattern => write!(f, "Ransomware Pattern"),
+            Self::JournalTampering => write!(f, "Journal Tampering"),
+            Self::GhostFile => write!(f, "Ghost File"),
+            Self::SuspiciousSize => write!(f, "Suspicious Size"),
+            Self::MftIntegrity => write!(f, "MFT Integrity"),
+        }
+    }
 }
 
 impl AnomalyCategory {
@@ -213,5 +231,15 @@ mod tests {
     fn default_config_has_no_volume_created() {
         let config = HeuristicsConfig::default();
         assert!(config.volume_created.is_none());
+    }
+
+    #[test]
+    fn anomaly_category_display() {
+        assert_eq!(format!("{}", AnomalyCategory::Timestomping), "Timestomping");
+        assert_eq!(
+            format!("{}", AnomalyCategory::SuspiciousLocation),
+            "Suspicious Location"
+        );
+        assert_eq!(format!("{}", AnomalyCategory::GhostFile), "Ghost File");
     }
 }
