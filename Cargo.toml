@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "crates/rt-core",
-    "crates/rt-pipeline",
+    "crates/rt-fswalker",
     "crates/rt-plugin-sdk",
     "crates/rt-timeline",
     "crates/rt-ewf",
@@ -29,7 +29,7 @@ authors = ["RapidTriage Contributors"]
 [workspace.dependencies]
 # Internal crates (path dependencies)
 rt-core       = { path = "crates/rt-core" }
-rt-pipeline   = { path = "crates/rt-pipeline" }
+rt-fswalker   = { path = "crates/rt-fswalker" }
 rt-plugin-sdk = { path = "crates/rt-plugin-sdk" }
 rt-timeline   = { path = "crates/rt-timeline" }
 rt-ewf        = { path = "crates/rt-ewf" }

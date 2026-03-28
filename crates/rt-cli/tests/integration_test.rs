@@ -8,8 +8,8 @@ extern crate rt_parser_usnjrnl;
 
 use rt_core::artifacts::ArtifactType;
 use rt_core::timeline::event::EventType;
-use rt_pipeline::orchestrator::{discover_artifacts, run_pipeline};
-use rt_pipeline::progress::ProgressReporter;
+use rt_fswalker::orchestrator::{discover_artifacts, run_pipeline};
+use rt_fswalker::progress::ProgressReporter;
 use rt_timeline::query::TimelineQuery;
 use rt_timeline::store::TimelineStore;
 use tempfile::TempDir;

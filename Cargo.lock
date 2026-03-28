@@ -3877,10 +3877,10 @@ dependencies = [
  "duckdb",
  "predicates",
  "rt-core",
+ "rt-fswalker",
  "rt-parser-evtx",
  "rt-parser-mft",
  "rt-parser-usnjrnl",
- "rt-pipeline",
  "rt-remote-access",
  "rt-report",
  "rt-signatures",
@@ -3917,6 +3917,21 @@ dependencies = [
  "rt-core",
  "tempfile",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "rt-fswalker"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "insta",
+ "memmap2",
+ "rayon",
+ "rt-core",
+ "sha2",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tracing",
 ]
 
 [[package]]
@@ -3983,21 +3998,6 @@ dependencies = [
  "rt-core",
  "serde_json",
  "tempfile",
- "tracing",
-]
-
-[[package]]
-name = "rt-pipeline"
-version = "0.1.0"
-dependencies = [
- "hex",
- "insta",
- "memmap2",
- "rayon",
- "rt-core",
- "sha2",
- "tempfile",
- "thiserror 2.0.18",
  "tracing",
 ]
 

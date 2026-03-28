@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use rt_pipeline::orchestrator::run_pipeline;
-use rt_pipeline::progress::ProgressReporter;
+use rt_fswalker::orchestrator::run_pipeline;
+use rt_fswalker::progress::ProgressReporter;
 use rt_signatures::engines::ioc_hash::HashIocStore;
 use rt_signatures::engines::ioc_network::NetworkIocStore;
 use rt_signatures::engines::yara::YaraEngine;

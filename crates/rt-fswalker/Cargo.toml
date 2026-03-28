@@ -1,10 +1,10 @@
 [package]
-name = "rt-pipeline"
+name = "rt-fswalker"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license = "Apache-2.0"
-description = "Evidence ingestion pipeline for RapidTriage"
+description = "Filesystem walker and artifact dispatch for RapidTriage"
 repository.workspace = true
 
 [dependencies]

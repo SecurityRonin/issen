@@ -13,7 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 rt-core = { workspace = true }
-rt-pipeline = { workspace = true }
+rt-fswalker = { workspace = true }
 rt-timeline = { workspace = true }
 rt-signatures = { workspace = true }
 rt-parser-usnjrnl = { workspace = true }
