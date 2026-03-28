@@ -233,6 +233,71 @@ impl FileTree {
 }
 
 // ---------------------------------------------------------------------------
+// Test helpers (pub for cross-crate test use)
+// ---------------------------------------------------------------------------
+
+impl FileTree {
+    /// Create a minimal tree with a single file node at index 0.
+    ///
+    /// Intended for unit tests in downstream crates that need a `FileTree`
+    /// without loading a real MFT. The resulting tree has a root node (index 1)
+    /// and the named file node at index 0 with `cached_path` = `/<name>`.
+    #[must_use]
+    pub fn test_single_node(name: &str) -> Self {
+        use crate::node::{FileNode, NtfsTimestamps};
+        use chrono::{TimeZone, Utc};
+
+        let ts = NtfsTimestamps {
+            modified: Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap(),
+            accessed: Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap(),
+            created: Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap(),
+            entry_modified: Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap(),
+        };
+
+        let file = FileNode {
+            name: name.to_string(),
+            mft_entry: 1,
+            parent_entry: 5,
+            is_dir: false,
+            size: 0,
+            si_timestamps: ts,
+            fn_timestamps: None,
+            file_attributes: 0,
+            usn_change_count: 0,
+            sequence_number: 0,
+            hard_link_count: 1,
+            is_resident: true,
+            security_id: 0,
+            owner_id: 0,
+            usn: 0,
+            ads_names: Vec::new(),
+        };
+
+        let root = FileNode {
+            name: ".".to_string(),
+            mft_entry: 5,
+            parent_entry: 5,
+            is_dir: true,
+            size: 0,
+            si_timestamps: ts,
+            fn_timestamps: None,
+            file_attributes: 0,
+            usn_change_count: 0,
+            sequence_number: 0,
+            hard_link_count: 1,
+            is_resident: true,
+            security_id: 0,
+            owner_id: 0,
+            usn: 0,
+            ads_names: Vec::new(),
+        };
+
+        // File at index 0, root at index 1
+        Self::from_nodes(vec![file, root])
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 

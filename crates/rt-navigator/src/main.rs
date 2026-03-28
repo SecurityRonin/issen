@@ -399,16 +399,17 @@ fn try_load_mft(
         anomaly_index.merge(usn_index);
     }
 
+    // Convert anomalies to workbench alerts (before App::new takes ownership)
+    let mft_alerts = investigation::alerts::anomalies_to_alerts(&anomaly_index, &tree);
+    data.alerts.extend(mft_alerts);
+
     // Build the MFT App (takes ownership of tree and anomaly_index)
     let app = App::new(tree, anomaly_index)?;
 
-    // Note: we don't set data.mft_tree since FileTree doesn't derive Clone
-    // and we already transferred ownership to App::new(). The MFT view is
-    // handled by delegation to the existing App.
-
     eprintln!(
-        "  MFT loaded, {} total timeline events",
-        data.timeline.len()
+        "  MFT loaded, {} total timeline events, {} alerts",
+        data.timeline.len(),
+        data.alerts.len(),
     );
     Ok(Some(app))
 }
