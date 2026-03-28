@@ -2,6 +2,8 @@ pub mod alerts;
 pub mod dashboard;
 pub mod data;
 pub mod detail;
+#[cfg(test)]
+mod test_helpers;
 pub mod timeline;
 pub mod views;
 pub mod workbench_ui;
@@ -15,7 +17,7 @@ use data::InvestigationData;
 use timeline::TimelineSource;
 
 /// Which view is currently active in the workbench.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum WorkbenchView {
     Dashboard,
     Timeline,
@@ -89,6 +91,12 @@ impl WorkbenchView {
     }
 }
 
+impl std::fmt::Display for WorkbenchView {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.label())
+    }
+}
+
 /// Main state machine for the investigation workbench TUI.
 pub struct WorkbenchApp {
     pub data: InvestigationData,
@@ -108,6 +116,22 @@ pub struct WorkbenchApp {
 
     /// Existing MFT tree app (delegation target when in MftTree view).
     pub mft_app: Option<App>,
+}
+
+impl std::fmt::Debug for WorkbenchApp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WorkbenchApp")
+            .field("view", &self.current_view().label())
+            .field("views", &self.available_views.len())
+            .field("selected", &self.selected)
+            .field("scroll_offset", &self.scroll_offset)
+            .field("search_mode", &self.search_mode)
+            .field("search_query", &self.search_query)
+            .field("sort_ascending", &self.sort_ascending)
+            .field("filtered_timeline", &self.filtered_timeline.len())
+            .field("has_mft", &self.mft_app.is_some())
+            .finish()
+    }
 }
 
 impl WorkbenchApp {
@@ -373,7 +397,7 @@ impl WorkbenchApp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use data::{CollectionMetadata, InvestigationData};
+    use data::InvestigationData;
     use timeline::{TimelineEvent, TimelineSource, TimestampType};
 
     fn make_test_data(n_timeline: usize, n_network: usize) -> InvestigationData {
@@ -400,20 +424,9 @@ mod tests {
             .collect();
 
         InvestigationData {
-            metadata: CollectionMetadata::default(),
-            alerts: Vec::new(),
             timeline,
-            mft_tree: None,
-            anomaly_index: None,
             network,
-            processes: Vec::new(),
-            crontabs: Vec::new(),
-            logins: Vec::new(),
-            packages: Vec::new(),
-            hashes: Vec::new(),
-            chkrootkit: Vec::new(),
-            configs: Vec::new(),
-            artifact_counts: std::collections::HashMap::new(),
+            ..Default::default()
         }
     }
 
@@ -611,5 +624,21 @@ mod tests {
         app.prev_view();
         assert_eq!(app.current_view_idx, app.available_views.len() - 1);
         assert_ne!(app.current_view(), WorkbenchView::Dashboard);
+    }
+
+    #[test]
+    fn workbench_view_display() {
+        assert_eq!(format!("{}", WorkbenchView::Dashboard), "Dashboard");
+        assert_eq!(format!("{}", WorkbenchView::Timeline), "Timeline");
+        assert_eq!(format!("{}", WorkbenchView::MftTree), "MFT Tree");
+    }
+
+    #[test]
+    fn workbench_app_debug_shows_state() {
+        let app = WorkbenchApp::new(make_test_data(10, 5), None);
+        let debug = format!("{app:?}");
+        assert!(debug.contains("WorkbenchApp"));
+        assert!(debug.contains("view: \"Dashboard\""));
+        assert!(debug.contains("selected: 0"));
     }
 }

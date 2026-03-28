@@ -6,6 +6,7 @@ pub mod network;
 pub mod packages;
 pub mod process;
 pub mod supertimeline;
+pub mod table_view;
 
 use ratatui::layout::Rect;
 use ratatui::Frame;
@@ -32,32 +33,13 @@ pub fn draw_view(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::investigation::data::{CollectionMetadata, InvestigationData};
-    use crate::investigation::WorkbenchApp;
-    use ratatui::backend::TestBackend;
-    use ratatui::Terminal;
+    use crate::investigation::test_helpers::*;
 
     /// Build a `WorkbenchApp` with empty `InvestigationData` and all views
     /// forced into `available_views` so we can exercise every branch of
     /// `draw_view` without needing real data.
-    fn make_empty_app() -> WorkbenchApp {
-        let data = InvestigationData {
-            metadata: CollectionMetadata::default(),
-            alerts: Vec::new(),
-            timeline: Vec::new(),
-            mft_tree: None,
-            anomaly_index: None,
-            network: Vec::new(),
-            processes: Vec::new(),
-            crontabs: Vec::new(),
-            logins: Vec::new(),
-            packages: Vec::new(),
-            hashes: Vec::new(),
-            chkrootkit: Vec::new(),
-            configs: Vec::new(),
-            artifact_counts: std::collections::HashMap::new(),
-        };
-        let mut app = WorkbenchApp::new(data, None);
+    fn make_all_views_app() -> WorkbenchApp {
+        let mut app = empty_app();
         // Force all views into available_views so we can switch to any of them.
         app.available_views = vec![
             WorkbenchView::Dashboard,
@@ -90,29 +72,19 @@ mod tests {
 
     #[test]
     fn draw_view_dashboard_is_noop() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let app = make_empty_app();
+        let app = make_all_views_app();
         // Default view is Dashboard (index 0).
         assert_eq!(app.current_view(), WorkbenchView::Dashboard);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
         // No panic = success.
     }
 
     #[test]
     fn draw_view_mft_tree_is_noop() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let mut app = make_empty_app();
+        let mut app = make_all_views_app();
         set_view(&mut app, WorkbenchView::MftTree);
         assert_eq!(app.current_view(), WorkbenchView::MftTree);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
     }
 
     // -----------------------------------------------------------------------
@@ -121,97 +93,57 @@ mod tests {
 
     #[test]
     fn draw_view_timeline_no_panic() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let mut app = make_empty_app();
+        let mut app = make_all_views_app();
         set_view(&mut app, WorkbenchView::Timeline);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
     }
 
     #[test]
     fn draw_view_network_no_panic() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let mut app = make_empty_app();
+        let mut app = make_all_views_app();
         set_view(&mut app, WorkbenchView::Network);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
     }
 
     #[test]
     fn draw_view_processes_no_panic() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let mut app = make_empty_app();
+        let mut app = make_all_views_app();
         set_view(&mut app, WorkbenchView::Processes);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
     }
 
     #[test]
     fn draw_view_logins_no_panic() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let mut app = make_empty_app();
+        let mut app = make_all_views_app();
         set_view(&mut app, WorkbenchView::Logins);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
     }
 
     #[test]
     fn draw_view_packages_no_panic() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let mut app = make_empty_app();
+        let mut app = make_all_views_app();
         set_view(&mut app, WorkbenchView::Packages);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
     }
 
     #[test]
     fn draw_view_configs_no_panic() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let mut app = make_empty_app();
+        let mut app = make_all_views_app();
         set_view(&mut app, WorkbenchView::Configs);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
     }
 
     #[test]
     fn draw_view_hashes_no_panic() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let mut app = make_empty_app();
+        let mut app = make_all_views_app();
         set_view(&mut app, WorkbenchView::Hashes);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
     }
 
     #[test]
     fn draw_view_chkrootkit_no_panic() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
-        let mut app = make_empty_app();
+        let mut app = make_all_views_app();
         set_view(&mut app, WorkbenchView::Chkrootkit);
-        terminal
-            .draw(|frame| {
-                draw_view(frame, &app, frame.area());
-            })
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_view(frame, app, area));
     }
 }

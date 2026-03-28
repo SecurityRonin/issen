@@ -49,6 +49,10 @@ pub struct CollectionMetadata {
 // ---------------------------------------------------------------------------
 
 /// The top-level container for all forensic data loaded from a collection.
+///
+/// Implements `Debug` with summary counts (not full data dumps) for
+/// practical debuggability without overwhelming output.
+#[derive(Default)]
 pub struct InvestigationData {
     pub metadata: CollectionMetadata,
     pub alerts: Vec<Alert>,
@@ -67,6 +71,24 @@ pub struct InvestigationData {
     /// Populated for Velociraptor collections where the manifest classifies
     /// each extracted file by `ArtifactType`.
     pub artifact_counts: HashMap<String, usize>,
+}
+
+impl std::fmt::Debug for InvestigationData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InvestigationData")
+            .field("hostname", &self.metadata.hostname)
+            .field("timeline", &self.timeline.len())
+            .field("alerts", &self.alerts.len())
+            .field("network", &self.network.len())
+            .field("processes", &self.processes.len())
+            .field("logins", &self.logins.len())
+            .field("packages", &self.packages.len())
+            .field("hashes", &self.hashes.len())
+            .field("chkrootkit", &self.chkrootkit.len())
+            .field("configs", &self.configs.len())
+            .field("artifact_types", &self.artifact_counts.len())
+            .finish()
+    }
 }
 
 impl InvestigationData {
@@ -587,5 +609,14 @@ mod tests {
         let meta = CollectionMetadata::default();
         assert!(meta.hostname.is_empty());
         assert_eq!(meta.acquisition_time, 0);
+    }
+
+    #[test]
+    fn investigation_data_debug_shows_counts() {
+        let data = InvestigationData::default();
+        let debug = format!("{data:?}");
+        assert!(debug.contains("InvestigationData"));
+        assert!(debug.contains("timeline: 0"));
+        assert!(debug.contains("alerts: 0"));
     }
 }

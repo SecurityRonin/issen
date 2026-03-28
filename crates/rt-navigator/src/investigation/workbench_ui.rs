@@ -142,8 +142,8 @@ fn draw_footer(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
 mod tests {
     use super::*;
     use crate::investigation::data::{CollectionMetadata, InvestigationData};
+    use crate::investigation::test_helpers::*;
     use crate::investigation::timeline::{TimelineEvent, TimelineSource, TimestampType};
-    use crate::investigation::WorkbenchApp;
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
 
@@ -168,28 +168,17 @@ mod tests {
             program: Some("nginx".to_string()),
         }];
 
-        let data = InvestigationData {
+        app_with(InvestigationData {
             metadata: CollectionMetadata {
                 hostname: "testhost".to_string(),
                 os: "Linux".to_string(),
                 collection_tool: "UAC".to_string(),
                 acquisition_time: 1704067200,
             },
-            alerts: Vec::new(),
             timeline,
-            mft_tree: None,
-            anomaly_index: None,
             network,
-            processes: Vec::new(),
-            crontabs: Vec::new(),
-            logins: Vec::new(),
-            packages: Vec::new(),
-            hashes: Vec::new(),
-            chkrootkit: Vec::new(),
-            configs: Vec::new(),
-            artifact_counts: std::collections::HashMap::new(),
-        };
-        WorkbenchApp::new(data, None)
+            ..Default::default()
+        })
     }
 
     #[test]
@@ -254,23 +243,7 @@ mod tests {
 
     #[test]
     fn render_empty_data_no_panic() {
-        let data = InvestigationData {
-            metadata: CollectionMetadata::default(),
-            alerts: Vec::new(),
-            timeline: Vec::new(),
-            mft_tree: None,
-            anomaly_index: None,
-            network: Vec::new(),
-            processes: Vec::new(),
-            crontabs: Vec::new(),
-            logins: Vec::new(),
-            packages: Vec::new(),
-            hashes: Vec::new(),
-            chkrootkit: Vec::new(),
-            configs: Vec::new(),
-            artifact_counts: std::collections::HashMap::new(),
-        };
-        let mut app = WorkbenchApp::new(data, None);
+        let mut app = empty_app();
         let backend = TestBackend::new(80, 24);
         let mut terminal = Terminal::new(backend).unwrap();
         terminal

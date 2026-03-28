@@ -206,10 +206,8 @@ mod tests {
     }
 
     use crate::investigation::data::{CollectionMetadata, InvestigationData};
+    use crate::investigation::test_helpers::*;
     use crate::investigation::timeline::{TimelineEvent, TimelineSource, TimestampType};
-    use crate::investigation::WorkbenchApp;
-    use ratatui::backend::TestBackend;
-    use ratatui::Terminal;
 
     fn make_dashboard_app() -> WorkbenchApp {
         let timeline: Vec<TimelineEvent> = (0..100)
@@ -227,7 +225,7 @@ mod tests {
         artifact_counts.insert("EventLog".to_string(), 326);
         artifact_counts.insert("Prefetch".to_string(), 584);
 
-        let data = InvestigationData {
+        app_with(InvestigationData {
             metadata: CollectionMetadata {
                 hostname: "WORKSTATION-01".to_string(),
                 os: "Windows 10".to_string(),
@@ -249,75 +247,33 @@ mod tests {
                 },
             ],
             timeline,
-            mft_tree: None,
-            anomaly_index: None,
-            network: Vec::new(),
-            processes: Vec::new(),
-            crontabs: Vec::new(),
-            logins: Vec::new(),
-            packages: Vec::new(),
-            hashes: Vec::new(),
-            chkrootkit: Vec::new(),
-            configs: Vec::new(),
             artifact_counts,
-        };
-        WorkbenchApp::new(data, None)
+            ..Default::default()
+        })
     }
 
     #[test]
     fn render_dashboard_with_metadata_no_panic() {
         let app = make_dashboard_app();
-        let backend = TestBackend::new(120, 40);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|frame| draw_dashboard(frame, &app, frame.area()))
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
     }
 
     #[test]
     fn render_dashboard_with_alerts_no_panic() {
         let app = make_dashboard_app();
-        let backend = TestBackend::new(120, 40);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|frame| draw_dashboard(frame, &app, frame.area()))
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
     }
 
     #[test]
     fn render_dashboard_empty_data_no_panic() {
-        let data = InvestigationData {
-            metadata: CollectionMetadata::default(),
-            alerts: Vec::new(),
-            timeline: Vec::new(),
-            mft_tree: None,
-            anomaly_index: None,
-            network: Vec::new(),
-            processes: Vec::new(),
-            crontabs: Vec::new(),
-            logins: Vec::new(),
-            packages: Vec::new(),
-            hashes: Vec::new(),
-            chkrootkit: Vec::new(),
-            configs: Vec::new(),
-            artifact_counts: std::collections::HashMap::new(),
-        };
-        let app = WorkbenchApp::new(data, None);
-        let backend = TestBackend::new(80, 24);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|frame| draw_dashboard(frame, &app, frame.area()))
-            .unwrap();
+        let app = empty_app();
+        assert_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
     }
 
     #[test]
     fn render_dashboard_small_terminal_no_panic() {
         let app = make_dashboard_app();
-        let backend = TestBackend::new(40, 10);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|frame| draw_dashboard(frame, &app, frame.area()))
-            .unwrap();
+        assert_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
     }
 
     #[test]

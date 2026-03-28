@@ -424,6 +424,7 @@ fn run_workbench(
     _manifest: rt_unpack::CollectionManifest,
 ) -> Result<()> {
     let mut workbench = investigation::WorkbenchApp::new(data, mft_app);
+    eprintln!("  Workbench: {:?}", workbench);
 
     let mut terminal = ratatui::init();
     let result = run_workbench_loop(&mut terminal, &mut workbench);
