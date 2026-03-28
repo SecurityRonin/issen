@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 rt-core = { workspace = true }
+rt-unpack = { workspace = true }
 rayon = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }

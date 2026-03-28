@@ -215,6 +215,51 @@ pub fn run_pipeline(
     Ok((events, result))
 }
 
+/// Run the pipeline on a collection archive.
+///
+/// Uses `rt-unpack` to detect format, extract to temp dir, then runs the
+/// normal filesystem-walking pipeline on the extracted contents.
+///
+/// # Errors
+///
+/// Returns an error if the collection format is not recognized or extraction fails.
+pub fn run_collection_pipeline(
+    collection_path: &Path,
+    progress: &ProgressReporter,
+) -> Result<(Vec<TimelineEvent>, IngestResult), RtError> {
+    let manifest = rt_unpack::registry::open_collection(collection_path)
+        .map_err(|e| RtError::UnsupportedFormat(e.to_string()))?;
+
+    tracing::info!(
+        format = %manifest.format_name,
+        artifacts = manifest.artifacts.len(),
+        root = %manifest.extracted_root.display(),
+        "Collection opened, running pipeline"
+    );
+
+    run_pipeline(&manifest.extracted_root, progress)
+}
+
+/// Run the pipeline, auto-detecting whether the input is a directory or collection archive.
+///
+/// - If `path` is a directory, walks it directly.
+/// - If `path` is a file, tries to open it as a collection archive first.
+///
+/// # Errors
+///
+/// Returns an error if the path is a file in an unrecognized format, or if
+/// pipeline execution fails.
+pub fn run_auto(
+    path: &Path,
+    progress: &ProgressReporter,
+) -> Result<(Vec<TimelineEvent>, IngestResult), RtError> {
+    if path.is_dir() {
+        run_pipeline(path, progress)
+    } else {
+        run_collection_pipeline(path, progress)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -321,6 +366,28 @@ mod tests {
         // No parsers registered in this test binary, so nothing parsed.
         assert_eq!(result.artifacts_parsed, 0);
         assert!(events.is_empty());
+    }
+
+    #[test]
+    fn test_run_collection_pipeline_unsupported_format() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let path = dir.path().join("random.bin");
+        std::fs::write(&path, b"not a collection").expect("write");
+
+        let progress = ProgressReporter::new();
+        let result = run_collection_pipeline(&path, &progress);
+        assert!(result.is_err(), "Unknown format should error");
+    }
+
+    #[test]
+    fn test_run_auto_with_directory() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        std::fs::write(dir.path().join("$J"), b"fake data").expect("write");
+
+        let progress = ProgressReporter::new();
+        let (events, result) = run_auto(dir.path(), &progress).expect("run_auto");
+        assert_eq!(result.artifacts_found, 1);
+        assert!(events.is_empty()); // No parsers registered in test binary
     }
 
     #[test]
