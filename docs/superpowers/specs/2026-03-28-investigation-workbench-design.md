@@ -2,173 +2,208 @@
 
 ## Overview
 
-Extend `rt-navigator` (`rt-nav`) to support a second mode: **investigation mode**. When the user passes a forensic collection archive (UAC `.tar.gz` or Velociraptor `.zip`) instead of an MFT file, `rt-nav` auto-detects the format, ingests the collection via `rt-unpack` + `rt-parser-uac`/`rt-parser-velociraptor`, and launches an interactive investigation workbench TUI with a dashboard overview and drill-in views for each artifact category.
+Extend `rt-navigator` (`rt-nav`) into a **unified forensic workbench**. When the user passes a collection archive (Velociraptor `.zip`, UAC `.tar.gz`), `rt-nav` extracts it, parses ALL artifacts into an integrated view: the existing MFT tree browser for NTFS navigation + new tabbed views for network, processes, logins, timeline, configs, etc. One tool, one command, full investigation.
+
+For UAC (Linux) collections without an MFT, the MFT tree tab is absent and the dashboard + artifact views carry the investigation. For Velociraptor (Windows) collections, you get the MFT tree AND all the parsed evtx/registry/network artifacts unified together.
 
 ## Goals
 
-- **One command** — `rt-nav collection.tar.gz` ingests and opens the workbench
-- **Dashboard landing** — summary counts, timeline activity sparkline, top findings
-- **Interactive drill-in views** — Tab-switchable views for Timeline (bodyfile), Network, Processes, Logins, Packages, Configs, Hashes, Chkrootkit findings
-- **Search** — `/` search across all views with background threading (reuse existing search pattern)
-- **Detail panel** — right-side panel showing full details of selected item
-- **Zero new binaries** — extends existing `rt-nav`, same binary
-- **CTF-ready** — solve Hal Pomeranz's Linux Forensic Scenario from the TUI
+- **One command** — `rt-nav collection.tar.gz` extracts, parses everything, opens the workbench
+- **Unified workbench** — MFT tree (when available) + dashboard + artifact drill-in views, all Tab-switchable
+- **Dashboard landing** — summary counts, timeline sparkline, auto-detected alerts
+- **Interactive drill-in views** — Timeline, Network, Processes, Logins, Packages, Configs, Hashes, Chkrootkit
+- **MFT tree integration** — Velociraptor zips contain $MFT/$UsnJrnl; extract and feed into existing tree view
+- **Alert detection** — lightweight pattern-matching surfaces suspicious findings on the dashboard
+- **Zero new binaries** — extends existing `rt-nav`
+- **CTF-ready** — solve Hal Pomeranz's Linux Forensic Scenario entirely from the TUI
 
 ## Non-Goals
 
-- DuckDB integration (parsed data stays in memory — UAC collections are small enough)
+- DuckDB supertimeline (parsed data stays in memory for TUI; use `rt ingest` + `rt timeline` for SQL queries)
 - Report export from TUI (use `rt report` separately)
-- Scan/signature engine integration in this phase
-- Velociraptor-specific views (Velociraptor extracts to files that the existing MFT mode handles)
+- Scan/signature engine integration in this phase (future: wire `--scan` into investigation mode)
 
 ---
 
 ## Architecture
 
-### Mode Detection
+### Unified Mode Detection
 
 ```
 rt-nav <path>
-  → is directory or MFT file?  → existing MFT tree mode
-  → is file + rt-unpack recognizes it?  → investigation mode
-  → neither?  → error with usage hint
+  ├── is directory or $MFT file?  → existing MFT tree mode (unchanged)
+  ├── is file recognized by rt-unpack?
+  │   ├── Velociraptor zip → extract → MFT tree + investigation views
+  │   └── UAC tar.gz → extract → investigation views only (no MFT)
+  └── neither → error with usage hint
 ```
 
-In `main.rs`, before `resolve_sources()`, probe the path with `rt_unpack::registry::open_collection()`. If it succeeds, branch into investigation mode. Otherwise fall through to existing MFT mode.
+In `main.rs`, probe the input path with `rt_unpack`. If a collection is detected:
+1. Extract via the provider's `open()` method
+2. Parse UAC-specific categories (bodyfile, network, process, etc.) into `InvestigationData`
+3. For Velociraptor: also look for `$MFT` and `$UsnJrnl` in the extracted files, build `FileTree` if found
+4. Launch unified workbench TUI
 
 ### Data Model
 
-Investigation mode does NOT use DuckDB or `TimelineStore`. The parsed UAC data is held in memory as the typed structs from `rt-parser-uac::parsers`:
-
 ```rust
+/// All parsed data from a collection, held in memory.
 pub struct InvestigationData {
-    pub metadata: CollectionMetadata,       // from rt-unpack
-    pub bodyfile: Vec<BodyfileEntry>,        // from parsers::bodyfile
-    pub network: Vec<NetworkConnection>,     // from parsers::network
-    pub processes: Vec<ProcessInfo>,         // from parsers::process
-    pub crontabs: Vec<CrontabEntry>,         // from parsers::process
-    pub logins: Vec<LoginRecord>,            // from parsers::system
-    pub system_info: Option<SystemInfo>,     // from parsers::system
-    pub packages: Vec<InstalledPackage>,     // from parsers::packages
-    pub hashes: Vec<HashedExecutable>,       // from parsers::hash_execs
-    pub chkrootkit: Vec<ChkrootkitFinding>, // from parsers::chkrootkit
-    pub configs: Vec<ConfigFile>,            // from parsers::configs
-    pub hardware: Option<HardwareInfo>,      // from parsers::hardware
-    pub mounts: Vec<MountInfo>,             // from parsers::storage
+    // Collection metadata
+    pub metadata: CollectionMetadata,
+    pub alerts: Vec<Alert>,
+
+    // MFT tree (present for Velociraptor, absent for UAC)
+    pub mft_tree: Option<FileTree>,
+    pub anomaly_index: Option<AnomalyIndex>,
+
+    // UAC-parsed categories (present for UAC, partially for Velociraptor)
+    pub bodyfile: Vec<BodyfileEntry>,
+    pub network: Vec<NetworkConnection>,
+    pub processes: Vec<ProcessInfo>,
+    pub crontabs: Vec<CrontabEntry>,
+    pub logins: Vec<LoginRecord>,
+    pub system_info: Option<SystemInfo>,
+    pub packages: Vec<InstalledPackage>,
+    pub hashes: Vec<HashedExecutable>,
+    pub chkrootkit: Vec<ChkrootkitFinding>,
+    pub configs: Vec<ConfigFile>,
+    pub hardware: Option<HardwareInfo>,
+    pub mounts: Vec<MountInfo>,
 }
 ```
+
+### View System
+
+Views are dynamically available based on what data was parsed:
+
+```rust
+pub enum WorkbenchView {
+    Dashboard,          // always present
+    MftTree,            // only if mft_tree.is_some()
+    Timeline,           // only if !bodyfile.is_empty()
+    Network,            // only if !network.is_empty()
+    Processes,          // only if !processes.is_empty()
+    Logins,             // only if !logins.is_empty()
+    Packages,           // only if !packages.is_empty()
+    Configs,            // only if !configs.is_empty()
+    Hashes,             // only if !hashes.is_empty()
+    Chkrootkit,         // only if !chkrootkit.is_empty()
+}
+```
+
+Tab/Shift+Tab cycles only through views that have data. Empty categories are hidden.
 
 ### TUI State Machine
 
 ```rust
-pub enum InvestigationView {
-    Dashboard,
-    Timeline,    // bodyfile entries, sorted by time
-    Network,     // connections table
-    Processes,   // process list + crontabs
-    Logins,      // login records
-    Packages,    // installed packages
-    Configs,     // system configs
-    Hashes,      // executable hashes
-    Chkrootkit,  // rootkit scan findings
-}
-
-pub struct InvestigationApp {
+pub struct WorkbenchApp {
     pub data: InvestigationData,
-    pub view: InvestigationView,
-    pub selected: usize,              // cursor position in current view's list
-    pub scroll_offset: usize,         // virtual scrolling
-    pub show_detail: bool,            // toggle right panel
-    pub search_query: String,         // active search
-    pub search_matches: Vec<usize>,   // matching indices in current view
+    pub available_views: Vec<WorkbenchView>,  // populated based on data
+    pub current_view_idx: usize,              // index into available_views
+    pub selected: usize,                      // cursor in current list
+    pub scroll_offset: usize,                 // virtual scrolling
+    pub show_detail: bool,                    // right panel toggle
+    pub search_mode: bool,
+    pub search_query: String,
+    pub search_matches: Vec<usize>,
     pub sort_ascending: bool,
+
+    // MFT tree mode delegates to existing App when in MftTree view
+    pub mft_app: Option<App>,
 }
 ```
+
+When `current_view == MftTree`, keyboard input delegates to the existing `App::handle_key()` and rendering delegates to the existing `ui::draw()`. This means the MFT tree view is the exact same experience as standalone `rt-nav` — zero reimplementation.
 
 ### Keyboard Map
 
 | Key | Action |
 |-----|--------|
-| `Tab` / `Shift+Tab` | Next/prev view |
+| `Tab` / `Shift+Tab` | Next/prev available view |
 | `1`-`9` | Jump to view by number |
-| `j`/`k` or `↑`/`↓` | Navigate list |
-| `Enter` | From Dashboard: drill into selected category. From list: toggle detail panel |
-| `Backspace` / `Esc` | Return to Dashboard |
+| `j`/`k` or Up/Down | Navigate list |
+| `Enter` | Dashboard: drill into selected. List: toggle detail |
+| `Esc` | Return to Dashboard |
 | `/` | Enter search mode |
 | `n`/`N` | Next/prev search match |
-| `s` | Cycle sort mode (varies per view) |
+| `s` | Cycle sort (per-view) |
 | `q` | Quit |
 | `?` | Help modal |
 
+When in MftTree view, all keys pass through to existing `App::handle_key()` except `Tab`/`Shift+Tab` (view switching) and `Esc` (back to dashboard).
+
 ### View Layouts
 
-**Dashboard:**
+**Dashboard (landing page):**
 ```
-┌─────────────────────────────────────────────────────────┐
-│ RT Investigation: <hostname>  OS: <os>  Collected: <ts> │
-├─────────────────────┬───────────────────────────────────┤
-│ SUMMARY             │ TIMELINE ACTIVITY                 │
-│ ▶ Bodyfile: 47,832  │ ▁▂▃▅▇█▇▅▃▂▁▁▁▁▁▁▂▅▇████▇▅▃▂▁  │
-│   Network:  23      │ 19:00----19:30----20:00----20:30  │
-│   Processes: 142    │                                   │
-│   Logins:   8       │ ALERTS                            │
-│   Packages: 1,204   │ ! Reverse shell in netstat        │
-│   Configs:  89      │ ! Hidden proc (high CPU)          │
-│   Hashes:   2,341   │ ! Suspicious /tmp executables     │
-│   Rootkit:  3       │ ! ld.so.preload modification      │
-├─────────────────────┴───────────────────────────────────┤
-│ [Tab] switch view  [Enter] drill in  [/] search  [q] q │
-└─────────────────────────────────────────────────────────┘
++-----------------------------------------------------------+
+| RT Investigation: vbox-linux   OS: Linux   UAC 2026-03-24 |
+| Views: [Dashboard] Timeline  Network  Process  Login  ... |
++------------------------+----------------------------------+
+| SUMMARY                | TIMELINE ACTIVITY                |
+|   Timeline: 47,832     |  ...:...:X:X:::::...:X:X:X:::.  |
+|   Network:  23 conns   |  19:00---19:30---20:00---20:30   |
+|   Processes: 142       |                                  |
+|   Logins:   8          | ALERTS (3 critical, 2 warning)   |
+|   Packages: 1,204      | [!] Reverse shell (python3 pty)  |
+|   Configs:  89         | [!] Hidden high-CPU process      |
+|   Hashes:   2,341      | [!] Suspicious /tmp executable   |
+|   Rootkit:  3 flags    | [w] ld.so.preload present        |
+|                        | [w] Non-RFC1918 connection       |
++------------------------+----------------------------------+
+| [Tab] switch view  [Enter] drill in  [/] search  [q] quit|
++-----------------------------------------------------------+
 ```
 
 **Drill-in view (e.g., Network):**
 ```
-┌─────────────────────────────────────────────────────────┐
-│ RT Investigation: <hostname>  View: [Network]           │
-├──────────────────────────────────┬──────────────────────┤
-│ Proto  Local           Remote   │ Detail               │
-│ ▶tcp   0.0.0.0:22     LISTEN   │ Protocol: tcp        │
-│  tcp   10.0.0.5:4444  ESTAB    │ Local: 0.0.0.0:22    │
-│  tcp   192.168.4.35   ESTAB    │ State: LISTEN        │
-│  udp   0.0.0.0:68     -        │ PID: 834             │
-│                                 │ Program: sshd        │
-├──────────────────────────────────┴──────────────────────┤
-│ [Tab] next view  [Esc] dashboard  23 connections        │
-└─────────────────────────────────┘──────────────────────┘
++-----------------------------------------------------------+
+| RT Investigation: vbox-linux   View: [Network]             |
++-------------------------------------+---------------------+
+| Proto  Local            Remote  St  | Detail              |
+| >tcp   0.0.0.0:22      *       LIS | Protocol: tcp       |
+|  tcp   10.0.0.5:4444   ESTAB   EST | Local: 0.0.0.0:22   |
+|  tcp   192.168.4.35:22 ESTAB   EST | Remote: *            |
+|  udp   0.0.0.0:68      *       -   | State: LISTEN        |
+|                                     | PID: 834 (sshd)     |
++-------------------------------------+---------------------+
+| [Tab] next  [Esc] dashboard  [/] search  23 connections   |
++-----------------------------------------------------------+
 ```
 
-### Alert Detection (Lightweight Heuristics)
+**MFT Tree view (Velociraptor only):**
+When Tab navigates to MftTree, the entire frame delegates to the existing `ui::draw()` from rt-navigator, with an added header showing it's part of the workbench. Pressing Tab/Esc returns to the workbench views.
 
-On ingest, run simple pattern-matching to surface alerts on the dashboard:
+### Alert Detection
+
+Lightweight pattern-matching on ingest — no external rules:
 
 ```rust
 pub struct Alert {
-    pub severity: AlertSeverity,  // Info, Warning, Critical
-    pub category: &'static str,
+    pub severity: AlertSeverity,
+    pub category: String,
     pub message: String,
     pub detail: String,
 }
 
-pub enum AlertSeverity { Info, Warning, Critical }
+pub enum AlertSeverity { Critical, Warning, Info }
 ```
 
-Built-in checks (no external rules, just pattern matching):
-- Network: connections to non-RFC1918 IPs, reverse shell patterns in process names
-- Process: high CPU with no visible name, processes running from /tmp or /dev/shm
-- Chkrootkit: any "INFECTED" findings
-- Configs: ld.so.preload present, suspicious crontab entries, passwd/shadow anomalies
-- Bodyfile: recently created executables in /tmp, /var/tmp, /dev/shm
+Built-in checks:
+- **Network:** connections to non-RFC1918 IPs, reverse shell patterns (`pty.spawn`, `nc -e`, `/dev/tcp`)
+- **Process:** high CPU with no visible name, processes from /tmp /dev/shm /var/tmp
+- **Chkrootkit:** any "INFECTED" findings
+- **Configs:** `ld.so.preload` present/non-empty, suspicious crontab entries (wget/curl/base64)
+- **Bodyfile:** recently created executables in temp dirs, SUID files outside standard paths
 
 ### Timeline Sparkline
 
-The dashboard shows a sparkline of bodyfile activity over time. Built from bodyfile mtime distribution:
-
+Dashboard sparkline from bodyfile mtime distribution:
 ```rust
-fn build_sparkline(entries: &[BodyfileEntry], width: usize) -> Vec<u64> {
-    // Bucket mtimes into `width` time bins
-    // Return counts per bin for ratatui::widgets::Sparkline
-}
+fn build_sparkline(entries: &[BodyfileEntry], width: usize) -> Vec<u64>
 ```
+Bucket all mtimes into `width` bins, return counts for `ratatui::widgets::Sparkline`.
 
 ---
 
@@ -178,32 +213,32 @@ New files in `crates/rt-navigator/src/`:
 
 ```
 investigation/
-├── mod.rs           — InvestigationApp state machine + handle_key
-├── data.rs          — InvestigationData struct + loading from manifest
-├── alerts.rs        — Alert detection heuristics
-├── dashboard.rs     — Dashboard view rendering
-├── views/
-│   ├── mod.rs       — ViewRenderer trait, view dispatch
-│   ├── timeline.rs  — Bodyfile timeline view
-│   ├── network.rs   — Network connections view
-│   ├── process.rs   — Process list + crontab view
-│   ├── logins.rs    — Login records view
-│   ├── packages.rs  — Package list view
-│   ├── configs.rs   — System configs view
-│   ├── hashes.rs    — Hash executables view
-│   └── chkrootkit.rs — Rootkit findings view
-└── detail.rs        — Detail panel rendering (right side)
+  mod.rs           -- WorkbenchApp state machine, handle_key, view switching
+  data.rs          -- InvestigationData struct, load from manifest + parse categories
+  alerts.rs        -- Alert detection heuristics (pattern matching)
+  dashboard.rs     -- Dashboard view rendering (summary + sparkline + alerts)
+  detail.rs        -- Detail panel rendering (right side, per-view)
+  views/
+    mod.rs         -- View trait, dispatch to per-view renderers
+    timeline.rs    -- Bodyfile timeline view (sortable by time/path/size)
+    network.rs     -- Network connections table
+    process.rs     -- Process list + crontabs
+    logins.rs      -- Login records
+    packages.rs    -- Installed packages
+    configs.rs     -- System configs
+    hashes.rs      -- Executable hashes
+    chkrootkit.rs  -- Rootkit scan findings
 ```
 
 Modified files:
-- `main.rs` — add collection detection branch, `run_investigation_loop()`
-- `Cargo.toml` — add `rt-unpack`, `rt-parser-uac`, `rt-parser-velociraptor` deps
+- `main.rs` — add collection detection, `run_workbench_loop()`, MFT extraction from Velociraptor
+- `Cargo.toml` — add rt-unpack, rt-parser-uac, rt-parser-velociraptor deps
 
-Unchanged files:
-- `app.rs` — existing MFT tree mode (untouched)
-- `ui.rs` — existing MFT tree rendering (untouched)
-- `search.rs` — existing search engine (untouched, not reused initially)
-- `sources.rs` — existing artifact resolution (untouched)
+Existing files (untouched):
+- `app.rs` — reused as-is when MftTree view is active
+- `ui.rs` — reused as-is when MftTree view is active
+- `search.rs` — reused as-is
+- `sources.rs` — reused for Velociraptor MFT source resolution
 
 ---
 
@@ -217,14 +252,40 @@ rt-parser-velociraptor = { workspace = true }
 inventory = { workspace = true }
 ```
 
-Existing deps already available: `ratatui`, `crossterm`, `clap`, `anyhow`, `chrono`.
+Also need `extern crate` for inventory registration (same pattern as rt-cli):
+```rust
+extern crate rt_parser_velociraptor;
+extern crate rt_parser_uac;
+```
+
+---
+
+## Collection-Specific Behavior
+
+### UAC (.tar.gz)
+
+- Extract via UacProvider
+- Parse all categories → InvestigationData
+- No MFT tree (Linux system)
+- Dashboard + all UAC artifact views
+- Available views: Dashboard, Timeline, Network, Processes, Logins, Packages, Configs, Hashes, Chkrootkit
+
+### Velociraptor (.zip)
+
+- Extract via VelociraptorProvider
+- Look for $MFT in extracted `uploads/ntfs/` → build FileTree + AnomalyIndex
+- Look for $UsnJrnl → enrich tree
+- Parse evtx → future (not in this phase)
+- MFT tree view available + Dashboard shows file count from MFT
+- Available views: Dashboard, MftTree, (plus any UAC-style artifacts if present)
 
 ---
 
 ## Testing Strategy
 
-- Unit tests for alert detection (pattern matching on known-bad data)
+- Unit tests for alert detection patterns
 - Unit tests for sparkline bucketing
-- Unit tests for `InvestigationData` loading from temp dir with synthetic UAC layout
-- Integration test: load real UAC test data, verify all categories populated
-- No TUI rendering tests (visual verification only)
+- Unit tests for InvestigationData loading from synthetic dir
+- Unit tests for view availability based on data
+- Integration test: load real UAC test data, verify all categories and alerts
+- Visual testing: manual verification of TUI layouts
