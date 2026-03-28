@@ -1,3 +1,10 @@
+pub mod chkrootkit;
+pub mod configs;
+pub mod hashes;
+pub mod logins;
+pub mod network;
+pub mod packages;
+pub mod process;
 pub mod supertimeline;
 
 use ratatui::layout::Rect;
@@ -12,19 +19,12 @@ pub fn draw_view(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
         // MftTree is handled by delegation to existing App.
         WorkbenchView::Dashboard | WorkbenchView::MftTree => {}
         WorkbenchView::Timeline => supertimeline::draw(frame, app, area),
-        // Artifact views — will be added in Task 6
-        WorkbenchView::Network
-        | WorkbenchView::Processes
-        | WorkbenchView::Logins
-        | WorkbenchView::Packages
-        | WorkbenchView::Configs
-        | WorkbenchView::Hashes
-        | WorkbenchView::Chkrootkit => {
-            // Placeholder: render empty block until Task 6 adds these
-            let block = ratatui::widgets::Block::default()
-                .borders(ratatui::widgets::Borders::ALL)
-                .title(format!(" {} (coming soon) ", app.current_view().label()));
-            frame.render_widget(block, area);
-        }
+        WorkbenchView::Network => network::draw(frame, app, area),
+        WorkbenchView::Processes => process::draw(frame, app, area),
+        WorkbenchView::Logins => logins::draw(frame, app, area),
+        WorkbenchView::Packages => packages::draw(frame, app, area),
+        WorkbenchView::Configs => configs::draw(frame, app, area),
+        WorkbenchView::Hashes => hashes::draw(frame, app, area),
+        WorkbenchView::Chkrootkit => chkrootkit::draw(frame, app, area),
     }
 }
