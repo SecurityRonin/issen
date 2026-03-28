@@ -27,6 +27,38 @@ pub fn draw_dashboard(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
 fn draw_summary(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
     let mut items: Vec<ListItem<'_>> = Vec::new();
 
+    // Collection metadata header
+    let meta = &app.data.metadata;
+    if !meta.hostname.is_empty() {
+        let mut lines = Vec::new();
+        lines.push(Line::from(vec![
+            Span::styled(
+                "  Host: ",
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(&meta.hostname),
+        ]));
+        if !meta.os.is_empty() {
+            lines.push(Line::from(format!("  OS: {}", meta.os)));
+        }
+        if !meta.collection_tool.is_empty() {
+            lines.push(Line::from(format!("  Tool: {}", meta.collection_tool)));
+        }
+        if meta.acquisition_time > 0 {
+            let dt = chrono::DateTime::from_timestamp(meta.acquisition_time, 0);
+            if let Some(dt) = dt {
+                lines.push(Line::from(format!(
+                    "  Date: {}",
+                    dt.format("%Y-%m-%d %H:%M UTC")
+                )));
+            }
+        }
+        lines.push(Line::from(""));
+        items.push(ListItem::new(lines));
+    }
+
     // Supertimeline entry
     if !app.data.timeline.is_empty() {
         let count = app.data.timeline.len();
@@ -62,6 +94,20 @@ fn draw_summary(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
                 Span::raw(format_count(count)),
             ])));
         }
+    }
+
+    // Artifact inventory (from collection manifest)
+    if !app.data.artifact_counts.is_empty() {
+        let mut counts: Vec<_> = app.data.artifact_counts.iter().collect();
+        counts.sort_by(|a, b| b.1.cmp(a.1));
+        let mut lines = vec![Line::from(Span::styled(
+            "  Collection Artifacts:",
+            Style::default().fg(Color::Green),
+        ))];
+        for (label, count) in counts {
+            lines.push(Line::from(format!("    {label}: {}", format_count(*count))));
+        }
+        items.push(ListItem::new(lines));
     }
 
     let block = Block::default().borders(Borders::ALL).title(" Summary ");
