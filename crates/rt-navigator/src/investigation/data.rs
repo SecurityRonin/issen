@@ -4,6 +4,7 @@
 //! supertimeline, and alert detections into a single struct that drives
 //! the Investigation Workbench UI.
 
+use std::collections::HashMap;
 use std::path::Path;
 
 use rt_mft_tree::tree::FileTree;
@@ -62,6 +63,10 @@ pub struct InvestigationData {
     pub hashes: Vec<HashedExecutable>,
     pub chkrootkit: Vec<ChkrootkitFinding>,
     pub configs: Vec<ConfigFile>,
+    /// Artifact inventory from collection manifest (label → count).
+    /// Populated for Velociraptor collections where the manifest classifies
+    /// each extracted file by `ArtifactType`.
+    pub artifact_counts: HashMap<String, usize>,
 }
 
 impl InvestigationData {
@@ -154,6 +159,55 @@ pub fn load_uac_collection(
         hashes,
         chkrootkit: chkrootkit_findings,
         configs: config_files,
+        artifact_counts: HashMap::new(),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Velociraptor collection loader
+// ---------------------------------------------------------------------------
+
+/// Load investigation data from a Velociraptor collection.
+///
+/// Uses the manifest's pre-classified artifact entries to build an artifact
+/// inventory. MFT and USN journal timeline events are added separately by
+/// `try_load_mft` in main.rs after this function returns.
+///
+/// Individual Windows artifact parsers (evtx, registry, prefetch) will be
+/// wired in as they become available — for now we build the artifact inventory
+/// and metadata so the dashboard can display what was collected.
+#[must_use]
+pub fn load_velociraptor_collection(
+    _extracted_root: &Path,
+    artifacts: &[rt_unpack::ManifestEntry],
+    manifest_meta: &rt_unpack::CollectionMetadata,
+) -> InvestigationData {
+    let metadata = convert_manifest_metadata(manifest_meta);
+
+    // Build artifact type inventory from manifest entries
+    let mut artifact_counts: HashMap<String, usize> = HashMap::new();
+    for entry in artifacts {
+        if let Some(ref artifact_type) = entry.artifact_type {
+            let label = format!("{artifact_type:?}");
+            *artifact_counts.entry(label).or_insert(0) += 1;
+        }
+    }
+
+    InvestigationData {
+        metadata,
+        alerts: Vec::new(),
+        timeline: Vec::new(),
+        mft_tree: None,
+        anomaly_index: None,
+        network: Vec::new(),
+        processes: Vec::new(),
+        crontabs: Vec::new(),
+        logins: Vec::new(),
+        packages: Vec::new(),
+        hashes: Vec::new(),
+        chkrootkit: Vec::new(),
+        configs: Vec::new(),
+        artifact_counts,
     }
 }
 
@@ -357,5 +411,104 @@ mod tests {
         let data = load_uac_collection(dir.path(), None);
         let counts = data.timeline_source_counts();
         assert!(counts.is_empty(), "empty data should have no source counts");
+    }
+
+    #[test]
+    fn load_velociraptor_collection_with_manifest_metadata() {
+        use rt_unpack::{CollectionMetadata as ManifestMeta, ManifestEntry, OsType};
+
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let meta = ManifestMeta {
+            hostname: Some("WORKSTATION01".into()),
+            collection_time: Some(
+                chrono::NaiveDateTime::parse_from_str("2025-08-10 03:41:20", "%Y-%m-%d %H:%M:%S")
+                    .unwrap()
+                    .and_utc(),
+            ),
+            os_type: OsType::Windows,
+            tool_version: Some("Velociraptor".into()),
+        };
+        let artifacts = vec![];
+
+        let data = load_velociraptor_collection(dir.path(), &artifacts, &meta);
+
+        assert_eq!(data.metadata.hostname, "WORKSTATION01");
+        assert_eq!(data.metadata.os, "Windows");
+        assert_eq!(data.metadata.collection_tool, "Velociraptor");
+        assert!(data.metadata.acquisition_time > 0);
+    }
+
+    #[test]
+    fn load_velociraptor_collection_counts_artifact_types() {
+        use rt_core::artifacts::ArtifactType;
+        use rt_unpack::{CollectionMetadata as ManifestMeta, ManifestEntry, OsType};
+        use std::path::PathBuf;
+
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let meta = ManifestMeta {
+            hostname: Some("TEST".into()),
+            collection_time: None,
+            os_type: OsType::Windows,
+            tool_version: Some("Velociraptor".into()),
+        };
+        let artifacts = vec![
+            ManifestEntry {
+                path: PathBuf::from("$MFT"),
+                artifact_type: Some(ArtifactType::Mft),
+            },
+            ManifestEntry {
+                path: PathBuf::from("Windows/System32/winevt/Logs/Security.evtx"),
+                artifact_type: Some(ArtifactType::EventLog),
+            },
+            ManifestEntry {
+                path: PathBuf::from("Windows/System32/winevt/Logs/System.evtx"),
+                artifact_type: Some(ArtifactType::EventLog),
+            },
+            ManifestEntry {
+                path: PathBuf::from("Windows/System32/config/SYSTEM"),
+                artifact_type: Some(ArtifactType::Registry),
+            },
+            ManifestEntry {
+                path: PathBuf::from("Windows/Prefetch/CMD.EXE-1234.pf"),
+                artifact_type: Some(ArtifactType::Prefetch),
+            },
+            ManifestEntry {
+                path: PathBuf::from("Users/admin/Recent/foo.lnk"),
+                artifact_type: Some(ArtifactType::Lnk),
+            },
+            ManifestEntry {
+                path: PathBuf::from("Windows/Temp/random.tmp"),
+                artifact_type: None,
+            },
+        ];
+
+        let data = load_velociraptor_collection(dir.path(), &artifacts, &meta);
+
+        // Should report artifact counts in summary
+        let counts = data.artifact_counts;
+        assert_eq!(*counts.get("EventLog").unwrap_or(&0), 2);
+        assert_eq!(*counts.get("Registry").unwrap_or(&0), 1);
+        assert_eq!(*counts.get("Prefetch").unwrap_or(&0), 1);
+        assert_eq!(*counts.get("Lnk").unwrap_or(&0), 1);
+        assert_eq!(*counts.get("Mft").unwrap_or(&0), 1);
+    }
+
+    #[test]
+    fn load_velociraptor_collection_empty_artifacts() {
+        use rt_unpack::{CollectionMetadata as ManifestMeta, OsType};
+
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let meta = ManifestMeta {
+            hostname: None,
+            collection_time: None,
+            os_type: OsType::Windows,
+            tool_version: Some("Velociraptor".into()),
+        };
+
+        let data = load_velociraptor_collection(dir.path(), &[], &meta);
+
+        assert!(data.timeline.is_empty());
+        assert!(data.alerts.is_empty());
+        assert!(data.artifact_counts.is_empty());
     }
 }

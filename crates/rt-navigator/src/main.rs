@@ -295,18 +295,32 @@ fn try_open_collection(
     eprintln!("  Detected collection: {}", manifest.format_name);
     eprintln!("  Extracted to {}", manifest.extracted_root.display());
 
-    // Load as UAC collection (works for UAC, partially for Velociraptor)
-    let mut data = investigation::data::load_uac_collection(
-        &manifest.extracted_root,
-        Some(&manifest.metadata),
-    );
+    let is_velociraptor = manifest.format_name.contains("elociraptor");
+
+    // Dispatch to the appropriate collection loader
+    let mut data = if is_velociraptor {
+        investigation::data::load_velociraptor_collection(
+            &manifest.extracted_root,
+            &manifest.artifacts,
+            &manifest.metadata,
+        )
+    } else {
+        investigation::data::load_uac_collection(&manifest.extracted_root, Some(&manifest.metadata))
+    };
 
     // For Velociraptor collections: try to find and load $MFT
-    let mft_app = if manifest.format_name.contains("elociraptor") {
+    let mft_app = if is_velociraptor {
         try_load_mft(&manifest.extracted_root, &manifest.artifacts, &mut data)?
     } else {
         None
     };
+
+    if !data.artifact_counts.is_empty() {
+        let mut counts: Vec<_> = data.artifact_counts.iter().collect();
+        counts.sort_by(|a, b| b.1.cmp(a.1));
+        let summary: Vec<String> = counts.iter().map(|(k, v)| format!("{v} {k}")).collect();
+        eprintln!("  Artifacts: {}", summary.join(", "));
+    }
 
     eprintln!(
         "  {} timeline events, {} alerts",

@@ -413,6 +413,7 @@ mod tests {
             hashes: Vec::new(),
             chkrootkit: Vec::new(),
             configs: Vec::new(),
+            artifact_counts: std::collections::HashMap::new(),
         }
     }
 
