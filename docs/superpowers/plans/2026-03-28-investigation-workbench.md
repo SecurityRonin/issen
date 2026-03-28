@@ -116,7 +116,6 @@ pub enum TimestampType {
     LoginTime,
     LogoutTime,
     ProcessStart,
-    Observed,
     RegLastWrite,
     EventLog,
 }
@@ -135,7 +134,6 @@ impl TimestampType {
             Self::LoginTime => "In",
             Self::LogoutTime => "Out",
             Self::ProcessStart => "PS",
-            Self::Observed => "Obs",
             Self::RegLastWrite => "RW",
             Self::EventLog => "EL",
         }
@@ -151,7 +149,6 @@ pub enum TimelineSource {
     UsnJournal,
     LoginHistory,
     ProcessList,
-    NetworkState,
     Registry,
     EventLog,
 }
@@ -180,7 +177,6 @@ impl TimelineSource {
             Self::UsnJournal,
             Self::LoginHistory,
             Self::ProcessList,
-            Self::NetworkState,
             Self::Registry,
             Self::EventLog,
         ])
@@ -280,63 +276,53 @@ pub fn logins_to_events(records: &[LoginRecord], acquisition_time: i64) -> Vec<T
 use rt_parser_uac::parsers::process::ProcessInfo;
 
 /// Convert process list into timeline events.
-/// Processes with parseable start_time get a ProcessStart event.
-/// All processes also get an Observed event at acquisition_time.
-pub fn processes_to_events(procs: &[ProcessInfo], acquisition_time: i64) -> Vec<TimelineEvent> {
+/// Only processes with a parseable start_time get a ProcessStart event.
+/// Processes without start_time do NOT generate timeline events — they
+/// live only in the Processes drill-in view.
+pub fn processes_to_events(procs: &[ProcessInfo]) -> Vec<TimelineEvent> {
     let mut events = Vec::new();
     for proc in procs {
-        // Observed at acquisition time
-        events.push(TimelineEvent {
-            timestamp: acquisition_time,
-            timestamp_type: TimestampType::Observed,
-            source: TimelineSource::ProcessList,
-            path: proc.command.clone(),
-            description: format!(
-                "Process running: {} (PID {}, CPU {}%, MEM {}%)",
-                proc.command,
-                proc.pid.as_deref().unwrap_or("?"),
-                proc.cpu.as_deref().unwrap_or("?"),
-                proc.mem.as_deref().unwrap_or("?"),
-            ),
-            extra: format!(
-                "user={} tty={}",
-                proc.user.as_deref().unwrap_or("?"),
-                proc.tty.as_deref().unwrap_or("?"),
-            ),
-        });
+        if let Some(ref start_str) = proc.start_time {
+            // Try parsing the start time (ps formats vary: "Mar24", "19:38", "2026")
+            if let Ok(ts) = parse_ps_start_time(start_str) {
+                events.push(TimelineEvent {
+                    timestamp: ts,
+                    timestamp_type: TimestampType::ProcessStart,
+                    source: TimelineSource::ProcessList,
+                    path: proc.command.clone(),
+                    description: format!(
+                        "Process started: {} (PID {})",
+                        proc.command,
+                        proc.pid.as_deref().unwrap_or("?"),
+                    ),
+                    extra: format!(
+                        "user={} cpu={}% mem={}%",
+                        proc.user.as_deref().unwrap_or("?"),
+                        proc.cpu.as_deref().unwrap_or("?"),
+                        proc.mem.as_deref().unwrap_or("?"),
+                    ),
+                });
+            }
+        }
     }
     events
 }
 
-// ---------------------------------------------------------------------------
-// Conversion: NetworkConnection → TimelineEvents
-// ---------------------------------------------------------------------------
-
-use rt_parser_uac::parsers::network::NetworkConnection;
-
-/// Convert network connections into acquisition-time observed events.
-pub fn network_to_events(conns: &[NetworkConnection], acquisition_time: i64) -> Vec<TimelineEvent> {
-    conns
-        .iter()
-        .map(|conn| TimelineEvent {
-            timestamp: acquisition_time,
-            timestamp_type: TimestampType::Observed,
-            source: TimelineSource::NetworkState,
-            path: format!(
-                "{}:{}",
-                conn.local_address.as_deref().unwrap_or("*"),
-                conn.local_port.as_deref().unwrap_or("*"),
-            ),
-            description: format!(
-                "{} {} → {} ({})",
-                conn.protocol.as_deref().unwrap_or("?"),
-                conn.local_address.as_deref().unwrap_or("*"),
-                conn.remote_address.as_deref().unwrap_or("*"),
-                conn.state.as_deref().unwrap_or("?"),
-            ),
-            extra: format!("pid={}", conn.pid.as_deref().unwrap_or("?")),
-        })
-        .collect()
+/// Best-effort parse of ps STARTED/STIME column.
+/// Formats vary: "Mar24", "19:38", "2026", "Mar 24 19:38".
+fn parse_ps_start_time(s: &str) -> Result<i64, ()> {
+    use chrono::NaiveDateTime;
+    let formats = [
+        "%b%d",          // "Mar24"
+        "%H:%M",         // "19:38"
+        "%b %d %H:%M",   // "Mar 24 19:38"
+    ];
+    for fmt in &formats {
+        if let Ok(ndt) = NaiveDateTime::parse_from_str(s.trim(), fmt) {
+            return Ok(ndt.and_utc().timestamp());
+        }
+    }
+    Err(())
 }
 
 // ---------------------------------------------------------------------------
@@ -547,24 +533,7 @@ mod tests {
     }
 
     #[test]
-    fn test_network_to_events() {
-        let conns = vec![NetworkConnection {
-            protocol: Some("tcp".to_string()),
-            local_address: Some("0.0.0.0".to_string()),
-            local_port: Some("22".to_string()),
-            remote_address: Some("*".to_string()),
-            state: Some("LISTEN".to_string()),
-            pid: Some("834".to_string()),
-        }];
-        let events = network_to_events(&conns, 1711300000);
-        assert_eq!(events.len(), 1);
-        assert_eq!(events[0].source, TimelineSource::NetworkState);
-        assert_eq!(events[0].timestamp_type, TimestampType::Observed);
-        assert_eq!(events[0].timestamp, 1711300000);
-    }
-
-    #[test]
-    fn test_processes_to_events() {
+    fn test_processes_to_events_no_start_time() {
         let procs = vec![ProcessInfo {
             user: Some("root".to_string()),
             pid: Some("1".to_string()),
@@ -574,10 +543,9 @@ mod tests {
             start_time: None,
             command: "/sbin/init".to_string(),
         }];
-        let events = processes_to_events(&procs, 1711300000);
-        assert_eq!(events.len(), 1);
-        assert_eq!(events[0].source, TimelineSource::ProcessList);
-        assert_eq!(events[0].timestamp_type, TimestampType::Observed);
+        // No start_time → no timeline events (lives only in drill-in view)
+        let events = processes_to_events(&procs);
+        assert!(events.is_empty());
     }
 
     #[test]
@@ -622,7 +590,7 @@ mod tests {
     #[test]
     fn test_timeline_source_all() {
         let all = TimelineSource::all();
-        assert_eq!(all.len(), 9);
+        assert_eq!(all.len(), 8);
         assert!(all.contains(&TimelineSource::Bodyfile));
         assert!(all.contains(&TimelineSource::UsnJournal));
     }
@@ -765,7 +733,6 @@ impl InvestigationData {
             TimelineSource::UsnJournal,
             TimelineSource::LoginHistory,
             TimelineSource::ProcessList,
-            TimelineSource::NetworkState,
         ];
         sources
             .iter()
@@ -791,7 +758,7 @@ pub fn load_uac_collection(extracted_root: &Path) -> InvestigationData {
     };
     use super::alerts;
     use super::timeline::{
-        bodyfile_to_events, logins_to_events, network_to_events, processes_to_events,
+        bodyfile_to_events, logins_to_events, processes_to_events,
     };
 
     // Parse metadata from directory name (e.g., "uac-vbox-linux-20260324193807")
@@ -879,8 +846,7 @@ pub fn load_uac_collection(extracted_root: &Path) -> InvestigationData {
     let mut timeline = Vec::new();
     timeline.extend(bodyfile_to_events(&bodyfile_entries));
     timeline.extend(logins_to_events(&logins, acq_time));
-    timeline.extend(processes_to_events(&all_procs, acq_time));
-    timeline.extend(network_to_events(&network_conns, acq_time));
+    timeline.extend(processes_to_events(&all_procs));
     // Sort chronologically
     timeline.sort_by_key(|e| e.timestamp);
 
@@ -1770,7 +1736,6 @@ impl WorkbenchApp {
             Some(UsnJournal),
             Some(LoginHistory),
             Some(ProcessList),
-            Some(NetworkState),
         ];
 
         // Find current filter state in cycle
@@ -2334,7 +2299,6 @@ fn source_color(source: TimelineSource) -> Color {
         TimelineSource::UsnJournal => Color::Magenta,
         TimelineSource::LoginHistory => Color::Yellow,
         TimelineSource::ProcessList => Color::LightRed,
-        TimelineSource::NetworkState => Color::LightGreen,
         TimelineSource::Registry => Color::LightCyan,
         TimelineSource::EventLog => Color::White,
     }

@@ -9,9 +9,9 @@ For UAC (Linux) collections without an MFT, the bodyfile timestamps drive the su
 ## Goals
 
 - **One command** — `rt-nav collection.tar.gz` extracts, parses everything, opens the workbench
-- **Unified supertimeline** — ALL timestamped data merges into one chronological view via a common `TimelineEvent` type. This includes intrinsic timestamps (bodyfile, MFT SI/FN, USN journal, login/logout times, process start times, registry LastWriteTime) and acquisition-time observations (network state, running processes observed at collection time)
+- **Unified supertimeline** — ALL intrinsically timestamped data merges into one chronological view via a common `TimelineEvent` type. This includes bodyfile MAC times, MFT SI/FN timestamps, USN journal records, login/logout times, process start times, and registry LastWriteTime. Only real timestamps — no synthetic acquisition-time padding
 - **Dashboard landing** — summary counts, supertimeline sparkline, auto-detected alerts
-- **Artifact drill-in views** — Network, Processes, Packages, Configs, Hashes, Chkrootkit still have dedicated views for browsing/filtering, but their timestamped data also feeds the supertimeline
+- **Artifact drill-in views** — Network, Processes, Logins, Packages, Configs, Hashes, Chkrootkit have dedicated views for browsing/filtering. Artifacts with intrinsic timestamps (process start times, login/logout times) also feed the supertimeline
 - **MFT tree integration** — Velociraptor zips contain $MFT/$UsnJrnl; extract and feed into existing tree view as a navigational tool
 - **Alert detection** — lightweight pattern-matching surfaces suspicious findings on the dashboard
 - **Zero new binaries** — extends existing `rt-nav`
@@ -80,8 +80,7 @@ pub enum TimestampType {
     UsnChange,      // USN journal change record
     LoginTime,      // User login
     LogoutTime,     // User logout
-    ProcessStart,   // Process start time (from ps)
-    Observed,       // Artifact observed at acquisition time (network conn, running proc, etc.)
+    ProcessStart,   // Process start time (from ps STARTED column)
     RegLastWrite,   // Registry key LastWriteTime (future: Velociraptor reg artifacts)
     EventLog,       // Future: evtx event
 }
@@ -93,8 +92,7 @@ pub enum TimelineSource {
     MftFn,          // MFT $FILE_NAME
     UsnJournal,     // $UsnJrnl:$J
     LoginHistory,   // last/wtmp
-    ProcessList,    // ps output (start times + acquisition-time observations)
-    NetworkState,   // netstat/ss (acquisition-time observations)
+    ProcessList,    // ps output (intrinsic start times only)
     Registry,       // Future: registry key LastWriteTime
     EventLog,       // Future: evtx
 }
@@ -104,18 +102,14 @@ pub enum TimelineSource {
 
 Each data source has a `into_timeline_events()` converter:
 
-**Intrinsic timestamps** (the artifact's own recorded time):
+**Intrinsic timestamps only** (the artifact's own recorded time — no synthetic acquisition-time padding):
 - **BodyfileEntry** → up to 4 events per entry (mtime, atime, ctime, crtime when non-zero)
 - **MFT FileNode** → up to 8 events per node (4 SI timestamps + 4 FN timestamps when present)
 - **UsnRecordV2** → 1 event per record (timestamp + reason flags as description)
 - **LoginRecord** → up to 2 events per record (login_time, logout_time when parseable)
-- **ProcessInfo** → 1 event per process with a parseable `start_time`
+- **ProcessInfo** → 1 event per process with a parseable `start_time` (from ps STARTED column)
 
-**Acquisition-time observations** (captured at collection time):
-- **NetworkConnection** → 1 event per connection (timestamp = collection metadata acquisition_time, type = Observed)
-- **ProcessInfo** → 1 event per process without start_time (timestamp = acquisition_time, type = Observed)
-
-The acquisition timestamp comes from `CollectionMetadata.acquisition_time` (parsed from the collection's directory name or metadata files).
+Artifacts without intrinsic timestamps (network connections from netstat/ss, processes without start_time) do NOT generate timeline events — they live only in their dedicated drill-in views. The timeline contains only events where we know *when* something actually happened, not when the collection tool ran.
 
 All events are collected into a single `Vec<TimelineEvent>`, sorted by timestamp. The supertimeline view displays this unified list with color-coded source indicators.
 
@@ -374,11 +368,10 @@ extern crate rt_parser_uac;
 
 - Extract via UacProvider
 - Parse all categories
-- Convert all timestamped data → supertimeline events:
+- Convert all intrinsically timestamped data → supertimeline events:
   - Bodyfile entries (mtime, atime, ctime, crtime)
   - Login records (login_time, logout_time)
-  - Process start times (when parseable from ps output)
-  - Network connections + processes without start_time → acquisition-time observations
+  - Process start times (when parseable from ps STARTED column)
 - No MFT tree (Linux system)
 - Available views: Dashboard, Timeline, Network, Processes, Logins, Packages, Configs, Hashes, Chkrootkit
 
