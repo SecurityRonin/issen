@@ -191,6 +191,8 @@ pub fn load_uac_collection(
         chkrootkit: &chkrootkit_findings,
         rootkit_findings: &rootkit_findings,
         configs: &config_files,
+        hashes: &hashes,
+        packages: &packages,
     };
     let alerts = detect_alerts(&alert_input);
 
@@ -831,6 +833,160 @@ mod tests {
         assert!(
             rootkit_alerts.is_empty(),
             "expected no rootkit alerts on clean system, got: {rootkit_alerts:?}"
+        );
+    }
+
+    // =====================================================================
+    // Cross-parser enrichment integration tests
+    // =====================================================================
+
+    #[test]
+    fn load_uac_collection_ld_preload_enriched_with_bodyfile() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let root = dir.path();
+
+        // ld.so.preload with suspicious library
+        std::fs::create_dir_all(root.join("chkrootkit")).expect("mkdir");
+        std::fs::write(
+            root.join("chkrootkit/etc_ld_so_preload.txt"),
+            "/lib/libevil.so\n",
+        )
+        .expect("write");
+
+        // Bodyfile with that library present on disk
+        std::fs::create_dir_all(root.join("bodyfile")).expect("mkdir");
+        std::fs::write(
+            root.join("bodyfile/bodyfile.txt"),
+            "0|/lib/libevil.so|999|100755|0|0|98304|1700000000|1700000000|1700000000|0\n",
+        )
+        .expect("write");
+
+        let data = load_uac_collection(root, None);
+
+        // The rootkit alert for ld_preload should be enriched with bodyfile data
+        let rootkit_alerts: Vec<_> = data
+            .alerts
+            .iter()
+            .filter(|a| a.category == "rootkit" && a.message.contains("ld_preload"))
+            .collect();
+        assert!(
+            !rootkit_alerts.is_empty(),
+            "expected ld_preload rootkit alert"
+        );
+        let detail = &rootkit_alerts[0].detail;
+        assert!(
+            detail.contains("size=98304"),
+            "expected bodyfile size in enriched alert, got: {detail}"
+        );
+        assert!(
+            detail.contains("mode=100755"),
+            "expected bodyfile mode in enriched alert, got: {detail}"
+        );
+    }
+
+    #[test]
+    fn load_uac_collection_ld_preload_enriched_with_hash() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let root = dir.path();
+
+        // ld.so.preload with suspicious library
+        std::fs::create_dir_all(root.join("chkrootkit")).expect("mkdir");
+        std::fs::write(
+            root.join("chkrootkit/etc_ld_so_preload.txt"),
+            "/lib/libevil.so\n",
+        )
+        .expect("write");
+
+        // Hash executables with md5 for that library
+        std::fs::create_dir_all(root.join("hash_executables")).expect("mkdir");
+        std::fs::write(
+            root.join("hash_executables/md5sum.txt"),
+            "abc123def456  /lib/libevil.so\n",
+        )
+        .expect("write");
+
+        let data = load_uac_collection(root, None);
+
+        let rootkit_alerts: Vec<_> = data
+            .alerts
+            .iter()
+            .filter(|a| a.category == "rootkit" && a.message.contains("ld_preload"))
+            .collect();
+        assert!(
+            !rootkit_alerts.is_empty(),
+            "expected ld_preload rootkit alert"
+        );
+        let detail = &rootkit_alerts[0].detail;
+        assert!(
+            detail.contains("abc123def456"),
+            "expected hash in enriched alert, got: {detail}"
+        );
+    }
+
+    #[test]
+    fn load_uac_collection_unattributed_listen_produces_alert() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let root = dir.path();
+
+        // ss output with a LISTEN socket that has no PID
+        std::fs::create_dir_all(root.join("live_response/network")).expect("mkdir");
+        std::fs::write(
+            root.join("live_response/network/ss_-tlnp.txt"),
+            "State  Recv-Q Send-Q Local Address:Port  Peer Address:Port Process\n\
+             LISTEN 0      128    0.0.0.0:3333         0.0.0.0:*\n",
+        )
+        .expect("write");
+
+        let data = load_uac_collection(root, None);
+
+        let unattrib_alerts: Vec<_> = data
+            .alerts
+            .iter()
+            .filter(|a| a.message.contains("Unattributed"))
+            .collect();
+        assert!(
+            !unattrib_alerts.is_empty(),
+            "expected unattributed connection alert for port 3333, got alerts: {:?}",
+            data.alerts
+        );
+    }
+
+    #[test]
+    fn load_uac_collection_hashes_and_packages_passed_to_alerts() {
+        // Verify that hashes and packages are available in InvestigationData
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let root = dir.path();
+
+        // Hash executables
+        std::fs::create_dir_all(root.join("hash_executables")).expect("mkdir");
+        std::fs::write(
+            root.join("hash_executables/md5sum.txt"),
+            "d41d8cd98f00b204e9800998ecf8427e  /usr/bin/ls\n",
+        )
+        .expect("write");
+
+        // Packages
+        std::fs::create_dir_all(root.join("live_response/packages")).expect("mkdir");
+        std::fs::write(
+            root.join("live_response/packages/dpkg_-l.txt"),
+            "Desired=Unknown/Install/Remove/Purge/Hold\n\
+             | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend\n\
+             |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)\n\
+             ||/ Name           Version      Architecture Description\n\
+             +++-==============-============-============-=================================\n\
+             ii  coreutils      8.32-4       amd64        GNU core utilities\n",
+        )
+        .expect("write");
+
+        let data = load_uac_collection(root, None);
+
+        assert!(
+            !data.hashes.is_empty(),
+            "expected hashes to be loaded, got none"
+        );
+        assert!(
+            !data.packages.is_empty(),
+            "expected packages to be loaded, got none"
         );
     }
 }

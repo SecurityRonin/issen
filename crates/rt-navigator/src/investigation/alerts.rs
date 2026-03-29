@@ -8,7 +8,9 @@ use rt_mft_tree::tree::FileTree;
 use rt_parser_uac::parsers::bodyfile::BodyfileEntry;
 use rt_parser_uac::parsers::chkrootkit::ChkrootkitFinding;
 use rt_parser_uac::parsers::configs::ConfigFile;
+use rt_parser_uac::parsers::hash_execs::HashedExecutable;
 use rt_parser_uac::parsers::network::NetworkConnection;
+use rt_parser_uac::parsers::packages::InstalledPackage;
 use rt_parser_uac::parsers::process::{CrontabEntry, ProcessInfo};
 use rt_parser_uac::parsers::rootkit::RootkitFinding;
 use rt_signatures::heuristics::AnomalyIndex;
@@ -59,6 +61,8 @@ pub struct AlertInput<'a> {
     pub chkrootkit: &'a [ChkrootkitFinding],
     pub rootkit_findings: &'a [RootkitFinding],
     pub configs: &'a [ConfigFile],
+    pub hashes: &'a [HashedExecutable],
+    pub packages: &'a [InstalledPackage],
 }
 
 // ---------------------------------------------------------------------------
@@ -73,9 +77,15 @@ pub fn detect_alerts(input: &AlertInput<'_>) -> Vec<Alert> {
     let mut alerts = Vec::new();
 
     check_network_alerts(input.network, &mut alerts);
+    check_unattributed_connections(input.network, &mut alerts);
     check_process_alerts(input.processes, &mut alerts);
     check_chkrootkit_alerts(input.chkrootkit, &mut alerts);
-    check_rootkit_finding_alerts(input.rootkit_findings, &mut alerts);
+    check_rootkit_finding_alerts(
+        input.rootkit_findings,
+        input.bodyfile,
+        input.hashes,
+        &mut alerts,
+    );
     check_config_alerts(input.configs, input.crontabs, &mut alerts);
     check_bodyfile_alerts(input.bodyfile, &mut alerts);
 
@@ -213,18 +223,98 @@ fn check_chkrootkit_alerts(findings: &[ChkrootkitFinding], alerts: &mut Vec<Aler
 /// - Critical → Critical (known rootkit module, LD_PRELOAD with rootkit lib)
 /// - Warning → Warning (unknown ld.so.preload entry, unsigned kernel module)
 /// - Info → Info (proprietary module, out-of-tree module)
-fn check_rootkit_finding_alerts(findings: &[RootkitFinding], alerts: &mut Vec<Alert>) {
+fn check_rootkit_finding_alerts(
+    findings: &[RootkitFinding],
+    bodyfile: &[BodyfileEntry],
+    hashes: &[HashedExecutable],
+    alerts: &mut Vec<Alert>,
+) {
     for finding in findings {
         let severity = match finding.severity {
             rt_parser_uac::parsers::rootkit::RootkitSeverity::Critical => AlertSeverity::Critical,
             rt_parser_uac::parsers::rootkit::RootkitSeverity::Warning => AlertSeverity::Warning,
             rt_parser_uac::parsers::rootkit::RootkitSeverity::Info => AlertSeverity::Info,
         };
+
+        let detail = if finding.check == "ld_preload" {
+            enrich_ld_preload_detail(&finding.evidence, bodyfile, hashes)
+        } else {
+            finding.evidence.clone()
+        };
+
         alerts.push(Alert {
             severity,
             category: "rootkit".into(),
             message: format!("[{}] {}", finding.check, finding.description),
-            detail: finding.evidence.clone(),
+            detail,
+        });
+    }
+}
+
+/// Build an enriched detail string for an ld.so.preload finding by
+/// cross-referencing the library path against bodyfile and hash data.
+fn enrich_ld_preload_detail(
+    path: &str,
+    bodyfile: &[BodyfileEntry],
+    hashes: &[HashedExecutable],
+) -> String {
+    let mut parts = vec![path.to_string()];
+
+    // Cross-reference against bodyfile for file metadata
+    if let Some(entry) = bodyfile.iter().find(|e| e.path == path) {
+        parts.push(format!(
+            "size={} mode={} uid={} gid={}",
+            entry.size, entry.mode, entry.uid, entry.gid
+        ));
+        if let Some(mtime) = entry.mtime {
+            parts.push(format!("mtime={mtime}"));
+        }
+    } else {
+        parts.push("not found in bodyfile".into());
+    }
+
+    // Cross-reference against hash executables
+    if let Some(entry) = hashes.iter().find(|h| h.path == path) {
+        parts.push(format!("{}={}", entry.algorithm, entry.hash));
+    }
+
+    parts.join(" | ")
+}
+
+// ---------------------------------------------------------------------------
+// Unattributed connection checks
+// ---------------------------------------------------------------------------
+
+/// Flag active connections (LISTEN/ESTABLISHED) with no process owner.
+///
+/// When `ss` or `netstat` reports a socket with no PID, it may indicate
+/// process hiding by a rootkit (e.g. diamorphine, reptile). Only flags
+/// active states (LISTEN, ESTAB, ESTABLISHED) — transient states like
+/// CLOSE-WAIT and TIME-WAIT are ignored.
+fn check_unattributed_connections(connections: &[NetworkConnection], alerts: &mut Vec<Alert>) {
+    let active_states = ["LISTEN", "ESTAB", "ESTABLISHED"];
+
+    for conn in connections {
+        if conn.pid.is_some() {
+            continue;
+        }
+
+        let state_upper = conn.state.to_uppercase();
+        if !active_states.iter().any(|s| state_upper.contains(s)) {
+            continue;
+        }
+
+        alerts.push(Alert {
+            severity: AlertSeverity::Warning,
+            category: "network".into(),
+            message: format!(
+                "Unattributed {} connection (no PID — possible process hiding)",
+                conn.state
+            ),
+            detail: format!(
+                "proto={} local={} remote={}",
+                conn.protocol, conn.local_addr, conn.remote_addr
+            ),
         });
     }
 }
@@ -380,6 +470,8 @@ mod tests {
             chkrootkit: &[],
             rootkit_findings: &[],
             configs: &[],
+            hashes: &[],
+            packages: &[],
         }
     }
 
@@ -738,5 +830,278 @@ mod tests {
         let alerts = detect_alerts(&input);
         let rootkit_alerts: Vec<_> = alerts.iter().filter(|a| a.category == "rootkit").collect();
         assert_eq!(rootkit_alerts.len(), 3);
+    }
+
+    // =====================================================================
+    // Cross-parser correlation — enriched rootkit alerts
+    // =====================================================================
+
+    #[test]
+    fn rootkit_ld_preload_enriched_with_bodyfile_metadata() {
+        use rt_parser_uac::parsers::rootkit::RootkitSeverity;
+        let findings = vec![RootkitFinding {
+            severity: RootkitSeverity::Warning,
+            check: "ld_preload".into(),
+            description: "Library found in ld.so.preload".into(),
+            evidence: "/lib/libevil.so".into(),
+        }];
+        let bodyfile = vec![BodyfileEntry {
+            md5: "d41d8cd98f00b204e9800998ecf8427e".into(),
+            path: "/lib/libevil.so".into(),
+            inode: 12345,
+            mode: "100755".into(),
+            uid: 0,
+            gid: 0,
+            size: 98304,
+            atime: Some(1_700_000_000),
+            mtime: Some(1_700_000_000),
+            ctime: Some(1_700_000_000),
+            crtime: None,
+        }];
+        let input = AlertInput {
+            rootkit_findings: &findings,
+            bodyfile: &bodyfile,
+            ..empty_input()
+        };
+        let alerts = detect_alerts(&input);
+        let rootkit_alerts: Vec<_> = alerts.iter().filter(|a| a.category == "rootkit").collect();
+        assert!(!rootkit_alerts.is_empty());
+        let detail = &rootkit_alerts[0].detail;
+        assert!(
+            detail.contains("size=98304"),
+            "expected bodyfile size in detail, got: {detail}"
+        );
+        assert!(
+            detail.contains("mode=100755"),
+            "expected bodyfile mode in detail, got: {detail}"
+        );
+    }
+
+    #[test]
+    fn rootkit_ld_preload_enriched_with_hash() {
+        use rt_parser_uac::parsers::rootkit::RootkitSeverity;
+        let findings = vec![RootkitFinding {
+            severity: RootkitSeverity::Critical,
+            check: "ld_preload".into(),
+            description: "Known rootkit library in ld.so.preload: jynx".into(),
+            evidence: "/lib/libjynx.so".into(),
+        }];
+        let hashes = vec![HashedExecutable {
+            hash: "abc123def456".into(),
+            path: "/lib/libjynx.so".into(),
+            algorithm: "md5".into(),
+        }];
+        let input = AlertInput {
+            rootkit_findings: &findings,
+            hashes: &hashes,
+            ..empty_input()
+        };
+        let alerts = detect_alerts(&input);
+        let rootkit_alerts: Vec<_> = alerts.iter().filter(|a| a.category == "rootkit").collect();
+        assert!(!rootkit_alerts.is_empty());
+        let detail = &rootkit_alerts[0].detail;
+        assert!(
+            detail.contains("md5=abc123def456"),
+            "expected hash in detail, got: {detail}"
+        );
+    }
+
+    #[test]
+    fn rootkit_ld_preload_enriched_with_both_bodyfile_and_hash() {
+        use rt_parser_uac::parsers::rootkit::RootkitSeverity;
+        let findings = vec![RootkitFinding {
+            severity: RootkitSeverity::Warning,
+            check: "ld_preload".into(),
+            description: "Library found in ld.so.preload".into(),
+            evidence: "/lib/libymv.so.3".into(),
+        }];
+        let bodyfile = vec![BodyfileEntry {
+            md5: String::new(),
+            path: "/lib/libymv.so.3".into(),
+            inode: 999,
+            mode: "100644".into(),
+            uid: 0,
+            gid: 0,
+            size: 45056,
+            atime: Some(1_700_000_000),
+            mtime: Some(1_695_000_000),
+            ctime: Some(1_695_000_000),
+            crtime: None,
+        }];
+        let hashes = vec![HashedExecutable {
+            hash: "deadbeef12345678".into(),
+            path: "/lib/libymv.so.3".into(),
+            algorithm: "sha1".into(),
+        }];
+        let input = AlertInput {
+            rootkit_findings: &findings,
+            bodyfile: &bodyfile,
+            hashes: &hashes,
+            ..empty_input()
+        };
+        let alerts = detect_alerts(&input);
+        let rootkit_alerts: Vec<_> = alerts.iter().filter(|a| a.category == "rootkit").collect();
+        assert!(!rootkit_alerts.is_empty());
+        let detail = &rootkit_alerts[0].detail;
+        assert!(
+            detail.contains("size=45056"),
+            "expected bodyfile size, got: {detail}"
+        );
+        assert!(
+            detail.contains("sha1=deadbeef12345678"),
+            "expected hash, got: {detail}"
+        );
+    }
+
+    #[test]
+    fn rootkit_non_ld_preload_not_enriched() {
+        use rt_parser_uac::parsers::rootkit::RootkitSeverity;
+        // kernel_module findings have no file path to cross-reference
+        let findings = vec![RootkitFinding {
+            severity: RootkitSeverity::Critical,
+            check: "kernel_module".into(),
+            description: "Known rootkit kernel module 'diamorphine' loaded".into(),
+            evidence: "diamorphine".into(),
+        }];
+        // Even with bodyfile/hash data present, non-ld_preload findings shouldn't be enriched
+        let bodyfile = vec![BodyfileEntry {
+            md5: String::new(),
+            path: "/some/unrelated/file".into(),
+            inode: 1,
+            mode: "100644".into(),
+            uid: 0,
+            gid: 0,
+            size: 100,
+            atime: None,
+            mtime: None,
+            ctime: None,
+            crtime: None,
+        }];
+        let input = AlertInput {
+            rootkit_findings: &findings,
+            bodyfile: &bodyfile,
+            ..empty_input()
+        };
+        let alerts = detect_alerts(&input);
+        let rootkit_alerts: Vec<_> = alerts.iter().filter(|a| a.category == "rootkit").collect();
+        assert_eq!(rootkit_alerts.len(), 1);
+        assert_eq!(rootkit_alerts[0].detail, "diamorphine");
+    }
+
+    #[test]
+    fn rootkit_ld_preload_no_bodyfile_match_shows_not_found() {
+        use rt_parser_uac::parsers::rootkit::RootkitSeverity;
+        let findings = vec![RootkitFinding {
+            severity: RootkitSeverity::Warning,
+            check: "ld_preload".into(),
+            description: "Library found in ld.so.preload".into(),
+            evidence: "/lib/libghost.so".into(),
+        }];
+        // Empty bodyfile — the library isn't on disk
+        let input = AlertInput {
+            rootkit_findings: &findings,
+            ..empty_input()
+        };
+        let alerts = detect_alerts(&input);
+        let rootkit_alerts: Vec<_> = alerts.iter().filter(|a| a.category == "rootkit").collect();
+        assert!(!rootkit_alerts.is_empty());
+        let detail = &rootkit_alerts[0].detail;
+        assert!(
+            detail.contains("not found in bodyfile"),
+            "expected 'not found in bodyfile' when no match, got: {detail}"
+        );
+    }
+
+    // =====================================================================
+    // Unattributed connection detection
+    // =====================================================================
+
+    #[test]
+    fn unattributed_listen_connection_flagged() {
+        let conns = vec![NetworkConnection {
+            protocol: "tcp".into(),
+            local_addr: "0.0.0.0:3333".into(),
+            remote_addr: "0.0.0.0:*".into(),
+            state: "LISTEN".into(),
+            pid: None,
+            program: None,
+        }];
+        let input = AlertInput {
+            network: &conns,
+            ..empty_input()
+        };
+        let alerts = detect_alerts(&input);
+        assert!(
+            alerts.iter().any(|a| a.category == "network"
+                && a.message.contains("Unattributed")
+                && a.message.contains("LISTEN")),
+            "expected unattributed LISTEN alert, got: {alerts:?}"
+        );
+    }
+
+    #[test]
+    fn unattributed_established_connection_flagged() {
+        let conns = vec![NetworkConnection {
+            protocol: "tcp".into(),
+            local_addr: "192.168.1.10:45678".into(),
+            remote_addr: "10.0.0.5:443".into(),
+            state: "ESTAB".into(),
+            pid: None,
+            program: None,
+        }];
+        let input = AlertInput {
+            network: &conns,
+            ..empty_input()
+        };
+        let alerts = detect_alerts(&input);
+        assert!(
+            alerts.iter().any(|a| a.category == "network"
+                && a.message.contains("Unattributed")
+                && a.message.contains("ESTAB")),
+            "expected unattributed ESTABLISHED alert, got: {alerts:?}"
+        );
+    }
+
+    #[test]
+    fn attributed_listen_no_unattributed_alert() {
+        let conns = vec![NetworkConnection {
+            protocol: "tcp".into(),
+            local_addr: "0.0.0.0:22".into(),
+            remote_addr: "0.0.0.0:*".into(),
+            state: "LISTEN".into(),
+            pid: Some(1234),
+            program: Some("sshd".into()),
+        }];
+        let input = AlertInput {
+            network: &conns,
+            ..empty_input()
+        };
+        let alerts = detect_alerts(&input);
+        assert!(
+            !alerts.iter().any(|a| a.message.contains("Unattributed")),
+            "should not flag attributed connection, got: {alerts:?}"
+        );
+    }
+
+    #[test]
+    fn unattributed_closed_wait_not_flagged() {
+        // CLOSE-WAIT and TIME-WAIT are transient — only flag active states
+        let conns = vec![NetworkConnection {
+            protocol: "tcp".into(),
+            local_addr: "192.168.1.10:45678".into(),
+            remote_addr: "10.0.0.5:80".into(),
+            state: "CLOSE-WAIT".into(),
+            pid: None,
+            program: None,
+        }];
+        let input = AlertInput {
+            network: &conns,
+            ..empty_input()
+        };
+        let alerts = detect_alerts(&input);
+        assert!(
+            !alerts.iter().any(|a| a.message.contains("Unattributed")),
+            "should not flag CLOSE-WAIT, got: {alerts:?}"
+        );
     }
 }
