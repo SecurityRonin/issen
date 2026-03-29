@@ -6,6 +6,7 @@ pub mod hash_execs;
 pub mod network;
 pub mod packages;
 pub mod process;
+pub mod rootkit;
 pub mod storage;
 pub mod system;
 
