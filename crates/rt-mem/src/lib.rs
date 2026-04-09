@@ -1,4 +1,5 @@
 pub mod cmd_memf;
+pub mod dispatch;
 pub mod open;
 pub mod output;
 
