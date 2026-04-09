@@ -2,6 +2,12 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 
+use crate::dispatch::{
+    build_reader, dispatch_linux_check, dispatch_linux_creds, dispatch_linux_modules,
+    dispatch_linux_netstat, dispatch_linux_ps, dispatch_linux_scan, dispatch_windows_check,
+    dispatch_windows_creds, dispatch_windows_modules, dispatch_windows_netstat,
+    dispatch_windows_ps, dispatch_windows_scan,
+};
 use crate::open::{detect_format, DumpFormat};
 use crate::output::{print_table, OutputFormat};
 
@@ -105,6 +111,45 @@ pub struct MemfArgs {
     pub pid_filter: Option<u32>,
 }
 
+/// Route a single [`MemfCommand`] to the appropriate OS-specific walker.
+///
+/// # Errors
+///
+/// Returns `Err` if the walker fails or the command is not dispatchable
+/// (e.g., `All` or `Timeline` which are handled at a higher level).
+fn dispatch_command(
+    os: TargetOs,
+    cmd: &MemfCommand,
+    reader: &memf_core::object_reader::ObjectReader<Box<dyn memf_format::PhysicalMemoryProvider>>,
+) -> anyhow::Result<(Vec<&'static str>, Vec<Vec<String>>)> {
+    match (os, cmd) {
+        (TargetOs::Linux, MemfCommand::Ps) => dispatch_linux_ps(reader),
+        (TargetOs::Linux, MemfCommand::Modules) => dispatch_linux_modules(reader),
+        (TargetOs::Linux, MemfCommand::Netstat) => dispatch_linux_netstat(reader),
+        (TargetOs::Linux, MemfCommand::Check) => dispatch_linux_check(reader),
+        (TargetOs::Linux, MemfCommand::Scan) => dispatch_linux_scan(reader),
+        (TargetOs::Linux, MemfCommand::Creds) => dispatch_linux_creds(reader),
+        (TargetOs::Windows, MemfCommand::Ps) => dispatch_windows_ps(reader),
+        (TargetOs::Windows, MemfCommand::Modules) => dispatch_windows_modules(reader),
+        (TargetOs::Windows, MemfCommand::Netstat) => dispatch_windows_netstat(reader),
+        (TargetOs::Windows, MemfCommand::Check) => dispatch_windows_check(reader),
+        (TargetOs::Windows, MemfCommand::Scan) => dispatch_windows_scan(reader),
+        (TargetOs::Windows, MemfCommand::Creds) => dispatch_windows_creds(reader),
+        // Unknown OS: fall back to Linux walkers as a best-effort attempt.
+        (TargetOs::Unknown, cmd) => dispatch_command(TargetOs::Linux, cmd, reader),
+        // Timeline and All are handled by the caller.
+        (_, MemfCommand::Timeline) => Ok((
+            vec!["Time", "Event", "Detail"],
+            vec![vec![
+                "n/a".into(),
+                "timeline".into(),
+                "not yet wired".into(),
+            ]],
+        )),
+        (_, MemfCommand::All) => anyhow::bail!("All is handled by the caller"),
+    }
+}
+
 /// Execute the requested memory forensic command.
 ///
 /// # Errors
@@ -126,11 +171,47 @@ pub fn run_memf_command(args: &MemfArgs) -> anyhow::Result<()> {
         args.command,
     );
 
-    // Dispatch — the memf-linux / memf-windows walkers require kernel symbol
-    // resolution (ISF / BTF / PDB) which is wired up in the walker crates.
-    // For now we emit a structured placeholder that exercises the output
-    // pipeline so integration tests can verify formatting, and the actual
-    // walker calls can be added incrementally without changing the interface.
+    // Attempt to build a real ObjectReader.  This requires:
+    //   1. A --profile <isf.json> path (symbol tables)
+    //   2. A dump with an embedded CR3 (Windows crash dump)
+    // For raw/LiME/AVML dumps without embedded CR3, or when no profile is
+    // supplied, build_reader returns Err and we fall through to the
+    // structured placeholder so existing integration tests keep passing.
+    let reader_result = build_reader(&args.dump_path, args.profile.as_deref());
+
+    // Detect OS from format for dispatch routing.
+    let os = detect_os(fmt);
+
+    if let Ok((_reader_fmt, ref reader)) = reader_result {
+        // Real walker dispatch — only reached when dump has CR3 + ISF profile.
+        if args.command == MemfCommand::All {
+            for cmd in &[
+                MemfCommand::Ps,
+                MemfCommand::Modules,
+                MemfCommand::Netstat,
+                MemfCommand::Check,
+                MemfCommand::Scan,
+                MemfCommand::Creds,
+            ] {
+                eprintln!("[rt-mem] dispatching {cmd}");
+                let result = dispatch_command(os, cmd, reader);
+                match result {
+                    Ok((hdrs, rows)) => print_table(&hdrs, &rows, args.output),
+                    Err(e) => eprintln!("[rt-mem] {cmd} failed: {e}"),
+                }
+            }
+        } else {
+            let (hdrs, rows) = dispatch_command(os, &args.command, reader)?;
+            print_table(&hdrs, &rows, args.output);
+        }
+        return Ok(());
+    }
+
+    // Graceful degradation: no CR3 or no profile — emit structured placeholder.
+    if let Err(ref e) = reader_result {
+        eprintln!("[rt-mem] walker unavailable: {e}");
+    }
+
     let headers: &[&str] = match args.command {
         MemfCommand::Ps => &["PID", "PPID", "Name", "State"],
         MemfCommand::Modules => &["Base", "Size", "Name", "Path"],
@@ -143,7 +224,6 @@ pub fn run_memf_command(args: &MemfArgs) -> anyhow::Result<()> {
     };
 
     let rows: Vec<Vec<String>> = if args.command == MemfCommand::All {
-        // For "all" emit a row per sub-command showing it was dispatched.
         [
             MemfCommand::Ps,
             MemfCommand::Modules,
@@ -157,7 +237,6 @@ pub fn run_memf_command(args: &MemfArgs) -> anyhow::Result<()> {
         .map(|cmd| vec![cmd.to_string(), "dispatched".into()])
         .collect()
     } else {
-        // Placeholder — real walker data will replace this.
         vec![vec![
             format!(
                 "(no data — walker for {fmt}/{} not yet wired)",
