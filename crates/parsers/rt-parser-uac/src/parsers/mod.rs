@@ -1,12 +1,16 @@
+pub mod auth_log;
+pub mod bash_history;
 pub mod bodyfile;
 pub mod chkrootkit;
 pub mod configs;
 pub mod hardware;
 pub mod hash_execs;
+pub mod journal;
 pub mod network;
 pub mod packages;
 pub mod process;
 pub mod rootkit;
+pub mod shadow;
 pub mod storage;
 pub mod system;
 
