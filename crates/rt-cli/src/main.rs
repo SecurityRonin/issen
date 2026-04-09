@@ -175,6 +175,29 @@ pub enum Commands {
         db: Option<PathBuf>,
     },
 
+    /// Analyse a physical memory dump (LiME, AVML, Windows crash dump, raw).
+    Memf {
+        /// Path to the memory dump file.
+        #[arg(value_name = "DUMP_PATH")]
+        dump_path: PathBuf,
+
+        /// Sub-command: ps, modules, netstat, check, timeline, scan, creds, all.
+        #[arg(long, default_value = "all")]
+        command: String,
+
+        /// ISF / BTF / PDB symbol profile path, or "auto" (default).
+        #[arg(long)]
+        profile: Option<String>,
+
+        /// Output format: text, json, bodyfile.
+        #[arg(long, default_value = "text")]
+        format: String,
+
+        /// Filter output to a specific PID (process commands only).
+        #[arg(long)]
+        pid: Option<u32>,
+    },
+
     /// Generate a self-contained HTML report from a timeline database.
     Report {
         /// Path to the DuckDB database.
@@ -312,6 +335,13 @@ fn main() -> ExitCode {
             &format,
             db.as_deref(),
         ),
+        Commands::Memf {
+            dump_path,
+            command,
+            profile,
+            format,
+            pid,
+        } => commands::memf::run(&dump_path, profile.as_deref(), &command, &format, pid),
         Commands::Report {
             db_path,
             output,

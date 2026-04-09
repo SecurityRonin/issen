@@ -24,6 +24,7 @@ rt-remote-access = { workspace = true }
 rt-parser-velociraptor = { workspace = true }
 rt-parser-uac = { workspace = true }
 rt-unpack = { workspace = true }
+rt-memf = { workspace = true }
 clap = { workspace = true }
 anyhow = { workspace = true }
 duckdb = { workspace = true }
