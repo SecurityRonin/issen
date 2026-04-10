@@ -135,10 +135,8 @@ fn dispatch_command(
         (TargetOs::Windows, MemfCommand::Check) => dispatch_windows_check(reader),
         (TargetOs::Windows, MemfCommand::Scan) => dispatch_windows_scan(reader),
         (TargetOs::Windows, MemfCommand::Creds) => dispatch_windows_creds(reader),
-        // Unknown OS: fall back to Linux walkers as a best-effort attempt.
-        (TargetOs::Unknown, cmd) => dispatch_command(TargetOs::Linux, cmd, reader),
         // Timeline dispatches to Linux walkers (boot_time, kmsg, oom_events).
-        (TargetOs::Linux, MemfCommand::Timeline) | (TargetOs::Unknown, MemfCommand::Timeline) => {
+        (TargetOs::Linux | TargetOs::Unknown, MemfCommand::Timeline) => {
             dispatch_linux_timeline(reader)
         }
         (_, MemfCommand::Timeline) => Ok((
@@ -150,6 +148,8 @@ fn dispatch_command(
             ]],
         )),
         (_, MemfCommand::All) => anyhow::bail!("All is handled by the caller"),
+        // Unknown OS: fall back to Linux walkers as a best-effort attempt.
+        (TargetOs::Unknown, cmd) => dispatch_command(TargetOs::Linux, cmd, reader),
     }
 }
 
