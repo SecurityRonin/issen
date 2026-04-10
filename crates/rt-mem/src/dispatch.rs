@@ -40,9 +40,9 @@ pub fn build_reader(
     let metadata = provider.metadata();
     let embedded_cr3 = metadata.as_ref().and_then(|m| m.cr3);
 
-    // For RED: keep old behavior — cr3_override is not yet used.
-    // The build_reader_succeeds_with_cr3_override test will fail here.
-    let cr3 = embedded_cr3.ok_or_else(|| {
+    // Resolve CR3: prefer the dump's embedded value; fall back to the
+    // caller-supplied override; fail if neither is available.
+    let cr3 = embedded_cr3.or(cr3_override).ok_or_else(|| {
         anyhow!("dump has no embedded CR3; use --cr3 <addr> to provide one")
     })?;
 

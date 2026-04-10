@@ -32,7 +32,9 @@ fn parse_memf_command(s: &str) -> MemfCommand {
 /// Accepts both `0x`-prefixed (e.g. `0xdeadbeef`) and bare hex (e.g. `deadbeef`).
 /// Returns `Err(String)` with a human-readable message on parse failure.
 pub fn parse_cr3_hex(s: &str) -> Result<u64, String> {
-    todo!("parse_cr3_hex not yet implemented")
+    let hex = s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")).unwrap_or(s);
+    u64::from_str_radix(hex, 16)
+        .map_err(|_| format!("invalid hex address '{s}': expected e.g. 0x1a2000 or 1a2000"))
 }
 
 /// Run the `rt memf` subcommand.
