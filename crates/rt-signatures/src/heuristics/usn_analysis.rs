@@ -651,6 +651,33 @@ mod tests {
         );
     }
 
+    // --- RED: tests exercising usnjrnl_forensic::usn types (will pass after GREEN migration) ---
+
+    #[test]
+    fn usnjrnl_forensic_usn_record_can_be_used_in_check_usn_stream() {
+        // This test verifies that check_usn_stream works with usnjrnl_forensic::usn::UsnRecord.
+        // It will FAIL until the migration replaces UsnRecordV2 with UsnRecord.
+        use usnjrnl_forensic::usn::attributes::FileAttributes;
+        use usnjrnl_forensic::usn::{UsnReason, UsnRecord};
+
+        let record = UsnRecord {
+            mft_entry: 100,
+            mft_sequence: 1,
+            parent_mft_entry: 10,
+            parent_mft_sequence: 1,
+            usn: 1000,
+            timestamp: chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap(),
+            reason: UsnReason::FILE_CREATE | UsnReason::CLOSE,
+            filename: "test.txt".to_string(),
+            file_attributes: FileAttributes::empty(),
+            source_info: 0,
+            security_id: 0,
+            major_version: 2,
+        };
+        // check_usn_stream expects &[UsnRecord] after migration.
+        let _ = check_usn_stream(&[record], None);
+    }
+
     #[test]
     fn usn_004_ghost_with_sequence_bits() {
         let tree = make_tree();

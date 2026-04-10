@@ -642,6 +642,36 @@ mod tests {
         assert_eq!(events[0].path, "test.txt");
     }
 
+    // --- RED: test exercising usnjrnl_forensic::usn::UsnRecord in usn_to_events ---
+
+    #[test]
+    fn usn_to_events_with_usnjrnl_forensic_record() {
+        // Will FAIL until migration replaces UsnRecordV2 with UsnRecord.
+        use usnjrnl_forensic::usn::attributes::FileAttributes;
+        use usnjrnl_forensic::usn::{UsnReason, UsnRecord};
+
+        let record = UsnRecord {
+            mft_entry: 12345,
+            mft_sequence: 1,
+            parent_mft_entry: 5,
+            parent_mft_sequence: 1,
+            usn: 0,
+            // 2024-01-15 00:00:00 UTC
+            timestamp: chrono::DateTime::from_timestamp(1_705_276_800, 0).unwrap(),
+            reason: UsnReason::FILE_CREATE,
+            filename: "migrate_test.txt".to_string(),
+            file_attributes: FileAttributes::empty(),
+            source_info: 0,
+            security_id: 0,
+            major_version: 2,
+        };
+        let events = usn_to_events(&[record]);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].timestamp, 1_705_276_800);
+        assert_eq!(events[0].path, "migrate_test.txt");
+        assert_eq!(events[0].timestamp_type, TimestampType::UsnChange);
+    }
+
     #[test]
     fn timestamp_type_labels_are_nonempty() {
         let types = [
