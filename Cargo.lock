@@ -4104,16 +4104,17 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
+ "chrono",
  "clap",
  "duckdb",
+ "inventory",
+ "mft",
  "predicates",
  "rt-core",
  "rt-fswalker",
  "rt-mem",
  "rt-parser-evtx",
- "rt-parser-mft",
  "rt-parser-uac",
- "rt-parser-usnjrnl",
  "rt-parser-velociraptor",
  "rt-remote-access",
  "rt-report",
@@ -4125,6 +4126,7 @@ dependencies = [
  "tempfile",
  "tracing",
  "tracing-subscriber",
+ "usnjrnl-forensic",
 ]
 
 [[package]]
@@ -4211,12 +4213,12 @@ dependencies = [
  "rt-core",
  "rt-mft-tree",
  "rt-parser-uac",
- "rt-parser-usnjrnl",
  "rt-parser-velociraptor",
  "rt-signatures",
  "rt-unpack",
  "shrinkpath",
  "tempfile",
+ "usnjrnl-forensic",
 ]
 
 [[package]]
@@ -4229,20 +4231,6 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tracing",
-]
-
-[[package]]
-name = "rt-parser-mft"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "inventory",
- "mft",
- "rt-core",
- "serde_json",
- "tempfile",
- "tracing",
- "usnjrnl-forensic",
 ]
 
 [[package]]
@@ -4260,19 +4248,6 @@ dependencies = [
  "tar",
  "tempfile",
  "thiserror 2.0.18",
- "tracing",
-]
-
-[[package]]
-name = "rt-parser-usnjrnl"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "insta",
- "inventory",
- "rt-core",
- "serde_json",
- "tempfile",
  "tracing",
 ]
 
@@ -4350,7 +4325,6 @@ dependencies = [
  "reqwest",
  "rt-core",
  "rt-mft-tree",
- "rt-parser-usnjrnl",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -4359,6 +4333,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "tracing",
+ "usnjrnl-forensic",
  "yara-x",
 ]
 
@@ -5532,8 +5507,6 @@ dependencies = [
 [[package]]
 name = "usnjrnl-forensic"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "664651e67fa82f3e97dd1e1f09eb8f1564c19d85a46b742900d46cf2d8218279"
 dependencies = [
  "anyhow",
  "bitflags 2.11.0",
@@ -5548,6 +5521,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "shrinkpath",
  "tempfile",
 ]
 

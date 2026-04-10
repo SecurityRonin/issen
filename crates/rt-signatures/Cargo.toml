@@ -9,14 +9,14 @@ repository.workspace = true
 
 [features]
 default = ["heuristics"]
-heuristics = ["dep:rt-mft-tree", "dep:rt-parser-usnjrnl"]
+heuristics = ["dep:rt-mft-tree", "dep:usnjrnl-forensic"]
 
 [dependencies]
 rt-core = { workspace = true }
 
 # Heuristics (optional)
 rt-mft-tree = { workspace = true, optional = true }
-rt-parser-usnjrnl = { workspace = true, optional = true }
+usnjrnl-forensic = { workspace = true, optional = true }
 
 # Scanning engines
 yara-x = { workspace = true }

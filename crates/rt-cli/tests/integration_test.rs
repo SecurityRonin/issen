@@ -3,8 +3,8 @@
 //!
 //! This tests the entire data flow programmatically, without going through the CLI binary.
 
-// Link the USN parser so it registers via inventory::submit!
-extern crate rt_parser_usnjrnl;
+// Link rt-cli parsers so their inventory::submit! registrations are included.
+extern crate rt_cli;
 
 use rt_core::artifacts::ArtifactType;
 use rt_core::timeline::event::EventType;

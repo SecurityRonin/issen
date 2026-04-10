@@ -23,7 +23,7 @@ anyhow = { workspace = true }
 ratatui = { workspace = true }
 crossterm = { workspace = true }
 indicatif = { workspace = true }
-rt-parser-usnjrnl = { workspace = true }
+usnjrnl-forensic = { workspace = true }
 rt-signatures = { workspace = true, features = ["heuristics"] }
 shrinkpath = { workspace = true }
 rt-core = { workspace = true }

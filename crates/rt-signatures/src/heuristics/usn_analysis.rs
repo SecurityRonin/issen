@@ -3,10 +3,18 @@
 use std::collections::HashMap;
 
 use rt_mft_tree::tree::FileTree;
-use rt_parser_usnjrnl::{UsnReasonFlags, UsnRecordV2};
+use usnjrnl_forensic::usn::{UsnReason, UsnRecord};
 
 use super::anomaly::{Anomaly, AnomalyCategory, AnomalyIndex};
 use crate::matching::results::Severity;
+
+/// Convert a `DateTime<Utc>` to Windows FILETIME (100ns ticks since 1601-01-01).
+/// Used for time-window comparisons that were originally written against raw FILETIME i64.
+fn to_filetime(dt: &chrono::DateTime<chrono::Utc>) -> i64 {
+    const FILETIME_EPOCH_OFFSET_SECS: i64 = 11_644_473_600;
+    (dt.timestamp() + FILETIME_EPOCH_OFFSET_SECS) * 10_000_000
+        + i64::from(dt.timestamp_subsec_nanos()) / 100
+}
 
 /// Run all USN stream analysis checks.
 ///
@@ -14,7 +22,7 @@ use crate::matching::results::Severity;
 /// ghost file detection (HEUR-USN-004) and to attach findings to tree nodes.
 /// Findings for entries not in the tree are attached to the root node (idx 0).
 #[must_use]
-pub fn check_usn_stream(records: &[UsnRecordV2], tree: Option<&FileTree>) -> AnomalyIndex {
+pub fn check_usn_stream(records: &[UsnRecord], tree: Option<&FileTree>) -> AnomalyIndex {
     let mut index = AnomalyIndex::new();
     check_usn_001(records, tree, &mut index);
     check_usn_002(records, tree, &mut index);
@@ -39,14 +47,11 @@ fn resolve_idx(frn: u64, tree: Option<&FileTree>) -> usize {
 /// Looks for rename chains where the new filename is all the same character
 /// repeated (e.g. "AAAAAAAAAAAA.AAA"), followed by a delete — all within
 /// a 30-second window on the same file reference number.
-fn check_usn_001(records: &[UsnRecordV2], tree: Option<&FileTree>, index: &mut AnomalyIndex) {
-    // Group records by file_reference_number.
-    let mut by_frn: HashMap<u64, Vec<&UsnRecordV2>> = HashMap::new();
+fn check_usn_001(records: &[UsnRecord], tree: Option<&FileTree>, index: &mut AnomalyIndex) {
+    // Group records by mft_entry (file reference number).
+    let mut by_frn: HashMap<u64, Vec<&UsnRecord>> = HashMap::new();
     for rec in records {
-        by_frn
-            .entry(rec.file_reference_number)
-            .or_default()
-            .push(rec);
+        by_frn.entry(rec.mft_entry).or_default().push(rec);
     }
 
     for (frn, recs) in &by_frn {
@@ -56,17 +61,17 @@ fn check_usn_001(records: &[UsnRecordV2], tree: Option<&FileTree>, index: &mut A
         let mut last_ts: Option<i64> = None;
 
         for rec in recs {
-            let r = rec.reason.0;
-            if r & UsnReasonFlags::RENAME_NEW_NAME != 0 && is_wipe_name(&rec.file_name) {
+            let ts = to_filetime(&rec.timestamp);
+            if rec.reason.contains(UsnReason::RENAME_NEW_NAME) && is_wipe_name(&rec.filename) {
                 rename_count += 1;
                 if first_ts.is_none() {
-                    first_ts = Some(rec.timestamp);
+                    first_ts = Some(ts);
                 }
-                last_ts = Some(rec.timestamp);
+                last_ts = Some(ts);
             }
-            if r & UsnReasonFlags::FILE_DELETE != 0 {
+            if rec.reason.contains(UsnReason::FILE_DELETE) {
                 has_delete = true;
-                last_ts = Some(rec.timestamp);
+                last_ts = Some(ts);
             }
         }
 
@@ -110,11 +115,11 @@ fn is_wipe_name(name: &str) -> bool {
 /// HEUR-USN-002: Rapid mass rename (ransomware indicator).
 ///
 /// Flags when >50 distinct files are renamed within a 60-second window.
-fn check_usn_002(records: &[UsnRecordV2], tree: Option<&FileTree>, index: &mut AnomalyIndex) {
+fn check_usn_002(records: &[UsnRecord], tree: Option<&FileTree>, index: &mut AnomalyIndex) {
     // Collect rename records sorted by timestamp.
-    let mut renames: Vec<&UsnRecordV2> = records
+    let mut renames: Vec<&UsnRecord> = records
         .iter()
-        .filter(|r| r.reason.0 & UsnReasonFlags::RENAME_NEW_NAME != 0)
+        .filter(|r| r.reason.contains(UsnReason::RENAME_NEW_NAME))
         .collect();
     renames.sort_by_key(|r| r.timestamp);
 
@@ -127,14 +132,16 @@ fn check_usn_002(records: &[UsnRecordV2], tree: Option<&FileTree>, index: &mut A
 
     for end in 0..renames.len() {
         // Shrink window from the left.
-        while renames[end].timestamp - renames[start].timestamp > sixty_seconds_ticks {
+        while to_filetime(&renames[end].timestamp) - to_filetime(&renames[start].timestamp)
+            > sixty_seconds_ticks
+        {
             start += 1;
         }
         let window = &renames[start..=end];
         // Count distinct file references in window.
         let mut seen = std::collections::HashSet::new();
         for r in window {
-            seen.insert(r.file_reference_number);
+            seen.insert(r.mft_entry);
         }
         if seen.len() > 50 {
             // Flag all files in this window.
@@ -173,7 +180,7 @@ fn check_usn_002(records: &[UsnRecordV2], tree: Option<&FileTree>, index: &mut A
 ///
 /// Checks for discontinuities in USN sequence numbers that are too large
 /// to be explained by normal record sizes (gap > 1MB suggests clearing).
-fn check_usn_003(records: &[UsnRecordV2], index: &mut AnomalyIndex) {
+fn check_usn_003(records: &[UsnRecord], index: &mut AnomalyIndex) {
     const GAP_THRESHOLD: i64 = 1_048_576; // 1MB in bytes
 
     if records.len() < 2 {
@@ -202,11 +209,11 @@ fn check_usn_003(records: &[UsnRecordV2], index: &mut AnomalyIndex) {
 }
 
 /// HEUR-USN-004: Ghost file (USN references non-existent MFT entry).
-fn check_usn_004(records: &[UsnRecordV2], tree: &FileTree, index: &mut AnomalyIndex) {
+fn check_usn_004(records: &[UsnRecord], tree: &FileTree, index: &mut AnomalyIndex) {
     let mut seen = std::collections::HashSet::new();
 
     for rec in records {
-        let mft_entry = rec.file_reference_number & FRN_MASK;
+        let mft_entry = rec.mft_entry & FRN_MASK;
         if seen.contains(&mft_entry) {
             continue;
         }
@@ -215,7 +222,7 @@ fn check_usn_004(records: &[UsnRecordV2], tree: &FileTree, index: &mut AnomalyIn
         if tree.entry_to_idx(mft_entry).is_none() {
             // File no longer in MFT — attach to parent if possible, else root.
             let parent_idx = tree
-                .entry_to_idx(rec.parent_file_reference_number & FRN_MASK)
+                .entry_to_idx(rec.parent_mft_entry & FRN_MASK)
                 .copied()
                 .unwrap_or(0);
             index.add(
@@ -227,8 +234,8 @@ fn check_usn_004(records: &[UsnRecordV2], tree: &FileTree, index: &mut AnomalyIn
                     description: "USN record references deleted/reallocated MFT entry".to_string(),
                     evidence: format!(
                         "ghost_entry={mft_entry}, file_name={}, parent_frn={}",
-                        rec.file_name,
-                        rec.parent_file_reference_number & FRN_MASK
+                        rec.filename,
+                        rec.parent_mft_entry & FRN_MASK
                     ),
                 },
             );
@@ -240,35 +247,37 @@ fn check_usn_004(records: &[UsnRecordV2], tree: &FileTree, index: &mut AnomalyIn
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use chrono::{TimeZone, Utc};
+    use chrono::{DateTime, TimeZone, Utc};
     use rt_mft_tree::node::{FileNode, NtfsTimestamps};
+    use usnjrnl_forensic::usn::FileAttributes;
+    use usnjrnl_forensic::usn::UsnReason;
 
-    /// Windows FILETIME for 2024-06-01 00:00:00 UTC.
-    const BASE_FILETIME: i64 = 133_620_192_000_000_000;
-    /// One second in FILETIME ticks (100ns units).
-    const ONE_SEC: i64 = 10_000_000;
+    /// Base timestamp: 2024-06-01 00:00:00 UTC.
+    fn base_ts() -> DateTime<Utc> {
+        Utc.with_ymd_and_hms(2024, 6, 1, 0, 0, 0).unwrap()
+    }
 
     fn make_usn_record(
         file_name: &str,
         frn: u64,
         parent_frn: u64,
-        reason: u32,
-        timestamp: i64,
+        reason: UsnReason,
+        timestamp: DateTime<Utc>,
         usn: i64,
-    ) -> UsnRecordV2 {
-        UsnRecordV2 {
-            record_length: 72 + (file_name.len() as u32 * 2),
-            major_version: 2,
-            minor_version: 0,
-            file_reference_number: frn,
-            parent_file_reference_number: parent_frn,
+    ) -> UsnRecord {
+        UsnRecord {
+            mft_entry: frn,
+            mft_sequence: 1,
+            parent_mft_entry: parent_frn,
+            parent_mft_sequence: 1,
             usn,
             timestamp,
-            reason: UsnReasonFlags(reason),
+            reason,
+            filename: file_name.to_string(),
+            file_attributes: FileAttributes::empty(),
             source_info: 0,
             security_id: 0,
-            file_attributes: 0,
-            file_name: file_name.to_string(),
+            major_version: 2,
         }
     }
 
@@ -362,37 +371,31 @@ mod tests {
 
     #[test]
     fn usn_001_triggers_on_sdelete_pattern() {
+        let base = base_ts();
         let records = vec![
-            make_usn_record(
-                "AAAAAA.AAA",
-                100,
-                10,
-                UsnReasonFlags::RENAME_NEW_NAME,
-                BASE_FILETIME,
-                1000,
-            ),
+            make_usn_record("AAAAAA.AAA", 100, 10, UsnReason::RENAME_NEW_NAME, base, 1000),
             make_usn_record(
                 "BBBBBB.BBB",
                 100,
                 10,
-                UsnReasonFlags::RENAME_NEW_NAME,
-                BASE_FILETIME + ONE_SEC,
+                UsnReason::RENAME_NEW_NAME,
+                base + chrono::Duration::seconds(1),
                 1100,
             ),
             make_usn_record(
                 "CCCCCC.CCC",
                 100,
                 10,
-                UsnReasonFlags::RENAME_NEW_NAME,
-                BASE_FILETIME + 2 * ONE_SEC,
+                UsnReason::RENAME_NEW_NAME,
+                base + chrono::Duration::seconds(2),
                 1200,
             ),
             make_usn_record(
                 "CCCCCC.CCC",
                 100,
                 10,
-                UsnReasonFlags::FILE_DELETE,
-                BASE_FILETIME + 3 * ONE_SEC,
+                UsnReason::FILE_DELETE,
+                base + chrono::Duration::seconds(3),
                 1300,
             ),
         ];
@@ -407,21 +410,15 @@ mod tests {
 
     #[test]
     fn usn_001_does_not_trigger_normal_rename() {
+        let base = base_ts();
         let records = vec![
-            make_usn_record(
-                "old_name.txt",
-                100,
-                10,
-                UsnReasonFlags::RENAME_NEW_NAME,
-                BASE_FILETIME,
-                1000,
-            ),
+            make_usn_record("old_name.txt", 100, 10, UsnReason::RENAME_NEW_NAME, base, 1000),
             make_usn_record(
                 "new_name.txt",
                 100,
                 10,
-                UsnReasonFlags::RENAME_NEW_NAME,
-                BASE_FILETIME + ONE_SEC,
+                UsnReason::RENAME_NEW_NAME,
+                base + chrono::Duration::seconds(1),
                 1100,
             ),
         ];
@@ -436,21 +433,15 @@ mod tests {
 
     #[test]
     fn usn_001_does_not_trigger_without_delete() {
+        let base = base_ts();
         let records = vec![
-            make_usn_record(
-                "AAAAAA.AAA",
-                100,
-                10,
-                UsnReasonFlags::RENAME_NEW_NAME,
-                BASE_FILETIME,
-                1000,
-            ),
+            make_usn_record("AAAAAA.AAA", 100, 10, UsnReason::RENAME_NEW_NAME, base, 1000),
             make_usn_record(
                 "BBBBBB.BBB",
                 100,
                 10,
-                UsnReasonFlags::RENAME_NEW_NAME,
-                BASE_FILETIME + ONE_SEC,
+                UsnReason::RENAME_NEW_NAME,
+                base + chrono::Duration::seconds(1),
                 1100,
             ),
         ];
@@ -462,20 +453,20 @@ mod tests {
 
     #[test]
     fn usn_002_triggers_on_mass_rename() {
+        let base = base_ts();
         let mut records = Vec::new();
         for i in 0..55u64 {
             records.push(make_usn_record(
                 &format!("file{i}.locked"),
                 1000 + i,
                 10,
-                UsnReasonFlags::RENAME_NEW_NAME,
-                BASE_FILETIME + (i as i64) * (ONE_SEC / 10), // all within ~5.5 seconds
+                UsnReason::RENAME_NEW_NAME,
+                base + chrono::Duration::milliseconds(i as i64 * 100), // all within ~5.5 seconds
                 (i as i64) * 100,
             ));
         }
         let index = check_usn_stream(&records, None);
         assert!(index.flagged_count() > 0);
-        // Check at least one node has HEUR-USN-002
         let has_002 = (0..56).any(|idx| {
             index
                 .for_node(idx)
@@ -487,14 +478,15 @@ mod tests {
 
     #[test]
     fn usn_002_does_not_trigger_below_threshold() {
+        let base = base_ts();
         let mut records = Vec::new();
         for i in 0..30u64 {
             records.push(make_usn_record(
                 &format!("file{i}.locked"),
                 1000 + i,
                 10,
-                UsnReasonFlags::RENAME_NEW_NAME,
-                BASE_FILETIME + (i as i64) * ONE_SEC,
+                UsnReason::RENAME_NEW_NAME,
+                base + chrono::Duration::seconds(i as i64),
                 (i as i64) * 100,
             ));
         }
@@ -512,21 +504,15 @@ mod tests {
 
     #[test]
     fn usn_003_triggers_on_journal_gap() {
+        let base = base_ts();
         let records = vec![
-            make_usn_record(
-                "a.txt",
-                100,
-                10,
-                UsnReasonFlags::FILE_CREATE,
-                BASE_FILETIME,
-                1000,
-            ),
+            make_usn_record("a.txt", 100, 10, UsnReason::FILE_CREATE, base, 1000),
             make_usn_record(
                 "b.txt",
                 200,
                 10,
-                UsnReasonFlags::FILE_CREATE,
-                BASE_FILETIME + ONE_SEC,
+                UsnReason::FILE_CREATE,
+                base + chrono::Duration::seconds(1),
                 2_000_000,
             ), // 2MB gap
         ];
@@ -539,21 +525,15 @@ mod tests {
 
     #[test]
     fn usn_003_does_not_trigger_normal_sequence() {
+        let base = base_ts();
         let records = vec![
-            make_usn_record(
-                "a.txt",
-                100,
-                10,
-                UsnReasonFlags::FILE_CREATE,
-                BASE_FILETIME,
-                1000,
-            ),
+            make_usn_record("a.txt", 100, 10, UsnReason::FILE_CREATE, base, 1000),
             make_usn_record(
                 "b.txt",
                 200,
                 10,
-                UsnReasonFlags::FILE_CREATE,
-                BASE_FILETIME + ONE_SEC,
+                UsnReason::FILE_CREATE,
+                base + chrono::Duration::seconds(1),
                 1200,
             ),
         ];
@@ -569,15 +549,10 @@ mod tests {
     #[test]
     fn usn_004_detects_ghost_file() {
         let tree = make_tree();
+        let base = base_ts();
         // FRN 999 does not exist in tree — ghost file.
-        let records = vec![make_usn_record(
-            "deleted.exe",
-            999,
-            10,
-            UsnReasonFlags::FILE_DELETE,
-            BASE_FILETIME,
-            1000,
-        )];
+        let records =
+            vec![make_usn_record("deleted.exe", 999, 10, UsnReason::FILE_DELETE, base, 1000)];
         let index = check_usn_stream(&records, Some(&tree));
         // Should be attached to parent (FRN 10 -> Users dir).
         let parent_idx = *tree.entry_to_idx(10).unwrap();
@@ -590,14 +565,9 @@ mod tests {
     #[test]
     fn usn_004_does_not_trigger_for_existing_entries() {
         let tree = make_tree();
-        let records = vec![make_usn_record(
-            "report.docx",
-            100,
-            10,
-            UsnReasonFlags::FILE_CREATE,
-            BASE_FILETIME,
-            1000,
-        )];
+        let base = base_ts();
+        let records =
+            vec![make_usn_record("report.docx", 100, 10, UsnReason::FILE_CREATE, base, 1000)];
         let index = check_usn_stream(&records, Some(&tree));
         let has_004 = (0..3).any(|idx| {
             index
@@ -610,14 +580,9 @@ mod tests {
 
     #[test]
     fn usn_004_skipped_when_no_tree() {
-        let records = vec![make_usn_record(
-            "deleted.exe",
-            999,
-            10,
-            UsnReasonFlags::FILE_DELETE,
-            BASE_FILETIME,
-            1000,
-        )];
+        let base = base_ts();
+        let records =
+            vec![make_usn_record("deleted.exe", 999, 10, UsnReason::FILE_DELETE, base, 1000)];
         let index = check_usn_stream(&records, None);
         assert_eq!(index.flagged_count(), 0);
     }
@@ -627,14 +592,15 @@ mod tests {
     #[test]
     fn resolve_idx_masks_frn_to_48_bits() {
         let tree = make_tree();
+        let base = base_ts();
         // FRN 100 exists in tree. Add sequence number in upper bits.
         let frn_with_seq = 0x0003_0000_0000_0064; // entry 100, seq 3
         let records = vec![make_usn_record(
             "report.docx",
             frn_with_seq,
             10,
-            UsnReasonFlags::FILE_CREATE,
-            BASE_FILETIME,
+            UsnReason::FILE_CREATE,
+            base,
             1000,
         )];
         let index = check_usn_stream(&records, Some(&tree));
@@ -651,15 +617,10 @@ mod tests {
         );
     }
 
-    // --- RED: tests exercising usnjrnl_forensic::usn types (will pass after GREEN migration) ---
+    // --- GREEN: test for usnjrnl_forensic::usn::UsnRecord in check_usn_stream ---
 
     #[test]
-    fn usnjrnl_forensic_usn_record_can_be_used_in_check_usn_stream() {
-        // This test verifies that check_usn_stream works with usnjrnl_forensic::usn::UsnRecord.
-        // It will FAIL until the migration replaces UsnRecordV2 with UsnRecord.
-        use usnjrnl_forensic::usn::attributes::FileAttributes;
-        use usnjrnl_forensic::usn::{UsnReason, UsnRecord};
-
+    fn usnjrnl_forensic_usn_record_works_in_check_usn_stream() {
         let record = UsnRecord {
             mft_entry: 100,
             mft_sequence: 1,
@@ -674,13 +635,14 @@ mod tests {
             security_id: 0,
             major_version: 2,
         };
-        // check_usn_stream expects &[UsnRecord] after migration.
-        let _ = check_usn_stream(&[record], None);
+        let index = check_usn_stream(&[record], None);
+        assert_eq!(index.flagged_count(), 0);
     }
 
     #[test]
     fn usn_004_ghost_with_sequence_bits() {
         let tree = make_tree();
+        let base = base_ts();
         // FRN 999 does NOT exist in tree, even after masking.
         let frn_with_seq = 0x0005_0000_0000_03E7; // entry 999, seq 5
         let parent_with_seq = 0x0002_0000_0000_000A; // entry 10, seq 2
@@ -688,8 +650,8 @@ mod tests {
             "deleted.exe",
             frn_with_seq,
             parent_with_seq,
-            UsnReasonFlags::FILE_DELETE,
-            BASE_FILETIME,
+            UsnReason::FILE_DELETE,
+            base,
             1000,
         )];
         let index = check_usn_stream(&records, Some(&tree));

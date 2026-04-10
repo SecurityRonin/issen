@@ -10,7 +10,7 @@ use rt_mft_tree::tree::FileTree;
 use rt_parser_uac::parsers::bodyfile::BodyfileEntry;
 use rt_parser_uac::parsers::process::ProcessInfo;
 use rt_parser_uac::parsers::system::LoginRecord;
-use rt_parser_usnjrnl::UsnRecordV2;
+use usnjrnl_forensic::usn::UsnRecord;
 
 // ---------------------------------------------------------------------------
 // Core types
@@ -317,29 +317,25 @@ fn push_ntfs_timestamps(
     }
 }
 
-/// Windows FILETIME epoch offset: seconds between 1601-01-01 and 1970-01-01.
-const FILETIME_EPOCH_OFFSET: i64 = 11_644_473_600;
-
 /// Convert USN journal records into timeline events.
 ///
-/// Each record produces one event. The Windows FILETIME timestamp is converted
-/// to Unix epoch seconds.
+/// Each record produces one event. The `DateTime<Utc>` timestamp is converted
+/// directly to Unix epoch seconds.
 #[must_use]
-pub fn usn_to_events(records: &[UsnRecordV2]) -> Vec<TimelineEvent> {
+pub fn usn_to_events(records: &[UsnRecord]) -> Vec<TimelineEvent> {
     let mut events = Vec::with_capacity(records.len());
 
     for record in records {
-        // Convert Windows FILETIME (100ns ticks since 1601-01-01) to Unix epoch.
-        let unix_ts = record.timestamp / 10_000_000 - FILETIME_EPOCH_OFFSET;
-        let reason_desc = record.reason.describe();
+        let unix_ts = record.timestamp.timestamp();
+        let reason_desc = record.reason.to_string();
 
         events.push(TimelineEvent {
             timestamp: unix_ts,
             timestamp_type: TimestampType::UsnChange,
             source: TimelineSource::UsnJournal,
-            path: record.file_name.clone(),
+            path: record.filename.clone(),
             description: reason_desc,
-            extra: format!("0x{:08X}", record.reason.0),
+            extra: format!("0x{:08X}", record.reason.bits()),
         });
     }
 
@@ -615,23 +611,21 @@ mod tests {
 
     #[test]
     fn usn_to_events_single_record() {
-        use rt_parser_usnjrnl::UsnReasonFlags;
+        use usnjrnl_forensic::usn::{FileAttributes, UsnReason};
 
-        let record = UsnRecordV2 {
-            record_length: 80,
-            major_version: 2,
-            minor_version: 0,
-            file_reference_number: 12345,
-            parent_file_reference_number: 5,
+        let record = UsnRecord {
+            mft_entry: 12345,
+            mft_sequence: 1,
+            parent_mft_entry: 5,
+            parent_mft_sequence: 1,
             usn: 0,
-            // 2024-01-15 00:00:00 UTC in FILETIME (100ns ticks since 1601-01-01)
-            // Unix = 1705276800, FILETIME = (1705276800 + 11644473600) * 10_000_000
-            timestamp: (1_705_276_800 + FILETIME_EPOCH_OFFSET) * 10_000_000,
-            reason: UsnReasonFlags(UsnReasonFlags::FILE_CREATE),
+            timestamp: chrono::DateTime::from_timestamp(1_705_276_800, 0).unwrap(),
+            reason: UsnReason::FILE_CREATE,
+            filename: "test.txt".into(),
+            file_attributes: FileAttributes::empty(),
             source_info: 0,
             security_id: 0,
-            file_attributes: 0,
-            file_name: "test.txt".into(),
+            major_version: 2,
         };
 
         let events = usn_to_events(&[record]);
@@ -640,36 +634,6 @@ mod tests {
         assert_eq!(events[0].timestamp_type, TimestampType::UsnChange);
         assert_eq!(events[0].source, TimelineSource::UsnJournal);
         assert_eq!(events[0].path, "test.txt");
-    }
-
-    // --- RED: test exercising usnjrnl_forensic::usn::UsnRecord in usn_to_events ---
-
-    #[test]
-    fn usn_to_events_with_usnjrnl_forensic_record() {
-        // Will FAIL until migration replaces UsnRecordV2 with UsnRecord.
-        use usnjrnl_forensic::usn::attributes::FileAttributes;
-        use usnjrnl_forensic::usn::{UsnReason, UsnRecord};
-
-        let record = UsnRecord {
-            mft_entry: 12345,
-            mft_sequence: 1,
-            parent_mft_entry: 5,
-            parent_mft_sequence: 1,
-            usn: 0,
-            // 2024-01-15 00:00:00 UTC
-            timestamp: chrono::DateTime::from_timestamp(1_705_276_800, 0).unwrap(),
-            reason: UsnReason::FILE_CREATE,
-            filename: "migrate_test.txt".to_string(),
-            file_attributes: FileAttributes::empty(),
-            source_info: 0,
-            security_id: 0,
-            major_version: 2,
-        };
-        let events = usn_to_events(&[record]);
-        assert_eq!(events.len(), 1);
-        assert_eq!(events[0].timestamp, 1_705_276_800);
-        assert_eq!(events[0].path, "migrate_test.txt");
-        assert_eq!(events[0].timestamp_type, TimestampType::UsnChange);
     }
 
     #[test]

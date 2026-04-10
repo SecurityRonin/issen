@@ -197,7 +197,7 @@ fn resolve_sources(cli: &Cli) -> Result<ArtifactSources> {
 fn enrich_with_usnjrnl(
     tree: &mut FileTree,
     path: &std::path::Path,
-) -> Vec<rt_parser_usnjrnl::UsnRecordV2> {
+) -> Vec<usnjrnl_forensic::usn::UsnRecord> {
     eprintln!("  Enriching with USN journal from {} ...", path.display());
     let data = match std::fs::read(path) {
         Ok(d) => d,
@@ -210,13 +210,31 @@ fn enrich_with_usnjrnl(
     let mut records = Vec::new();
     let mut offset = 0;
     while offset < data.len() {
-        if let Some(rec) = rt_parser_usnjrnl::UsnRecordV2::parse(&data[offset..]) {
-            let len = rec.record_length as usize;
-            records.push(rec);
-            offset += len;
-        } else {
-            // Skip forward to find next record (aligned to 8 bytes).
+        // Skip zero-filled padding regions.
+        if data[offset] == 0 {
             offset += 8;
+            continue;
+        }
+        match usnjrnl_forensic::usn::parse_usn_record_v2(&data[offset..]) {
+            Ok(rec) => {
+                // Record length is the first 4 bytes of the raw record.
+                let len = if data.len() >= offset + 4 {
+                    u32::from_le_bytes([
+                        data[offset],
+                        data[offset + 1],
+                        data[offset + 2],
+                        data[offset + 3],
+                    ]) as usize
+                } else {
+                    8
+                };
+                records.push(rec);
+                offset += len.max(8);
+            }
+            Err(_) => {
+                // Skip forward to find next record (aligned to 8 bytes).
+                offset += 8;
+            }
         }
     }
 
@@ -227,8 +245,8 @@ fn enrich_with_usnjrnl(
         .iter()
         .map(|r| {
             (
-                r.file_reference_number & 0x0000_FFFF_FFFF_FFFF,
-                r.file_name.clone(),
+                r.mft_entry & 0x0000_FFFF_FFFF_FFFF,
+                r.filename.clone(),
             )
         })
         .collect();
