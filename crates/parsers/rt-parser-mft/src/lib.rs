@@ -30,7 +30,22 @@ pub struct MftFileParser;
 /// `116_444_736_000_000_000`).
 #[must_use]
 pub fn filetime_to_ns(filetime: u64) -> Option<i64> {
-    todo!("implement filetime_to_ns")
+    /// 100-nanosecond ticks between 1601-01-01 (Windows epoch) and
+    /// 1970-01-01 (Unix epoch).
+    const FILETIME_EPOCH_OFFSET: u64 = 116_444_736_000_000_000;
+
+    if filetime == 0 {
+        return None;
+    }
+    // Reject FILETIMEs that predate the Unix epoch.
+    let ticks_since_unix = filetime.checked_sub(FILETIME_EPOCH_OFFSET)?;
+    // Each tick is 100 ns; convert to nanoseconds.
+    // Use i128 to avoid overflow before casting to i64.
+    let ns = i128::from(ticks_since_unix) * 100;
+    // Clamp to i64 range — any realistic forensic timestamp fits easily.
+    #[allow(clippy::cast_possible_truncation)]
+    let result = ns.clamp(i128::from(i64::MIN), i128::from(i64::MAX)) as i64;
+    Some(result)
 }
 
 /// Convert a `chrono::DateTime<Utc>` to nanoseconds since the Unix epoch.
