@@ -32,7 +32,7 @@ authors = ["RapidTriage Contributors"]
 
 [workspace.dependencies]
 # Internal crates (path dependencies)
-forensic-indicators = { path = "../forensic-indicators" }
+forensic-catalog = { path = "../forensic-catalog" }
 rt-core       = { path = "crates/rt-core" }
 rt-fswalker   = { path = "crates/rt-fswalker" }
 rt-plugin-sdk = { path = "crates/rt-plugin-sdk" }
