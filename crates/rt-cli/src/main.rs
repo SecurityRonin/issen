@@ -26,6 +26,13 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
+    /// Rapid triage of a UAC or supported collection — rootkits, hidden processes, network.
+    Analyse {
+        /// Path to the collection file (UAC .tar.gz, zip, etc.).
+        #[arg(value_name = "COLLECTION_PATH")]
+        collection_path: PathBuf,
+    },
+
     /// Ingest evidence and parse artifacts into a timeline.
     Ingest {
         /// Path to evidence directory or file.
@@ -261,6 +268,7 @@ fn main() -> ExitCode {
         .init();
 
     let result = match cli.command {
+        Commands::Analyse { collection_path } => commands::analyse::run(&collection_path),
         Commands::Ingest {
             evidence_path,
             output,

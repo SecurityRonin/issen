@@ -10,7 +10,10 @@
 /// Invalid or blank lines are silently skipped.
 #[must_use]
 pub fn parse_hidden_pids(content: &str) -> Vec<u32> {
-    todo!("parse_hidden_pids not yet implemented")
+    content
+        .lines()
+        .filter_map(|line| line.trim().parse::<u32>().ok())
+        .collect()
 }
 
 /// Read and parse `live_response/process/hidden_pids_for_ps_command.txt`
@@ -19,7 +22,10 @@ pub fn parse_hidden_pids(content: &str) -> Vec<u32> {
 /// Returns an empty vec if the file is absent (collection predates the check).
 #[must_use]
 pub fn read_hidden_pids(root: &std::path::Path) -> Vec<u32> {
-    todo!("read_hidden_pids not yet implemented")
+    let path = root.join("live_response/process/hidden_pids_for_ps_command.txt");
+    std::fs::read_to_string(path)
+        .map(|c| parse_hidden_pids(&c))
+        .unwrap_or_default()
 }
 
 #[cfg(test)]

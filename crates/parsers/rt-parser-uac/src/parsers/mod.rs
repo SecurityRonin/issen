@@ -54,7 +54,52 @@ pub struct HiddenProcessAnalysis {
 /// is almost certainly XMRig).
 #[must_use]
 pub fn analyze_hidden_processes(root: &Path) -> HiddenProcessAnalysis {
-    todo!("analyze_hidden_processes not yet implemented")
+    let hidden_pids = hidden_pids::read_hidden_pids(root);
+    if hidden_pids.is_empty() {
+        return HiddenProcessAnalysis::default();
+    }
+
+    let sockstat = mem_sockstat::read_mem_sockstat(root);
+
+    let findings = hidden_pids
+        .iter()
+        .map(|&pid| {
+            let pid_entries: Vec<SockstatEntry> = sockstat
+                .iter()
+                .filter(|e| e.pid == pid)
+                .cloned()
+                .collect();
+
+            // Primary process name: the main thread (TID == PID), or any entry.
+            let process_name = pid_entries
+                .iter()
+                .find(|e| e.tid == pid)
+                .or_else(|| pid_entries.first())
+                .map(|e| e.process_name.clone());
+
+            // Collect distinct thread names (names from entries where TID != PID).
+            let mut thread_names: Vec<String> = pid_entries
+                .iter()
+                .filter(|e| e.tid != pid)
+                .map(|e| e.process_name.clone())
+                .collect::<std::collections::HashSet<_>>()
+                .into_iter()
+                .collect();
+            thread_names.sort();
+
+            HiddenProcessFinding {
+                pid,
+                process_name,
+                thread_names,
+                connections: pid_entries,
+            }
+        })
+        .collect();
+
+    HiddenProcessAnalysis {
+        hidden_pids,
+        findings,
+    }
 }
 
 /// Aggregated results from parsing all UAC categories.
@@ -153,6 +198,9 @@ pub fn parse_all_categories(extracted_root: &Path) -> UacParseResult {
         let configs = configs::collect_configs(&sys_dir);
         result.config_files = configs.len();
     }
+
+    // Hidden process analysis
+    result.hidden_process_analysis = analyze_hidden_processes(extracted_root);
 
     result
 }

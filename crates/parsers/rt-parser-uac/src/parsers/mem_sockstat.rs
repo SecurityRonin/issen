@@ -36,7 +36,62 @@ pub struct SockstatEntry {
 /// Skips the header row and any lines that cannot be parsed.
 #[must_use]
 pub fn parse_mem_sockstat(content: &str) -> Vec<SockstatEntry> {
-    todo!("parse_mem_sockstat not yet implemented")
+    // Column indices in the TSV:
+    // 0=NetNS 1=ProcessName 2=PID 3=TID 4=FD 5=SockOffset
+    // 6=Family 7=Type 8=Proto 9=SrcAddr 10=SrcPort 11=DstAddr 12=DstPort 13=State 14=Filter
+    let mut entries = Vec::new();
+    let mut lines = content.lines();
+
+    // Skip header row (contains "Process Name" or similar).
+    let Some(first) = lines.next() else {
+        return entries;
+    };
+    // If first line looks like the header, skip it; otherwise try to parse it.
+    if first.contains("Process Name") || first.contains("PID") {
+        // It's the header — already consumed, continue with data.
+    } else {
+        // No header — attempt to parse the first line as data.
+        if let Some(entry) = parse_sockstat_line(first) {
+            entries.push(entry);
+        }
+    }
+
+    for line in lines {
+        if let Some(entry) = parse_sockstat_line(line) {
+            entries.push(entry);
+        }
+    }
+    entries
+}
+
+fn parse_sockstat_line(line: &str) -> Option<SockstatEntry> {
+    let cols: Vec<&str> = line.split('\t').collect();
+    if cols.len() < 14 {
+        return None;
+    }
+    let process_name = cols[1].to_string();
+    let pid = cols[2].parse::<u32>().ok()?;
+    let tid = cols[3].parse::<u32>().ok()?;
+    let family = cols[6].to_string();
+    let proto = cols[8].to_string();
+    let src_addr = cols[9].to_string();
+    let src_port = cols[10].parse::<u16>().ok();
+    let dst_addr = cols[11].to_string();
+    let dst_port = cols[12].parse::<u16>().ok();
+    let state = cols[13].to_string();
+
+    Some(SockstatEntry {
+        process_name,
+        pid,
+        tid,
+        family,
+        proto,
+        src_addr,
+        src_port,
+        dst_addr,
+        dst_port,
+        state,
+    })
 }
 
 /// Read and parse `memory_dump/output-sockstat` from a UAC collection root.
@@ -44,7 +99,10 @@ pub fn parse_mem_sockstat(content: &str) -> Vec<SockstatEntry> {
 /// Returns an empty vec if the file is absent.
 #[must_use]
 pub fn read_mem_sockstat(root: &std::path::Path) -> Vec<SockstatEntry> {
-    todo!("read_mem_sockstat not yet implemented")
+    let path = root.join("memory_dump/output-sockstat");
+    std::fs::read_to_string(path)
+        .map(|c| parse_mem_sockstat(&c))
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
