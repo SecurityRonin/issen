@@ -1,0 +1,16 @@
+id: correlation.miner.rootkit-concealment
+title: Rootkit concealed miner activity
+severity: critical
+description: Correlates rootkit evidence, hidden process visibility mismatch, and mining-pool activity.
+within_seconds: 900
+references:
+  - https://www.elastic.co/security-labs/elastic-security-labs-steps-through-the-r77-rootkit
+  - https://www.elastic.co/es/security-labs/linux-rootkits-2-caught-in-the-act
+  - https://unit42.paloaltonetworks.com/hildegard-malware-teamtnt/
+clauses:
+  - source: artifact
+    required_tag: rootkit_indicator
+  - source: memory
+    required_tag: miner_thread
+  - source: memory
+    required_tag: mining_pool

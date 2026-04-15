@@ -148,21 +148,52 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
 
     // ── 5. CPU anomaly ────────────────────────────────────────────────────
     let top_path = root.join("live_response/process/top_-b_-n1.txt");
-    if let Ok(top_content) = std::fs::read_to_string(&top_path) {
+    let cpu_user_pct: Option<f32> = std::fs::read_to_string(&top_path).ok().and_then(|c| {
+        c.lines()
+            .find(|l| l.contains("%Cpu") || l.contains("Cpu(s)"))
+            .and_then(|line| {
+                // "%Cpu(s): 97.7 us,  2.3 sy, ..."  or  "%Cpu(s):  97.7 us, ..."
+                line.split_once(':')
+                    .and_then(|(_, rest)| rest.trim().split(',').next())
+                    .and_then(|tok| tok.trim().split_whitespace().next())
+                    .and_then(|n| n.parse::<f32>().ok())
+            })
+    });
+    if let Some(pct) = cpu_user_pct {
+        let top_content = std::fs::read_to_string(&top_path).unwrap_or_default();
         if let Some(cpu_line) = top_content
             .lines()
             .find(|l| l.contains("%Cpu") || l.contains("Cpu(s)"))
         {
             println!("┌─ CPU ───────────────────────────────────────────────────");
             println!("│  {}", cpu_line.trim());
-            if cpu_line.contains("97.") || cpu_line.contains("98.") || cpu_line.contains("99.") {
+            if pct >= 90.0 {
                 println!("│  ^ WARNING: Near-100% CPU with no visible process — miner likely hidden by rootkit.");
             }
             println!();
         }
     }
 
-    // ── 6. Attack narrative ───────────────────────────────────────────────
+    // ── 6. Pivot rule findings ─────────────────────────────────────────────
+    match super::pivot::evaluate_pivot(&rootkit_findings, &hidden, &net_conns, cpu_user_pct) {
+        Ok(findings) if !findings.is_empty() => {
+            println!("┌─ PIVOT FINDINGS ────────────────────────────────────────");
+            for f in &findings {
+                let severity_label = f.severity.to_uppercase();
+                println!("│  [{severity_label}] {}", f.title);
+                println!("│         Rule     : {}", f.rule_id);
+                println!("│         Evidence : {}", f.evidence_ids.join(", "));
+                println!("│");
+            }
+            println!();
+        }
+        Ok(_) => {}
+        Err(e) => {
+            tracing::warn!("Pivot rule evaluation failed: {e}");
+        }
+    }
+
+    // ── 7. Attack narrative ───────────────────────────────────────────────
     println!("┌─ NARRATIVE ─────────────────────────────────────────────");
     build_narrative(&hidden, &rootkit_findings, &established);
     println!();
