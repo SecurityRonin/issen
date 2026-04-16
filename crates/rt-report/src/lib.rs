@@ -8,6 +8,14 @@
 use std::fmt::Write as FmtWrite;
 use std::path::Path;
 
+pub mod mermaid;
+
+pub use mermaid::{
+    render_attack_chain, render_defenses,
+    AttackChainInput, AttackChainNode, AttackChainEdge, AttackTactic,
+    DefenseInput, DefenseItem, DefenseCategory,
+};
+
 use chrono::Utc;
 
 // ---------------------------------------------------------------------------
