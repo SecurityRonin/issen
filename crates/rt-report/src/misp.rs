@@ -1,4 +1,4 @@
-//! MISP event builder and push utilities for RapidTriage.
+//! MISP event builder and push utilities for `RapidTriage`.
 //!
 //! Provides types to construct a MISP event from forensic findings and
 //! (behind the `remote` feature) push it to a MISP instance via the REST API.
@@ -54,8 +54,26 @@ pub struct MispEventId(pub u64);
 /// `"External analysis"` category.  The resulting event defaults to
 /// `distribution = 0` (org-only), `threat_level_id = 2` (medium), and
 /// `analysis = 0` (initial).
+#[must_use]
 pub fn build_misp_event(title: &str, findings: &[String]) -> MispEvent {
-    todo!("implement build_misp_event")
+    let attributes = findings
+        .iter()
+        .map(|f| MispAttribute {
+            r#type: "text".to_string(),
+            category: "External analysis".to_string(),
+            value: f.clone(),
+            comment: String::new(),
+            to_ids: false,
+        })
+        .collect();
+
+    MispEvent {
+        info: title.to_string(),
+        distribution: 0,
+        threat_level_id: 2,
+        analysis: 0,
+        attributes,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -78,7 +96,38 @@ pub fn push_to_misp(
     base_url: &str,
     misp_key: &str,
 ) -> anyhow::Result<MispEventId> {
-    todo!("implement push_to_misp")
+    #[derive(Deserialize)]
+    struct EventWrapper {
+        #[serde(rename = "Event")]
+        inner: EventIdField,
+    }
+    #[derive(Deserialize)]
+    struct EventIdField {
+        id: serde_json::Value,
+    }
+
+    let url = format!("{base_url}/events");
+    let body = serde_json::to_string(event)?;
+    let client = reqwest::blocking::Client::new();
+    let resp = client
+        .post(&url)
+        .header("Authorization", misp_key)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .body(body)
+        .send()?;
+
+    let text = resp.text()?;
+    let wrapper: EventWrapper = serde_json::from_str(&text)?;
+    // MISP returns the id as a JSON string ("42"), so parse from either string or number.
+    let id: u64 = match &wrapper.inner.id {
+        serde_json::Value::String(s) => s.parse()?,
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("MISP event id is not a valid u64"))?,
+        other => anyhow::bail!("unexpected MISP event id type: {other}"),
+    };
+    Ok(MispEventId(id))
 }
 
 // ---------------------------------------------------------------------------
