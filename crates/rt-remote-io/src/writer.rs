@@ -14,18 +14,43 @@ pub struct RemoteWriter {
 impl RemoteWriter {
     /// Create a new writer that will write to `path` within `op`.
     pub fn new(op: Operator, path: impl Into<String>) -> Self {
-        todo!("implement RemoteWriter::new")
+        Self {
+            op,
+            path: path.into(),
+            buf: Vec::new(),
+            finished: false,
+        }
     }
 
     /// Flush the internal buffer to the remote backend.
+    ///
+    /// # Errors
+    /// Returns an error if the write to the backend fails.
     pub fn finish(&mut self) -> Result<()> {
-        todo!("implement RemoteWriter::finish")
+        if self.finished {
+            return Ok(());
+        }
+        let bytes = std::mem::take(&mut self.buf);
+        let op = self.op.clone();
+        let path = self.path.clone();
+
+        // Drive the async write to completion.  We use a fresh single-threaded
+        // runtime so this works from any calling context (blocking, async
+        // current-thread, or async multi-thread) without `block_in_place`.
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        rt.block_on(op.write(&path, bytes))?;
+
+        self.finished = true;
+        Ok(())
     }
 }
 
 impl io::Write for RemoteWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        todo!("implement RemoteWriter::write")
+        self.buf.extend_from_slice(buf);
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> io::Result<()> {
@@ -35,7 +60,10 @@ impl io::Write for RemoteWriter {
 
 impl Drop for RemoteWriter {
     fn drop(&mut self) {
-        todo!("implement RemoteWriter::drop")
+        if !self.finished {
+            // Best-effort flush on drop; ignore errors.
+            let _ = self.finish();
+        }
     }
 }
 

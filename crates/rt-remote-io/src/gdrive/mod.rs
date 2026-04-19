@@ -1,3 +1,5 @@
+pub mod auth;
+
 /// Parse a Google Drive file ID from various input formats:
 /// - `gdrive://<id>`
 /// - `https://drive.google.com/file/d/<id>/view`
@@ -6,7 +8,39 @@
 ///
 /// Returns `None` for empty strings, unrecognised URLs, or bare IDs containing slashes.
 pub fn parse_file_id(input: &str) -> Option<String> {
-    todo!("implement parse_file_id")
+    if input.is_empty() {
+        return None;
+    }
+
+    // gdrive://<id>
+    if let Some(id) = input.strip_prefix("gdrive://") {
+        return Some(id.to_string());
+    }
+
+    // https://drive.google.com/file/d/<id>/...
+    if let Some(rest) = input.strip_prefix("https://drive.google.com/file/d/") {
+        let id = rest.split('/').next()?;
+        return Some(id.to_string());
+    }
+
+    // https://drive.google.com/open?id=<id>
+    if let Some(rest) = input.strip_prefix("https://drive.google.com/open?id=") {
+        // id may have further query params after &
+        let id = rest.split('&').next()?;
+        return Some(id.to_string());
+    }
+
+    // Any other URL with a scheme — reject
+    if input.contains("://") {
+        return None;
+    }
+
+    // Bare ID — must not contain slashes
+    if input.contains('/') {
+        return None;
+    }
+
+    Some(input.to_string())
 }
 
 #[cfg(test)]

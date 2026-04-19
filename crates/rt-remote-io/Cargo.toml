@@ -7,10 +7,13 @@ license.workspace = true
 
 [features]
 default = []
-remote = ["dep:opendal", "dep:tokio"]
+remote = ["dep:opendal", "dep:tokio", "dep:reqwest"]
 
 [dependencies]
-anyhow = { workspace = true }
+anyhow      = { workspace = true }
+serde       = { workspace = true, features = ["derive"] }
+serde_json  = { workspace = true }
+reqwest     = { workspace = true, optional = true }
 opendal = { version = "0.55.0", optional = true, features = [
     "services-s3",
     "services-gcs",
@@ -24,7 +27,8 @@ opendal = { version = "0.55.0", optional = true, features = [
 tokio = { workspace = true, optional = true }
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tokio    = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tempfile = { workspace = true }
 
 [lints]
 workspace = true

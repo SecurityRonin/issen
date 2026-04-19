@@ -1,5 +1,5 @@
 use anyhow::Result;
-use opendal::{EntryMode, Operator, blocking, options};
+use opendal::{EntryMode, Operator, options};
 use std::io;
 
 /// List all non-directory entries under `prefix` in `op`.
@@ -7,14 +7,36 @@ use std::io;
 /// For each entry, writes a tab-separated line `"<path>\t<size_in_bytes>\n"` to `out`.
 /// Returns the total count of files written.
 ///
+/// Creates a temporary single-threaded Tokio runtime so this works from any context.
+///
 /// # Errors
-/// Returns an error if listing or reading metadata fails.
+/// Returns an error if listing fails or writing to `out` fails.
 pub fn walk_remote_prefix(
     op: &Operator,
     prefix: &str,
     out: &mut dyn io::Write,
 ) -> Result<usize> {
-    todo!("implement walk_remote_prefix")
+    let list_opts = options::ListOptions {
+        recursive: true,
+        ..Default::default()
+    };
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    let entries = rt.block_on(op.list_options(prefix, list_opts))?;
+
+    let mut count = 0usize;
+    for entry in entries {
+        let meta = entry.metadata();
+        if meta.mode() == EntryMode::DIR {
+            continue;
+        }
+        let size = meta.content_length();
+        writeln!(out, "{}\t{size}", entry.path())?;
+        count += 1;
+    }
+    Ok(count)
 }
 
 #[cfg(test)]

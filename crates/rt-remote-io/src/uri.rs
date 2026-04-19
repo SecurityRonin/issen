@@ -1,6 +1,6 @@
 /// Returns true if the string looks like a remote URI (has a recognised scheme).
 pub fn is_remote_uri(s: &str) -> bool {
-    todo!("implement is_remote_uri")
+    UriScheme::detect(s).is_some()
 }
 
 /// All URI schemes that rt-remote-io recognises.
@@ -22,7 +22,25 @@ pub enum UriScheme {
 impl UriScheme {
     /// Detect the scheme from a URI string. Returns None for unrecognised schemes.
     pub fn detect(uri: &str) -> Option<Self> {
-        todo!("implement UriScheme::detect")
+        let scheme = uri.split("://").next()?;
+        if scheme == uri {
+            // No "://" found.
+            return None;
+        }
+        match scheme {
+            "s3" => Some(Self::S3),
+            "gcs" => Some(Self::Gcs),
+            "azblob" => Some(Self::AzBlob),
+            "gdrive" => Some(Self::GDrive),
+            "sftp" => Some(Self::Sftp),
+            "webdav" => Some(Self::WebDav),
+            "hdfs" => Some(Self::Hdfs),
+            "http" => Some(Self::Http),
+            "https" => Some(Self::Https),
+            "mem" => Some(Self::Mem),
+            "file" => Some(Self::File),
+            _ => None,
+        }
     }
 }
 
