@@ -16,12 +16,43 @@ use crate::gdrive::auth::GDriveAuthMode;
 /// Returns the total number of bytes written to `sink`.
 #[cfg(feature = "remote")]
 pub fn download_gdrive_file(
-    _file_id: &str,
-    _auth: &GDriveAuthMode,
-    _sink: &mut dyn std::io::Write,
-    _base_url_override: Option<&str>,
+    file_id: &str,
+    auth: &GDriveAuthMode,
+    sink: &mut dyn std::io::Write,
+    base_url_override: Option<&str>,
 ) -> anyhow::Result<u64> {
-    anyhow::bail!("not implemented")
+    let client = reqwest::blocking::Client::new();
+
+    let request = match auth {
+        GDriveAuthMode::Public => {
+            let base = base_url_override.unwrap_or("https://drive.usercontent.google.com");
+            let url = format!(
+                "{base}/download?id={file_id}&export=download&confirm=t"
+            );
+            client.get(&url)
+        }
+        GDriveAuthMode::UserOAuth { access_token } => {
+            let base = base_url_override.unwrap_or("https://www.googleapis.com");
+            let url = format!("{base}/drive/v3/files/{file_id}?alt=media");
+            client.get(&url).header("Authorization", format!("Bearer {access_token}"))
+        }
+        GDriveAuthMode::ServiceAccount { .. } => {
+            anyhow::bail!("service account not yet implemented");
+        }
+    };
+
+    let mut response = request.send().map_err(|e| anyhow::anyhow!("request failed: {e}"))?;
+
+    if !response.status().is_success() {
+        anyhow::bail!(
+            "server returned {}: {}",
+            response.status(),
+            response.text().unwrap_or_default()
+        );
+    }
+
+    let bytes = response.copy_to(sink)?;
+    Ok(bytes)
 }
 
 #[cfg(all(test, feature = "remote"))]
