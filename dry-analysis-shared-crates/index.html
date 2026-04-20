@@ -1,0 +1,989 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://securityronin.github.io/rapidtriage/dry-analysis-shared-crates/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>DRY Analysis: Shared Code Between RapidTriage and memory-forensic - RapidTriage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dry-analysis-shared-code-between-rapidtriage-and-memory-forensic" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="RapidTriage" class="md-header__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            RapidTriage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DRY Analysis: Shared Code Between RapidTriage and memory-forensic
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../privacy/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Privacy Policy
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../terms/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Terms of Service
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="RapidTriage" class="md-nav__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    RapidTriage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terms of Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency Direction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#category-a-concrete-duplications-extract-immediately" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Category A: Concrete Duplications — Extract Immediately
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Category A: Concrete Duplications — Extract Immediately">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a1-suspicious-port-list-high-severity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A1. Suspicious Port List (HIGH severity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2-trusted-system-library-path-predicates-high-severity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2. Trusted System Library Path Predicates (HIGH severity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a3-crontabentry-struct-high-severity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A3. CrontabEntry Struct (HIGH severity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a4-reverse-shell-command-patterns-moderate-severity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A4. Reverse Shell Command Patterns (MODERATE severity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#category-b-same-concept-different-implementation-share-interface-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Category B: Same Concept, Different Implementation — Share Interface Only
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Category B: Same Concept, Different Implementation — Share Interface Only">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#b1-yara-scanner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B1. YARA Scanner
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b2-severity-enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B2. Severity Enums
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b3-networkconnection-socket-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B3. NetworkConnection / Socket Models
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#category-c-architecturally-distinct-do-not-share" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Category C: Architecturally Distinct — Do Not Share
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Category C: Architecturally Distinct — Do Not Share">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#c1-timeline-and-correlation-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C1. Timeline and Correlation Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c2-ioc-feed-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C2. IOC Feed Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c3-walker-implementation-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C3. Walker Implementation Code
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proposed-crate-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proposed Crate Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Proposed Crate Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#migration-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Checklist
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-not-to-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Not to Extract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risk-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Assessment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dry-analysis-shared-code-between-rapidtriage-and-memory-forensic">DRY Analysis: Shared Code Between RapidTriage and memory-forensic<a class="headerlink" href="#dry-analysis-shared-code-between-rapidtriage-and-memory-forensic" title="Permanent link">&para;</a></h1>
+<p><strong>Date:</strong> 2026-04-10<br />
+<strong>Scope:</strong> <code>~/src/RapidTriage</code> and <code>~/src/memory-forensic</code><br />
+<strong>Method:</strong> Static analysis of parsers, carvers, scanners, alert heuristics, and walker classifiers across both workspaces</p>
+<hr />
+<h2 id="executive-summary">Executive Summary<a class="headerlink" href="#executive-summary" title="Permanent link">&para;</a></h2>
+<p>Both repositories implement forensic analysis functionality that, in several cases, embeds identical or near-identical constants, predicates, and data structures. The duplication is not cosmetic — it means that an update to (say) a suspicious port list must be made in two places, and divergence between them is already visible. However, not all apparent similarity represents true duplication: the two repos operate at different layers of the forensic stack, and unifying logic that looks similar but serves different purposes would create wrong abstractions.</p>
+<p><strong>Bottom line:</strong> Create two small, dependency-free crates in the <code>memory-forensic</code> workspace — <code>forensic-patterns</code> and <code>forensic-types</code> — and migrate the four concrete duplications identified below. Do not merge walkers, YARA engines, severity enums, network connection models, timeline logic, or IOC management.</p>
+<hr />
+<h2 id="dependency-direction">Dependency Direction<a class="headerlink" href="#dependency-direction" title="Permanent link">&para;</a></h2>
+<p>RapidTriage already depends on <code>memory-forensic</code> crates (e.g. <code>memf-core</code>, <code>memf-format</code>, <code>memf-linux</code>, <code>memf-windows</code>). Any shared crate must live in the <code>memory-forensic</code> workspace. Placing it in <code>RapidTriage</code> would create a circular dependency: <code>memory-forensic → RapidTriage → memory-forensic</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>memory-forensic workspace
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  ├── memf-core
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  ├── memf-linux
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  ├── memf-windows
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  ├── forensic-patterns    ← NEW (no deps except std)
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  └── forensic-types       ← NEW (deps: serde only)
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>RapidTriage workspace
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  ├── rt-parser-uac        ← adds forensic-patterns, forensic-types as deps
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  ├── rt-navigator         ← adds forensic-patterns as dep
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  └── rt-mem               (no change needed)
+</code></pre></div>
+<hr />
+<h2 id="category-a-concrete-duplications-extract-immediately">Category A: Concrete Duplications — Extract Immediately<a class="headerlink" href="#category-a-concrete-duplications-extract-immediately" title="Permanent link">&para;</a></h2>
+<h3 id="a1-suspicious-port-list-high-severity">A1. Suspicious Port List (HIGH severity)<a class="headerlink" href="#a1-suspicious-port-list-high-severity" title="Permanent link">&para;</a></h3>
+<p><strong>RapidTriage</strong> — <code>crates/rt-navigator/src/investigation/alerts/types.rs</code><br />
+Defines <code>SUSPICIOUS_PORTS: &amp;[u16]</code> with ~30 entries: 4444, 50050, 31337, 1337, 8888, 9999, 4445, and others widely associated with C2 frameworks (Metasploit, Cobalt Strike, Empire).</p>
+<p><strong>memory-forensic</strong> — Inline in multiple walker classifiers across <code>memf-linux/</code> and <code>memf-windows/</code><br />
+The same port numbers appear hardcoded in <code>if port == 4444 || port == 50050 …</code> guards scattered across at least four walker files.</p>
+<p><strong>Impact of divergence:</strong> If a new C2 port is added to the alert heuristic in <code>rt-navigator</code> but not to the walker classifier in <code>memf-linux</code>, the memory walker will miss it even though the higher-level triage layer would catch it — a false negative at the forensic evidence layer.</p>
+<p><strong>Resolution:</strong> Extract to <code>forensic-patterns::ports</code>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">SUSPICIOUS_PORTS</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="kt">u16</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="p">[</span><span class="mi">4444</span><span class="p">,</span><span class="w"> </span><span class="mi">50050</span><span class="p">,</span><span class="w"> </span><span class="mi">31337</span><span class="p">,</span><span class="w"> </span><span class="mi">1337</span><span class="p">,</span><span class="w"> </span><span class="mi">8888</span><span class="p">,</span><span class="w"> </span><span class="mi">9999</span><span class="p">,</span><span class="w"> </span><span class="mi">4445</span><span class="p">,</span><span class="w"> </span><span class="err">…</span><span class="p">];</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">is_suspicious_port</span><span class="p">(</span><span class="n">port</span><span class="p">:</span><span class="w"> </span><span class="kt">u16</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="n">SUSPICIOUS_PORTS</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="o">&amp;</span><span class="n">port</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="a2-trusted-system-library-path-predicates-high-severity">A2. Trusted System Library Path Predicates (HIGH severity)<a class="headerlink" href="#a2-trusted-system-library-path-predicates-high-severity" title="Permanent link">&para;</a></h3>
+<p><strong>RapidTriage</strong><br />
+- <code>crates/rt-parser-uac/src/parsers/rootkit.rs</code>: <code>is_trusted_system_lib_path(path: &amp;str) -&gt; bool</code> — checks <code>System32</code>, <code>SysWOW64</code>, <code>WinSxS</code> prefixes<br />
+- <code>crates/rt-navigator/src/investigation/alerts/filesystem.rs</code>: a second, slightly different implementation of the same predicate</p>
+<p><strong>memory-forensic</strong><br />
+At least five separate inline implementations in:
+- <code>memf-linux/src/pam_hooks.rs</code>
+- <code>memf-linux/src/ld_preload.rs</code>
+- <code>memf-linux/src/systemd_units.rs</code>
+- <code>memf-linux/src/container_escape.rs</code>
+- <code>memf-windows/</code> (PE validation walkers)</p>
+<p>Each implementation differs slightly in which paths it considers trusted, introducing inconsistency: a library loaded from a path that one implementation considers trusted may be flagged by another.</p>
+<p><strong>Resolution:</strong> Extract to <code>forensic-patterns::paths</code>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">is_trusted_system_lib_path</span><span class="p">(</span><span class="n">path</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">…</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">is_suspicious_temp_path</span><span class="p">(</span><span class="n">path</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">…</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+The Linux and Windows predicates have different sets of trusted directories and should remain as <code>is_trusted_linux_lib_path</code> and <code>is_trusted_windows_lib_path</code> respectively — do not collapse them into one function with OS flags.</p>
+<hr />
+<h3 id="a3-crontabentry-struct-high-severity">A3. CrontabEntry Struct (HIGH severity)<a class="headerlink" href="#a3-crontabentry-struct-high-severity" title="Permanent link">&para;</a></h3>
+<p><strong>RapidTriage</strong> — <code>crates/rt-parser-uac/src/parsers/process.rs</code><br />
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">CrontabEntry</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">pub</span><span class="w"> </span><span class="n">schedule</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="k">pub</span><span class="w"> </span><span class="n">command</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="k">pub</span><span class="w"> </span><span class="n">user</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>memory-forensic</strong> — <code>crates/memf-linux/src/crontab.rs</code><br />
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">CrontabEntry</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">pub</span><span class="w"> </span><span class="n">schedule</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="k">pub</span><span class="w"> </span><span class="n">command</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="k">pub</span><span class="w"> </span><span class="n">user</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div></p>
+<p>These are byte-for-byte identical. The only reason they are separate is that neither workspace knew about the other's definition when each was written. Both derive <code>Debug</code>, <code>Clone</code>, <code>serde::Serialize</code>.</p>
+<p><strong>Resolution:</strong> Extract to <code>forensic-types::crontab</code>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="cp">#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">CrontabEntry</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">pub</span><span class="w"> </span><span class="n">schedule</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="k">pub</span><span class="w"> </span><span class="n">command</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="k">pub</span><span class="w"> </span><span class="n">user</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+Both crates replace their local definition with <code>use forensic_types::crontab::CrontabEntry;</code>.</p>
+<hr />
+<h3 id="a4-reverse-shell-command-patterns-moderate-severity">A4. Reverse Shell Command Patterns (MODERATE severity)<a class="headerlink" href="#a4-reverse-shell-command-patterns-moderate-severity" title="Permanent link">&para;</a></h3>
+<p><strong>RapidTriage</strong> — <code>crates/rt-navigator/src/investigation/alerts/process.rs</code><br />
+Hardcoded slice of pattern strings: <code>"pty.spawn"</code>, <code>"bash -i"</code>, <code>"nc -e"</code>, <code>"/bin/sh -i"</code>, <code>"python -c"</code>, <code>"perl -e"</code>, <code>"ruby -e"</code>, <code>"lua -e"</code>.</p>
+<p><strong>memory-forensic</strong> — Multiple walker classifiers in <code>memf-linux/</code><br />
+The same patterns appear in process argument scanners, duplicated by string literal.</p>
+<p><strong>Resolution:</strong> Extract to <code>forensic-patterns::commands</code>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">REVERSE_SHELL_PATTERNS</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="o">&amp;</span><span class="kt">str</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="p">[</span><span class="s">&quot;pty.spawn&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;bash -i&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;nc -e&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">…</span><span class="p">];</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">pub</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">SUSPICIOUS_DOWNLOAD_TOOLS</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="o">&amp;</span><span class="kt">str</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="p">[</span><span class="s">&quot;curl&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;wget&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;certutil&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;bitsadmin&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">…</span><span class="p">];</span>
+</code></pre></div></p>
+<hr />
+<h2 id="category-b-same-concept-different-implementation-share-interface-only">Category B: Same Concept, Different Implementation — Share Interface Only<a class="headerlink" href="#category-b-same-concept-different-implementation-share-interface-only" title="Permanent link">&para;</a></h2>
+<h3 id="b1-yara-scanner">B1. YARA Scanner<a class="headerlink" href="#b1-yara-scanner" title="Permanent link">&para;</a></h3>
+<p>RapidTriage implements a YARA scanner that operates against <strong>files and parsed artifact data</strong> (LNK targets, prefetch paths, strings extracted from UAC collections). memory-forensic implements a YARA scanner that operates against <strong>raw memory regions</strong> (page-aligned byte slices, pool allocations). The scan targets, rule scoping, and error handling are necessarily different.</p>
+<p><strong>Do not merge the implementations.</strong> If a shared abstraction becomes valuable in the future, define a <code>trait YaraScanner</code> with a single <code>scan(&amp;[u8]) -&gt; Vec&lt;YaraMatch&gt;</code> method and let each crate provide its own implementation. Do not implement the trait in a shared crate.</p>
+<h3 id="b2-severity-enums">B2. Severity Enums<a class="headerlink" href="#b2-severity-enums" title="Permanent link">&para;</a></h3>
+<p>RapidTriage defines <code>AlertSeverity { Critical, High, Medium, Low, Info }</code> tuned to triage alert presentation. memory-forensic walkers express severity as <code>ScanSeverity { Definite, Probable, Suspicious, Informational }</code> tuned to memory scan confidence levels. These are not the same taxonomy and should not be unified. Merging them would require either losing precision in one domain or adding meaningless variants to both.</p>
+<h3 id="b3-networkconnection-socket-models">B3. NetworkConnection / Socket Models<a class="headerlink" href="#b3-networkconnection-socket-models" title="Permanent link">&para;</a></h3>
+<p>RapidTriage's <code>NetworkConnection</code> carries triage-layer fields: parsed timestamps, associated process name from UAC data, alert flags. memory-forensic's socket structures carry raw kernel fields: socket state machine values, struct offsets, kernel virtual addresses. The fields are different because the data sources are different. Do not unify; do not add a common base struct.</p>
+<hr />
+<h2 id="category-c-architecturally-distinct-do-not-share">Category C: Architecturally Distinct — Do Not Share<a class="headerlink" href="#category-c-architecturally-distinct-do-not-share" title="Permanent link">&para;</a></h2>
+<h3 id="c1-timeline-and-correlation-logic">C1. Timeline and Correlation Logic<a class="headerlink" href="#c1-timeline-and-correlation-logic" title="Permanent link">&para;</a></h3>
+<p><code>rt-navigator</code>'s correlation layer (C2 beacon detection, MFT/process cross-correlation, EventLog/network join) is RapidTriage's primary value proposition over raw walker output. This logic belongs exclusively in <code>rt-navigator</code>. Placing it in <code>memory-forensic</code> would make the low-level forensic library aware of high-level triage concepts, inverting the dependency and polluting the library's scope.</p>
+<h3 id="c2-ioc-feed-management">C2. IOC Feed Management<a class="headerlink" href="#c2-ioc-feed-management" title="Permanent link">&para;</a></h3>
+<p>IOC (Indicator of Compromise) feed ingestion, deduplication, and TTL management live in <code>rt-navigator</code>. memory-forensic walkers have no mechanism for network or file-based feed updates and should not grow one. Feed management is a RapidTriage concern.</p>
+<h3 id="c3-walker-implementation-code">C3. Walker Implementation Code<a class="headerlink" href="#c3-walker-implementation-code" title="Permanent link">&para;</a></h3>
+<p>Each OS walker (<code>walk_processes</code>, <code>walk_modules</code>, <code>walk_amsi_bypass</code>, etc.) is inherently tied to its kernel data structures and ISF symbol resolution. Even walkers that produce similarly named structs (e.g., <code>ProcessInfo</code> in both Linux and Windows walkers) parse different kernel structures via different ISF offsets. Sharing walker bodies would require abstraction layers that add complexity without correctness benefit.</p>
+<hr />
+<h2 id="proposed-crate-structure">Proposed Crate Structure<a class="headerlink" href="#proposed-crate-structure" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>memory-forensic/crates/
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  forensic-patterns/
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    Cargo.toml               # no deps except std
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    src/
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>      lib.rs                 # pub mod ports; pub mod paths; pub mod commands; pub mod processes;
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>      ports.rs               # SUSPICIOUS_PORTS, is_suspicious_port()
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>      paths.rs               # is_trusted_linux_lib_path(), is_trusted_windows_lib_path(),
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>                             # is_suspicious_temp_path()
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>      commands.rs            # REVERSE_SHELL_PATTERNS, SUSPICIOUS_DOWNLOAD_TOOLS
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>      processes.rs           # KNOWN_MALWARE_PROCESS_NAMES
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  forensic-types/
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    Cargo.toml               # deps: serde (with derive feature)
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>    src/
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>      lib.rs                 # pub mod crontab; pub mod process;
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>      crontab.rs             # CrontabEntry { schedule, command, user }
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>      process.rs             # ProcessSummary (if needed after survey)
+</code></pre></div>
+<h3 id="migration-checklist">Migration Checklist<a class="headerlink" href="#migration-checklist" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>memory-forensic/Cargo.toml</code> workspace</td>
+<td>Add <code>forensic-patterns</code>, <code>forensic-types</code> to <code>[workspace.members]</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>memf-linux/Cargo.toml</code></td>
+<td>Add <code>forensic-patterns</code> and <code>forensic-types</code> as deps</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>memf-windows/Cargo.toml</code></td>
+<td>Add <code>forensic-patterns</code> as dep</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>rt-parser-uac/Cargo.toml</code></td>
+<td>Add <code>forensic-patterns</code>, <code>forensic-types</code> as deps</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>rt-navigator/Cargo.toml</code></td>
+<td>Add <code>forensic-patterns</code> as dep</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Remove <code>SUSPICIOUS_PORTS</code> from <code>rt-navigator/alerts/types.rs</code></td>
+<td>Replace with <code>forensic_patterns::ports::SUSPICIOUS_PORTS</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Remove inline port checks from <code>memf-linux</code> walkers</td>
+<td>Replace with <code>forensic_patterns::ports::is_suspicious_port(port)</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Remove duplicate <code>is_trusted_system_lib_path</code> from <code>rt-parser-uac</code> and <code>rt-navigator</code></td>
+<td>Replace with <code>forensic_patterns::paths::is_trusted_windows_lib_path</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Remove inline path checks from <code>memf-linux</code> walkers</td>
+<td>Replace with <code>forensic_patterns::paths::is_trusted_linux_lib_path</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Remove <code>CrontabEntry</code> from <code>rt-parser-uac/parsers/process.rs</code></td>
+<td>Replace with <code>forensic_types::crontab::CrontabEntry</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>Remove <code>CrontabEntry</code> from <code>memf-linux/src/crontab.rs</code></td>
+<td>Re-export <code>forensic_types::crontab::CrontabEntry</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>Remove <code>REVERSE_SHELL_PATTERNS</code> from <code>rt-navigator/alerts/process.rs</code></td>
+<td>Replace with <code>forensic_patterns::commands::REVERSE_SHELL_PATTERNS</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>Remove inline reverse-shell checks from <code>memf-linux</code> walkers</td>
+<td>Replace with <code>forensic_patterns::commands::REVERSE_SHELL_PATTERNS</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="what-not-to-extract">What Not to Extract<a class="headerlink" href="#what-not-to-extract" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Candidate</th>
+<th>Reason to Leave in Place</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NetworkConnection</code> / socket models</td>
+<td>Different fields per OS/layer; unification loses precision</td>
+</tr>
+<tr>
+<td><code>AlertSeverity</code> vs <code>ScanSeverity</code></td>
+<td>Different taxonomies; a merged enum would be meaningless</td>
+</tr>
+<tr>
+<td>YARA scanner implementation</td>
+<td>Different scan targets (files vs. memory regions)</td>
+</tr>
+<tr>
+<td>Walker bodies (<code>walk_*</code> functions)</td>
+<td>Kernel-version-specific ISF offsets; cannot be shared</td>
+</tr>
+<tr>
+<td>Timeline / correlation functions</td>
+<td>RapidTriage value-add; wrong abstraction layer for memory-forensic</td>
+</tr>
+<tr>
+<td>IOC feed ingestion</td>
+<td>RapidTriage-only concern; memory-forensic has no feed infrastructure</td>
+</tr>
+<tr>
+<td><code>detect_alerts</code> / <code>anomalies_to_alerts</code></td>
+<td>Pure triage logic; no place in a forensic evidence library</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="risk-assessment">Risk Assessment<a class="headerlink" href="#risk-assessment" title="Permanent link">&para;</a></h2>
+<p><strong>Low risk:</strong> <code>forensic-patterns</code> has no external dependencies and exposes only constants and pure functions. A compilation failure is impossible at runtime, and migrating a constant is a mechanical substitution. Tests for the consuming crates cover the constants indirectly.</p>
+<p><strong>Moderate risk:</strong> <code>forensic-types</code> changes the canonical location of <code>CrontabEntry</code>. Any downstream code that serializes the struct to disk (e.g., JSON reports) will see no behavioral change since the field names are identical. Any code that pattern-matches on the module path (<code>forensic_types::crontab::CrontabEntry</code> vs. the previous paths) needs a <code>use</code> update.</p>
+<p><strong>Mitigation:</strong> Follow strict TDD per CLAUDE.md. RED commit: add failing tests in both workspaces that <code>use forensic_patterns::…</code> (these fail because the crate doesn't exist yet). GREEN commit: create the crates and migrate. Each workspace gets its own RED→GREEN commit pair.</p>
+<hr />
+<h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
+<p>The duplication is real and consequential in four specific areas (ports, path predicates, CrontabEntry, reverse-shell patterns). The fix is small and low-risk: two new crates in the <code>memory-forensic</code> workspace, each under 200 lines of code. Everything else that looks similar across the two repos is similar by coincidence of domain, not by sharing the same data or logic — and should remain separate.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "navigation.tabs", "navigation.sections", "navigation.top", "search.highlight"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>

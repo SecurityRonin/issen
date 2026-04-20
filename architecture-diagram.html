@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RapidTriage — System Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #020617;
+      color: #e2e8f0;
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 60px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .header-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .pulse-dot {
+      width: 10px; height: 10px;
+      background: #34d399;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.8); }
+    }
+    h1 { font-size: 26px; font-weight: 700; color: #f8fafc; letter-spacing: -0.5px; }
+    .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .diagram-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 1160px;
+      overflow-x: auto;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 1160px;
+    }
+    .card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-emerald { background: #34d399; }
+    .dot-violet  { background: #a78bfa; }
+    .dot-rose    { background: #fb7185; }
+    .card h3 { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+    .card li { font-size: 11px; color: #94a3b8; list-style: none; padding: 2px 0; }
+    footer {
+      margin-top: 28px;
+      font-size: 10px;
+      color: #334155;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-line">
+    <div class="pulse-dot"></div>
+    <h1>RapidTriage — System Architecture</h1>
+  </div>
+  <p class="subtitle">Rust 1.80 &nbsp;·&nbsp; 24-crate workspace &nbsp;·&nbsp; DuckDB · YARA-X · OpenDAL · inventory plugins &nbsp;·&nbsp; v0.1.0</p>
+</div>
+
+<div class="diagram-card">
+<svg viewBox="0 0 1120 750" xmlns="http://www.w3.org/2000/svg"
+     style="width:100%;height:auto;font-family:'JetBrains Mono',monospace;">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+    </pattern>
+    <marker id="arr"      markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arr-rose" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#fb7185"/>
+    </marker>
+    <marker id="arr-amber" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#fbbf24"/>
+    </marker>
+    <marker id="arr-violet" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#a78bfa"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1120" height="750" fill="#020617"/>
+  <rect width="1120" height="750" fill="url(#grid)"/>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- ARROWS — drawn first so boxes render on top               -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+
+  <!-- Local Collections → rt-unpack -->
+  <line x1="122" y1="118" x2="122" y2="163" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Memory Dumps → rt-mem -->
+  <line x1="320" y1="118" x2="490" y2="163" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Threat Feeds → rt-signatures (dashed rose) -->
+  <line x1="562" y1="118" x2="175" y2="455" stroke="#fb7185" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#arr-rose)"/>
+  <!-- Cloud backends → rt-remote-io operator box -->
+  <line x1="900" y1="118" x2="900" y2="163" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arr-amber)"/>
+  <!-- rt-unpack → rt-fswalker -->
+  <line x1="198" y1="193" x2="218" y2="193" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- rt-fswalker → parsers (down) -->
+  <line x1="308" y1="228" x2="308" y2="256" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- rt-remote-io → rt-fswalker (cross-boundary, amber) -->
+  <line x1="735" y1="196" x2="400" y2="196" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-amber)"/>
+
+  <!-- Parser boxes → timeline (fan) -->
+  <line x1="90"  y1="312" x2="220" y2="358" stroke="#64748b" stroke-width="1" marker-end="url(#arr)"/>
+  <line x1="210" y1="312" x2="320" y2="358" stroke="#64748b" stroke-width="1" marker-end="url(#arr)"/>
+  <line x1="335" y1="312" x2="450" y2="358" stroke="#64748b" stroke-width="1" marker-end="url(#arr)"/>
+  <line x1="465" y1="312" x2="560" y2="358" stroke="#64748b" stroke-width="1" marker-end="url(#arr)"/>
+  <!-- rt-mem → timeline -->
+  <line x1="490" y1="228" x2="490" y2="358" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Timeline → analysis layer -->
+  <line x1="175" y1="428" x2="175" y2="453" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arr-violet)"/>
+  <line x1="415" y1="428" x2="415" y2="453" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arr-violet)"/>
+  <line x1="652" y1="428" x2="652" y2="453" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arr-violet)"/>
+  <line x1="900" y1="428" x2="900" y2="453" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arr-violet)"/>
+
+  <!-- Analysis → CLI/Output -->
+  <line x1="175" y1="537" x2="130" y2="573" stroke="#64748b" stroke-width="1" marker-end="url(#arr)"/>
+  <line x1="415" y1="537" x2="320" y2="573" stroke="#64748b" stroke-width="1" marker-end="url(#arr)"/>
+  <line x1="652" y1="537" x2="600" y2="573" stroke="#64748b" stroke-width="1" marker-end="url(#arr)"/>
+  <line x1="900" y1="537" x2="800" y2="573" stroke="#64748b" stroke-width="1" marker-end="url(#arr)"/>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION BOUNDARIES (drawn after arrows, before boxes)     -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+
+  <!-- Evidence Sources — left zone -->
+  <rect x="20" y="36" width="690" height="98" rx="10"
+        fill="none" stroke="#fbbf24" stroke-width="1" stroke-dasharray="6,4"/>
+  <text x="30" y="31" fill="#fbbf24" font-size="8" font-weight="600">EVIDENCE SOURCES</text>
+
+  <!-- Cloud Storage — right zone -->
+  <rect x="725" y="36" width="375" height="98" rx="10"
+        fill="rgba(120,53,15,0.08)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="6,4"/>
+  <text x="735" y="31" fill="#fbbf24" font-size="8" font-weight="600">CLOUD STORAGE  (OpenDAL 0.55)</text>
+
+  <!-- Ingestion Pipeline — left zone -->
+  <rect x="20" y="148" width="690" height="185" rx="10"
+        fill="none" stroke="#34d399" stroke-width="1" stroke-dasharray="6,4"/>
+  <text x="30" y="143" fill="#34d399" font-size="8" font-weight="600">INGESTION PIPELINE</text>
+
+  <!-- rt-remote-io — right zone -->
+  <rect x="725" y="148" width="375" height="185" rx="10"
+        fill="rgba(120,53,15,0.06)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="735" y="143" fill="#fbbf24" font-size="8" font-weight="600">rt-remote-io</text>
+
+  <!-- Detection & Analysis boundary -->
+  <rect x="20" y="445" width="1080" height="100" rx="10"
+        fill="none" stroke="#fb7185" stroke-width="1" stroke-dasharray="6,4"/>
+  <text x="30" y="440" fill="#fb7185" font-size="8" font-weight="600">DETECTION  &amp;  ANALYSIS</text>
+
+  <!-- CLI & Output boundary -->
+  <rect x="20" y="565" width="1080" height="92" rx="10"
+        fill="none" stroke="#22d3ee" stroke-width="1" stroke-dasharray="6,4"/>
+  <text x="30" y="560" fill="#22d3ee" font-size="8" font-weight="600">CLI  &amp;  OUTPUT</text>
+
+  <!-- Parser plugins sub-boundary -->
+  <rect x="30" y="250" width="680" height="70" rx="6"
+        fill="rgba(6,78,59,0.1)" stroke="#34d399" stroke-width="0.8" stroke-dasharray="3,3"/>
+  <text x="38" y="246" fill="#34d399" font-size="7">PARSER PLUGINS  (inventory — compile-time registration)</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- COMPONENT BOXES                                           -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+
+  <!-- ── Evidence Sources ─────────────────────────────────── -->
+
+  <!-- Local Collections -->
+  <rect x="32" y="48" width="180" height="70" rx="6" fill="#0f172a"/>
+  <rect x="32" y="48" width="180" height="70" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="122" y="68" fill="white"   font-size="11" font-weight="600" text-anchor="middle">Local Collections</text>
+  <text x="122" y="83" fill="#94a3b8" font-size="8"  text-anchor="middle">KAPE · UAC · Velociraptor</text>
+  <text x="122" y="96" fill="#64748b" font-size="8"  text-anchor="middle">E01 · VMDK · raw disk</text>
+
+  <!-- Memory Dumps -->
+  <rect x="228" y="48" width="180" height="70" rx="6" fill="#0f172a"/>
+  <rect x="228" y="48" width="180" height="70" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="318" y="68" fill="white"   font-size="11" font-weight="600" text-anchor="middle">Memory Dumps</text>
+  <text x="318" y="83" fill="#94a3b8" font-size="8"  text-anchor="middle">LiME · AVML · crash dump</text>
+  <text x="318" y="96" fill="#64748b" font-size="8"  text-anchor="middle">Windows · Linux · raw</text>
+
+  <!-- Threat Feeds -->
+  <rect x="428" y="48" width="268" height="70" rx="6" fill="#0f172a"/>
+  <rect x="428" y="48" width="268" height="70" rx="6" fill="rgba(136,19,55,0.2)" stroke="#fb7185" stroke-width="1.5"/>
+  <text x="562" y="68" fill="white"   font-size="11" font-weight="600" text-anchor="middle">Threat Feeds</text>
+  <text x="562" y="83" fill="#fb7185" font-size="8"  text-anchor="middle">CISA KEV · MISP · STIX 2.1</text>
+  <text x="562" y="96" fill="#64748b" font-size="8"  text-anchor="middle">Hash IOCs · Network IOCs · YARA · Sigma</text>
+
+  <!-- Cloud: S3 -->
+  <rect x="735" y="48" width="78" height="70" rx="6" fill="#0f172a"/>
+  <rect x="735" y="48" width="78" height="70" rx="6" fill="rgba(120,53,15,0.35)" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="774" y="76" fill="#fbbf24" font-size="12" font-weight="700" text-anchor="middle">S3</text>
+  <text x="774" y="92" fill="#64748b" font-size="8"  text-anchor="middle">AWS</text>
+
+  <!-- Cloud: GCS -->
+  <rect x="825" y="48" width="78" height="70" rx="6" fill="#0f172a"/>
+  <rect x="825" y="48" width="78" height="70" rx="6" fill="rgba(120,53,15,0.35)" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="864" y="76" fill="#fbbf24" font-size="12" font-weight="700" text-anchor="middle">GCS</text>
+  <text x="864" y="92" fill="#64748b" font-size="8"  text-anchor="middle">Google</text>
+
+  <!-- Cloud: Azure -->
+  <rect x="915" y="48" width="78" height="70" rx="6" fill="#0f172a"/>
+  <rect x="915" y="48" width="78" height="70" rx="6" fill="rgba(120,53,15,0.35)" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="954" y="72" fill="#fbbf24" font-size="11" font-weight="700" text-anchor="middle">Azure</text>
+  <text x="954" y="86" fill="#fbbf24" font-size="9"  text-anchor="middle">Blob</text>
+  <text x="954" y="100" fill="#64748b" font-size="8" text-anchor="middle">Storage</text>
+
+  <!-- Cloud: WebDAV -->
+  <rect x="1005" y="48" width="88" height="70" rx="6" fill="#0f172a"/>
+  <rect x="1005" y="48" width="88" height="70" rx="6" fill="rgba(120,53,15,0.35)" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="1049" y="72" fill="#fbbf24" font-size="11" font-weight="700" text-anchor="middle">WebDAV</text>
+  <text x="1049" y="86" fill="#fbbf24" font-size="9"  text-anchor="middle">HTTP</text>
+  <text x="1049" y="100" fill="#64748b" font-size="8" text-anchor="middle">NAS / SFTP</text>
+
+  <!-- ── Ingestion Pipeline ─────────────────────────────────── -->
+
+  <!-- rt-unpack -->
+  <rect x="32" y="163" width="160" height="65" rx="6" fill="#0f172a"/>
+  <rect x="32" y="163" width="160" height="65" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="112" y="183" fill="white"   font-size="11" font-weight="600" text-anchor="middle">rt-unpack</text>
+  <text x="112" y="198" fill="#34d399" font-size="8"  text-anchor="middle">Format detection</text>
+  <text x="112" y="211" fill="#64748b" font-size="8"  text-anchor="middle">UAC · KAPE · Velociraptor</text>
+
+  <!-- rt-fswalker -->
+  <rect x="218" y="163" width="175" height="65" rx="6" fill="#0f172a"/>
+  <rect x="218" y="163" width="175" height="65" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="306" y="183" fill="white"   font-size="11" font-weight="600" text-anchor="middle">rt-fswalker</text>
+  <text x="306" y="198" fill="#34d399" font-size="8"  text-anchor="middle">Parallel walk · rayon</text>
+  <text x="306" y="211" fill="#64748b" font-size="8"  text-anchor="middle">SHA-256 integrity check</text>
+
+  <!-- rt-mem -->
+  <rect x="413" y="163" width="285" height="65" rx="6" fill="#0f172a"/>
+  <rect x="413" y="163" width="285" height="65" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="556" y="183" fill="white"   font-size="11" font-weight="600" text-anchor="middle">rt-mem</text>
+  <text x="556" y="198" fill="#34d399" font-size="8"  text-anchor="middle">Memory forensic bridge</text>
+  <text x="556" y="211" fill="#64748b" font-size="8"  text-anchor="middle">memf-core · memf-linux · memf-windows</text>
+
+  <!-- Parser: MFT -->
+  <rect x="38"  y="258" width="108" height="54" rx="5" fill="#0f172a"/>
+  <rect x="38"  y="258" width="108" height="54" rx="5" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1"/>
+  <text x="92"  y="277" fill="white"   font-size="9" font-weight="600" text-anchor="middle">rt-parser-mft</text>
+  <text x="92"  y="291" fill="#64748b" font-size="8" text-anchor="middle">NTFS MFT · USN</text>
+
+  <!-- Parser: EVTX -->
+  <rect x="158" y="258" width="118" height="54" rx="5" fill="#0f172a"/>
+  <rect x="158" y="258" width="118" height="54" rx="5" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1"/>
+  <text x="217" y="277" fill="white"   font-size="9" font-weight="600" text-anchor="middle">rt-parser-evtx</text>
+  <text x="217" y="291" fill="#64748b" font-size="8" text-anchor="middle">Windows Event Log</text>
+
+  <!-- Parser: UAC -->
+  <rect x="288" y="258" width="108" height="54" rx="5" fill="#0f172a"/>
+  <rect x="288" y="258" width="108" height="54" rx="5" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1"/>
+  <text x="342" y="277" fill="white"   font-size="9" font-weight="600" text-anchor="middle">rt-parser-uac</text>
+  <text x="342" y="291" fill="#64748b" font-size="8" text-anchor="middle">UAC tar.gz · flate2</text>
+
+  <!-- Parser: Velociraptor -->
+  <rect x="408" y="258" width="148" height="54" rx="5" fill="#0f172a"/>
+  <rect x="408" y="258" width="148" height="54" rx="5" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1"/>
+  <text x="482" y="277" fill="white"   font-size="9" font-weight="600" text-anchor="middle">rt-parser-velociraptor</text>
+  <text x="482" y="291" fill="#64748b" font-size="8" text-anchor="middle">Velociraptor collections</text>
+
+  <!-- Plugin SDK badge -->
+  <rect x="568" y="258" width="135" height="54" rx="5" fill="#0f172a"/>
+  <rect x="568" y="258" width="135" height="54" rx="5" fill="rgba(6,78,59,0.15)" stroke="#34d399" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="635" y="277" fill="#34d399" font-size="9" font-weight="500" text-anchor="middle">rt-plugin-sdk</text>
+  <text x="635" y="291" fill="#64748b" font-size="7" text-anchor="middle">WASM · gRPC (planned)</text>
+
+  <!-- rt-remote-io operator -->
+  <rect x="735" y="163" width="358" height="70" rx="6" fill="#0f172a"/>
+  <rect x="735" y="163" width="358" height="70" rx="6" fill="rgba(120,53,15,0.35)" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="914" y="183" fill="white"   font-size="11" font-weight="600" text-anchor="middle">operator_for_uri()</text>
+  <text x="914" y="198" fill="#fbbf24" font-size="8"  text-anchor="middle">fetch_remote_text · RemoteWriter · walk_remote_prefix</text>
+  <text x="914" y="211" fill="#64748b" font-size="8"  text-anchor="middle">tokio async · opendal 0.55 · blocking bridge</text>
+
+  <!-- GDrive box -->
+  <rect x="735" y="248" width="358" height="78" rx="6" fill="#0f172a"/>
+  <rect x="735" y="248" width="358" height="78" rx="6" fill="rgba(120,53,15,0.2)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="914" y="267" fill="#fbbf24" font-size="9" font-weight="600" text-anchor="middle">Google Drive  (rt-remote-io::gdrive)</text>
+  <text x="914" y="282" fill="#94a3b8" font-size="8" text-anchor="middle">parse_file_id · OAuth2 browser flow</text>
+  <text x="914" y="296" fill="#64748b" font-size="8" text-anchor="middle">RT_GDRIVE_CLIENT_ID / RT_GDRIVE_CLIENT_SECRET</text>
+  <text x="914" y="310" fill="#64748b" font-size="7" text-anchor="middle">~/.config/rapidtriage/gdrive_token.json</text>
+
+  <!-- ── Timeline Store (full width) ──────────────────────── -->
+  <rect x="20"  y="358" width="1080" height="70" rx="8" fill="#0f172a"/>
+  <rect x="20"  y="358" width="1080" height="70" rx="8" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="2"/>
+  <text x="560" y="381" fill="white"   font-size="14" font-weight="700" text-anchor="middle">rt-timeline  ·  DuckDB (primary)  ·  SQLite export</text>
+  <text x="560" y="398" fill="#a78bfa" font-size="9"  text-anchor="middle">TIMESTAMP_NS precision  ·  evidence_id  ·  case_id  ·  event_type  ·  attributes (JSON)  ·  source</text>
+  <text x="560" y="413" fill="#64748b" font-size="8"  text-anchor="middle">rt-core types  ·  inventory plugin registration  ·  columnar SQL engine  ·  cross-referenced findings</text>
+
+  <!-- ── Detection & Analysis ──────────────────────────────── -->
+
+  <!-- rt-signatures -->
+  <rect x="32"  y="453" width="285" height="84" rx="6" fill="#0f172a"/>
+  <rect x="32"  y="453" width="285" height="84" rx="6" fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1.5"/>
+  <text x="175" y="473" fill="white"   font-size="11" font-weight="600" text-anchor="middle">rt-signatures</text>
+  <text x="175" y="488" fill="#fb7185" font-size="8"  text-anchor="middle">YARA-X 0.12  ·  Tau-Engine 1.0</text>
+  <text x="175" y="502" fill="#64748b" font-size="8"  text-anchor="middle">Hash IOC · Network IOC · STIX 2.1</text>
+  <text x="175" y="516" fill="#64748b" font-size="8"  text-anchor="middle">reqwest feed sync · ipnet CIDR matching</text>
+
+  <!-- rt-correlation -->
+  <rect x="333" y="453" width="265" height="84" rx="6" fill="#0f172a"/>
+  <rect x="333" y="453" width="265" height="84" rx="6" fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1.5"/>
+  <text x="466" y="473" fill="white"   font-size="11" font-weight="600" text-anchor="middle">rt-correlation</text>
+  <text x="466" y="488" fill="#fb7185" font-size="8"  text-anchor="middle">Pivot engine · YAML rules</text>
+  <text x="466" y="502" fill="#64748b" font-size="8"  text-anchor="middle">forensic-catalog · zeek-intel</text>
+  <text x="466" y="516" fill="#64748b" font-size="8"  text-anchor="middle">time windows · logic operators</text>
+
+  <!-- rt-remote-access -->
+  <rect x="614" y="453" width="265" height="84" rx="6" fill="#0f172a"/>
+  <rect x="614" y="453" width="265" height="84" rx="6" fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1.5"/>
+  <text x="747" y="473" fill="white"   font-size="11" font-weight="600" text-anchor="middle">rt-remote-access</text>
+  <text x="747" y="488" fill="#fb7185" font-size="8"  text-anchor="middle">LOLRMM · 400+ tool definitions</text>
+  <text x="747" y="502" fill="#64748b" font-size="8"  text-anchor="middle">notatin · quick-xml · DuckDB findings</text>
+  <text x="747" y="516" fill="#64748b" font-size="8"  text-anchor="middle">RAT / RMM / C2 / tunnel detection</text>
+
+  <!-- rt-mft-tree + rt-mem analysis -->
+  <rect x="895" y="453" width="198" height="84" rx="6" fill="#0f172a"/>
+  <rect x="895" y="453" width="198" height="84" rx="6" fill="rgba(136,19,55,0.3)" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="994" y="473" fill="white"   font-size="10" font-weight="600" text-anchor="middle">rt-mft-tree + rt-mem</text>
+  <text x="994" y="488" fill="#fb7185" font-size="8"  text-anchor="middle">MFT heuristics · hidden procs</text>
+  <text x="994" y="502" fill="#64748b" font-size="8"  text-anchor="middle">ps · modules · netstat · creds</text>
+  <text x="994" y="516" fill="#64748b" font-size="8"  text-anchor="middle">memf-linux · memf-windows</text>
+
+  <!-- ── CLI & Output ──────────────────────────────────────── -->
+
+  <!-- rt-cli -->
+  <rect x="32"  y="573" width="188" height="76" rx="6" fill="#0f172a"/>
+  <rect x="32"  y="573" width="188" height="76" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+  <text x="126" y="593" fill="white"   font-size="11" font-weight="600" text-anchor="middle">rt-cli  (rt binary)</text>
+  <text x="126" y="608" fill="#22d3ee" font-size="8"  text-anchor="middle">analyse · ingest · timeline · scan</text>
+  <text x="126" y="621" fill="#64748b" font-size="8"  text-anchor="middle">memf · remote-access · report · feed</text>
+
+  <!-- rt-report -->
+  <rect x="236" y="573" width="188" height="76" rx="6" fill="#0f172a"/>
+  <rect x="236" y="573" width="188" height="76" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="330" y="593" fill="white"   font-size="11" font-weight="600" text-anchor="middle">rt-report</text>
+  <text x="330" y="608" fill="#34d399" font-size="8"  text-anchor="middle">Self-contained HTML</text>
+  <text x="330" y="621" fill="#64748b" font-size="8"  text-anchor="middle">Mermaid · attack chain · defenses</text>
+
+  <!-- Output formats -->
+  <rect x="440" y="573" width="648" height="76" rx="6" fill="#0f172a"/>
+  <rect x="440" y="573" width="648" height="76" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="764" y="593" fill="white"   font-size="11" font-weight="600" text-anchor="middle">Output Formats</text>
+  <text x="764" y="608" fill="#94a3b8" font-size="8"  text-anchor="middle">HTML Report  ·  JSON  ·  DuckDB  ·  SQLite  ·  Text / Table  ·  Bodyfile (Plaso)</text>
+  <text x="764" y="622" fill="#64748b" font-size="8"  text-anchor="middle">report.html  ·  events.json  ·  timeline.duckdb  ·  case.db  ·  0|file|inode|...|crtime</text>
+  <text x="764" y="636" fill="#64748b" font-size="7"  text-anchor="middle">tracing · structured JSON logging · audit trail (case_id + evidence_id) · TIMESTAMP_NS chain of custody</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- LEGEND — outside all boundaries (lowest boundary ends ~657) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <line x1="20" y1="677" x2="1100" y2="677" stroke="#1e293b" stroke-width="1"/>
+
+  <text x="20" y="694" fill="#64748b" font-size="8">LEGEND:</text>
+
+  <rect x="82"  y="684" width="12" height="12" rx="2" fill="rgba(6,78,59,0.4)"    stroke="#34d399" stroke-width="1"/>
+  <text x="100" y="694" fill="#94a3b8" font-size="8">Core pipeline (Rust)</text>
+
+  <rect x="228" y="684" width="12" height="12" rx="2" fill="rgba(76,29,149,0.4)"  stroke="#a78bfa" stroke-width="1"/>
+  <text x="246" y="694" fill="#94a3b8" font-size="8">Timeline / DuckDB</text>
+
+  <rect x="375" y="684" width="12" height="12" rx="2" fill="rgba(136,19,55,0.4)"  stroke="#fb7185" stroke-width="1"/>
+  <text x="393" y="694" fill="#94a3b8" font-size="8">Detection / Security</text>
+
+  <rect x="528" y="684" width="12" height="12" rx="2" fill="rgba(120,53,15,0.35)" stroke="#fbbf24" stroke-width="1"/>
+  <text x="546" y="694" fill="#94a3b8" font-size="8">Cloud / Remote (OpenDAL)</text>
+
+  <rect x="700" y="684" width="12" height="12" rx="2" fill="rgba(8,51,68,0.4)"    stroke="#22d3ee" stroke-width="1"/>
+  <text x="718" y="694" fill="#94a3b8" font-size="8">CLI / Frontend</text>
+
+  <rect x="806" y="684" width="12" height="12" rx="2" fill="rgba(30,41,59,0.5)"   stroke="#94a3b8" stroke-width="1"/>
+  <text x="824" y="694" fill="#94a3b8" font-size="8">External / Output</text>
+
+  <line x1="938" y1="688" x2="960" y2="688" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="4,2"/>
+  <circle cx="938" cy="688" r="2" fill="#fb7185"/>
+  <text x="966" y="694" fill="#94a3b8" font-size="8">Threat intel flow</text>
+
+  <line x1="1048" y1="688" x2="1070" y2="688" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="4,2"/>
+  <circle cx="1048" cy="688" r="2" fill="#fbbf24"/>
+  <text x="1076" y="694" fill="#94a3b8" font-size="8">Remote I/O</text>
+
+</svg>
+</div>
+
+<div class="cards-grid">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-dot dot-emerald"></div>
+      <h3>Pipeline — 24 Crates</h3>
+    </div>
+    <ul>
+      <li>• Rust 1.80+ · Apache 2.0</li>
+      <li>• rayon parallel filesystem walk</li>
+      <li>• evtx · mft · usnjrnl-forensic</li>
+      <li>• inventory compile-time plugins</li>
+      <li>• WASM / gRPC plugins (planned)</li>
+      <li>• rt-remote-io: OpenDAL 0.55 backends</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-dot dot-violet"></div>
+      <h3>Timeline Store</h3>
+    </div>
+    <ul>
+      <li>• DuckDB (primary, in-process columnar)</li>
+      <li>• SQLite export for legal hold</li>
+      <li>• TIMESTAMP_NS nanosecond precision</li>
+      <li>• case_id · evidence_id audit spans</li>
+      <li>• SHA-256 chain of custody</li>
+      <li>• Cross-referenced findings table</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-dot dot-rose"></div>
+      <h3>Detection Engines</h3>
+    </div>
+    <ul>
+      <li>• YARA-X 0.12 (next-gen rule engine)</li>
+      <li>• Tau-Engine 1.0 (Sigma evaluation)</li>
+      <li>• LOLRMM — 400+ RMM tool defs</li>
+      <li>• YAML correlation rules · pivot engine</li>
+      <li>• CISA KEV · MISP · STIX 2.1 feeds</li>
+      <li>• ipnet CIDR · Hash IOC · Network IOC</li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  RapidTriage v0.1.0 &nbsp;·&nbsp; Rust · DuckDB · YARA-X · OpenDAL · inventory
+  &nbsp;·&nbsp; architecture generated 2026-04-19
+</footer>
+
+</body>
+</html>

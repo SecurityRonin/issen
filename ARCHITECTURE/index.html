@@ -1,0 +1,1368 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://securityronin.github.io/rapidtriage/ARCHITECTURE/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Architecture - RapidTriage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="RapidTriage" class="md-header__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            RapidTriage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../privacy/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Privacy Policy
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../terms/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Terms of Service
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="RapidTriage" class="md-nav__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    RapidTriage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terms of Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workspace-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workspace Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workspace Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#crate-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crate Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ingestion-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ingestion Pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ingestion Pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plugin-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timeline-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeline Schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#signature-scanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signature Scanning
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Signature Scanning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#engine-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Engine Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feed-infrastructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feed Infrastructure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#remote-access-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Remote Access Detection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Remote Access Detection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#artifactprovider-trait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ArtifactProvider Trait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#detection-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detection Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings Storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#report-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report Generation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-and-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and Test
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>Interactive diagram:</strong> <a href="../architecture-diagram.html">architecture-diagram.html</a> — full system map with all 24 crates, cloud backends, detection engines, and data flow.</p>
+</blockquote>
+<p>This document describes RapidTriage's architecture using progressive disclosure. Start with the overview, then drill into subsystems as needed.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>RapidTriage transforms forensic evidence collections into structured timelines and assessment findings. Evidence goes in, a DuckDB database with parsed events, signature matches, and remote access detections comes out.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>flowchart LR
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    Evidence[&quot;Evidence Collection\n(KAPE, Velociraptor,\nraw image)&quot;]
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    Ingest[&quot;rt-unpack + rt-fswalker\nIngestion&quot;]
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    Timeline[&quot;rt-timeline\nDuckDB Store&quot;]
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    Sigs[&quot;rt-signatures\nThreat Intel&quot;]
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    RA[&quot;rt-remote-access\nRemote Access&quot;]
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    Corr[&quot;rt-correlation\nPivot Engine&quot;]
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    Report[&quot;rt-report\nHTML Output&quot;]
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    CLI[&quot;rt-cli&quot;]
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    CLI --&gt; Ingest
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    CLI --&gt; Sigs
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    CLI --&gt; RA
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    CLI --&gt; Corr
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    CLI --&gt; Report
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    Evidence --&gt; Ingest
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    Ingest --&gt; Timeline
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    Sigs --&gt; Timeline
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    RA --&gt; Timeline
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    Corr --&gt; Timeline
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    Timeline --&gt; Report
+</code></pre></div>
+<p>The CLI (<code>rt</code>) is the entry point. It dispatches to four subsystems: the ingestion pipeline, signature scanning, remote access detection, and report generation. All subsystems write to or read from a shared DuckDB timeline database.</p>
+<h2 id="workspace-structure">Workspace Structure<a class="headerlink" href="#workspace-structure" title="Permanent link">&para;</a></h2>
+<p>20 crates in a Cargo workspace, organized by responsibility:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>graph TD
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    subgraph CLI[&quot;CLI Layer&quot;]
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        rt-cli
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    end
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    subgraph Assessment[&quot;Assessment Layer&quot;]
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        rt-signatures
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>        rt-remote-access
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        rt-correlation
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    end
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    subgraph Pipeline[&quot;Pipeline Layer&quot;]
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>        rt-unpack
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        rt-fswalker
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        rt-report
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        rt-navigator
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>        rt-mft-tree
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    end
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    subgraph Storage[&quot;Storage Layer&quot;]
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>        rt-timeline
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    end
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>    subgraph RemoteIO[&quot;Remote I/O Layer&quot;]
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>        rt-remote-io
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>    end
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>    subgraph Memory[&quot;Memory Layer&quot;]
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>        rt-mem
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>    end
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>    subgraph Parsers[&quot;Parser Plugins&quot;]
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>        rt-parser-mft
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>        rt-parser-evtx
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>        rt-parser-uac
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>        rt-parser-velociraptor
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>    end
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a>
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>    subgraph Foundation[&quot;Foundation&quot;]
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>        rt-core
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>        rt-plugin-sdk
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a>        rt-ewf
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a>        rt-shrinkpath
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a>    end
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a>
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a>    rt-cli --&gt; rt-unpack
+<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a>    rt-cli --&gt; rt-fswalker
+<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>    rt-cli --&gt; rt-signatures
+<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a>    rt-cli --&gt; rt-remote-access
+<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a>    rt-cli --&gt; rt-correlation
+<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a>    rt-cli --&gt; rt-report
+<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a>    rt-cli --&gt; rt-mem
+<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a>    rt-cli --&gt; rt-navigator
+<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>    rt-cli --&gt; rt-remote-io
+<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a>    rt-unpack --&gt; rt-core
+<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a>    rt-fswalker --&gt; rt-core
+<a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a>    rt-fswalker --&gt; rt-plugin-sdk
+<a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a>    rt-signatures --&gt; rt-core
+<a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a>    rt-remote-access --&gt; rt-core
+<a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a>    rt-remote-access --&gt; rt-timeline
+<a id="__codelineno-1-61" name="__codelineno-1-61" href="#__codelineno-1-61"></a>    rt-correlation --&gt; rt-core
+<a id="__codelineno-1-62" name="__codelineno-1-62" href="#__codelineno-1-62"></a>    rt-correlation --&gt; rt-timeline
+<a id="__codelineno-1-63" name="__codelineno-1-63" href="#__codelineno-1-63"></a>    rt-report --&gt; rt-timeline
+<a id="__codelineno-1-64" name="__codelineno-1-64" href="#__codelineno-1-64"></a>    rt-report --&gt; rt-core
+<a id="__codelineno-1-65" name="__codelineno-1-65" href="#__codelineno-1-65"></a>    rt-timeline --&gt; rt-core
+<a id="__codelineno-1-66" name="__codelineno-1-66" href="#__codelineno-1-66"></a>    rt-mft-tree --&gt; rt-core
+<a id="__codelineno-1-67" name="__codelineno-1-67" href="#__codelineno-1-67"></a>    rt-parser-mft --&gt; rt-core
+<a id="__codelineno-1-68" name="__codelineno-1-68" href="#__codelineno-1-68"></a>    rt-parser-mft --&gt; rt-plugin-sdk
+<a id="__codelineno-1-69" name="__codelineno-1-69" href="#__codelineno-1-69"></a>    rt-parser-evtx --&gt; rt-core
+<a id="__codelineno-1-70" name="__codelineno-1-70" href="#__codelineno-1-70"></a>    rt-parser-evtx --&gt; rt-plugin-sdk
+<a id="__codelineno-1-71" name="__codelineno-1-71" href="#__codelineno-1-71"></a>    rt-parser-uac --&gt; rt-core
+<a id="__codelineno-1-72" name="__codelineno-1-72" href="#__codelineno-1-72"></a>    rt-parser-uac --&gt; rt-plugin-sdk
+<a id="__codelineno-1-73" name="__codelineno-1-73" href="#__codelineno-1-73"></a>    rt-parser-velociraptor --&gt; rt-core
+<a id="__codelineno-1-74" name="__codelineno-1-74" href="#__codelineno-1-74"></a>    rt-parser-velociraptor --&gt; rt-plugin-sdk
+<a id="__codelineno-1-75" name="__codelineno-1-75" href="#__codelineno-1-75"></a>    rt-unpack --&gt; rt-ewf
+</code></pre></div>
+<p><strong>Dependency rule:</strong> Arrows point downward. Higher layers depend on lower layers, never the reverse. <code>rt-core</code> has no internal dependencies.</p>
+<h3 id="crate-responsibilities">Crate Responsibilities<a class="headerlink" href="#crate-responsibilities" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Crate</th>
+<th>Layer</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rt-core</code></td>
+<td>Foundation</td>
+<td>Shared types (<code>TimelineEvent</code>, <code>ArtifactType</code>, <code>EventType</code>), plugin traits, error types, configuration</td>
+</tr>
+<tr>
+<td><code>rt-plugin-sdk</code></td>
+<td>Foundation</td>
+<td>Parser plugin registration via <code>inventory</code> crate. Parsers register themselves at compile time</td>
+</tr>
+<tr>
+<td><code>rt-ewf</code></td>
+<td>Foundation</td>
+<td>Expert Witness Format (E01) forensic image reading</td>
+</tr>
+<tr>
+<td><code>rt-shrinkpath</code></td>
+<td>Foundation</td>
+<td>Path abbreviation utilities</td>
+</tr>
+<tr>
+<td><code>rt-timeline</code></td>
+<td>Storage</td>
+<td>DuckDB columnar timeline store. Insert events, query by time/type/source, export to SQLite</td>
+</tr>
+<tr>
+<td><code>rt-unpack</code></td>
+<td>Pipeline</td>
+<td>Collection format detection and unpacking (UAC tar.gz, Velociraptor, KAPE)</td>
+</tr>
+<tr>
+<td><code>rt-fswalker</code></td>
+<td>Pipeline</td>
+<td>Parallel filesystem walk via rayon; SHA-256 integrity hashing; dispatches parsers via plugin SDK</td>
+</tr>
+<tr>
+<td><code>rt-report</code></td>
+<td>Pipeline</td>
+<td>Self-contained HTML report generation from timeline data, including Mermaid attack chain diagrams</td>
+</tr>
+<tr>
+<td><code>rt-navigator</code></td>
+<td>Pipeline</td>
+<td>Interactive TUI navigation for timeline and findings</td>
+</tr>
+<tr>
+<td><code>rt-mft-tree</code></td>
+<td>Pipeline</td>
+<td>MFT heuristic analysis</td>
+</tr>
+<tr>
+<td><code>rt-remote-io</code></td>
+<td>Remote I/O</td>
+<td>Remote storage I/O via OpenDAL 0.55: S3, GCS, Azure Blob, WebDAV, HTTP, Google Drive (OAuth2)</td>
+</tr>
+<tr>
+<td><code>rt-mem</code></td>
+<td>Memory</td>
+<td>Memory forensics bridge into the memf-* sibling workspace</td>
+</tr>
+<tr>
+<td><code>rt-signatures</code></td>
+<td>Assessment</td>
+<td>Six detection engines (YARA-X, Sigma/Tau-Engine, Hash IOC, Network IOC, STIX, Suricata) + feed infrastructure</td>
+</tr>
+<tr>
+<td><code>rt-remote-access</code></td>
+<td>Assessment</td>
+<td>Remote access detection: LOLRMM rule engine (400+ tools) + 7 category scanners + DuckDB findings store</td>
+</tr>
+<tr>
+<td><code>rt-correlation</code></td>
+<td>Assessment</td>
+<td>Pivot engine: YAML correlation rules, zeek-intel, cross-source evidence joining</td>
+</tr>
+<tr>
+<td><code>rt-parser-mft</code></td>
+<td>Parsers</td>
+<td>NTFS MFT + USN Journal parser. Registers via <code>inventory::submit!</code></td>
+</tr>
+<tr>
+<td><code>rt-parser-evtx</code></td>
+<td>Parsers</td>
+<td>Windows Event Log (EVTX) parser. Registers via <code>inventory::submit!</code></td>
+</tr>
+<tr>
+<td><code>rt-parser-uac</code></td>
+<td>Parsers</td>
+<td>UAC collection format parser. Registers via <code>inventory::submit!</code></td>
+</tr>
+<tr>
+<td><code>rt-parser-velociraptor</code></td>
+<td>Parsers</td>
+<td>Velociraptor collection parser. Registers via <code>inventory::submit!</code></td>
+</tr>
+<tr>
+<td><code>rt-cli</code></td>
+<td>CLI</td>
+<td>Command-line interface. Parses args, dispatches to subsystems, formats output</td>
+</tr>
+<tr>
+<td><code>xtask</code></td>
+<td>Build</td>
+<td>Build automation tasks</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="ingestion-pipeline">Ingestion Pipeline<a class="headerlink" href="#ingestion-pipeline" title="Permanent link">&para;</a></h2>
+<p>The pipeline ingests an evidence collection and produces a DuckDB timeline. It uses a layered architecture where each layer handles one level of abstraction.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>flowchart TD
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    Input[&quot;Evidence Path\n/path/to/collection/&quot;]
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    Unpack[&quot;rt-unpack\nFormat Detection + Unpack&quot;]
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    Walk[&quot;rt-fswalker\nParallel Walk (rayon)&quot;]
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    MFT[&quot;rt-parser-mft\nMFT + USN Journal&quot;]
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    EVTX[&quot;rt-parser-evtx\nEvent Log&quot;]
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    UAC[&quot;rt-parser-uac\nUAC Format&quot;]
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    Veloci[&quot;rt-parser-velociraptor\nVelociraptor&quot;]
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    TL[&quot;rt-timeline\nDuckDB Insert&quot;]
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    Input --&gt; Unpack
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    Unpack --&gt; Walk
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    Walk --&gt; MFT
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    Walk --&gt; EVTX
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    Walk --&gt; UAC
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    Walk --&gt; Veloci
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    MFT --&gt; TL
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    EVTX --&gt; TL
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    UAC --&gt; TL
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    Veloci --&gt; TL
+</code></pre></div>
+<h3 id="plugin-system">Plugin System<a class="headerlink" href="#plugin-system" title="Permanent link">&para;</a></h3>
+<p>Parsers register themselves at compile time using the <code>inventory</code> crate. The filesystem walker discovers registered parsers at runtime without hardcoded dispatch:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// In rt-parser-mft:</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">inventory</span><span class="p">::</span><span class="n">submit</span><span class="o">!</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">ParserPlugin</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="s">&quot;mft&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">[</span><span class="s">&quot;$MFT&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">parse_mft</span><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1">// In rt-fswalker:</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="k">for</span><span class="w"> </span><span class="n">plugin</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">inventory</span><span class="p">::</span><span class="n">iter</span><span class="p">::</span><span class="o">&lt;</span><span class="n">ParserPlugin</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">plugin</span><span class="p">.</span><span class="n">can_parse</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">        </span><span class="n">plugin</span><span class="p">.</span><span class="n">parse</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">timeline</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">}</span>
+</code></pre></div>
+<p>Adding a new parser means creating a new crate, implementing the trait, and linking it — no changes to the pipeline.</p>
+<h3 id="timeline-schema">Timeline Schema<a class="headerlink" href="#timeline-schema" title="Permanent link">&para;</a></h3>
+<p>All parsed events become <code>TimelineEvent</code> records in DuckDB:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>timestamp</code></td>
+<td><code>TIMESTAMP_NS</code></td>
+<td>Event time (nanosecond precision)</td>
+</tr>
+<tr>
+<td><code>event_type</code></td>
+<td><code>VARCHAR</code></td>
+<td><code>FileCreate</code>, <code>FileDelete</code>, <code>ProcessExec</code>, <code>LogonEvent</code>, ...</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td><code>VARCHAR</code></td>
+<td>Artifact type: <code>UsnJournal</code>, <code>MFT</code>, <code>EventLog</code>, ...</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><code>VARCHAR</code></td>
+<td>File path or event identifier</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>VARCHAR</code></td>
+<td>Human-readable event summary</td>
+</tr>
+<tr>
+<td><code>evidence_source</code></td>
+<td><code>VARCHAR</code></td>
+<td>Case/host identifier</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>VARCHAR</code> (JSON)</td>
+<td>Artifact-specific structured data</td>
+</tr>
+</tbody>
+</table>
+<p>DuckDB's columnar storage makes time-range and type-filtered queries fast, even with millions of events.</p>
+<hr />
+<h2 id="signature-scanning">Signature Scanning<a class="headerlink" href="#signature-scanning" title="Permanent link">&para;</a></h2>
+<p><code>rt-signatures</code> provides six detection engines behind a unified <code>ScanEngine</code> interface.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>flowchart TD
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    ScanEngine[&quot;ScanEngine\n(unified orchestrator)&quot;]
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    YARA[&quot;YARA Engine\n(yara-x)&quot;]
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    Sigma[&quot;Sigma Engine\n(tau-engine)&quot;]
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    Hash[&quot;Hash IOC\nEngine&quot;]
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    Net[&quot;Network IOC\nEngine&quot;]
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    STIX[&quot;STIX 2.1\nEngine&quot;]
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    Suri[&quot;Suricata\nIOC Extractor&quot;]
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    Feeds[&quot;Feed Registry\n+ Cache&quot;]
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    Findings[&quot;ScanFinding&quot;]
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    ScanEngine --&gt; YARA
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    ScanEngine --&gt; Sigma
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    ScanEngine --&gt; Hash
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>    ScanEngine --&gt; Net
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    ScanEngine --&gt; STIX
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>    ScanEngine --&gt; Suri
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>    Feeds --&gt; ScanEngine
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>    YARA --&gt; Findings
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    Sigma --&gt; Findings
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>    Hash --&gt; Findings
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>    Net --&gt; Findings
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>    STIX --&gt; Findings
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>    Suri --&gt; Findings
+</code></pre></div>
+<h3 id="engine-details">Engine Details<a class="headerlink" href="#engine-details" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Engine</th>
+<th>Input</th>
+<th>Matching Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>YARA</td>
+<td>File bytes</td>
+<td>Pattern matching via yara-x. Compiles rules once, scans files in parallel</td>
+</tr>
+<tr>
+<td>Sigma</td>
+<td>Timeline events</td>
+<td>Converts events to field maps, evaluates detection logic via tau-engine</td>
+</tr>
+<tr>
+<td>Hash IOC</td>
+<td>File hashes</td>
+<td>MD5/SHA-1/SHA-256 lookup in HashSet. Hashes computed on-the-fly</td>
+</tr>
+<tr>
+<td>Network IOC</td>
+<td>Event metadata</td>
+<td>IP, domain, CIDR matching against string fields in event metadata</td>
+</tr>
+<tr>
+<td>STIX 2.1</td>
+<td>Files + events</td>
+<td>Extracts indicators from STIX bundles, dispatches to hash/network engines</td>
+</tr>
+<tr>
+<td>Suricata</td>
+<td>Rule files</td>
+<td>Parses Suricata syntax to extract IPs, domains, ports as network IOCs</td>
+</tr>
+</tbody>
+</table>
+<h3 id="feed-infrastructure">Feed Infrastructure<a class="headerlink" href="#feed-infrastructure" title="Permanent link">&para;</a></h3>
+<p>Threat intelligence feeds are downloaded, cached locally, and loaded into engines automatically:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>flowchart LR
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    Registry[&quot;Feed Registry\n(built-in configs)&quot;]
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    HTTP[&quot;HTTP Downloader\n(reqwest, ETag caching)&quot;]
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    Cache[&quot;Local Feed Cache\n(~/.rapidtriage/feeds/)&quot;]
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    Parsers[&quot;Feed Parsers\n(plaintext, CSV, JSON, STIX)&quot;]
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    Loader[&quot;Feed-to-Engine\nLoader&quot;]
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    ScanEngine[&quot;ScanEngine&quot;]
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    Registry --&gt; HTTP
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    HTTP --&gt; Cache
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    Cache --&gt; Parsers
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    Parsers --&gt; Loader
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    Loader --&gt; ScanEngine
+</code></pre></div>
+<p>Conditional HTTP requests (ETag / If-None-Match) avoid re-downloading unchanged feeds. Each feed has a format parser that extracts indicators into the appropriate engine.</p>
+<hr />
+<h2 id="remote-access-detection">Remote Access Detection<a class="headerlink" href="#remote-access-detection" title="Permanent link">&para;</a></h2>
+<p><code>rt-remote-access</code> uses a hybrid detection engine to find every category of remote access capability in forensic evidence.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>flowchart TD
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    scan[&quot;scan(provider, config)&quot;]
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    subgraph Phase1[&quot;Phase 1: Rule Engine&quot;]
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>        LOLRMM[&quot;LOLRMM YAML\n(400+ RMM tools)&quot;]
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>        Custom[&quot;Custom YAML\n(VPN/ZTNA/Hardware)&quot;]
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>        Compile[&quot;Compile to\nDetectionRule&quot;]
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>        Eval[&quot;Evaluate against\nArtifactProvider&quot;]
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    end
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    subgraph Phase2[&quot;Phase 2: Category Scanners&quot;]
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>        Builtin[&quot;Built-in Remote\n(RDP/SSH)&quot;]
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>        Lateral[&quot;Lateral Movement\n(PsExec/WMI)&quot;]
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>        Tunnel[&quot;Tunneling\n(ngrok/cloudflared)&quot;]
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>        C2[&quot;C2 Frameworks&quot;]
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>        WebShell[&quot;Web Shells&quot;]
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>        Firewall[&quot;Firewall Config&quot;]
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>        Hardware[&quot;Hardware Remote\n(iLO/iDRAC)&quot;]
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>    end
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>    Phase3[&quot;Phase 3: Merge\n(deduplicate by tool + category)&quot;]
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>    Result[&quot;ScanResult\n{findings, capabilities, categories}&quot;]
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>    scan --&gt; Phase1
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>    LOLRMM --&gt; Compile
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>    Custom --&gt; Compile
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>    Compile --&gt; Eval
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>    scan --&gt; Phase2
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>    Eval --&gt; Phase3
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a>    Builtin --&gt; Phase3
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a>    Lateral --&gt; Phase3
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a>    Tunnel --&gt; Phase3
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a>    C2 --&gt; Phase3
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a>    WebShell --&gt; Phase3
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a>    Firewall --&gt; Phase3
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a>    Hardware --&gt; Phase3
+<a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a>    Phase3 --&gt; Result
+</code></pre></div>
+<h3 id="artifactprovider-trait">ArtifactProvider Trait<a class="headerlink" href="#artifactprovider-trait" title="Permanent link">&para;</a></h3>
+<p>The scanner doesn't read forensic artifacts directly. Instead, it queries an <code>ArtifactProvider</code> trait that abstracts over available data sources:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">ArtifactProvider</span><span class="p">:</span><span class="w"> </span><span class="nb">Send</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Sync</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">capabilities</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ProviderCapability</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">registry_values</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">RegistryEntry</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">event_log_entries</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">log_name</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">EventLogEntry</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">prefetch_entries</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">PrefetchEntry</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">file_exists</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="kt">bool</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="c1">// ... 12 methods total, all with default empty implementations</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>Graceful degradation:</strong> Every method has a default implementation returning empty results. If the evidence lacks Event Logs, event-based scanners silently skip rather than error. The <code>capabilities()</code> method reports what data is available, and the evaluator checks capabilities before attempting queries.</p>
+<p><strong>CompositeArtifactProvider</strong> aggregates specialized sub-providers (registry, filesystem, event log) into a single provider, delegating calls based on capability.</p>
+<h3 id="detection-flow">Detection Flow<a class="headerlink" href="#detection-flow" title="Permanent link">&para;</a></h3>
+<p><strong>Rule engine</strong> (Phase 1): LOLRMM YAML definitions describe what artifacts each RMM tool leaves behind (registry keys, file paths, services, event log entries). These are compiled into <code>DetectionRule</code> structs with <code>DetectionCondition</code> variants:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>LOLRMM YAML ──&gt; compile_lolrmm() ──&gt; DetectionRule {
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    conditions: [
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>        RegistryKeyExists(&quot;HKLM\\SOFTWARE\\AnyDesk&quot;),
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>        FilePathExists(&quot;C:\\Program Files\\AnyDesk\\*&quot;),
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>        ServiceName(&quot;AnyDesk&quot;),
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>        EventLogSource(&quot;AnyDesk&quot;),
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    ]
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>}
+</code></pre></div>
+<p>The evaluator tests each condition against the provider, producing a <code>Finding</code> with raw artifact hits when any condition matches.</p>
+<p><strong>Category scanners</strong> (Phase 2): For detection that requires correlation or behavioral analysis (e.g., "RDP is enabled AND NLA is disabled AND firewall allows 3389"), dedicated scanner modules implement the <code>CategoryScanner</code> trait.</p>
+<h3 id="findings-storage">Findings Storage<a class="headerlink" href="#findings-storage" title="Permanent link">&para;</a></h3>
+<p>Findings are stored in a DuckDB <code>findings</code> table and cross-referenced into the timeline as <code>Assessment</code> events:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>flowchart LR
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    Finding[&quot;Finding\n{tool, category, artifacts}&quot;]
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    FTable[&quot;findings table\n(DuckDB)&quot;]
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    XRef[&quot;Cross-reference\nevent&quot;]
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    Timeline[&quot;Timeline\n(chronological view)&quot;]
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    Finding --&gt; FTable
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    Finding --&gt; XRef
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    XRef --&gt; Timeline
+</code></pre></div>
+<p>This gives analysts two views: the findings table for assessment-oriented queries ("what remote access tools were found?") and the timeline for chronological context ("when did AnyDesk first appear relative to the intrusion?").</p>
+<hr />
+<h2 id="report-generation">Report Generation<a class="headerlink" href="#report-generation" title="Permanent link">&para;</a></h2>
+<p><code>rt-report</code> generates self-contained HTML reports from a DuckDB timeline database. Reports include:</p>
+<ul>
+<li>Case metadata (case ID, examiner, generation timestamp)</li>
+<li>Event timeline with filtering and sorting</li>
+<li>Signature findings summary</li>
+<li>Evidence source breakdown</li>
+</ul>
+<p>Reports are single HTML files with embedded CSS — no external dependencies, suitable for email attachment or upload to case management systems.</p>
+<hr />
+<h2 id="data-flow">Data Flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h2>
+<p>End-to-end flow for a typical incident response engagement:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>sequenceDiagram
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    participant User as Practitioner
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    participant CLI as rt (CLI)
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    participant Unpack as rt-unpack
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    participant Walker as rt-fswalker
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    participant Timeline as rt-timeline (DuckDB)
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    participant Sigs as rt-signatures
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    participant RA as rt-remote-access
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    participant Report as rt-report
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>    User-&gt;&gt;CLI: rt ingest /evidence -o case.duckdb --scan
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>    CLI-&gt;&gt;Unpack: detect + unpack collection format
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>    Unpack-&gt;&gt;Walker: walk unpacked evidence tree
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>    Walker-&gt;&gt;Walker: Discover parseable files (parallel via rayon)
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>    Walker-&gt;&gt;Timeline: Insert TimelineEvents
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>    CLI-&gt;&gt;Sigs: scan(timeline_events, engines)
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>    Sigs-&gt;&gt;Timeline: Insert ScanFindings
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>    CLI--&gt;&gt;User: Ingestion complete (N events, M findings)
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>    User-&gt;&gt;CLI: rt remote-access /evidence --db case.duckdb
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>    CLI-&gt;&gt;RA: scan(provider, config)
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>    RA-&gt;&gt;RA: Rule engine (LOLRMM + custom YAML)
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>    RA-&gt;&gt;RA: Category scanners (7 modules)
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>    RA-&gt;&gt;RA: Merge findings
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>    RA-&gt;&gt;Timeline: Insert findings + cross-ref events
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>    CLI--&gt;&gt;User: Remote access findings (table/JSON)
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>    User-&gt;&gt;CLI: rt timeline case.duckdb --flagged
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>    CLI-&gt;&gt;Timeline: Query flagged events
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>    CLI--&gt;&gt;User: Findings with severity and context
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>
+<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a>    User-&gt;&gt;CLI: rt report case.duckdb -o report.html
+<a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a>    CLI-&gt;&gt;Report: generate(db, config)
+<a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>    Report-&gt;&gt;Timeline: Read events + findings
+<a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a>    Report--&gt;&gt;User: Self-contained HTML report
+</code></pre></div>
+<hr />
+<h2 id="design-principles">Design Principles<a class="headerlink" href="#design-principles" title="Permanent link">&para;</a></h2>
+<p><strong>Correctness over speed.</strong> Forensic accuracy is non-negotiable. Rust's type system and <code>unsafe_code = "deny"</code> enforce memory safety. <code>clippy::unwrap_used = "deny"</code> prevents silent panics. When speed and correctness conflict, correctness wins.</p>
+<p><strong>Graceful degradation.</strong> Missing artifacts produce coverage gaps, not crashes. Every parser failure is caught and logged. The pipeline continues with whatever data is available. Partial results with explicit warnings are more valuable than no results.</p>
+<p><strong>Evidence integrity.</strong> RapidTriage never modifies source evidence. All data flows from evidence into new DuckDB databases. Read-only access to evidence is enforced by design.</p>
+<p><strong>Plugin extensibility.</strong> New artifact parsers are added by creating a crate, implementing the plugin trait, and linking it. No changes to the pipeline, timeline, or CLI are required.</p>
+<p><strong>Progressive analysis.</strong> Each command produces useful output independently. <code>rt ingest</code> creates a timeline. <code>rt scan</code> adds threat intel. <code>rt remote-access</code> adds infrastructure assessment. <code>rt report</code> generates deliverables. Run them all or run them individually.</p>
+<hr />
+<h2 id="key-dependencies">Key Dependencies<a class="headerlink" href="#key-dependencies" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Dependency</th>
+<th>Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>duckdb</code></td>
+<td>1.x (bundled)</td>
+<td>Columnar timeline storage, analytical queries</td>
+</tr>
+<tr>
+<td><code>yara-x</code></td>
+<td>0.12</td>
+<td>YARA rule compilation and file scanning</td>
+</tr>
+<tr>
+<td><code>tau-engine</code></td>
+<td>1.0</td>
+<td>Sigma rule evaluation</td>
+</tr>
+<tr>
+<td><code>opendal</code></td>
+<td>0.55</td>
+<td>Remote storage abstraction (S3, GCS, Azure Blob, WebDAV, GDrive)</td>
+</tr>
+<tr>
+<td><code>notatin</code></td>
+<td>1.0</td>
+<td>Windows registry hive parsing</td>
+</tr>
+<tr>
+<td><code>evtx</code></td>
+<td>0.11</td>
+<td>Windows Event Log parsing</td>
+</tr>
+<tr>
+<td><code>mft</code></td>
+<td>0.6</td>
+<td>NTFS Master File Table parsing</td>
+</tr>
+<tr>
+<td><code>ewf</code></td>
+<td>0.1</td>
+<td>Expert Witness Format (E01) image support</td>
+</tr>
+<tr>
+<td><code>inventory</code></td>
+<td>0.3</td>
+<td>Compile-time parser plugin registration</td>
+</tr>
+<tr>
+<td><code>clap</code></td>
+<td>4.x</td>
+<td>CLI argument parsing</td>
+</tr>
+<tr>
+<td><code>rayon</code></td>
+<td>1.x</td>
+<td>Parallel parser dispatch</td>
+</tr>
+<tr>
+<td><code>ratatui</code></td>
+<td>0.29</td>
+<td>TUI framework for rt-navigator</td>
+</tr>
+<tr>
+<td><code>reqwest</code></td>
+<td>0.12</td>
+<td>HTTP feed downloads (rustls-tls)</td>
+</tr>
+<tr>
+<td><code>serde</code> / <code>serde_yaml</code></td>
+<td>1.x / 0.9</td>
+<td>LOLRMM YAML deserialization</td>
+</tr>
+<tr>
+<td><code>tracing</code></td>
+<td>0.1</td>
+<td>Structured logging and diagnostics</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="build-and-test">Build and Test<a class="headerlink" href="#build-and-test" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Full build</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>cargo<span class="w"> </span>build<span class="w"> </span>--workspace<span class="w"> </span>--release
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Full test suite</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>cargo<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--workspace
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="c1"># Single crate</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>cargo<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-p<span class="w"> </span>rt-remote-access
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>cargo<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-p<span class="w"> </span>rt-signatures
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="c1"># Lints</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>cargo<span class="w"> </span>clippy<span class="w"> </span>--workspace<span class="w"> </span>--lib<span class="w"> </span>--bins
+</code></pre></div>
+<p>Minimum Rust version: 1.80. C compiler required for bundled DuckDB.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "navigation.tabs", "navigation.sections", "navigation.top", "search.highlight"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>

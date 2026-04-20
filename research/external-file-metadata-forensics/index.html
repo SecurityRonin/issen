@@ -1,0 +1,3600 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://securityronin.github.io/rapidtriage/research/external-file-metadata-forensics/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>External File Metadata Forensics: Complete Reference for Rust Parser Development - RapidTriage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#external-file-metadata-forensics-complete-reference-for-rust-parser-development" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="RapidTriage" class="md-header__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            RapidTriage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              External File Metadata Forensics: Complete Reference for Rust Parser Development
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../privacy/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Privacy Policy
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../terms/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Terms of Service
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="RapidTriage" class="md-nav__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    RapidTriage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../terms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terms of Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-ntfs-alternate-data-streams-ads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 1: NTFS Alternate Data Streams (ADS)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1: NTFS Alternate Data Streams (ADS)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-zoneidentifier-mark-of-the-web" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Zone.Identifier (Mark of the Web)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.1 Zone.Identifier (Mark of the Web)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zoneid-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ZoneId Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#properties-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Properties Reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#browser-behavior-differences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Browser Behavior Differences
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parsing-from-raw-ntfs-mft" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parsing from Raw NTFS $MFT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-forensic-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Forensic Considerations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-smartscreen-ads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 SmartScreen ADS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-other-known-ntfs-ads-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Other Known NTFS ADS Names
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-ads-in-usnjrnl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 ADS in $UsnJrnl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-ads-in-logfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5 ADS in $LogFile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#16-ads-preservation-during-file-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6 ADS Preservation During File Operations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#17-malware-use-of-ads-mitre-t1564004" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.7 Malware Use of ADS (MITRE T1564.004)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-ntfs-ea-extended-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2: NTFS $EA (Extended Attributes)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2: NTFS $EA (Extended Attributes)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-ea-vs-ads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 $EA vs ADS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-on-disk-structure-file_full_ea_information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 On-Disk Structure: FILE_FULL_EA_INFORMATION
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-wsl-linux-metadata-in-ea" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 WSL Linux Metadata in $EA
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.3 WSL Linux Metadata in $EA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#legacy-lxfs-format-lxattrb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Legacy LxFs Format: LXATTRB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#newer-wslfs-drvfs-format-separate-ea-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Newer WslFs / DrvFs Format: Separate EA Entries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-common-ea-names-velociraptor-default-exclusions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Common $EA Names (Velociraptor Default Exclusions)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-forensic-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5 Forensic Tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-ntfs-security-descriptors-access-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 3: NTFS Security Descriptors &amp; Access Control
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 3: NTFS Security Descriptors &amp; Access Control">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-security-descriptor-binary-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Security Descriptor Binary Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1 Security Descriptor Binary Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#header-20-bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Header (20 bytes)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#control-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Control Flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#acl-header-8-bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ACL Header (8 bytes)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ace-access-control-entry-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ACE (Access Control Entry) Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ace-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ACE Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ace-flags-inheritance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ACE Flags (Inheritance)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#access-mask-bit-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access Mask Bit Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sid-binary-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SID Binary Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-secure-file-and-securityid-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 $Secure File and SecurityId Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-well-known-sids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Well-Known SIDs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-mandatory-integrity-control-mic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Mandatory Integrity Control (MIC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-4-macos-extended-attributes-xattr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 4: macOS Extended Attributes (xattr)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 4: macOS Extended Attributes (xattr)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-comapplequarantine-mark-of-the-web-equivalent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 com.apple.quarantine (Mark of the Web Equivalent)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1 com.apple.quarantine (Mark of the Web Equivalent)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#format_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quarantine-flag-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quarantine Flag Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quarantineeventsv2-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QuarantineEventsV2 Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#browser-differences-macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Browser Differences (macOS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-comapplemetadatakmditemwherefroms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 com.apple.metadata:kMDItemWhereFroms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-comapplemetadatakmditemdownloadeddate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 com.apple.metadata:kMDItemDownloadedDate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-comapplelastuseddateps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 com.apple.lastuseddate#PS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-comapplemacl-mandatory-access-control-label" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.5 com.apple.macl (Mandatory Access Control Label)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#46-comappleprovenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.6 com.apple.provenance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#47-comapplefinderinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.7 com.apple.FinderInfo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#48-other-macos-extended-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.8 Other macOS Extended Attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#49-apfs-xattr-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.9 APFS xattr Storage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.9 APFS xattr Storage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inline-embedded-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inline (Embedded) Storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-stream-extent-based-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Stream (Extent-Based) Storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#410-hfs-xattr-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.10 HFS+ xattr Storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-5-macos-gatekeeper-tcc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 5: macOS Gatekeeper &amp; TCC
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 5: macOS Gatekeeper &amp; TCC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-gatekeeper-assessment-databases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Gatekeeper Assessment Databases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-tcc-transparency-consent-and-control-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 TCC (Transparency, Consent, and Control) Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-6-linux-extended-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 6: Linux Extended Attributes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 6: Linux Extended Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-namespaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Namespaces
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-securityselinux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 security.selinux
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-securitycapability-file-capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 security.capability (File Capabilities)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.3 security.capability (File Capabilities)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#binary-format-struct-vfs_cap_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Binary Format (struct vfs_cap_data)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#revision-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Revision Versions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#magic_etc-field-decoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        magic_etc Field Decoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-capabilities-forensically-significant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Capabilities (Forensically Significant)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hunting-for-capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hunting for Capabilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64-securityima-integrity-measurement-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 security.ima (Integrity Measurement Architecture)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#65-securityevm-extended-verification-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.5 security.evm (Extended Verification Module)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#66-xdg-origin-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.6 XDG Origin Attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#67-posix-acls-systemposix_acl_access-systemposix_acl_default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.7 POSIX ACLs (system.posix_acl_access / system.posix_acl_default)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.7 POSIX ACLs (system.posix_acl_access / system.posix_acl_default)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#uapi-userspace-binary-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UAPI (Userspace) Binary Format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tag-values-e_tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tag Values (e_tag)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#permission-bits-e_perm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permission Bits (e_perm)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ext4-on-disk-format-compact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ext4 On-Disk Format (Compact)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validity-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validity Rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#68-nfsv4-acls-systemnfs4_acl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.8 NFSv4 ACLs (system.nfs4_acl)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-7-cross-platform-interoperability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 7: Cross-Platform Interoperability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 7: Cross-Platform Interoperability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-appledouble-format-_filename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 AppleDouble Format (._filename)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-ntfs-interop-afp-streams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 NTFS Interop: AFP Streams
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-preservation-caveats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Preservation Caveats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-8-rust-parsing-approach-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 8: Rust Parsing Approach Summary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 8: Rust Parsing Approach Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recommended-crate-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended Crate Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-parsing-tasks-by-platform" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Parsing Tasks by Platform
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ntfs-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NTFS &amp; Windows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        macOS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linux
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cross-platform-interoperability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Platform / Interoperability
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="external-file-metadata-forensics-complete-reference-for-rust-parser-development">External File Metadata Forensics: Complete Reference for Rust Parser Development<a class="headerlink" href="#external-file-metadata-forensics-complete-reference-for-rust-parser-development" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>Research compiled 2026-03-25 for RapidTriage forensic parser development.
+Covers NTFS ADS, macOS xattrs, Linux xattrs, ACLs, and related external metadata systems.</p>
+</blockquote>
+<hr />
+<h2 id="part-1-ntfs-alternate-data-streams-ads">Part 1: NTFS Alternate Data Streams (ADS)<a class="headerlink" href="#part-1-ntfs-alternate-data-streams-ads" title="Permanent link">&para;</a></h2>
+<h3 id="11-zoneidentifier-mark-of-the-web">1.1 Zone.Identifier (Mark of the Web)<a class="headerlink" href="#11-zoneidentifier-mark-of-the-web" title="Permanent link">&para;</a></h3>
+<h4 id="format">Format<a class="headerlink" href="#format" title="Permanent link">&para;</a></h4>
+<p>The Zone.Identifier is an NTFS ADS stored as a plain-text INI file attached to downloaded files. It is accessed as <code>filename:Zone.Identifier:$DATA</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[ZoneTransfer]</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">ZoneId</span><span class="o">=</span><span class="s">3</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="na">ReferrerUrl</span><span class="o">=</span><span class="s">https://example.com/downloads/</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="na">HostUrl</span><span class="o">=</span><span class="s">https://example.com/downloads/file.exe</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="na">HostIpAddress</span><span class="o">=</span><span class="s">203.0.113.50</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="na">LastWriterPackageFamilyName</span><span class="o">=</span><span class="s">Microsoft.MicrosoftEdge_8wekyb3d8bbwe</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="na">AppZoneId</span><span class="o">=</span><span class="s">4</span>
+</code></pre></div>
+<h4 id="zoneid-values">ZoneId Values<a class="headerlink" href="#zoneid-values" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>ZoneId</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Local Machine</td>
+<td>File originated from the local system</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Local Intranet</td>
+<td>File from intranet zone</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Trusted Sites</td>
+<td>File from a trusted site</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Internet</td>
+<td>File downloaded from the internet</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Restricted Sites</td>
+<td>File from restricted/untrusted zone</td>
+</tr>
+</tbody>
+</table>
+<h4 id="properties-reference">Properties Reference<a class="headerlink" href="#properties-reference" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Since</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZoneId</code></td>
+<td>XP SP2</td>
+<td>Security zone of origin (0-4)</td>
+</tr>
+<tr>
+<td><code>ReferrerUrl</code></td>
+<td>Win10 1703</td>
+<td>Page URL where the download link was clicked</td>
+</tr>
+<tr>
+<td><code>HostUrl</code></td>
+<td>Win10 1703</td>
+<td>Direct download URL of the file</td>
+</tr>
+<tr>
+<td><code>HostIpAddress</code></td>
+<td>Win10 1703</td>
+<td>IP address of the download server</td>
+</tr>
+<tr>
+<td><code>LastWriterPackageFamilyName</code></td>
+<td>Win10 1703</td>
+<td>UWP/Store app package family name that wrote the file</td>
+</tr>
+<tr>
+<td><code>AppZoneId</code></td>
+<td>Win10 1703</td>
+<td>SmartScreen reputation assessment zone</td>
+</tr>
+</tbody>
+</table>
+<h4 id="browser-behavior-differences">Browser Behavior Differences<a class="headerlink" href="#browser-behavior-differences" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Chrome</th>
+<th>Edge (Legacy/UWP)</th>
+<th>Edge (Chromium)</th>
+<th>Firefox (older)</th>
+<th>Firefox (newer)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ZoneId</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>HostUrl</td>
+<td>Yes</td>
+<td>Sometimes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>ReferrerUrl</td>
+<td>Yes</td>
+<td>Sometimes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>HostIpAddress</td>
+<td>No</td>
+<td>Yes</td>
+<td>Varies</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>LastWriterPackageFamilyName</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>AppZoneId</td>
+<td>No</td>
+<td>Via SmartScreen</td>
+<td>Via SmartScreen</td>
+<td>No</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key forensic notes:</strong>
+- <code>curl</code> and <code>wget</code> on Windows do NOT create Zone.Identifier streams.
+- Archive extraction via Windows Explorer propagates Zone.Identifier to extracted files, with <code>ReferrerUrl</code> pointing back to the archive's local path.
+- HTML smuggling (blob: URLs) results in <code>HostUrl=about:internet</code> in Chromium-based browsers.
+- Incognito/Private browsing may omit <code>ReferrerUrl</code>/<code>HostUrl</code> but still writes <code>ZoneId</code>.</p>
+<h4 id="parsing-from-raw-ntfs-mft">Parsing from Raw NTFS $MFT<a class="headerlink" href="#parsing-from-raw-ntfs-mft" title="Permanent link">&para;</a></h4>
+<p>The Zone.Identifier is stored as a named <code>$DATA</code> attribute in the MFT record. In the MFT entry for a file:
+1. Locate all <code>$DATA</code> attributes (type 0x80).
+2. Named <code>$DATA</code> attributes have a non-zero name offset and name length in the attribute header.
+3. The stream name <code>Zone.Identifier</code> is stored as UTF-16LE.
+4. For resident attributes, the data follows inline. For non-resident, follow the data run list.</p>
+<h4 id="anti-forensic-considerations">Anti-Forensic Considerations<a class="headerlink" href="#anti-forensic-considerations" title="Permanent link">&para;</a></h4>
+<ul>
+<li>"Unblock" via file properties deletes the entire Zone.Identifier ADS.</li>
+<li>Zone.Identifier can be disabled via Group Policy: <code>User Configuration &gt; Administrative Templates &gt; Windows Components &gt; Attachment Manager &gt; Do not preserve zone information</code>.</li>
+<li>Copying to FAT/FAT32/exFAT removes all ADS.</li>
+<li>MotW bypass CVEs: CVE-2022-41091, CVE-2022-44698, CVE-2023-36584, CVE-2024-38217.</li>
+<li>ISO/VHD/VHDX containers bypass MotW because their internal filesystems don't support NTFS ADS.</li>
+</ul>
+<h3 id="12-smartscreen-ads">1.2 SmartScreen ADS<a class="headerlink" href="#12-smartscreen-ads" title="Permanent link">&para;</a></h3>
+<p>Windows SmartScreen creates an ADS named <code>:SmartScreen</code> on some downloaded executables. The content is typically the string <code>"Anaheim"</code> (the codename for Chromium-based Edge), marking the file as having been assessed by SmartScreen.</p>
+<p><strong>Forensic significance:</strong> Presence of <code>:SmartScreen</code> confirms the file was downloaded and assessed. Useful for IR/threat hunting: <code>dir /r</code> or Sysmon to search for these streams.</p>
+<h3 id="13-other-known-ntfs-ads-names">1.3 Other Known NTFS ADS Names<a class="headerlink" href="#13-other-known-ntfs-ads-names" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ADS Name</th>
+<th>Source</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>:$DATA</code> (unnamed)</td>
+<td>NTFS</td>
+<td>Default data stream (file content)</td>
+</tr>
+<tr>
+<td><code>:Zone.Identifier</code></td>
+<td>Windows</td>
+<td>Mark of the Web download provenance</td>
+</tr>
+<tr>
+<td><code>:SmartScreen</code></td>
+<td>Windows Defender</td>
+<td>SmartScreen reputation assessment</td>
+</tr>
+<tr>
+<td><code>:{GUID}</code> (various)</td>
+<td>Kaspersky, AV products</td>
+<td>File scan result hash/signature</td>
+</tr>
+<tr>
+<td><code>:encryptable</code></td>
+<td>EFS</td>
+<td>EFS encryption metadata</td>
+</tr>
+<tr>
+<td><code>:OECustomProperty</code></td>
+<td>Outlook</td>
+<td>Custom email properties</td>
+</tr>
+<tr>
+<td><code>:com.dropbox.attrs</code></td>
+<td>Dropbox</td>
+<td>Dropbox sync metadata</td>
+</tr>
+<tr>
+<td><code>:AFP_Resource</code></td>
+<td>SFM/ExtremeZ-IP</td>
+<td>Mac resource fork (NTFS interop)</td>
+</tr>
+<tr>
+<td><code>:AFP_AfpInfo</code></td>
+<td>SFM/ExtremeZ-IP</td>
+<td>Mac AFP metadata (NTFS interop)</td>
+</tr>
+<tr>
+<td><code>:{4c8cc155-6c1e-11d1-8e41-00c04fb9386d}</code></td>
+<td>Legacy Windows</td>
+<td>Summary Information (OLE)</td>
+</tr>
+<tr>
+<td><code>:Favicon</code></td>
+<td>Internet Explorer</td>
+<td>Cached favicon data</td>
+</tr>
+<tr>
+<td><code>:ms-properties</code></td>
+<td>Windows</td>
+<td>Windows property store</td>
+</tr>
+<tr>
+<td><code>:bin</code></td>
+<td>BitPaymer ransomware</td>
+<td>Malware hiding (copies itself here)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="14-ads-in-usnjrnl">1.4 ADS in $UsnJrnl<a class="headerlink" href="#14-ads-in-usnjrnl" title="Permanent link">&para;</a></h3>
+<p>The USN Journal (<code>$Extend\$UsnJrnl:$J</code>) tracks ADS operations with specific reason codes:</p>
+<table>
+<thead>
+<tr>
+<th>Reason Code</th>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>USN_REASON_NAMED_DATA_OVERWRITE</code></td>
+<td><code>0x00000010</code></td>
+<td>Named data stream (ADS) content overwritten</td>
+</tr>
+<tr>
+<td><code>USN_REASON_NAMED_DATA_EXTEND</code></td>
+<td><code>0x00000020</code></td>
+<td>Named data stream (ADS) content extended</td>
+</tr>
+<tr>
+<td><code>USN_REASON_NAMED_DATA_TRUNCATION</code></td>
+<td><code>0x00000040</code></td>
+<td>Named data stream (ADS) content truncated</td>
+</tr>
+<tr>
+<td><code>USN_REASON_STREAM_CHANGE</code></td>
+<td>(various)</td>
+<td>Generic stream change indicator</td>
+</tr>
+</tbody>
+</table>
+<p>These are distinct from <code>USN_REASON_DATA_OVERWRITE</code> (0x00000001) and <code>USN_REASON_DATA_EXTEND</code> (0x00000002), which apply to the default unnamed stream.</p>
+<p><strong>Forensic approach:</strong> Parse <code>$UsnJrnl:$J</code> and filter for <code>NAMED_DATA_*</code> reason flags to detect ADS creation/modification, even if the files are deleted.</p>
+<h3 id="15-ads-in-logfile">1.5 ADS in $LogFile<a class="headerlink" href="#15-ads-in-logfile" title="Permanent link">&para;</a></h3>
+<p>The NTFS <code>$LogFile</code> (MFT entry #2) records redo/undo operations for all metadata changes. ADS creation shows up as new <code>$DATA</code> attribute creation in the MFT record. The $LogFile is a circular log (default 64KB blocks), so data retention is typically minutes to hours on active volumes.</p>
+<h3 id="16-ads-preservation-during-file-operations">1.6 ADS Preservation During File Operations<a class="headerlink" href="#16-ads-preservation-during-file-operations" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>ADS Preserved?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NTFS-to-NTFS file copy (Windows API)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>NTFS-to-NTFS folder copy (Explorer, post-Win7)</td>
+<td>No (bug in IFileOperation)</td>
+</tr>
+<tr>
+<td>NTFS-to-FAT/FAT32/exFAT</td>
+<td>No (ADS stripped)</td>
+</tr>
+<tr>
+<td>NTFS-to-network share</td>
+<td>Often No</td>
+</tr>
+<tr>
+<td>Upload (FTP, cloud, email attachment)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>ZIP/archive compression</td>
+<td>No (unless tool specifically preserves)</td>
+</tr>
+<tr>
+<td>Unblock file (Properties dialog)</td>
+<td>Deletes Zone.Identifier only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="17-malware-use-of-ads-mitre-t1564004">1.7 Malware Use of ADS (MITRE T1564.004)<a class="headerlink" href="#17-malware-use-of-ads-mitre-t1564004" title="Permanent link">&para;</a></h3>
+<p>Known threat actors and malware families abusing ADS:</p>
+<table>
+<thead>
+<tr>
+<th>Threat</th>
+<th>Technique</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>BitPaymer</strong></td>
+<td>Copies self to <code>:bin</code> ADS of a new file, executes from ADS</td>
+</tr>
+<tr>
+<td><strong>WastedLocker</strong></td>
+<td>Stores executable content in ADS</td>
+</tr>
+<tr>
+<td><strong>Valak</strong></td>
+<td>Saves and executes files as ADS</td>
+</tr>
+<tr>
+<td><strong>APT32 (OceanLotus)</strong></td>
+<td>Used ADS during Cobalt Kitty campaign</td>
+</tr>
+<tr>
+<td><strong>Regin</strong></td>
+<td>Stores encrypted executables in <code>$EA</code> (Extended Attributes)</td>
+</tr>
+<tr>
+<td><strong>Zeroaccess</strong></td>
+<td>Stores operational data in Extended Attributes</td>
+</tr>
+<tr>
+<td><strong>Latrodectus</strong></td>
+<td>Uses ADS for self-deletion while process is running</td>
+</tr>
+</tbody>
+</table>
+<p><strong>LOLBins that can manipulate ADS:</strong> <code>type</code>, <code>esentutl</code>, <code>expand</code>, <code>extrac32</code>, <code>findstr</code>, <code>certutil.exe</code>, <code>makecab</code>, <code>print</code>, <code>reg export</code>, <code>regedit</code>, PowerShell (<code>Set-Content -Stream</code>, <code>Get-Content -Stream</code>).</p>
+<p><strong>Detection:</strong> Monitor Sysmon Event ID 1 for execution with ADS parameters. Watch for filenames containing colons. Use <code>dir /r</code> or <code>streams.exe</code> (Sysinternals) for enumeration.</p>
+<hr />
+<h2 id="part-2-ntfs-ea-extended-attributes">Part 2: NTFS $EA (Extended Attributes)<a class="headerlink" href="#part-2-ntfs-ea-extended-attributes" title="Permanent link">&para;</a></h2>
+<h3 id="21-ea-vs-ads">2.1 $EA vs ADS<a class="headerlink" href="#21-ea-vs-ads" title="Permanent link">&para;</a></h3>
+<p><code>$EA</code> is a distinct MFT attribute (type 0xE0) from ADS (<code>$DATA</code> type 0x80). Extended Attributes store name-value pairs used by OS/2 compatibility, WSL, SMB, and NFS.</p>
+<h3 id="22-on-disk-structure-file_full_ea_information">2.2 On-Disk Structure: FILE_FULL_EA_INFORMATION<a class="headerlink" href="#22-on-disk-structure-file_full_ea_information" title="Permanent link">&para;</a></h3>
+<p>Each EA entry uses the <code>FILE_FULL_EA_INFORMATION</code> structure:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Offset  Size  Field
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>0x00    4     NextEntryOffset (0 = last entry; otherwise offset to next entry, padded to DWORD)
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>0x04    1     Flags (0x00 or 0x80 = FILE_NEED_EA)
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>0x05    1     EaNameLength (length of name, excluding null terminator)
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>0x06    2     EaValueLength (length of value data)
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>0x08    var   EaName (null-terminated ASCII string)
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>var     var   EaValue (raw bytes, length = EaValueLength)
+</code></pre></div>
+<h3 id="23-wsl-linux-metadata-in-ea">2.3 WSL Linux Metadata in $EA<a class="headerlink" href="#23-wsl-linux-metadata-in-ea" title="Permanent link">&para;</a></h3>
+<h4 id="legacy-lxfs-format-lxattrb">Legacy LxFs Format: <code>LXATTRB</code><a class="headerlink" href="#legacy-lxfs-format-lxattrb" title="Permanent link">&para;</a></h4>
+<p>A single EA entry named <code>LXATTRB</code> containing a packed 56-byte structure:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Offset  Size  Field
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>0x00    2     Flags
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>0x02    2     Version
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>0x04    4     st_mode (Linux file mode, e.g., 0100644)
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>0x08    4     st_uid (Linux user ID)
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>0x0C    4     st_gid (Linux group ID)
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>0x10    4     st_rdev (device ID)
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>0x14    4     atime_sec (access time seconds)
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>0x18    4     atime_nsec (access time nanoseconds)
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>0x1C    4     (padding)
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>0x20    4     mtime_sec
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>0x24    4     mtime_nsec
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>0x28    4     (padding)
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>0x2C    4     ctime_sec
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>0x30    4     ctime_nsec
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>0x34    4     (padding)
+</code></pre></div>
+<h4 id="newer-wslfs-drvfs-format-separate-ea-entries">Newer WslFs / DrvFs Format: Separate EA Entries<a class="headerlink" href="#newer-wslfs-drvfs-format-separate-ea-entries" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>EA Name</th>
+<th>Size</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$LXUID</code></td>
+<td>4 bytes</td>
+<td>Linux User ID (uint32 LE)</td>
+</tr>
+<tr>
+<td><code>$LXGID</code></td>
+<td>4 bytes</td>
+<td>Linux Group ID (uint32 LE)</td>
+</tr>
+<tr>
+<td><code>$LXMOD</code></td>
+<td>4 bytes</td>
+<td>Linux file mode (uint32 LE)</td>
+</tr>
+<tr>
+<td><code>$LXDEV</code></td>
+<td>4 bytes</td>
+<td>Linux device ID (uint32 LE)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Known bug:</strong> DrvFs with metadata has an off-by-one error in <code>FILE_FULL_EA_INFORMATION</code> layout, causing Windows API (<code>ZwQueryEaFile</code>) to misread by 1 byte.</p>
+<h3 id="24-common-ea-names-velociraptor-default-exclusions">2.4 Common $EA Names (Velociraptor Default Exclusions)<a class="headerlink" href="#24-common-ea-names-velociraptor-default-exclusions" title="Permanent link">&para;</a></h3>
+<p>The Velociraptor <code>Windows.NTFS.ExtendedAttributes</code> artifact excludes these common legitimate EA names:
+- <code>$KERNEL.PURGE.ESBCACHE</code>
+- <code>$KERNEL.PURGE.APPXFICACHE</code>
+- <code>$CI.CATALOGHINT</code>
+- <code>{GUID}.CSC.*</code> patterns</p>
+<h3 id="25-forensic-tools">2.5 Forensic Tools<a class="headerlink" href="#25-forensic-tools" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>EaTools</strong> (jschicht/GitHub): Parse and manipulate $EA on NTFS</li>
+<li><strong>Velociraptor</strong>: <code>Windows.NTFS.ExtendedAttributes</code> artifact</li>
+<li><strong>MFTECmd</strong> (Eric Zimmerman): Parses MFT including $EA attribute</li>
+</ul>
+<hr />
+<h2 id="part-3-ntfs-security-descriptors-access-control">Part 3: NTFS Security Descriptors &amp; Access Control<a class="headerlink" href="#part-3-ntfs-security-descriptors-access-control" title="Permanent link">&para;</a></h2>
+<h3 id="31-security-descriptor-binary-structure">3.1 Security Descriptor Binary Structure<a class="headerlink" href="#31-security-descriptor-binary-structure" title="Permanent link">&para;</a></h3>
+<h4 id="header-20-bytes">Header (20 bytes)<a class="headerlink" href="#header-20-bytes" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Offset  Size  Field
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>0x00    1     Revision (always 0x01)
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>0x01    1     Padding (0x00)
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>0x02    2     Control Flags (LE)
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>0x04    4     Offset to Owner SID (from start of descriptor)
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>0x08    4     Offset to Group SID
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>0x0C    4     Offset to SACL (0 if no SACL)
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>0x10    4     Offset to DACL (0 if no DACL)
+</code></pre></div>
+<h4 id="control-flags">Control Flags<a class="headerlink" href="#control-flags" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x0001</td>
+<td>SE_OWNER_DEFAULTED</td>
+<td>Owner was set by default mechanism</td>
+</tr>
+<tr>
+<td>0x0002</td>
+<td>SE_GROUP_DEFAULTED</td>
+<td>Group was set by default mechanism</td>
+</tr>
+<tr>
+<td>0x0004</td>
+<td>SE_DACL_PRESENT</td>
+<td>DACL is present</td>
+</tr>
+<tr>
+<td>0x0008</td>
+<td>SE_DACL_DEFAULTED</td>
+<td>DACL was set by default</td>
+</tr>
+<tr>
+<td>0x0010</td>
+<td>SE_SACL_PRESENT</td>
+<td>SACL is present</td>
+</tr>
+<tr>
+<td>0x0020</td>
+<td>SE_SACL_DEFAULTED</td>
+<td>SACL was set by default</td>
+</tr>
+<tr>
+<td>0x0100</td>
+<td>SE_DACL_AUTO_INHERIT_REQ</td>
+<td>DACL auto-inherit requested</td>
+</tr>
+<tr>
+<td>0x0200</td>
+<td>SE_SACL_AUTO_INHERIT_REQ</td>
+<td>SACL auto-inherit requested</td>
+</tr>
+<tr>
+<td>0x0400</td>
+<td>SE_DACL_AUTO_INHERITED</td>
+<td>DACL was auto-inherited</td>
+</tr>
+<tr>
+<td>0x0800</td>
+<td>SE_SACL_AUTO_INHERITED</td>
+<td>SACL was auto-inherited</td>
+</tr>
+<tr>
+<td>0x1000</td>
+<td>SE_DACL_PROTECTED</td>
+<td>DACL is protected from inheritance</td>
+</tr>
+<tr>
+<td>0x2000</td>
+<td>SE_SACL_PROTECTED</td>
+<td>SACL is protected from inheritance</td>
+</tr>
+<tr>
+<td>0x4000</td>
+<td>SE_RM_CONTROL_VALID</td>
+<td>Resource Manager control valid</td>
+</tr>
+<tr>
+<td>0x8000</td>
+<td>SE_SELF_RELATIVE</td>
+<td>Self-relative format (offsets, not pointers)</td>
+</tr>
+</tbody>
+</table>
+<p>Common value on disk: <code>0x8004</code> (DACL Present + Self-Relative) or <code>0x8014</code> (DACL + SACL Present + Self-Relative).</p>
+<h4 id="acl-header-8-bytes">ACL Header (8 bytes)<a class="headerlink" href="#acl-header-8-bytes" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Offset  Size  Field
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>0x00    1     AclRevision (0x02 = ACL_REVISION, 0x04 = ACL_REVISION_DS)
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>0x01    1     Sbz1 (padding, 0x00)
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>0x02    2     AclSize (total size of ACL in bytes, LE)
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>0x04    2     AceCount (number of ACEs, LE)
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>0x06    2     Sbz2 (padding, 0x00)
+</code></pre></div>
+<h4 id="ace-access-control-entry-structure">ACE (Access Control Entry) Structure<a class="headerlink" href="#ace-access-control-entry-structure" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Offset  Size  Field
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>0x00    1     AceType
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>0x01    1     AceFlags
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>0x02    2     AceSize (total size of this ACE in bytes, LE)
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>0x04    4     AccessMask (32-bit access rights bitmask, LE)
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>0x08    var   SID (variable-length Security Identifier)
+</code></pre></div>
+<h4 id="ace-types">ACE Types<a class="headerlink" href="#ace-types" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x00</td>
+<td>ACCESS_ALLOWED_ACE_TYPE</td>
+<td>Grants access</td>
+</tr>
+<tr>
+<td>0x01</td>
+<td>ACCESS_DENIED_ACE_TYPE</td>
+<td>Denies access</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>SYSTEM_AUDIT_ACE_TYPE</td>
+<td>Audit (in SACL)</td>
+</tr>
+<tr>
+<td>0x03</td>
+<td>SYSTEM_ALARM_ACE_TYPE</td>
+<td>Alarm (reserved)</td>
+</tr>
+<tr>
+<td>0x05</td>
+<td>ACCESS_ALLOWED_OBJECT_ACE_TYPE</td>
+<td>Object-specific allow (AD)</td>
+</tr>
+<tr>
+<td>0x06</td>
+<td>ACCESS_DENIED_OBJECT_ACE_TYPE</td>
+<td>Object-specific deny (AD)</td>
+</tr>
+<tr>
+<td>0x07</td>
+<td>SYSTEM_AUDIT_OBJECT_ACE_TYPE</td>
+<td>Object-specific audit</td>
+</tr>
+<tr>
+<td>0x11</td>
+<td>SYSTEM_MANDATORY_LABEL_ACE_TYPE</td>
+<td>Mandatory Integrity label</td>
+</tr>
+<tr>
+<td>0x12</td>
+<td>SYSTEM_RESOURCE_ATTRIBUTE_ACE_TYPE</td>
+<td>Resource attribute</td>
+</tr>
+<tr>
+<td>0x13</td>
+<td>SYSTEM_SCOPED_POLICY_ID_ACE_TYPE</td>
+<td>Scoped policy</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ace-flags-inheritance">ACE Flags (Inheritance)<a class="headerlink" href="#ace-flags-inheritance" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x01</td>
+<td>OBJECT_INHERIT_ACE</td>
+<td>ACE inherited by child objects</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>CONTAINER_INHERIT_ACE</td>
+<td>ACE inherited by child containers</td>
+</tr>
+<tr>
+<td>0x04</td>
+<td>NO_PROPAGATE_INHERIT_ACE</td>
+<td>Inheritance stops after one level</td>
+</tr>
+<tr>
+<td>0x08</td>
+<td>INHERIT_ONLY_ACE</td>
+<td>ACE applies only to children, not this object</td>
+</tr>
+<tr>
+<td>0x10</td>
+<td>INHERITED_ACE</td>
+<td>ACE was inherited from parent</td>
+</tr>
+<tr>
+<td>0x40</td>
+<td>SUCCESSFUL_ACCESS_ACE_FLAG</td>
+<td>Audit on successful access (SACL)</td>
+</tr>
+<tr>
+<td>0x80</td>
+<td>FAILED_ACCESS_ACE_FLAG</td>
+<td>Audit on failed access (SACL)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="access-mask-bit-fields">Access Mask Bit Fields<a class="headerlink" href="#access-mask-bit-fields" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x00000001</td>
+<td>FILE_READ_DATA / FILE_LIST_DIRECTORY</td>
+</tr>
+<tr>
+<td>0x00000002</td>
+<td>FILE_WRITE_DATA / FILE_ADD_FILE</td>
+</tr>
+<tr>
+<td>0x00000004</td>
+<td>FILE_APPEND_DATA / FILE_ADD_SUBDIRECTORY</td>
+</tr>
+<tr>
+<td>0x00000008</td>
+<td>FILE_READ_EA</td>
+</tr>
+<tr>
+<td>0x00000010</td>
+<td>FILE_WRITE_EA</td>
+</tr>
+<tr>
+<td>0x00000020</td>
+<td>FILE_EXECUTE / FILE_TRAVERSE</td>
+</tr>
+<tr>
+<td>0x00000040</td>
+<td>FILE_DELETE_CHILD</td>
+</tr>
+<tr>
+<td>0x00000080</td>
+<td>FILE_READ_ATTRIBUTES</td>
+</tr>
+<tr>
+<td>0x00000100</td>
+<td>FILE_WRITE_ATTRIBUTES</td>
+</tr>
+<tr>
+<td>0x00010000</td>
+<td>DELETE</td>
+</tr>
+<tr>
+<td>0x00020000</td>
+<td>READ_CONTROL</td>
+</tr>
+<tr>
+<td>0x00040000</td>
+<td>WRITE_DAC</td>
+</tr>
+<tr>
+<td>0x00080000</td>
+<td>WRITE_OWNER</td>
+</tr>
+<tr>
+<td>0x00100000</td>
+<td>SYNCHRONIZE</td>
+</tr>
+<tr>
+<td>0x01000000</td>
+<td>ACCESS_SYSTEM_SECURITY</td>
+</tr>
+<tr>
+<td>0x02000000</td>
+<td>MAXIMUM_ALLOWED</td>
+</tr>
+<tr>
+<td>0x10000000</td>
+<td>GENERIC_ALL</td>
+</tr>
+<tr>
+<td>0x20000000</td>
+<td>GENERIC_EXECUTE</td>
+</tr>
+<tr>
+<td>0x40000000</td>
+<td>GENERIC_WRITE</td>
+</tr>
+<tr>
+<td>0x80000000</td>
+<td>GENERIC_READ</td>
+</tr>
+</tbody>
+</table>
+<h4 id="sid-binary-structure">SID Binary Structure<a class="headerlink" href="#sid-binary-structure" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Offset  Size  Field
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>0x00    1     Revision (always 0x01)
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>0x01    1     SubAuthorityCount (1-15)
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>0x02    6     IdentifierAuthority (big-endian 48-bit value)
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>0x08    4*N   SubAuthority[N] (array of uint32 LE values)
+</code></pre></div>
+<p>Total size: <code>8 + (4 * SubAuthorityCount)</code> bytes.</p>
+<p>Example: <code>S-1-5-32-544</code> (Administrators):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>01              Revision = 1
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>02              SubAuthorityCount = 2
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>000000000005    IdentifierAuthority = 5 (NT Authority)
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>20000000        SubAuthority[0] = 32 (BUILTIN_DOMAIN)
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>20020000        SubAuthority[1] = 544 (DOMAIN_ALIAS_RID_ADMINS)
+</code></pre></div></p>
+<h3 id="32-secure-file-and-securityid-mapping">3.2 $Secure File and SecurityId Mapping<a class="headerlink" href="#32-secure-file-and-securityid-mapping" title="Permanent link">&para;</a></h3>
+<p>Security descriptors are NOT stored per-file in NTFS 3.0+. Instead:</p>
+<ol>
+<li>Each MFT record's <code>$STANDARD_INFORMATION</code> attribute (type 0x10) contains a <code>SecurityId</code> field (at offset 0x34, 4 bytes LE).</li>
+<li><code>SecurityId</code> maps to the <code>$Secure</code> system file (MFT entry #9).</li>
+<li><code>$Secure</code> contains three data streams:</li>
+<li><strong><code>$SDS</code></strong> (Security Descriptor Stream): Contains all security descriptors sequentially. Each entry has: offset, hash, SecurityId, descriptor size, then the actual descriptor.</li>
+<li><strong><code>$SII</code></strong> (Security ID Index): B+ tree index mapping SecurityId to offset in <code>$SDS</code>.</li>
+<li><strong><code>$SDH</code></strong> (Security Descriptor Hash): B+ tree index mapping descriptor hashes to offset in <code>$SDS</code>. Used to deduplicate identical descriptors.</li>
+</ol>
+<p><strong>Lookup flow:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>MFT $STANDARD_INFORMATION.SecurityId
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  -&gt; $Secure:$SII (SecurityId -&gt; SDS offset)
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  -&gt; $Secure:$SDS (offset -&gt; full security descriptor)
+</code></pre></div></p>
+<p><strong>Forensic slack:</strong> The <code>$SDS</code> stream contains slack space between entries and beyond the last valid entry, which can be carved for deleted/overwritten security descriptors.</p>
+<h3 id="33-well-known-sids">3.3 Well-Known SIDs<a class="headerlink" href="#33-well-known-sids" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>SID</th>
+<th>Name</th>
+<th>Forensic Significance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S-1-0-0</td>
+<td>Null SID</td>
+<td>No security principal</td>
+</tr>
+<tr>
+<td>S-1-1-0</td>
+<td>Everyone</td>
+<td>Universal group; overly permissive if in DACL</td>
+</tr>
+<tr>
+<td>S-1-3-0</td>
+<td>Creator Owner</td>
+<td>Placeholder in inheritable ACEs</td>
+</tr>
+<tr>
+<td>S-1-5-7</td>
+<td>Anonymous Logon</td>
+<td>Indicates anonymous/unauthenticated access</td>
+</tr>
+<tr>
+<td>S-1-5-11</td>
+<td>Authenticated Users</td>
+<td>All authenticated users</td>
+</tr>
+<tr>
+<td>S-1-5-18</td>
+<td>SYSTEM (LocalSystem)</td>
+<td>OS service account; normal on system files</td>
+</tr>
+<tr>
+<td>S-1-5-19</td>
+<td>Local Service</td>
+<td>NT Authority\LocalService</td>
+</tr>
+<tr>
+<td>S-1-5-20</td>
+<td>Network Service</td>
+<td>NT Authority\NetworkService</td>
+</tr>
+<tr>
+<td>S-1-5-32-544</td>
+<td>Administrators</td>
+<td>Built-in Administrators group</td>
+</tr>
+<tr>
+<td>S-1-5-32-545</td>
+<td>Users</td>
+<td>Built-in Users group</td>
+</tr>
+<tr>
+<td>S-1-5-32-546</td>
+<td>Guests</td>
+<td>Built-in Guests group</td>
+</tr>
+<tr>
+<td>S-1-5-21-*-500</td>
+<td>Domain Administrator</td>
+<td>Built-in admin (RID 500)</td>
+</tr>
+<tr>
+<td>S-1-5-21-*-501</td>
+<td>Domain Guest</td>
+<td>Guest account (RID 501)</td>
+</tr>
+<tr>
+<td>S-1-5-21-*-512</td>
+<td>Domain Admins</td>
+<td>Domain admin group</td>
+</tr>
+<tr>
+<td>S-1-5-21-*-513</td>
+<td>Domain Users</td>
+<td>All domain users</td>
+</tr>
+<tr>
+<td>S-1-16-0</td>
+<td>Untrusted Integrity</td>
+<td>MIC: Untrusted level</td>
+</tr>
+<tr>
+<td>S-1-16-4096</td>
+<td>Low Integrity</td>
+<td>MIC: Low (sandboxed/downloaded)</td>
+</tr>
+<tr>
+<td>S-1-16-8192</td>
+<td>Medium Integrity</td>
+<td>MIC: Medium (standard user)</td>
+</tr>
+<tr>
+<td>S-1-16-12288</td>
+<td>High Integrity</td>
+<td>MIC: High (elevated/admin)</td>
+</tr>
+<tr>
+<td>S-1-16-16384</td>
+<td>System Integrity</td>
+<td>MIC: System level</td>
+</tr>
+</tbody>
+</table>
+<h3 id="34-mandatory-integrity-control-mic">3.4 Mandatory Integrity Control (MIC)<a class="headerlink" href="#34-mandatory-integrity-control-mic" title="Permanent link">&para;</a></h3>
+<p>MIC uses a <code>SYSTEM_MANDATORY_LABEL_ACE</code> (type 0x11) in the SACL to store integrity level. The ACE's SID is one of the integrity level SIDs (S-1-16-*).</p>
+<p><strong>Forensic significance:</strong>
+- Files with Low Integrity (S-1-16-4096) were likely created by sandboxed processes (e.g., Internet Explorer Protected Mode, Chrome sandbox).
+- An executable running at System integrity level has unrestricted access.
+- Integrity control evaluation happens BEFORE DACL evaluation and can override discretionary access.</p>
+<p><strong>Default behavior:</strong> Objects without an explicit integrity label are treated as Medium integrity.</p>
+<hr />
+<h2 id="part-4-macos-extended-attributes-xattr">Part 4: macOS Extended Attributes (xattr)<a class="headerlink" href="#part-4-macos-extended-attributes-xattr" title="Permanent link">&para;</a></h2>
+<h3 id="41-comapplequarantine-mark-of-the-web-equivalent">4.1 <code>com.apple.quarantine</code> (Mark of the Web Equivalent)<a class="headerlink" href="#41-comapplequarantine-mark-of-the-web-equivalent" title="Permanent link">&para;</a></h3>
+<h4 id="format_1">Format<a class="headerlink" href="#format_1" title="Permanent link">&para;</a></h4>
+<p>UTF-8 string with semicolon-delimited fields:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>&lt;flags&gt;;&lt;hex_timestamp&gt;;&lt;agent_name&gt;;&lt;UUID&gt;
+</code></pre></div>
+<p>Example:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>0083;5c54614c;Safari;B555DB5F-D82A-408B-B9A6-D4F4012FD520
+</code></pre></div></p>
+<h4 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Format</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Flags</td>
+<td>Hex (4 digits)</td>
+<td>Quarantine type + status flags</td>
+</tr>
+<tr>
+<td>Timestamp</td>
+<td>Hex</td>
+<td>Unix epoch timestamp of download</td>
+</tr>
+<tr>
+<td>Agent Name</td>
+<td>String</td>
+<td>App that triggered quarantine (e.g., <code>Safari</code>, <code>com.google.Chrome</code>)</td>
+</tr>
+<tr>
+<td>UUID</td>
+<td>UUID string</td>
+<td>Links to QuarantineEventsV2 database entry</td>
+</tr>
+</tbody>
+</table>
+<h4 id="quarantine-flag-values">Quarantine Flag Values<a class="headerlink" href="#quarantine-flag-values" title="Permanent link">&para;</a></h4>
+<p><strong>Low-order bits (download type):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Bits</th>
+<th>Value</th>
+<th>Constant</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x00</td>
+<td>0</td>
+<td>kLSQuarantineTypeWebDownload</td>
+<td>HTTP(S) download</td>
+</tr>
+<tr>
+<td>0x01</td>
+<td>1</td>
+<td>kLSQuarantineTypeOtherDownload</td>
+<td>Generic/other download</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>2</td>
+<td>kLSQuarantineTypeEmailAttachment</td>
+<td>Email attachment</td>
+</tr>
+<tr>
+<td>0x03</td>
+<td>3</td>
+<td>kLSQuarantineTypeInstantMessageAttachment</td>
+<td>IM attachment</td>
+</tr>
+<tr>
+<td>0x04</td>
+<td>4</td>
+<td>kLSQuarantineTypeCalendarEventAttachment</td>
+<td>Calendar event</td>
+</tr>
+<tr>
+<td>0x06</td>
+<td>6</td>
+<td>kLSQuarantineTypeSandboxed</td>
+<td>Sandboxed app</td>
+</tr>
+</tbody>
+</table>
+<p><strong>High-order bit flags:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Hex Mask</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bit 0</td>
+<td>0x01</td>
+<td>App has been run (Sierra and earlier)</td>
+</tr>
+<tr>
+<td>Bit 5</td>
+<td>0x20</td>
+<td>Installer package (.pkg/.mpkg) opened</td>
+</tr>
+<tr>
+<td>Bit 6</td>
+<td>0x40</td>
+<td>Gatekeeper "Open" dialog accepted</td>
+</tr>
+<tr>
+<td>Bit 7</td>
+<td>0x80</td>
+<td>File is still in quarantine, awaiting first-run check</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Common values and transitions:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Hex</th>
+<th>Binary</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0000</code></td>
+<td><code>00000000</code></td>
+<td>Web download, no flags</td>
+</tr>
+<tr>
+<td><code>0001</code></td>
+<td><code>00000001</code></td>
+<td>Other/generic download</td>
+</tr>
+<tr>
+<td><code>0002</code></td>
+<td><code>00000010</code></td>
+<td>Email attachment</td>
+</tr>
+<tr>
+<td><code>0003</code></td>
+<td><code>00000011</code></td>
+<td>IM attachment</td>
+</tr>
+<tr>
+<td><code>0041</code></td>
+<td><code>01000001</code></td>
+<td>Other download, Gatekeeper dialog accepted</td>
+</tr>
+<tr>
+<td><code>0042</code></td>
+<td><code>01000010</code></td>
+<td>Email attachment, Gatekeeper dialog accepted</td>
+</tr>
+<tr>
+<td><code>0081</code></td>
+<td><code>10000001</code></td>
+<td>Other download, first-run pending</td>
+</tr>
+<tr>
+<td><code>0083</code></td>
+<td><code>10000011</code></td>
+<td>Web/IM download, first-run pending (most common initial value)</td>
+</tr>
+<tr>
+<td><code>00C3</code></td>
+<td><code>11000011</code></td>
+<td>Gatekeeper first-run check passed (Mojave+)</td>
+</tr>
+<tr>
+<td><code>00E3</code></td>
+<td><code>11100011</code></td>
+<td>Gatekeeper passed + app run (Sierra and earlier)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="quarantineeventsv2-database">QuarantineEventsV2 Database<a class="headerlink" href="#quarantineeventsv2-database" title="Permanent link">&para;</a></h4>
+<p><strong>Location:</strong> <code>~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV2</code></p>
+<p><strong>Type:</strong> SQLite3</p>
+<p><strong>Key columns:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LSQuarantineEventIdentifier</td>
+<td>UUID (matches xattr UUID field)</td>
+</tr>
+<tr>
+<td>LSQuarantineTimeStamp</td>
+<td>Download timestamp</td>
+</tr>
+<tr>
+<td>LSQuarantineAgentBundleIdentifier</td>
+<td>App bundle ID (e.g., <code>com.apple.Safari</code>)</td>
+</tr>
+<tr>
+<td>LSQuarantineAgentName</td>
+<td>App display name</td>
+</tr>
+<tr>
+<td>LSQuarantineDataURLString</td>
+<td>Direct download URL</td>
+</tr>
+<tr>
+<td>LSQuarantineOriginURLString</td>
+<td>Referrer/origin URL</td>
+</tr>
+<tr>
+<td>LSQuarantineSenderName</td>
+<td>Sender name (for email/IM)</td>
+</tr>
+<tr>
+<td>LSQuarantineSenderAddress</td>
+<td>Sender address</td>
+</tr>
+<tr>
+<td>LSQuarantineTypeNumber</td>
+<td>Download type enum value</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Forensic notes:</strong>
+- Residual database entries persist even after files are deleted. This is a valuable forensic artifact.
+- Each user has their own database; no system-level equivalent exists.
+- macOS 13.3+ reportedly broke database consistency, reducing forensic value on newer systems.
+- One database per user; located in the user's home directory.</p>
+<h4 id="browser-differences-macos">Browser Differences (macOS)<a class="headerlink" href="#browser-differences-macos" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Safari</th>
+<th>Chrome</th>
+<th>Firefox</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>com.apple.quarantine</code></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>com.apple.metadata:kMDItemWhereFroms</code></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>com.apple.metadata:kMDItemDownloadedDate</code></td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-comapplemetadatakmditemwherefroms">4.2 <code>com.apple.metadata:kMDItemWhereFroms</code><a class="headerlink" href="#42-comapplemetadatakmditemwherefroms" title="Permanent link">&para;</a></h3>
+<p><strong>Format:</strong> Binary plist (bplist) containing an array of strings.</p>
+<p><strong>Content:</strong> Array of URLs:
+- Index 0: Direct download URL
+- Index 1: Referrer URL (page that linked to the download)</p>
+<p><strong>Decoding:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>xattr<span class="w"> </span>-p<span class="w"> </span>com.apple.metadata:kMDItemWhereFroms<span class="w"> </span>&lt;file&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>xxd<span class="w"> </span>-r<span class="w"> </span>-p<span class="w"> </span><span class="p">|</span><span class="w"> </span>plutil<span class="w"> </span>-p<span class="w"> </span>-
+</code></pre></div></p>
+<p><strong>Forensic significance:</strong> Persists indefinitely across reboots. Safari stores both URLs; Chrome stores download URL only.</p>
+<p><strong>Security note:</strong> A vulnerability reported in 2023 showed that <code>kMDItemWhereFroms</code> could leak authentication tokens embedded in download URLs. Apple patched this quietly.</p>
+<h3 id="43-comapplemetadatakmditemdownloadeddate">4.3 <code>com.apple.metadata:kMDItemDownloadedDate</code><a class="headerlink" href="#43-comapplemetadatakmditemdownloadeddate" title="Permanent link">&para;</a></h3>
+<p><strong>Format:</strong> Binary plist containing an NSDate (CFAbsoluteTime).</p>
+<p><strong>Content:</strong> Timestamp of when the file was downloaded.</p>
+<p><strong>Note:</strong> Only Safari writes this attribute; Chrome does not.</p>
+<h3 id="44-comapplelastuseddateps">4.4 <code>com.apple.lastuseddate#PS</code><a class="headerlink" href="#44-comapplelastuseddateps" title="Permanent link">&para;</a></h3>
+<p><strong>Format:</strong> 8 bytes, little-endian, Unix timestamp (seconds since epoch as <code>f64</code>).</p>
+<p><strong>Content:</strong> Last time the file was opened/used.</p>
+<h3 id="45-comapplemacl-mandatory-access-control-label">4.5 <code>com.apple.macl</code> (Mandatory Access Control Label)<a class="headerlink" href="#45-comapplemacl-mandatory-access-control-label" title="Permanent link">&para;</a></h3>
+<p><strong>Format:</strong> Binary blob, 72 bytes per entry, SIP-protected.</p>
+<p><strong>Structure:</strong>
+- Header byte <code>0x00</code>
+- Followed by UUID(s) of applications permitted to access the file
+- Each UUID block separated by <code>0x00</code> bytes
+- Multiple UUIDs if file was accessed by multiple applications via drag-and-drop</p>
+<p><strong>Forensic significance:</strong>
+- Proves which specific application(s) accessed a file via TCC drag-and-drop.
+- UUID is unique per system + user + application, so it cannot be transferred between machines.
+- Protected by SIP; cannot be cleared without disabling SIP (workaround: zip, delete, unzip).
+- Managed by the Sandbox subsystem, NOT tccd.
+- Enumerating the attribute's existence does NOT trigger TCC popup; reading its value DOES.</p>
+<h3 id="46-comappleprovenance">4.6 <code>com.apple.provenance</code><a class="headerlink" href="#46-comappleprovenance" title="Permanent link">&para;</a></h3>
+<p><strong>Introduced:</strong> macOS Ventura (13.x)</p>
+<p><strong>Purpose:</strong> Marks that an app has successfully cleared quarantine and Gatekeeper assessment. Applied when:
+1. App is moved to a new folder (e.g., /Applications)
+2. App is launched for the first time via Finder
+3. Gatekeeper assessment succeeds</p>
+<p><strong>Protection:</strong> NOT protected by SIP (unlike <code>com.apple.macl</code> after assessment).</p>
+<h3 id="47-comapplefinderinfo">4.7 <code>com.apple.FinderInfo</code><a class="headerlink" href="#47-comapplefinderinfo" title="Permanent link">&para;</a></h3>
+<p><strong>Format:</strong> Exactly 32 bytes (strict requirement; any other size causes error).</p>
+<p><strong>Binary Layout:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Offset  Size  Field                Description
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>0x00    4     fdType               File type code (4 ASCII chars, e.g., &#39;TEXT&#39;, &#39;JPEG&#39;)
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>0x04    4     fdCreator            Creator code (4 ASCII chars, e.g., &#39;MACS&#39;, &#39;GKON&#39;)
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>0x08    2     fdFlags              Finder flags (see below)
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>0x0A    2     fdLocationV          Vertical position in Finder window
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>0x0C    2     fdLocationH          Horizontal position in Finder window
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>0x0E    2     fdFldr               Directory ID
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>0x10    16    FXInfo               Extended Finder Info (extended flags, script code, etc.)
+</code></pre></div>
+<p><strong>Finder Flags (fdFlags):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0x01</td>
+<td>isOnDesk (not used in modern macOS)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0x02</td>
+<td>Color (bits 1-3 encode label color)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0x10</td>
+<td>isShared</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0x20</td>
+<td>hasNoINITs</td>
+</tr>
+<tr>
+<td>6</td>
+<td>0x40</td>
+<td>hasBeenInited</td>
+</tr>
+<tr>
+<td>7</td>
+<td>0x80</td>
+<td>isAlias</td>
+</tr>
+<tr>
+<td>8</td>
+<td>0x0100</td>
+<td>hasCustomIcon</td>
+</tr>
+<tr>
+<td>9</td>
+<td>0x0200</td>
+<td>isStationery</td>
+</tr>
+<tr>
+<td>10</td>
+<td>0x0400</td>
+<td>nameLocked</td>
+</tr>
+<tr>
+<td>11</td>
+<td>0x0800</td>
+<td>hasBundle</td>
+</tr>
+<tr>
+<td>12</td>
+<td>0x1000</td>
+<td>isInvisible</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parsing tool:</strong> <a href="https://github.com/dropbox/finderinfo-rust"><code>finderinfo-rust</code></a> (Rust crate by Dropbox).</p>
+<h3 id="48-other-macos-extended-attributes">4.8 Other macOS Extended Attributes<a class="headerlink" href="#48-other-macos-extended-attributes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Format</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>com.apple.metadata:kMDItemFinderComment</code></td>
+<td>Binary plist (string)</td>
+<td>User-set Finder comment</td>
+</tr>
+<tr>
+<td><code>com.apple.metadata:kMDItem_kMDItemUserTags</code></td>
+<td>Binary plist (array)</td>
+<td>Finder tags (color labels)</td>
+</tr>
+<tr>
+<td><code>com.apple.metadata:kMDItemLastUsedDate</code></td>
+<td>Binary plist (date)</td>
+<td>Last opened date</td>
+</tr>
+<tr>
+<td><code>com.apple.metadata:kMDItemUseCount</code></td>
+<td>Binary plist (int)</td>
+<td>Number of times opened</td>
+</tr>
+<tr>
+<td><code>com.apple.ResourceFork</code></td>
+<td>Raw binary</td>
+<td>Classic Mac resource fork data</td>
+</tr>
+<tr>
+<td><code>com.apple.TextEncoding</code></td>
+<td>UTF-8 string</td>
+<td>Text file encoding (e.g., <code>utf-8;134217984</code>)</td>
+</tr>
+<tr>
+<td><code>com.apple.diskimages.recentcksum</code></td>
+<td>String</td>
+<td>Disk image checksum + timestamp</td>
+</tr>
+<tr>
+<td><code>com.apple.diskimages.fsck</code></td>
+<td>String</td>
+<td>Filesystem check data for DMG</td>
+</tr>
+<tr>
+<td><code>com.apple.rootless</code></td>
+<td>(flag presence)</td>
+<td>SIP protection flag</td>
+</tr>
+<tr>
+<td><code>com.apple.decmpfs</code></td>
+<td>Binary</td>
+<td>HFS+ transparent compression metadata</td>
+</tr>
+<tr>
+<td><code>com.apple.genstore</code></td>
+<td>Binary</td>
+<td>Document version store data</td>
+</tr>
+<tr>
+<td><code>com.apple.security</code></td>
+<td>Binary</td>
+<td>Access Control List data</td>
+</tr>
+<tr>
+<td><code>com.apple.backupd</code></td>
+<td>Binary</td>
+<td>Time Machine backup metadata</td>
+</tr>
+<tr>
+<td><code>com.apple.cs.CodeDirectory</code></td>
+<td>Binary</td>
+<td>Code signature hash</td>
+</tr>
+</tbody>
+</table>
+<h3 id="49-apfs-xattr-storage">4.9 APFS xattr Storage<a class="headerlink" href="#49-apfs-xattr-storage" title="Permanent link">&para;</a></h3>
+<h4 id="inline-embedded-storage">Inline (Embedded) Storage<a class="headerlink" href="#inline-embedded-storage" title="Permanent link">&para;</a></h4>
+<p>For xattrs up to 3,804 bytes, data is stored directly in the xattr record in the filesystem metadata tree.</p>
+<p><strong>Key structure (<code>j_xattr_key_t</code>):</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Field       Type      Description
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>hdr         j_key_t   Standard FS record key header (contains object_id + type APFS_TYPE_XATTR)
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>name_len    uint16    Length of attribute name including null terminator
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>name        char[]    UTF-8 null-terminated attribute name
+</code></pre></div></p>
+<p><strong>Value structure (<code>j_xattr_val_t</code>):</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Field       Type      Description
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>flags       uint16    XATTR_DATA_STREAM (0x01) or XATTR_DATA_EMBEDDED (0x02)
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>xdata_len   uint16    Length of inline data (0 if stream-based)
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>xdata       uint8[]   Inline data (present only if XATTR_DATA_EMBEDDED)
+</code></pre></div></p>
+<h4 id="data-stream-extent-based-storage">Data Stream (Extent-Based) Storage<a class="headerlink" href="#data-stream-extent-based-storage" title="Permanent link">&para;</a></h4>
+<p>For xattrs larger than 3,804 bytes, the <code>flags</code> field has <code>XATTR_DATA_STREAM</code> set, and <code>xdata</code> contains an 8-byte object identifier pointing to the data stream's extent records (<code>APFS_TYPE_FILE_EXTENT</code>).</p>
+<p><strong>Forensic note:</strong> APFS clones (copy-on-write copies) share xattrs with the original; they are NOT duplicated.</p>
+<h3 id="410-hfs-xattr-storage">4.10 HFS+ xattr Storage<a class="headerlink" href="#410-hfs-xattr-storage" title="Permanent link">&para;</a></h3>
+<p>On HFS+, extended attributes are stored in the <strong>Attributes B-tree</strong> (<code>$AttrFile</code>), a separate B-tree that maps (CNID, attribute name) pairs to attribute data.</p>
+<hr />
+<h2 id="part-5-macos-gatekeeper-tcc">Part 5: macOS Gatekeeper &amp; TCC<a class="headerlink" href="#part-5-macos-gatekeeper-tcc" title="Permanent link">&para;</a></h2>
+<h3 id="51-gatekeeper-assessment-databases">5.1 Gatekeeper Assessment Databases<a class="headerlink" href="#51-gatekeeper-assessment-databases" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Database Path</th>
+<th>Protection</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/var/db/SystemPolicy</code></td>
+<td>Root-writable (not SIP)</td>
+<td>Gatekeeper rules (authority table)</td>
+</tr>
+<tr>
+<td><code>/var/db/.SystemPolicy-default</code></td>
+<td>Backup</td>
+<td>Original backup of SystemPolicy</td>
+</tr>
+<tr>
+<td><code>/var/db/SystemPolicyConfiguration/ExecPolicy</code></td>
+<td>Not SIP-protected</td>
+<td>Execution policy cache and provenance</td>
+</tr>
+<tr>
+<td><code>/var/db/SystemPolicyConfiguration/gke.bundle</code></td>
+<td>SIP-protected</td>
+<td>Gatekeeper exclusions</td>
+</tr>
+<tr>
+<td><code>/var/db/SystemPolicyConfiguration/TamperExceptions.plist</code></td>
+<td>SIP-protected</td>
+<td>Anti-tampering exception list</td>
+</tr>
+</tbody>
+</table>
+<p><strong>ExecPolicy tables of forensic interest:</strong>
+- <code>executable_measurements_v2</code> — Code hash measurements
+- <code>legacy_exec_history_v4</code> — Historical execution records
+- <code>provenance_tracking</code> — App provenance (cdhash + metadata)
+- <code>policy_scan_cache</code> — Cached scan results</p>
+<h3 id="52-tcc-transparency-consent-and-control-database">5.2 TCC (Transparency, Consent, and Control) Database<a class="headerlink" href="#52-tcc-transparency-consent-and-control-database" title="Permanent link">&para;</a></h3>
+<p><strong>Locations:</strong>
+- User: <code>~/Library/Application Support/com.apple.TCC/TCC.db</code>
+- System: <code>/Library/Application Support/com.apple.TCC/TCC.db</code>
+- iOS: <code>/private/var/mobile/Library/TCC/TCC.db</code></p>
+<p><strong>Type:</strong> SQLite3 (SIP-protected from editing, but readable with Full Disk Access)</p>
+<p><strong>Primary table: <code>access</code></strong></p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>service</td>
+<td>TEXT</td>
+<td>Permission type (e.g., <code>kTCCServiceSystemPolicyAllFiles</code>)</td>
+</tr>
+<tr>
+<td>client</td>
+<td>TEXT</td>
+<td>Bundle ID or absolute path</td>
+</tr>
+<tr>
+<td>client_type</td>
+<td>INT</td>
+<td>0 = Bundle ID, 1 = Absolute path</td>
+</tr>
+<tr>
+<td>auth_value</td>
+<td>INT</td>
+<td>0=Denied, 1=Unknown, 2=Allowed, 3=Limited</td>
+</tr>
+<tr>
+<td>auth_reason</td>
+<td>INT</td>
+<td>1=Error, 2=User Consent, 3=User Set, 4=System Set, 5=Service Policy, 6=MDM Policy, 7=Override Policy, 8=Missing usage string, 9=Prompt Timeout, 10=Preflight Unknown, 11=Entitled, 12=App Type Policy</td>
+</tr>
+<tr>
+<td>csreq</td>
+<td>BLOB</td>
+<td>Code signing requirement (binary blob)</td>
+</tr>
+<tr>
+<td>policy_id</td>
+<td>INT</td>
+<td>MDM policy reference</td>
+</tr>
+<tr>
+<td>indirect_object_identifier</td>
+<td>TEXT</td>
+<td>Target (for AppleEvents: bundle ID/path of target app)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key service values:</strong>
+- <code>kTCCServiceSystemPolicyAllFiles</code> — Full Disk Access
+- <code>kTCCServiceAccessibility</code> — Accessibility (control computer)
+- <code>kTCCServiceScreenCapture</code> — Screen recording
+- <code>kTCCServiceMicrophone</code> — Microphone access
+- <code>kTCCServiceCamera</code> — Camera access
+- <code>kTCCServicePostEvent</code> — Send keystrokes
+- <code>kTCCServiceListenEvent</code> — Input monitoring
+- <code>kTCCServiceDeveloperTool</code> — Developer tool access</p>
+<p><strong>Forensic significance:</strong> TCC entries reveal which applications requested and received permission to access protected resources. Critical for identifying spyware, RATs, or unauthorized monitoring.</p>
+<hr />
+<h2 id="part-6-linux-extended-attributes">Part 6: Linux Extended Attributes<a class="headerlink" href="#part-6-linux-extended-attributes" title="Permanent link">&para;</a></h2>
+<h3 id="61-namespaces">6.1 Namespaces<a class="headerlink" href="#61-namespaces" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Namespace</th>
+<th>Read</th>
+<th>Write</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>user.*</code></td>
+<td>Any (with file read)</td>
+<td>Any (with file write)</td>
+<td>Arbitrary user metadata</td>
+</tr>
+<tr>
+<td><code>security.*</code></td>
+<td>Root (CAP_SYS_ADMIN)</td>
+<td>Root (CAP_SYS_ADMIN)</td>
+<td>Security modules (SELinux, capabilities, IMA)</td>
+</tr>
+<tr>
+<td><code>system.*</code></td>
+<td>Varies</td>
+<td>Varies</td>
+<td>Kernel subsystems (ACLs)</td>
+</tr>
+<tr>
+<td><code>trusted.*</code></td>
+<td>Root (CAP_SYS_ADMIN)</td>
+<td>Root (CAP_SYS_ADMIN)</td>
+<td>Privileged process metadata</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Important:</strong> <code>getfattr</code> defaults to <code>user.*</code> pattern only. Use <code>-m -</code> (dash as pattern) to see all namespaces.</p>
+<p><strong>Note:</strong> Cannot set <code>user.*</code> xattrs on symlinks or device special files (resource consumption protection).</p>
+<h3 id="62-securityselinux">6.2 <code>security.selinux</code><a class="headerlink" href="#62-securityselinux" title="Permanent link">&para;</a></h3>
+<p><strong>Format:</strong> Null-terminated string containing the SELinux security context label.</p>
+<p><strong>Example:</strong> <code>unconfined_u:object_r:user_home_t:s0</code></p>
+<p><strong>Structure:</strong> <code>user:role:type:level</code></p>
+<p><strong>Forensic significance:</strong> Reveals the mandatory access control context. Changes to SELinux labels may indicate policy manipulation or compromise.</p>
+<h3 id="63-securitycapability-file-capabilities">6.3 <code>security.capability</code> (File Capabilities)<a class="headerlink" href="#63-securitycapability-file-capabilities" title="Permanent link">&para;</a></h3>
+<h4 id="binary-format-struct-vfs_cap_data">Binary Format (<code>struct vfs_cap_data</code>)<a class="headerlink" href="#binary-format-struct-vfs_cap_data" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">struct</span><span class="w"> </span><span class="nc">vfs_cap_data</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">    </span><span class="n">__le32</span><span class="w"> </span><span class="n">magic_etc</span><span class="p">;</span><span class="w">        </span><span class="c1">// Revision in upper byte + effective flag in bit 0</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">        </span><span class="n">__le32</span><span class="w"> </span><span class="n">permitted</span><span class="p">;</span><span class="w">    </span><span class="c1">// Permitted capability bitmask</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">        </span><span class="n">__le32</span><span class="w"> </span><span class="n">inheritable</span><span class="p">;</span><span class="w">  </span><span class="c1">// Inheritable capability bitmask</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">data</span><span class="p">[</span><span class="n">VFS_CAP_U32</span><span class="p">];</span><span class="w">    </span><span class="c1">// 1 pair for v1, 2 pairs for v2/v3</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="p">};</span>
+</code></pre></div>
+<h4 id="revision-versions">Revision Versions<a class="headerlink" href="#revision-versions" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Revision</th>
+<th>Constant</th>
+<th>Total xattr Size</th>
+<th>Capability Bits</th>
+<th>Extra Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1</td>
+<td><code>VFS_CAP_REVISION_1</code> (0x01000000)</td>
+<td>12 bytes</td>
+<td>32-bit</td>
+<td>None</td>
+</tr>
+<tr>
+<td>v2</td>
+<td><code>VFS_CAP_REVISION_2</code> (0x02000000)</td>
+<td>20 bytes</td>
+<td>64-bit</td>
+<td>None</td>
+</tr>
+<tr>
+<td>v3</td>
+<td><code>VFS_CAP_REVISION_3</code> (since Linux 4.14)</td>
+<td>24 bytes</td>
+<td>64-bit</td>
+<td><code>rootid</code> (4 bytes, namespace root UID)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="magic_etc-field-decoding">magic_etc Field Decoding<a class="headerlink" href="#magic_etc-field-decoding" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>magic_etc &amp; 0xFF000000 = Revision
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>magic_etc &amp; 0x00000001 = VFS_CAP_FLAGS_EFFECTIVE (if set, capabilities are auto-activated)
+</code></pre></div>
+<h4 id="key-capabilities-forensically-significant">Key Capabilities (Forensically Significant)<a class="headerlink" href="#key-capabilities-forensically-significant" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Bit</th>
+<th>Description</th>
+<th>Forensic Concern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CAP_SETUID</td>
+<td>7</td>
+<td>Manipulate UIDs</td>
+<td>Privilege escalation</td>
+</tr>
+<tr>
+<td>CAP_SETGID</td>
+<td>6</td>
+<td>Manipulate GIDs</td>
+<td>Privilege escalation</td>
+</tr>
+<tr>
+<td>CAP_NET_RAW</td>
+<td>13</td>
+<td>RAW/PACKET sockets</td>
+<td>Network sniffing</td>
+</tr>
+<tr>
+<td>CAP_NET_ADMIN</td>
+<td>12</td>
+<td>Network administration</td>
+<td>Network manipulation</td>
+</tr>
+<tr>
+<td>CAP_SYS_ADMIN</td>
+<td>21</td>
+<td>Broad admin operations</td>
+<td>Near-root access</td>
+</tr>
+<tr>
+<td>CAP_DAC_OVERRIDE</td>
+<td>1</td>
+<td>Bypass file read/write/execute checks</td>
+<td>File access bypass</td>
+</tr>
+<tr>
+<td>CAP_SYS_PTRACE</td>
+<td>19</td>
+<td>Trace processes</td>
+<td>Process injection</td>
+</tr>
+<tr>
+<td>CAP_SYS_MODULE</td>
+<td>16</td>
+<td>Load kernel modules</td>
+<td>Rootkit installation</td>
+</tr>
+</tbody>
+</table>
+<h4 id="hunting-for-capabilities">Hunting for Capabilities<a class="headerlink" href="#hunting-for-capabilities" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Find all binaries with capabilities</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Decode capability hex from /proc</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>capsh<span class="w"> </span>--decode<span class="o">=</span>0x0000000000000080<span class="w">  </span><span class="c1"># = cap_setuid</span>
+</code></pre></div>
+<h3 id="64-securityima-integrity-measurement-architecture">6.4 <code>security.ima</code> (Integrity Measurement Architecture)<a class="headerlink" href="#64-securityima-integrity-measurement-architecture" title="Permanent link">&para;</a></h3>
+<p><strong>Format:</strong> Binary data structure containing either a hash or a digital signature.</p>
+<p><strong>Hash mode:</strong>
+- Default algorithm: SHA-1 (configurable to SHA-256 via <code>ima_hash=sha256</code> boot param)
+- Stored as raw hash bytes with algorithm identifier prefix</p>
+<p><strong>Signature mode:</strong>
+- RSA-key based digital signature of the file contents
+- Private key signs; public key verifies at runtime</p>
+<p><strong>IMA Appraisal Modes:</strong>
+- <code>enforce</code> — Deny access if hash mismatch or missing
+- <code>log</code> — Log mismatches but allow access
+- <code>fix</code> — Create/update hashes for files
+- <code>off</code> — Disabled</p>
+<p><strong>Runtime measurement log:</strong> <code>/sys/kernel/security/ima/ascii_runtime_measurements</code></p>
+<h3 id="65-securityevm-extended-verification-module">6.5 <code>security.evm</code> (Extended Verification Module)<a class="headerlink" href="#65-securityevm-extended-verification-module" title="Permanent link">&para;</a></h3>
+<p><strong>Format:</strong> HMAC-SHA1 hash of all security xattrs (<code>security.ima</code>, <code>security.selinux</code>, etc.).</p>
+<p><strong>Purpose:</strong> Detects offline tampering of security xattrs by hashing them together and signing with a key (either HMAC symmetric or RSA asymmetric).</p>
+<h3 id="66-xdg-origin-attributes">6.6 XDG Origin Attributes<a class="headerlink" href="#66-xdg-origin-attributes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Description</th>
+<th>Set By</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>user.xdg.origin.url</code></td>
+<td>Download source URL</td>
+<td>Chromium, wget, curl, Snapcraft</td>
+</tr>
+<tr>
+<td><code>user.xdg.referrer.url</code></td>
+<td>Referrer URL</td>
+<td>Chromium</td>
+</tr>
+<tr>
+<td><code>user.xdg.origin.email.from</code></td>
+<td>Email sender (attachments)</td>
+<td>Thunderbird</td>
+</tr>
+<tr>
+<td><code>user.xdg.origin.email.subject</code></td>
+<td>Email subject (attachments)</td>
+<td>Thunderbird</td>
+</tr>
+<tr>
+<td><code>user.xdg.publisher</code></td>
+<td>Publisher/author</td>
+<td>Various</td>
+</tr>
+<tr>
+<td><code>user.xdg.comment</code></td>
+<td>User comment</td>
+<td>File managers</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note:</strong> Not yet in widespread use (as of 2025). Adoption is growing with Chromium, wget, curl.</p>
+<h3 id="67-posix-acls-systemposix_acl_access-systemposix_acl_default">6.7 POSIX ACLs (<code>system.posix_acl_access</code> / <code>system.posix_acl_default</code>)<a class="headerlink" href="#67-posix-acls-systemposix_acl_access-systemposix_acl_default" title="Permanent link">&para;</a></h3>
+<h4 id="uapi-userspace-binary-format">UAPI (Userspace) Binary Format<a class="headerlink" href="#uapi-userspace-binary-format" title="Permanent link">&para;</a></h4>
+<p><strong>Header (4 bytes):</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>Offset  Size  Field
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>0x00    4     a_version (__le32, value = 0x0002 = POSIX_ACL_XATTR_VERSION)
+</code></pre></div></p>
+<p><strong>Each entry (8 bytes):</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>Offset  Size  Field
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>0x00    2     e_tag (__le16)
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>0x02    2     e_perm (__le16)
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>0x04    4     e_id (__le32, ACL_UNDEFINED_ID = 0xFFFFFFFF for entries without qualifier)
+</code></pre></div></p>
+<p><strong>Total size:</strong> <code>4 + (8 * entry_count)</code> bytes.</p>
+<h4 id="tag-values-e_tag">Tag Values (e_tag)<a class="headerlink" href="#tag-values-e_tag" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x01</td>
+<td>ACL_USER_OBJ</td>
+<td>File owner permissions</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>ACL_USER</td>
+<td>Named user permissions (e_id = uid)</td>
+</tr>
+<tr>
+<td>0x04</td>
+<td>ACL_GROUP_OBJ</td>
+<td>File group permissions</td>
+</tr>
+<tr>
+<td>0x08</td>
+<td>ACL_GROUP</td>
+<td>Named group permissions (e_id = gid)</td>
+</tr>
+<tr>
+<td>0x10</td>
+<td>ACL_MASK</td>
+<td>Maximum permissions for ACL_USER/ACL_GROUP_OBJ/ACL_GROUP</td>
+</tr>
+<tr>
+<td>0x20</td>
+<td>ACL_OTHER</td>
+<td>Everyone else</td>
+</tr>
+</tbody>
+</table>
+<h4 id="permission-bits-e_perm">Permission Bits (e_perm)<a class="headerlink" href="#permission-bits-e_perm" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x04</td>
+<td>ACL_READ</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>ACL_WRITE</td>
+</tr>
+<tr>
+<td>0x01</td>
+<td>ACL_EXECUTE</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ext4-on-disk-format-compact">Ext4 On-Disk Format (Compact)<a class="headerlink" href="#ext4-on-disk-format-compact" title="Permanent link">&para;</a></h4>
+<p>Uses <code>EXT4_ACL_VERSION = 0x0001</code>. Short entries (4 bytes, no e_id) for <code>ACL_USER_OBJ</code>, <code>ACL_GROUP_OBJ</code>, <code>ACL_MASK</code>, <code>ACL_OTHER</code>. Full entries (8 bytes, with e_id) for <code>ACL_USER</code> and <code>ACL_GROUP</code>.</p>
+<h4 id="validity-rules">Validity Rules<a class="headerlink" href="#validity-rules" title="Permanent link">&para;</a></h4>
+<p>A valid ACL must contain exactly one each of <code>ACL_USER_OBJ</code>, <code>ACL_GROUP_OBJ</code>, and <code>ACL_OTHER</code>. If any <code>ACL_USER</code> or <code>ACL_GROUP</code> entries exist, exactly one <code>ACL_MASK</code> entry is required.</p>
+<h3 id="68-nfsv4-acls-systemnfs4_acl">6.8 NFSv4 ACLs (<code>system.nfs4_acl</code>)<a class="headerlink" href="#68-nfsv4-acls-systemnfs4_acl" title="Permanent link">&para;</a></h3>
+<p>More complex than POSIX ACLs. Supports ALLOW, DENY, AUDIT, and ALARM ACE types with rich permission masks and inheritance flags similar to Windows DACLs.</p>
+<hr />
+<h2 id="part-7-cross-platform-interoperability">Part 7: Cross-Platform Interoperability<a class="headerlink" href="#part-7-cross-platform-interoperability" title="Permanent link">&para;</a></h2>
+<h3 id="71-appledouble-format-_filename">7.1 AppleDouble Format (<code>._filename</code>)<a class="headerlink" href="#71-appledouble-format-_filename" title="Permanent link">&para;</a></h3>
+<p>Used when macOS stores files on non-fork-aware filesystems (FAT, ext4, NFS, etc.).</p>
+<p><strong>Filename convention:</strong> <code>._&lt;original_filename&gt;</code> (e.g., <code>._document.pdf</code>)</p>
+<p><strong>Header:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>Offset  Size  Field
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>0x00    4     Magic (0x00051607)
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>0x04    4     Version (0x00020000)
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>0x08    16    Home File System (zero-padded string)
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>0x18    2     Number of entries
+</code></pre></div></p>
+<p><strong>Each entry descriptor (12 bytes):</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>Offset  Size  Field
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>0x00    4     Entry ID (1=Data Fork, 2=Resource Fork, 9=Finder Info, 15=ATTR header)
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>0x04    4     Offset in file
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>0x08    4     Length
+</code></pre></div></p>
+<p><strong>Extended attributes:</strong> In macOS AppleDouble files, the 32-byte Finder Info (Entry ID 9) is followed by <code>"ATTR"</code> magic and a list of extended attribute name-value pairs.</p>
+<p>All multi-byte values are big-endian.</p>
+<h3 id="72-ntfs-interop-afp-streams">7.2 NTFS Interop: AFP Streams<a class="headerlink" href="#72-ntfs-interop-afp-streams" title="Permanent link">&para;</a></h3>
+<p>When macOS connects to NTFS volumes via SMB:
+- Resource forks are stored as <code>:AFP_Resource</code> ADS
+- AFP metadata is stored as <code>:AFP_AfpInfo</code> ADS (60 bytes)</p>
+<p><strong>Samba <code>vfs_fruit</code> module:</strong> Bridges AppleDouble and ADS storage, intercepting <code>AFP_AfpInfo</code> and <code>AFP_Resource</code> streams.</p>
+<h3 id="73-preservation-caveats">7.3 Preservation Caveats<a class="headerlink" href="#73-preservation-caveats" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Source FS</th>
+<th>Destination FS</th>
+<th>xattrs/ADS Preserved?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NTFS ADS</td>
+<td>NTFS</td>
+<td>Yes (files), No (folders post-Win7)</td>
+</tr>
+<tr>
+<td>NTFS ADS</td>
+<td>FAT/exFAT</td>
+<td>No</td>
+</tr>
+<tr>
+<td>APFS xattrs</td>
+<td>APFS</td>
+<td>Yes (including clones)</td>
+</tr>
+<tr>
+<td>APFS xattrs</td>
+<td>FAT/exFAT</td>
+<td>Stored as AppleDouble (._files)</td>
+</tr>
+<tr>
+<td>ext4 xattrs</td>
+<td>ext4</td>
+<td>Yes (if tool supports: <code>cp --preserve=xattr</code>, <code>tar --xattrs</code>)</td>
+</tr>
+<tr>
+<td>ext4 xattrs</td>
+<td>FAT</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>mv</code> across filesystems</td>
+<td>Target FS</td>
+<td>Silently discards xattrs if unsupported</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Critical for forensic practitioners:</strong> Always ensure evidence collection tools preserve extended attributes. Use <code>tar --xattrs</code> or forensic imaging (dd, ewfacquire) rather than file-level copy.</p>
+<hr />
+<h2 id="part-8-rust-parsing-approach-summary">Part 8: Rust Parsing Approach Summary<a class="headerlink" href="#part-8-rust-parsing-approach-summary" title="Permanent link">&para;</a></h2>
+<h3 id="recommended-crate-dependencies">Recommended Crate Dependencies<a class="headerlink" href="#recommended-crate-dependencies" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Crate</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ntfs</code> (Colin Finck)</td>
+<td>NTFS MFT parsing, attribute enumeration, ADS reading</td>
+</tr>
+<tr>
+<td><code>nom</code></td>
+<td>Binary format parsing (ACLs, security descriptors, EA)</td>
+</tr>
+<tr>
+<td><code>plist</code></td>
+<td>macOS binary plist parsing (kMDItem* attributes)</td>
+</tr>
+<tr>
+<td><code>xattr</code></td>
+<td>Reading xattrs from live filesystems</td>
+</tr>
+<tr>
+<td><code>rusqlite</code></td>
+<td>Parsing QuarantineEventsV2, TCC.db, SystemPolicy SQLite DBs</td>
+</tr>
+<tr>
+<td><code>uuid</code></td>
+<td>UUID parsing for quarantine links, macl entries</td>
+</tr>
+<tr>
+<td><code>chrono</code></td>
+<td>Timestamp handling (Unix epoch, Core Data epoch, FILETIME)</td>
+</tr>
+<tr>
+<td><code>finderinfo</code> (Dropbox)</td>
+<td>Parsing com.apple.FinderInfo 32-byte structure</td>
+</tr>
+</tbody>
+</table>
+<h3 id="key-parsing-tasks-by-platform">Key Parsing Tasks by Platform<a class="headerlink" href="#key-parsing-tasks-by-platform" title="Permanent link">&para;</a></h3>
+<p><strong>Windows (NTFS):</strong>
+1. Parse MFT records: enumerate all <code>$DATA</code> attributes (type 0x80) for ADS names
+2. Parse <code>Zone.Identifier</code> ADS content as INI file
+3. Parse <code>$EA</code> attributes (type 0xE0) using <code>FILE_FULL_EA_INFORMATION</code> structure
+4. Resolve <code>SecurityId</code> from <code>$STANDARD_INFORMATION</code> -&gt; <code>$Secure:$SII</code> -&gt; <code>$Secure:$SDS</code>
+5. Parse security descriptors: header -&gt; DACL/SACL -&gt; ACEs -&gt; SIDs
+6. Parse <code>$UsnJrnl:$J</code> for <code>USN_REASON_NAMED_DATA_*</code> flags</p>
+<p><strong>macOS (APFS/HFS+):</strong>
+1. Read all xattrs per file
+2. Parse <code>com.apple.quarantine</code> as semicolon-delimited UTF-8 text
+3. Parse <code>kMDItem*</code> attributes as binary plists
+4. Parse <code>com.apple.FinderInfo</code> as 32-byte FInfo+FXInfo structure
+5. Parse <code>com.apple.macl</code> as series of 72-byte UUID entries
+6. Cross-reference UUIDs with QuarantineEventsV2 SQLite DB</p>
+<p><strong>Linux (ext4/btrfs/XFS):</strong>
+1. Read all xattrs across all namespaces
+2. Parse <code>security.capability</code> as <code>vfs_cap_data</code> structure (check revision for size)
+3. Parse <code>system.posix_acl_access</code> / <code>system.posix_acl_default</code> as POSIX ACL binary format
+4. Parse <code>security.selinux</code> as null-terminated UTF-8 string
+5. Parse <code>security.ima</code> / <code>security.evm</code> as binary hash/signature
+6. Parse <code>user.xdg.origin.*</code> as UTF-8 strings</p>
+<hr />
+<h2 id="sources">Sources<a class="headerlink" href="#sources" title="Permanent link">&para;</a></h2>
+<h3 id="ntfs-windows">NTFS &amp; Windows<a class="headerlink" href="#ntfs-windows" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://www.digital-detective.net/forensic-analysis-of-zone-identifier-stream/">Digital Detective - Zone.Identifier Forensic Analysis</a></li>
+<li><a href="https://www.cyberengage.org/post/unveiling-file-origins-the-role-of-alternate-data-streams-ads-zone-identifier-in-forensic-inve">CyberEngage - ADS Zone.Identifier Investigation</a></li>
+<li><a href="https://www.dfir.co.za/2018/06/18/highway-to-the-danger-zone-identifier/">The Swanepoel Method - Highway To The Danger Zone.Identifier</a></li>
+<li><a href="https://securityjosh.github.io/2021/01/27/Detect-HTML-Smuggling-Sysmon.html">SecurityJosh - Detecting HTML Smuggling with Zone.Identifier</a></li>
+<li><a href="https://attack.mitre.org/techniques/T1564/004/">MITRE ATT&amp;CK T1564.004 - NTFS File Attributes</a></li>
+<li><a href="https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1564.004/T1564.004.md">Red Canary Atomic Red Team - T1564.004</a></li>
+<li><a href="https://www.winitor.com/pdf/NtfsAlternateDataStreams.pdf">Winitor - NTFS Alternate Data Streams (PDF)</a></li>
+<li><a href="https://flatcap.github.io/linux-ntfs/ntfs/attributes/security_descriptor.html">NTFS Documentation - $SECURITY_DESCRIPTOR</a></li>
+<li><a href="https://artefacts.help/windows_secure.html">artifacts.help - NTFS $Secure</a></li>
+<li><a href="https://github.com/jschicht/Secure2Csv">jschicht/Secure2Csv</a></li>
+<li><a href="https://github.com/jschicht/EaTools">jschicht/EaTools</a></li>
+<li><a href="https://docs.velociraptor.app/artifact_references/pages/windows.ntfs.extendedattributes/">Velociraptor - Windows.NTFS.ExtendedAttributes</a></li>
+<li><a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/ifs/security-descriptors">Microsoft - Security Descriptors in File Systems</a></li>
+<li><a href="https://learn.microsoft.com/en-us/windows/win32/secauthz/mandatory-integrity-control">Microsoft - Mandatory Integrity Control</a></li>
+<li><a href="https://learn.microsoft.com/en-us/windows/win32/secauthz/well-known-sids">Microsoft - Well-known SIDs</a></li>
+<li><a href="https://github.com/Microsoft/WSL/issues/2777">Microsoft WSL Issue #2777 - EA Incompatibility</a></li>
+<li><a href="https://isc.sans.edu/diary/31990">SANS DFIR - USN Journal</a></li>
+<li><a href="https://www.cyberengage.org/post/power-of-ntfs-journaling-in-digital-forensics-logfile-usnjrnl">CyberEngage - NTFS Journaling Forensics</a></li>
+<li><a href="https://countuponsecurity.com/2017/05/25/digital-forensics-ntfs-change-journal/">Count Upon Security - NTFS Change Journal</a></li>
+</ul>
+<h3 id="macos">macOS<a class="headerlink" href="#macos" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://eclecticlight.co/2017/12/11/xattr-com-apple-quarantine-the-quarantine-flag/">Eclectic Light Company - com.apple.quarantine</a></li>
+<li><a href="https://eclecticlight.co/2020/10/29/quarantine-and-the-quarantine-flag/">Eclectic Light Company - Quarantine and the quarantine flag</a></li>
+<li><a href="https://eclecticlight.co/2020/01/30/quarantine-sip-and-macl-macos-per-file-security-controls/">Eclectic Light Company - Quarantine, SIP, and MACL</a></li>
+<li><a href="https://eclecticlight.co/2017/12/19/xattr-com-apple-finderinfo-information-for-the-finder/">Eclectic Light Company - com.apple.FinderInfo</a></li>
+<li><a href="https://eclecticlight.co/2023/05/10/how-macos-now-tracks-the-provenance-of-apps/">Eclectic Light Company - How macOS tracks provenance</a></li>
+<li><a href="https://eclecticlight.co/2024/05/13/apfs-extended-attributes-revisited/">Eclectic Light Company - APFS Extended Attributes Revisited</a></li>
+<li><a href="https://hackmd.io/@M4shl3/xattr">HackMD - Extended Attributes macOS Forensics</a></li>
+<li><a href="https://dfir.ch/posts/macos_extended_attributes/">dfir.ch - macOS Extended Attributes Case Study</a></li>
+<li><a href="https://0xmachos.com/2019-02-01-Quarantine-Intro/">0xmachos - Quarantine Intro</a></li>
+<li><a href="https://nixhacker.com/security-protection-in-macos-1/">nixhacker - Gatekeeper Security</a></li>
+<li><a href="https://knight.sc/reverse%20engineering/2019/02/20/syspolicyd-internals.html">Scott Knight - syspolicyd internals</a></li>
+<li><a href="https://redcanary.com/blog/threat-detection/gatekeeper/">Red Canary - Gatekeeping in macOS</a></li>
+<li><a href="https://hacktricks.wiki/en/macos-hardening/macos-security-and-privilege-escalation/macos-security-protections/macos-gatekeeper.html">HackTricks - macOS Gatekeeper/Quarantine/XProtect</a></li>
+<li><a href="https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive">Rainforest QA - TCC.db Deep Dive</a></li>
+<li><a href="https://slyd0g.medium.com/extended-attributes-and-tcc-on-macos-a535878f2c8d">slyd0g - Extended Attributes and TCC on macOS</a></li>
+<li><a href="https://developer.apple.com/support/downloads/Apple-File-System-Reference.pdf">Apple - APFS Reference (PDF)</a></li>
+<li><a href="https://static.ernw.de/whitepaper/ERNW_Whitepaper65_APFS-forensics_signed.pdf">ERNW - APFS Forensics Whitepaper</a></li>
+<li><a href="https://jtsylve.blog/post/2022/12/19/APFS-Data-Streams">Joe Sylve - APFS Data Streams</a></li>
+<li><a href="https://github.com/libyal/libfsapfs/blob/main/documentation/Apple%20File%20System%20(APFS).asciidoc">libfsapfs Documentation</a></li>
+<li><a href="https://github.com/dropbox/finderinfo-rust">Dropbox finderinfo-rust</a></li>
+<li><a href="https://afine.com/how-macos-file-metadata-exposed-authentication-tokens">AFine - macOS Extended Attributes Expose Auth Tokens</a></li>
+<li><a href="https://github.com/reitermarkus/quarantine/blob/master/findings.md">reitermarkus/quarantine findings</a></li>
+<li><a href="https://support.apple.com/guide/security/gatekeeper-and-runtime-protection-sec5599b66df/web">Apple - Gatekeeper and runtime protection</a></li>
+</ul>
+<h3 id="linux">Linux<a class="headerlink" href="#linux" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://man7.org/linux/man-pages/man7/xattr.7.html">man7.org - xattr(7)</a></li>
+<li><a href="https://www.man7.org/linux/man-pages/man7/capabilities.7.html">man7.org - capabilities(7)</a></li>
+<li><a href="https://www.man7.org/linux/man-pages/man5/acl.5.html">man7.org - acl(5)</a></li>
+<li><a href="https://github.com/torvalds/linux/blob/master/include/linux/posix_acl_xattr.h">Linux kernel - posix_acl_xattr.h</a></li>
+<li><a href="https://github.com/torvalds/linux/blob/master/fs/ext4/acl.h">Linux kernel - ext4/acl.h</a></li>
+<li><a href="https://github.com/torvalds/linux/blob/master/include/uapi/linux/posix_acl.h">Linux kernel - posix_acl.h (UAPI)</a></li>
+<li><a href="https://dfir.ch/posts/linux_capabilities/">dfir.ch - Linux Capabilities Revisited</a></li>
+<li><a href="https://wiki.archlinux.org/title/Extended_attributes">ArchWiki - Extended Attributes</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Extended_file_attributes">Wikipedia - Extended File Attributes</a></li>
+<li><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/kernel_administration_guide/enhancing_security_with_the_kernel_integrity_subsystem">Red Hat - IMA Documentation</a></li>
+<li><a href="https://www.redhat.com/en/blog/how-use-linux-kernels-integrity-measurement-architecture">Red Hat - How to use IMA</a></li>
+<li><a href="https://ima-doc.readthedocs.io/en/latest/ima-concepts.html">IMA Documentation</a></li>
+<li><a href="https://www.usenix.org/legacyurl/posix-access-control-lists-linux">USENIX - POSIX ACLs on Linux</a></li>
+<li><a href="https://www.kernel.org/doc/html/latest/filesystems/ext4/attributes.html">Kernel.org - ext4 Extended Attributes</a></li>
+</ul>
+<h3 id="cross-platform-interoperability">Cross-Platform / Interoperability<a class="headerlink" href="#cross-platform-interoperability" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://grokipedia.com/page/AppleSingle_and_AppleDouble_formats">Grokipedia - AppleSingle and AppleDouble Formats</a></li>
+<li><a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000625.shtml">LOC - AppleDouble Resource Fork</a></li>
+<li><a href="https://www.samba.org/samba/docs/4.5/man-html/vfs_fruit.8.html">Samba - vfs_fruit</a></li>
+<li><a href="https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemDetails/FileSystemDetails.html">Apple Developer - File System Details</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "navigation.tabs", "navigation.sections", "navigation.top", "search.highlight"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>

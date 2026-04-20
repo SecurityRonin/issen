@@ -1,0 +1,2108 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://securityronin.github.io/rapidtriage/remote-sources/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Remote Sources - RapidTriage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#remote-sources" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="RapidTriage" class="md-header__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            RapidTriage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Remote Sources
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../privacy/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Privacy Policy
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../terms/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Terms of Service
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="RapidTriage" class="md-nav__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    RapidTriage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terms of Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cloud-object-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cloud Object Storage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cloud Object Storage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aws-s3-s3bucketkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AWS S3 — s3://bucket/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#google-cloud-storage-gcsbucketobject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Google Cloud Storage — gcs://bucket/object
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#azure-blob-storage-azblobcontainerblob" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Azure Blob Storage — azblob://container/blob
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#azure-data-lake-gen2-azdlsfilesystempath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Azure Data Lake Gen2 — azdls://filesystem/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#azure-files-azfilesharepath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Azure Files — azfile://share/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backblaze-b2-b2bucketkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backblaze B2 — b2://bucket/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tencent-cloud-cos-cosbucketkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tencent Cloud COS — cos://bucket/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#huawei-cloud-obs-obsbucketkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Huawei Cloud OBS — obs://bucket/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alibaba-cloud-oss-ossbucketkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alibaba Cloud OSS — oss://bucket/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#openstack-swift-swiftcontainerpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenStack Swift — swift://container/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upyun-upyunbucketkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upyun — upyun://bucket/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloud-drives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cloud Drives
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cloud Drives">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#google-drive-gdrivefile-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Google Drive — gdrive://file-id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#microsoft-onedrive-onedrivepath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microsoft OneDrive — onedrive://path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dropbox-dropboxpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dropbox — dropbox://path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aliyun-drive-aliyun-drivepath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aliyun Drive — aliyun-drive://path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#yandex-disk-yandex-diskpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yandex Disk — yandex-disk://path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pcloud-pcloudpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pCloud — pcloud://path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koofr-koofrpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Koofr — koofr://path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seafile-seafileserverrepopath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seafile — seafile://server/repo/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#developer-ml-infra" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Developer / ML / Infra
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Developer / ML / Infra">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#github-githubownerrepopath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub — github://owner/repo/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#huggingface-huggingfaceownerrepopath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HuggingFace — huggingface://owner/repo/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vercel-blob-vercel-blobkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vercel Blob — vercel-blob://key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vercel-build-artifacts-vercel-artifactskey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vercel Build Artifacts — vercel-artifacts://key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#github-actions-cache-ghackey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub Actions Cache — ghac://key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#databricks-dbfs-dbfspath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Databricks DBFS — dbfs://path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distributed-big-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distributed / Big Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Distributed / Big Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#alluxio-alluxiohostportpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alluxio — alluxio://host:port/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webhdfs-webhdfsnamenodeportpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WebHDFS — webhdfs://namenode:port/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hdfs-native-hdfsnamenodeportpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HDFS Native — hdfs://namenode:port/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lakefs-lakefsrepobranchpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LakeFS — lakefs://repo/branch/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decentralized" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decentralized
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decentralized">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ipfs-ipfscidpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IPFS — ipfs://CID/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ipfs-mfs-ipmfspath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IPFS MFS — ipmfs:///path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#network-kv-databases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Network KV / Databases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Network KV / Databases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#redis-redishostportkey-redisshostportkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Redis — redis://host:port/key / rediss://host:port/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memcached-memcachedhostportkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memcached — memcached://host:port/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etcd-etcdhostportkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        etcd — etcd://host:port/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tikv-tikvpd-hostportkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TiKV — tikv://pd-host:port/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mongodb-mongodbuserpasshostdatabasecollectionkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MongoDB — mongodb://[user:pass@]host/database/collection/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mongodb-gridfs-gridfsuserpasshostdatabasebucketkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MongoDB GridFS — gridfs://[user:pass@]host/database/bucket/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mysql-mariadb-mysqluserpasshostdatabasekey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MySQL / MariaDB — mysql://[user:pass@]host/database/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postgresql-postgresqluserpasshostdatabasekey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PostgreSQL — postgresql://[user:pass@]host/database/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-sqlitepathtodbsqlitekey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite — sqlite:///path/to/db.sqlite/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cloudflare-kv-cloudflare-kvnamespace-idkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cloudflare KV — cloudflare-kv://namespace-id/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cloudflare-d1-d1database-idkey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cloudflare D1 — d1://database-id/key
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filesystem-network-protocols" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filesystem / Network Protocols
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Filesystem / Network Protocols">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#local-filesystem-fileabspath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local filesystem — file:///abs/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http-https-httphostpath-httpshostpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP / HTTPS — http://host/path, https://host/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webdav-webdavhostpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WebDAV — webdav://host/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sftp-sftpuserhostportpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SFTP — sftp://[user@]host[:port]/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ftp-ftps-ftpuserpasshostpath-ftpsuserpasshostpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FTP / FTPS — ftp://user:pass@host/path, ftps://user:pass@host/path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-memory-mempath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In-memory — mem://path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-vs-write" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read vs. Write
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="remote-sources">Remote Sources<a class="headerlink" href="#remote-sources" title="Permanent link">&para;</a></h1>
+<p>RapidTriage ingests evidence from 48 URI schemes via <a href="https://opendal.apache.org/">Apache OpenDAL</a>. Every scheme uses the same interface — <code>rt ingest --source &lt;URI&gt;</code> — regardless of backend. The <code>rt-remote-io</code> crate handles all authentication, streaming, and path resolution transparently.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>s3://dfir-bucket/case/collection.tar.gz<span class="w"> </span>--output<span class="w"> </span><span class="k">case</span>.duckdb
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>sftp://analyst@10.0.1.5/evidence/<span class="w"> </span>--output<span class="w"> </span><span class="k">case</span>.duckdb
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>gdrive://1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms
+</code></pre></div>
+<hr />
+<h2 id="cloud-object-storage">Cloud Object Storage<a class="headerlink" href="#cloud-object-storage" title="Permanent link">&para;</a></h2>
+<p>Most enterprise acquisitions land in object storage. These backends are read/write.</p>
+<h3 id="aws-s3-s3bucketkey">AWS S3 — <code>s3://bucket/key</code><a class="headerlink" href="#aws-s3-s3bucketkey" title="Permanent link">&para;</a></h3>
+<p>Compatible with AWS S3, MinIO, Cloudflare R2, Wasabi, and any S3-compatible endpoint.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>s3://dfir-evidence/2026-04-19/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AWS_ACCESS_KEY_ID</code></td>
+<td>Yes</td>
+<td>IAM access key</td>
+</tr>
+<tr>
+<td><code>AWS_SECRET_ACCESS_KEY</code></td>
+<td>Yes</td>
+<td>IAM secret key</td>
+</tr>
+<tr>
+<td><code>AWS_DEFAULT_REGION</code></td>
+<td>No</td>
+<td>Defaults to <code>us-east-1</code></td>
+</tr>
+<tr>
+<td><code>AWS_SESSION_TOKEN</code></td>
+<td>No</td>
+<td>For temporary STS credentials</td>
+</tr>
+<tr>
+<td><code>AWS_ENDPOINT_URL</code></td>
+<td>No</td>
+<td>Override for MinIO / R2 / Wasabi</td>
+</tr>
+</tbody>
+</table>
+<h3 id="google-cloud-storage-gcsbucketobject">Google Cloud Storage — <code>gcs://bucket/object</code><a class="headerlink" href="#google-cloud-storage-gcsbucketobject" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>gcs://my-dfir-bucket/collections/host-001.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GOOGLE_APPLICATION_CREDENTIALS</code></td>
+<td>Yes</td>
+<td>Path to service account JSON</td>
+</tr>
+</tbody>
+</table>
+<p>Alternatively, Application Default Credentials (ADC) work if <code>gcloud auth application-default login</code> has been run.</p>
+<h3 id="azure-blob-storage-azblobcontainerblob">Azure Blob Storage — <code>azblob://container/blob</code><a class="headerlink" href="#azure-blob-storage-azblobcontainerblob" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>azblob://evidence/2026-04-19/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AZURE_STORAGE_ACCOUNT</code></td>
+<td>Yes</td>
+<td>Storage account name</td>
+</tr>
+<tr>
+<td><code>AZURE_STORAGE_ACCESS_KEY</code></td>
+<td>Yes</td>
+<td>Account key</td>
+</tr>
+</tbody>
+</table>
+<h3 id="azure-data-lake-gen2-azdlsfilesystempath">Azure Data Lake Gen2 — <code>azdls://filesystem/path</code><a class="headerlink" href="#azure-data-lake-gen2-azdlsfilesystempath" title="Permanent link">&para;</a></h3>
+<p>For enterprise data lakes using hierarchical namespace.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>azdls://forensics/cases/2026-04-19/
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AZURE_STORAGE_ACCOUNT</code></td>
+<td>Yes</td>
+<td>Storage account name</td>
+</tr>
+<tr>
+<td><code>AZURE_STORAGE_ACCESS_KEY</code></td>
+<td>Yes</td>
+<td>Account key</td>
+</tr>
+<tr>
+<td><code>AZDLS_ENDPOINT</code></td>
+<td>No</td>
+<td>Defaults to <code>https://&lt;account&gt;.dfs.core.windows.net</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="azure-files-azfilesharepath">Azure Files — <code>azfile://share/path</code><a class="headerlink" href="#azure-files-azfilesharepath" title="Permanent link">&para;</a></h3>
+<p>SMB file shares via REST API.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>azfile://dfir-share/collections/host-001/
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AZURE_STORAGE_ACCOUNT</code></td>
+<td>Yes</td>
+<td>Storage account name</td>
+</tr>
+<tr>
+<td><code>AZURE_STORAGE_ACCESS_KEY</code></td>
+<td>Yes</td>
+<td>Account key</td>
+</tr>
+<tr>
+<td><code>AZFILE_ENDPOINT</code></td>
+<td>No</td>
+<td>Defaults to <code>https://&lt;account&gt;.file.core.windows.net</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="backblaze-b2-b2bucketkey">Backblaze B2 — <code>b2://bucket/key</code><a class="headerlink" href="#backblaze-b2-b2bucketkey" title="Permanent link">&para;</a></h3>
+<p>Cost-effective cold storage for large evidence sets.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>b2://dfir-cold/archives/host-001.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BACKBLAZE_APPLICATION_KEY_ID</code></td>
+<td>Yes</td>
+<td>Application key ID</td>
+</tr>
+<tr>
+<td><code>BACKBLAZE_APPLICATION_KEY</code></td>
+<td>Yes</td>
+<td>Application key</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tencent-cloud-cos-cosbucketkey">Tencent Cloud COS — <code>cos://bucket/key</code><a class="headerlink" href="#tencent-cloud-cos-cosbucketkey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>cos://dfir-bucket/evidence.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TENCENTCLOUD_SECRET_ID</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>TENCENTCLOUD_SECRET_KEY</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>TENCENTCLOUD_REGION</code></td>
+<td>No</td>
+<td>Defaults to <code>ap-guangzhou</code></td>
+</tr>
+<tr>
+<td><code>COS_ENDPOINT</code></td>
+<td>No</td>
+<td>Override endpoint</td>
+</tr>
+</tbody>
+</table>
+<h3 id="huawei-cloud-obs-obsbucketkey">Huawei Cloud OBS — <code>obs://bucket/key</code><a class="headerlink" href="#huawei-cloud-obs-obsbucketkey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>obs://dfir-bucket/evidence.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HUAWEI_ACCESS_KEY_ID</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>HUAWEI_SECRET_ACCESS_KEY</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>HUAWEI_REGION</code></td>
+<td>No</td>
+<td>Defaults to <code>cn-north-4</code></td>
+</tr>
+<tr>
+<td><code>OBS_ENDPOINT</code></td>
+<td>No</td>
+<td>Override endpoint</td>
+</tr>
+</tbody>
+</table>
+<h3 id="alibaba-cloud-oss-ossbucketkey">Alibaba Cloud OSS — <code>oss://bucket/key</code><a class="headerlink" href="#alibaba-cloud-oss-ossbucketkey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>oss://dfir-bucket/evidence.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ALIBABA_CLOUD_ACCESS_KEY_ID</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>ALIBABA_CLOUD_ACCESS_KEY_SECRET</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>ALIBABA_CLOUD_REGION</code></td>
+<td>No</td>
+<td>Defaults to <code>cn-hangzhou</code></td>
+</tr>
+<tr>
+<td><code>OSS_ENDPOINT</code></td>
+<td>No</td>
+<td>Override endpoint</td>
+</tr>
+</tbody>
+</table>
+<h3 id="openstack-swift-swiftcontainerpath">OpenStack Swift — <code>swift://container/path</code><a class="headerlink" href="#openstack-swift-swiftcontainerpath" title="Permanent link">&para;</a></h3>
+<p>Common in private cloud environments (OpenStack, Ceph RADOS Gateway).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>swift://evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SWIFT_ENDPOINT</code></td>
+<td>Yes</td>
+<td>Swift proxy endpoint</td>
+</tr>
+<tr>
+<td><code>SWIFT_TOKEN</code></td>
+<td>Yes</td>
+<td>Auth token</td>
+</tr>
+</tbody>
+</table>
+<h3 id="upyun-upyunbucketkey">Upyun — <code>upyun://bucket/key</code><a class="headerlink" href="#upyun-upyunbucketkey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>upyun://dfir-bucket/evidence.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UPYUN_OPERATOR</code></td>
+<td>Yes</td>
+<td>Operator name</td>
+</tr>
+<tr>
+<td><code>UPYUN_PASSWORD</code></td>
+<td>Yes</td>
+<td>Operator password</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="cloud-drives">Cloud Drives<a class="headerlink" href="#cloud-drives" title="Permanent link">&para;</a></h2>
+<h3 id="google-drive-gdrivefile-id">Google Drive — <code>gdrive://file-id</code><a class="headerlink" href="#google-drive-gdrivefile-id" title="Permanent link">&para;</a></h3>
+<p>Supports both file IDs and share URLs. Authentication uses OAuth2 (interactive browser flow) or a service account.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># By file ID</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>gdrive://1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># By full share URL</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span><span class="s2">&quot;gdrive://https://drive.google.com/file/d/1BxiMVs0.../view&quot;</span>
+</code></pre></div>
+<p>Authentication priority:
+1. <code>GOOGLE_APPLICATION_CREDENTIALS</code> — service account JSON (recommended for automation)
+2. <code>GDRIVE_CLIENT_ID</code> + <code>GDRIVE_CLIENT_SECRET</code> — OAuth2 (browser popup on first run, token cached in <code>~/.config/rapidtriage/gdrive-token.json</code>)
+3. Saved token from previous OAuth2 session</p>
+<h3 id="microsoft-onedrive-onedrivepath">Microsoft OneDrive — <code>onedrive://path</code><a class="headerlink" href="#microsoft-onedrive-onedrivepath" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>onedrive://Documents/Evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ONEDRIVE_ACCESS_TOKEN</code></td>
+<td>Yes</td>
+<td>OAuth2 bearer token</td>
+</tr>
+</tbody>
+</table>
+<p>Obtain a token via <code>az account get-access-token --resource https://graph.microsoft.com</code> or the Microsoft identity platform.</p>
+<h3 id="dropbox-dropboxpath">Dropbox — <code>dropbox://path</code><a class="headerlink" href="#dropbox-dropboxpath" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>dropbox://Evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DROPBOX_ACCESS_TOKEN</code></td>
+<td>Yes</td>
+<td>OAuth2 access token</td>
+</tr>
+</tbody>
+</table>
+<h3 id="aliyun-drive-aliyun-drivepath">Aliyun Drive — <code>aliyun-drive://path</code><a class="headerlink" href="#aliyun-drive-aliyun-drivepath" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>aliyun-drive://evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ALIYUN_DRIVE_ACCESS_TOKEN</code></td>
+<td>Yes</td>
+<td>OAuth2 access token</td>
+</tr>
+</tbody>
+</table>
+<h3 id="yandex-disk-yandex-diskpath">Yandex Disk — <code>yandex-disk://path</code><a class="headerlink" href="#yandex-disk-yandex-diskpath" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>yandex-disk://Evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>YANDEX_DISK_ACCESS_TOKEN</code></td>
+<td>Yes</td>
+<td>OAuth2 access token</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pcloud-pcloudpath">pCloud — <code>pcloud://path</code><a class="headerlink" href="#pcloud-pcloudpath" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>pcloud://Evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PCLOUD_USERNAME</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>PCLOUD_PASSWORD</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>PCLOUD_ENDPOINT</code></td>
+<td>No</td>
+<td>Defaults to <code>https://api.pcloud.com</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="koofr-koofrpath">Koofr — <code>koofr://path</code><a class="headerlink" href="#koofr-koofrpath" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>koofr://Evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KOOFR_EMAIL</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>KOOFR_PASSWORD</code></td>
+<td>Yes</td>
+<td>App password (not account password)</td>
+</tr>
+<tr>
+<td><code>KOOFR_ENDPOINT</code></td>
+<td>No</td>
+<td>Defaults to <code>https://app.koofr.net</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="seafile-seafileserverrepopath">Seafile — <code>seafile://server/repo/path</code><a class="headerlink" href="#seafile-seafileserverrepopath" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>seafile://files.example.com/Evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SEAFILE_USERNAME</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>SEAFILE_PASSWORD</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>SEAFILE_REPO</code></td>
+<td>No</td>
+<td>Default repo if not in URI</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="developer-ml-infra">Developer / ML / Infra<a class="headerlink" href="#developer-ml-infra" title="Permanent link">&para;</a></h2>
+<h3 id="github-githubownerrepopath">GitHub — <code>github://owner/repo/path</code><a class="headerlink" href="#github-githubownerrepopath" title="Permanent link">&para;</a></h3>
+<p>Read-only access to repository file trees. Useful for ingesting scripts, configs, or forensic artifacts stored in repositories.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>github://SecurityRonin/evidence-repo/cases/2026-04-19/
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GITHUB_TOKEN</code></td>
+<td>No</td>
+<td>Required for private repos or higher rate limits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="huggingface-huggingfaceownerrepopath">HuggingFace — <code>huggingface://owner/repo/path</code><a class="headerlink" href="#huggingface-huggingfaceownerrepopath" title="Permanent link">&para;</a></h3>
+<p>Ingest datasets or model artifacts stored on HuggingFace Hub.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>huggingface://SecurityRonin/forensic-datasets/malware-samples/
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HUGGINGFACE_TOKEN</code></td>
+<td>No</td>
+<td>Required for private repos</td>
+</tr>
+</tbody>
+</table>
+<h3 id="vercel-blob-vercel-blobkey">Vercel Blob — <code>vercel-blob://key</code><a class="headerlink" href="#vercel-blob-vercel-blobkey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>vercel-blob://evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BLOB_READ_WRITE_TOKEN</code></td>
+<td>Yes</td>
+<td>From Vercel project settings</td>
+</tr>
+</tbody>
+</table>
+<h3 id="vercel-build-artifacts-vercel-artifactskey">Vercel Build Artifacts — <code>vercel-artifacts://key</code><a class="headerlink" href="#vercel-build-artifacts-vercel-artifactskey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>vercel-artifacts://build-cache-key
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VERCEL_ARTIFACTS_TOKEN</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="github-actions-cache-ghackey">GitHub Actions Cache — <code>ghac://key</code><a class="headerlink" href="#github-actions-cache-ghackey" title="Permanent link">&para;</a></h3>
+<p>For CI-based forensic workflows where evidence is cached between runs.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>ghac://evidence-snapshot
+</code></pre></div>
+<p>Auth is automatic within GitHub Actions via <code>ACTIONS_CACHE_URL</code> and <code>ACTIONS_RUNTIME_TOKEN</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GHAC_VERSION</code></td>
+<td>No</td>
+<td>Cache API version, defaults to <code>v1</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="databricks-dbfs-dbfspath">Databricks DBFS — <code>dbfs://path</code><a class="headerlink" href="#databricks-dbfs-dbfspath" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>dbfs://mnt/evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DATABRICKS_HOST</code></td>
+<td>Yes</td>
+<td>Workspace URL</td>
+</tr>
+<tr>
+<td><code>DATABRICKS_TOKEN</code></td>
+<td>Yes</td>
+<td>Personal access token</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="distributed-big-data">Distributed / Big Data<a class="headerlink" href="#distributed-big-data" title="Permanent link">&para;</a></h2>
+<h3 id="alluxio-alluxiohostportpath">Alluxio — <code>alluxio://host:port/path</code><a class="headerlink" href="#alluxio-alluxiohostportpath" title="Permanent link">&para;</a></h3>
+<p>Unified data access layer over HDFS, S3, Azure.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>alluxio://alluxio-master:19998/evidence/
+</code></pre></div>
+<p>No credentials needed by default; Alluxio manages upstream auth.</p>
+<h3 id="webhdfs-webhdfsnamenodeportpath">WebHDFS — <code>webhdfs://namenode:port/path</code><a class="headerlink" href="#webhdfs-webhdfsnamenodeportpath" title="Permanent link">&para;</a></h3>
+<p>HDFS access via REST API. Works with CDH, HDP, and vanilla Hadoop. No client libraries required.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>webhdfs://namenode:50070/user/forensics/evidence.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WEBHDFS_USER</code></td>
+<td>No</td>
+<td>Hadoop username (proxies as this user)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hdfs-native-hdfsnamenodeportpath">HDFS Native — <code>hdfs://namenode:port/path</code><a class="headerlink" href="#hdfs-native-hdfsnamenodeportpath" title="Permanent link">&para;</a></h3>
+<p>Pure-Rust HDFS client — <strong>no JVM, no <code>JAVA_HOME</code>, no Hadoop installation required</strong>. Implements the HDFS RPC protocol directly.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>hdfs://namenode:9000/user/forensics/evidence.tar.gz
+</code></pre></div>
+<p>Kerberos is not currently supported by the native client; use <code>webhdfs://</code> in Kerberized environments.</p>
+<h3 id="lakefs-lakefsrepobranchpath">LakeFS — <code>lakefs://repo/branch/path</code><a class="headerlink" href="#lakefs-lakefsrepobranchpath" title="Permanent link">&para;</a></h3>
+<p>Data versioning layer over S3/GCS/Azure — useful when evidence is version-controlled.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>lakefs://forensics/main/cases/2026-04-19/
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LAKEFS_ACCESS_KEY_ID</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>LAKEFS_SECRET_ACCESS_KEY</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>LAKEFS_ENDPOINT</code></td>
+<td>No</td>
+<td>Defaults to <code>http://localhost:8000</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="decentralized">Decentralized<a class="headerlink" href="#decentralized" title="Permanent link">&para;</a></h2>
+<h3 id="ipfs-ipfscidpath">IPFS — <code>ipfs://CID/path</code><a class="headerlink" href="#ipfs-ipfscidpath" title="Permanent link">&para;</a></h3>
+<p>Read-only. Content-addressed and immutable — ideal for evidence integrity verification.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG/evidence.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IPFS_GATEWAY</code></td>
+<td>No</td>
+<td>Defaults to local node <code>http://127.0.0.1:8080</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="ipfs-mfs-ipmfspath">IPFS MFS — <code>ipmfs:///path</code><a class="headerlink" href="#ipfs-mfs-ipmfspath" title="Permanent link">&para;</a></h3>
+<p>Mutable File System — read and write via local IPFS node.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>ipmfs:///forensics/evidence.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IPFS_ENDPOINT</code></td>
+<td>No</td>
+<td>Defaults to <code>http://127.0.0.1:5001</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="network-kv-databases">Network KV / Databases<a class="headerlink" href="#network-kv-databases" title="Permanent link">&para;</a></h2>
+<p>These backends treat keys as file paths. Useful when evidence metadata is stored in a live database.</p>
+<h3 id="redis-redishostportkey-redisshostportkey">Redis — <code>redis://host:port/key</code> / <code>rediss://host:port/key</code><a class="headerlink" href="#redis-redishostportkey-redisshostportkey" title="Permanent link">&para;</a></h3>
+<p><code>rediss://</code> is Redis over TLS.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>redis://localhost:6379/evidence:host-001
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>rediss://redis.internal:6380/evidence:host-001
+</code></pre></div>
+<p>Credentials embedded in URI: <code>redis://user:password@host:port/key</code></p>
+<h3 id="memcached-memcachedhostportkey">Memcached — <code>memcached://host:port/key</code><a class="headerlink" href="#memcached-memcachedhostportkey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>memcached://cache:11211/evidence-key
+</code></pre></div>
+<h3 id="etcd-etcdhostportkey">etcd — <code>etcd://host:port/key</code><a class="headerlink" href="#etcd-etcdhostportkey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>etcd://etcd-host:2379/forensics/evidence
+</code></pre></div>
+<h3 id="tikv-tikvpd-hostportkey">TiKV — <code>tikv://pd-host:port/key</code><a class="headerlink" href="#tikv-tikvpd-hostportkey" title="Permanent link">&para;</a></h3>
+<p>Distributed transactional KV.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>tikv://pd-host:2379/evidence-key
+</code></pre></div>
+<h3 id="mongodb-mongodbuserpasshostdatabasecollectionkey">MongoDB — <code>mongodb://[user:pass@]host/database/collection/key</code><a class="headerlink" href="#mongodb-mongodbuserpasshostdatabasecollectionkey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>mongodb://admin:secret@mongo:27017/forensics/evidence/host-001
+</code></pre></div>
+<h3 id="mongodb-gridfs-gridfsuserpasshostdatabasebucketkey">MongoDB GridFS — <code>gridfs://[user:pass@]host/database/bucket/key</code><a class="headerlink" href="#mongodb-gridfs-gridfsuserpasshostdatabasebucketkey" title="Permanent link">&para;</a></h3>
+<p>For large binary blobs stored in GridFS.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>gridfs://mongo:27017/forensics/evidence/collection.tar.gz
+</code></pre></div>
+<h3 id="mysql-mariadb-mysqluserpasshostdatabasekey">MySQL / MariaDB — <code>mysql://[user:pass@]host/database/key</code><a class="headerlink" href="#mysql-mariadb-mysqluserpasshostdatabasekey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>mysql://analyst:secret@mysql:3306/forensics/evidence
+</code></pre></div>
+<h3 id="postgresql-postgresqluserpasshostdatabasekey">PostgreSQL — <code>postgresql://[user:pass@]host/database/key</code><a class="headerlink" href="#postgresql-postgresqluserpasshostdatabasekey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>postgresql://analyst:secret@pg:5432/forensics/evidence
+</code></pre></div>
+<h3 id="sqlite-sqlitepathtodbsqlitekey">SQLite — <code>sqlite:///path/to/db.sqlite/key</code><a class="headerlink" href="#sqlite-sqlitepathtodbsqlitekey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>sqlite:///cases/2026-04-19/case.db/evidence
+</code></pre></div>
+<h3 id="cloudflare-kv-cloudflare-kvnamespace-idkey">Cloudflare KV — <code>cloudflare-kv://namespace-id/key</code><a class="headerlink" href="#cloudflare-kv-cloudflare-kvnamespace-idkey" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>cloudflare-kv://abc123def456/evidence:host-001
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CLOUDFLARE_ACCOUNT_ID</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>CLOUDFLARE_API_TOKEN</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="cloudflare-d1-d1database-idkey">Cloudflare D1 — <code>d1://database-id/key</code><a class="headerlink" href="#cloudflare-d1-d1database-idkey" title="Permanent link">&para;</a></h3>
+<p>SQLite-compatible database via REST API.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>d1://abc123def456/evidence-key
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CLOUDFLARE_ACCOUNT_ID</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>CLOUDFLARE_API_TOKEN</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="filesystem-network-protocols">Filesystem / Network Protocols<a class="headerlink" href="#filesystem-network-protocols" title="Permanent link">&para;</a></h2>
+<h3 id="local-filesystem-fileabspath">Local filesystem — <code>file:///abs/path</code><a class="headerlink" href="#local-filesystem-fileabspath" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>file:///cases/2026-04-19/collection.tar.gz
+</code></pre></div>
+<p>Equivalent to passing the path directly without <code>--source</code>.</p>
+<h3 id="http-https-httphostpath-httpshostpath">HTTP / HTTPS — <code>http://host/path</code>, <code>https://host/path</code><a class="headerlink" href="#http-https-httphostpath-httpshostpath" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only.</strong> Evidence accessible via a plain HTTP server.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>https://evidence-portal.example.com/cases/host-001.tar.gz
+</code></pre></div>
+<h3 id="webdav-webdavhostpath">WebDAV — <code>webdav://host/path</code><a class="headerlink" href="#webdav-webdavhostpath" title="Permanent link">&para;</a></h3>
+<p>Read/write. Common in enterprise NAS, Nextcloud, SharePoint.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>webdav://nas.corp.example.com/forensics/collection.tar.gz
+</code></pre></div>
+<h3 id="sftp-sftpuserhostportpath">SFTP — <code>sftp://[user@]host[:port]/path</code><a class="headerlink" href="#sftp-sftpuserhostportpath" title="Permanent link">&para;</a></h3>
+<p>Authenticates via SSH agent (default), key file, or known-hosts policy.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>sftp://analyst@10.0.1.5/evidence/collection.tar.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RT_SFTP_KEY_PATH</code></td>
+<td>No</td>
+<td>Path to private key file</td>
+</tr>
+<tr>
+<td><code>RT_SFTP_KNOWN_HOSTS_STRATEGY</code></td>
+<td>No</td>
+<td><code>strict</code> (default) / <code>add</code> / <code>accept</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="ftp-ftps-ftpuserpasshostpath-ftpsuserpasshostpath">FTP / FTPS — <code>ftp://user:pass@host/path</code>, <code>ftps://user:pass@host/path</code><a class="headerlink" href="#ftp-ftps-ftpuserpasshostpath-ftpsuserpasshostpath" title="Permanent link">&para;</a></h3>
+<p><code>ftps://</code> is FTP over TLS. Credentials are embedded in the URI.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>ftp://analyst:secret@ftp.corp.example.com/evidence/
+</code></pre></div>
+<h3 id="in-memory-mempath">In-memory — <code>mem://path</code><a class="headerlink" href="#in-memory-mempath" title="Permanent link">&para;</a></h3>
+<p>For testing and pipeline integration. Data is not persisted.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a>rt<span class="w"> </span>ingest<span class="w"> </span>--source<span class="w"> </span>mem://test/evidence.tar.gz
+</code></pre></div>
+<hr />
+<h2 id="read-vs-write">Read vs. Write<a class="headerlink" href="#read-vs-write" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Read</th>
+<th>Write</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>All object storage (S3, GCS, Azure, B2, …)</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Cloud drives (OneDrive, Dropbox, GDrive, …)</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>SFTP, FTP, WebDAV</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>HDFS native, WebHDFS</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Network KV / databases</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>IPFS (<code>ipfs://</code>)</td>
+<td>✓</td>
+<td>— (content-addressed, immutable)</td>
+</tr>
+<tr>
+<td>IPFS MFS (<code>ipmfs://</code>)</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>GitHub (<code>github://</code>)</td>
+<td>✓</td>
+<td>— (git tree accessor)</td>
+</tr>
+<tr>
+<td>HTTP / HTTPS</td>
+<td>✓</td>
+<td>— (GET only)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">&para;</a></h2>
+<p>All backends are implemented in the <code>rt-remote-io</code> crate using <a href="https://opendal.apache.org/">Apache OpenDAL</a> 0.55. The <code>operator_for_uri</code> function parses any of the 48 URI schemes and returns a unified <code>Operator</code> — callers never need to know which backend is in use.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="k">use</span><span class="w"> </span><span class="n">rt_remote_io</span><span class="p">::</span><span class="n">operator</span><span class="p">::</span><span class="n">operator_for_uri</span><span class="p">;</span>
+<a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a>
+<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="kd">let</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">operator_for_uri</span><span class="p">(</span><span class="s">&quot;s3://my-bucket/evidence/collection.tar.gz&quot;</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<a id="__codelineno-49-4" name="__codelineno-49-4" href="#__codelineno-49-4"></a><span class="kd">let</span><span class="w"> </span><span class="n">bytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">path</span><span class="p">).</span><span class="k">await</span><span class="o">?</span><span class="p">;</span>
+</code></pre></div>
+<p>See the <a href="https://securityronin.github.io/rapidtriage/rt_remote_io/">API docs</a> for the full interface.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "navigation.tabs", "navigation.sections", "navigation.top", "search.highlight"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>

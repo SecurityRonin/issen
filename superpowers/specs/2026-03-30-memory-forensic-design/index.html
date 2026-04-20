@@ -1,0 +1,2322 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://securityronin.github.io/rapidtriage/superpowers/specs/2026-03-30-memory-forensic-design/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>memory-forensic: Pure-Rust Memory Forensics Framework - RapidTriage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#memory-forensic-pure-rust-memory-forensics-framework" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="RapidTriage" class="md-header__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            RapidTriage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              memory-forensic: Pure-Rust Memory Forensics Framework
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../privacy/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Privacy Policy
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../terms/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Terms of Service
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="RapidTriage" class="md-nav__button md-logo" aria-label="RapidTriage" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    RapidTriage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SecurityRonin/rapidtriage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SecurityRonin/rapidtriage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../terms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terms of Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-workspace-structure-crate-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Workspace Structure &amp; Crate Responsibilities
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Workspace Structure &amp; Crate Responsibilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#crate-dependency-dag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crate Dependency DAG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-conventions-all-crates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared Conventions (all crates)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-physical-memory-provider-layer-memf-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Physical Memory Provider Layer (memf-format)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Physical Memory Provider Layer (memf-format)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-trait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Trait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plugin-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin Registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#supported-formats-3-tiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Formats (3 tiers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#probing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Probing Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-string-analysis-layer-memf-strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. String Analysis Layer (memf-strings)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. String Analysis Layer (memf-strings)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#core-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        String Extraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#yara-x-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        YARA-X Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-existing-string-file-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-existing String File Support
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-symbol-resolution-layer-memf-symbols" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Symbol Resolution Layer (memf-symbols)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Symbol Resolution Layer (memf-symbols)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#three-backend-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three-Backend Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-1-btf-linux-52" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend 1: BTF (Linux 5.2+)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-2-mach-o-symbols-macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend 2: Mach-O Symbols (macOS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-3-isf-json-all-platforms-fallback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend 3: ISF JSON (All platforms, fallback)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolution-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolution Chain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kaslr-shift-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        KASLR Shift Detection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-core-memory-model-memf-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Memory Model (memf-core)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Core Memory Model (memf-core)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#virtual-address-space" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Virtual Address Space
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#page-table-walking-x86_64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Page Table Walking (x86_64)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#objectreader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ObjectReader
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-os-walker-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. OS Walker Plugins
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. OS Walker Plugins">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plugin-trait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin Trait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-output-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Output Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memf-linux-linux-kernel-walkers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memf-linux -- Linux Kernel Walkers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memf-mac-macos-xnu-kernel-walkers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memf-mac -- macOS XNU Kernel Walkers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memf-windows-windows-kernel-walkers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memf-windows -- Windows Kernel Walkers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-detection-engines-memf-detect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Detection Engines (memf-detect)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Detection Engines (memf-detect)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#engine-trait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Engine Trait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engine-1-cross-view-rootkit-detection-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Engine 1: Cross-View Rootkit Detection (Linux)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engine-2-crypto-key-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Engine 2: Crypto Key Recovery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engine 2: Crypto Key Recovery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#2a-full-disk-encryption-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2a. Full Disk Encryption Keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2b-aes-key-schedule-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2b. AES Key Schedule Detection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2c-ssh-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2c. SSH Keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2d-blockchain-keys-and-seed-phrases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2d. Blockchain Keys and Seed Phrases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2e-oauth-tokens-api-keys-and-session-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2e. OAuth Tokens, API Keys, and Session Credentials
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engine-3-dkom-data-structure-manipulation-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Engine 3: DKOM / Data Structure Manipulation (Windows)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-cli-memf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. CLI (memf)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. CLI (memf)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#command-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Command Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Formats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Testing Strategy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Testing Strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#synthetic-test-fixtures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Synthetic Test Fixtures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration-tests-with-real-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Tests with Real Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-coverage-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Coverage Targets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tdd-discipline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TDD Discipline
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-phasing-external-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Phasing &amp; External Dependencies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Phasing &amp; External Dependencies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-format-detection-string-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Format Detection + String Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-linux-macos-processnetwork-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Linux + macOS Process/Network Extraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-detection-engines-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Detection Engines + Windows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#external-dependencies-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        External Dependencies Summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="References">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#research-corpus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Research Corpus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inspirations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspirations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="memory-forensic-pure-rust-memory-forensics-framework">memory-forensic: Pure-Rust Memory Forensics Framework<a class="headerlink" href="#memory-forensic-pure-rust-memory-forensics-framework" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>A standalone Rust workspace at <code>~/src/memory-forensic</code> providing a pure-Rust memory forensics framework. Inspired by Volatility 3, mquire, and MemProcFS but written from scratch with zero C dependencies. Supports 13+ dump formats (LiME, AVML, ELF core, kdump, Windows DMP, hiberfil.sys, VMware, VirtualBox, etc.), OS kernel structure walking (processes, sockets, modules) for Linux/macOS/Windows, string-based IoC classification with YARA-X, and detection engines for rootkits, crypto keys, and credential recovery.</p>
+<h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Format-agnostic physical memory access</strong> -- a <code>PhysicalMemoryProvider</code> trait with confidence-based probing so dump formats are detected by magic bytes, never file extension</li>
+<li><strong>Multi-OS kernel walking</strong> -- extract processes, network connections, loaded modules, and mount points from Linux, macOS, and Windows memory dumps via pluggable <code>WalkerPlugin</code> implementations</li>
+<li><strong>Symbol resolution without external tools</strong> -- BTF (Linux 5.2+), Mach-O DWARF (macOS), and ISF JSON (Volatility 3-compatible, all OS) backends for resolving kernel struct offsets at runtime</li>
+<li><strong>String-based IoC classification</strong> -- YARA-X rule matching plus regex-based classifiers for URLs, IPs, file paths, credentials, and crypto material in extracted strings</li>
+<li><strong>Detection engines</strong> -- cross-view rootkit detection, crypto key recovery (FDE, blockchain, SSH, browser), and credential extraction (DPAPI, LSASS, Kerberos, OAuth, session tokens)</li>
+<li><strong>Strict TDD</strong> -- every feature developed red-green-refactor with synthetic test fixtures</li>
+</ul>
+<h2 id="non-goals">Non-Goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Live memory acquisition (use AVML, LiME, WinPmem for capture -- this tool reads dumps only)</li>
+<li>TUI or GUI (CLI only; RapidTriage rt-navigator may integrate later)</li>
+<li>Network-based analysis (no packet capture parsing)</li>
+<li>Disk image mounting or filesystem analysis (that's RapidTriage's domain)</li>
+<li>Android/iOS mobile memory analysis (future work)</li>
+</ul>
+<hr />
+<h2 id="1-workspace-structure-crate-responsibilities">1. Workspace Structure &amp; Crate Responsibilities<a class="headerlink" href="#1-workspace-structure-crate-responsibilities" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>~/src/memory-forensic/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── Cargo.toml                  # workspace root
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├── LICENSE                     # Apache-2.0
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>├── crates/
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│   ├── memf-format/            # physical memory providers (dump format parsers)
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   ├── memf-symbols/           # symbol resolution backends (BTF, Mach-O, ISF)
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│   ├── memf-core/              # virtual address translation, ObjectReader, page table walking
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│   ├── memf-linux/             # Linux kernel structure walkers
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│   ├── memf-mac/               # macOS XNU kernel structure walkers
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│   ├── memf-windows/           # Windows kernel structure walkers
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│   ├── memf-strings/           # string extraction + IoC classification + YARA-X
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│   └── memf-detect/            # detection engines (rootkits, crypto keys, credentials)
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>└── src/
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    └── main.rs                 # memf CLI binary
+</code></pre></div>
+<h3 id="crate-dependency-dag">Crate Dependency DAG<a class="headerlink" href="#crate-dependency-dag" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>memf (CLI)
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>├── memf-detect
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>│   ├── memf-linux
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>│   │   ├── memf-core
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>│   │   │   ├── memf-format
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>│   │   │   └── memf-symbols
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>│   │   └── memf-core
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>│   ├── memf-mac
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>│   │   └── memf-core
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>│   ├── memf-windows
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>│   │   └── memf-core
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>│   └── memf-strings
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>│       └── memf-format
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>└── memf-strings
+</code></pre></div>
+<h3 id="shared-conventions-all-crates">Shared Conventions (all crates)<a class="headerlink" href="#shared-conventions-all-crates" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>edition = "2021"</code>, MSRV 1.75+</li>
+<li><code>#![deny(unsafe_code)]</code> -- no unsafe Rust</li>
+<li><code>thiserror = "2"</code> for library errors, <code>anyhow = "1"</code> for CLI only</li>
+<li><code>inventory = "0.3"</code> for compile-time plugin registration</li>
+<li><code>memmap2 = "0.9"</code> for memory-mapped file I/O</li>
+<li>Clippy pedantic + <code>#![warn(missing_docs)]</code></li>
+</ul>
+<hr />
+<h2 id="2-physical-memory-provider-layer-memf-format">2. Physical Memory Provider Layer (<code>memf-format</code>)<a class="headerlink" href="#2-physical-memory-provider-layer-memf-format" title="Permanent link">&para;</a></h2>
+<h3 id="core-trait">Core Trait<a class="headerlink" href="#core-trait" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="sd">/// A provider of physical memory from a dump file.</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">PhysicalMemoryProvider</span><span class="p">:</span><span class="w"> </span><span class="nb">Send</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Sync</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="sd">/// Read `buf.len()` bytes from physical address `addr`.</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="sd">/// Returns number of bytes actually read (may be less if crossing a gap).</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">read_phys</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">addr</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="p">[</span><span class="kt">u8</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="kt">usize</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="sd">/// Return all valid physical address ranges in the dump.</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">ranges</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="n">PhysicalRange</span><span class="p">];</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="sd">/// Total physical memory size (sum of all ranges).</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">total_size</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u64</span><span class="p">;</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="sd">/// Human-readable format name (e.g., &quot;LiME&quot;, &quot;AVML v2&quot;).</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">format_name</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">;</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="p">}</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">PhysicalRange</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">start</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">end</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w">   </span><span class="c1">// exclusive</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="plugin-registration">Plugin Registration<a class="headerlink" href="#plugin-registration" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">FormatPlugin</span><span class="p">:</span><span class="w"> </span><span class="nb">Send</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Sync</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="sd">/// Human-readable name for this format.</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">;</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="sd">/// Probe the first `header` bytes of a file. Return confidence 0-100.</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">probe</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">header</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="kt">u8</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u8</span><span class="p">;</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="sd">/// Open the file and return a PhysicalMemoryProvider.</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Path</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">PhysicalMemoryProvider</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="p">}</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="c1">// Registration via inventory crate</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="n">inventory</span><span class="p">::</span><span class="n">collect</span><span class="o">!</span><span class="p">(</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">FormatPlugin</span><span class="o">&gt;</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="supported-formats-3-tiers">Supported Formats (3 tiers)<a class="headerlink" href="#supported-formats-3-tiers" title="Permanent link">&para;</a></h3>
+<p><strong>Tier 1 -- Phase 1 (high priority, test data available):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Magic / Signature</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LiME</td>
+<td><code>0x4C694D45</code> (LE) at offset 0</td>
+<td>Linux memory, version field at +4, address range records</td>
+</tr>
+<tr>
+<td>AVML v2</td>
+<td><code>0x4C4D5641</code> + Snappy-compressed blocks</td>
+<td>Azure AVML, each block: header + snappy payload</td>
+</tr>
+<tr>
+<td>Raw/padded</td>
+<td>No magic (fallback, confidence 5)</td>
+<td>Contiguous physical dump, size must be power-of-2 aligned</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tier 2 -- Phase 2 (common formats):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Magic / Signature</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ELF core</td>
+<td><code>0x7F454C46</code> + <code>PT_LOAD</code> segments</td>
+<td>Linux kdump, QEMU, libvirt; parse program headers for ranges</td>
+</tr>
+<tr>
+<td>Windows DMP 32</td>
+<td><code>"PAGEDUMP"</code> at offset 0</td>
+<td>32-bit crash dump; <code>DUMP_HEADER</code> struct</td>
+</tr>
+<tr>
+<td>Windows DMP 64</td>
+<td><code>"PAGEDU64"</code> at offset 0</td>
+<td>64-bit crash dump; <code>DUMP_HEADER64</code> struct</td>
+</tr>
+<tr>
+<td>VMware <code>.vmem</code></td>
+<td>Paired with <code>.vmss</code>/<code>.vmsn</code> for metadata</td>
+<td>Raw memory + snapshot metadata</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tier 3 -- Phase 3 (extended support):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Magic / Signature</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>kdump (makedumpfile)</td>
+<td><code>0x8757D0E0</code> (LE) or <code>0xE0D05787</code> (BE)</td>
+<td>Flattened or ELF-based, optional LZO/zstd/snappy compression</td>
+</tr>
+<tr>
+<td>hiberfil.sys</td>
+<td><code>"HIBR"</code> / <code>"RSTR"</code> / <code>"WAKE"</code> at offset 0</td>
+<td>Windows hibernation; Xpress Huffman decompression</td>
+</tr>
+<tr>
+<td>VirtualBox <code>.sav</code></td>
+<td>VBox core dump in ELF wrapper</td>
+<td>Parse VBox-specific ELF notes</td>
+</tr>
+<tr>
+<td>Hyper-V <code>.vsv</code></td>
+<td>Hyper-V saved state</td>
+<td>Binary paging file format</td>
+</tr>
+<tr>
+<td>HPAK</td>
+<td><code>0x4850414B</code> ("HPAK")</td>
+<td>Comae (now Magnet) format, zlib compressed</td>
+</tr>
+<tr>
+<td>Mach-O core</td>
+<td><code>0xFEEDFACF</code> + <code>LC_SEGMENT_64</code></td>
+<td>macOS kernel core dumps</td>
+</tr>
+</tbody>
+</table>
+<h3 id="probing-strategy">Probing Strategy<a class="headerlink" href="#probing-strategy" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>read first 4096 bytes
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>for each FormatPlugin (sorted by Tier):
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    score = plugin.probe(header)
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    if score &gt;= 80: return plugin.open(path)   # high confidence
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>collect all scores &gt;= 20
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>if exactly one &gt;= 50: return that plugin
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>if multiple &gt;= 50: return error (ambiguous)
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>if none &gt;= 20: return error (unknown format)
+</code></pre></div>
+<hr />
+<h2 id="3-string-analysis-layer-memf-strings">3. String Analysis Layer (<code>memf-strings</code>)<a class="headerlink" href="#3-string-analysis-layer-memf-strings" title="Permanent link">&para;</a></h2>
+<h3 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>PhysicalMemoryProvider
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    -&gt; StringExtractor (configurable min_len, encoding)
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>        -&gt; ClassifierPipeline
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>            -&gt; RegexClassifier (URLs, IPs, emails, paths, credentials)
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>            -&gt; YaraClassifier (YARA-X rule matching)
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>            -&gt; Custom StringClassifier plugins
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>        -&gt; ClassifiedString { value, offset, categories, confidence }
+</code></pre></div>
+<h3 id="core-types">Core Types<a class="headerlink" href="#core-types" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ClassifiedString</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">value</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">physical_offset</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">encoding</span><span class="p">:</span><span class="w"> </span><span class="nc">StringEncoding</span><span class="p">,</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">categories</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">StringCategory</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">confidence</span><span class="p">:</span><span class="w"> </span><span class="kt">f32</span><span class="p">,</span><span class="w">  </span><span class="c1">// 0.0 - 1.0</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">}</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">StringEncoding</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="n">Ascii</span><span class="p">,</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="n">Utf8</span><span class="p">,</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="n">Utf16Le</span><span class="p">,</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">    </span><span class="n">Utf16Be</span><span class="p">,</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="p">}</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">StringCategory</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">    </span><span class="n">Url</span><span class="p">(</span><span class="n">UrlType</span><span class="p">),</span><span class="w">           </span><span class="c1">// http/https/ftp/file/data URIs</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">    </span><span class="n">IpAddress</span><span class="p">(</span><span class="n">IpVersion</span><span class="p">),</span><span class="w">   </span><span class="c1">// IPv4, IPv6</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">    </span><span class="n">Email</span><span class="p">,</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">    </span><span class="n">FilePath</span><span class="p">(</span><span class="n">OsType</span><span class="p">),</span><span class="w">       </span><span class="c1">// Windows backslash, Unix forward-slash</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="w">    </span><span class="n">DomainName</span><span class="p">,</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="w">    </span><span class="n">RegistryKey</span><span class="p">,</span><span class="w">            </span><span class="c1">// Windows registry paths</span>
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="w">    </span><span class="n">Credential</span><span class="p">(</span><span class="n">CredentialType</span><span class="p">),</span>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="w">    </span><span class="n">CryptoMaterial</span><span class="p">(</span><span class="n">CryptoType</span><span class="p">),</span>
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="w">    </span><span class="n">Command</span><span class="p">(</span><span class="n">CommandType</span><span class="p">),</span><span class="w">   </span><span class="c1">// shell commands, PowerShell</span>
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="w">    </span><span class="n">Ioc</span><span class="p">(</span><span class="n">IocType</span><span class="p">),</span><span class="w">           </span><span class="c1">// known malware indicators</span>
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="w">    </span><span class="n">Uncategorized</span><span class="p">,</span>
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a><span class="p">}</span>
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">UrlType</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Http</span><span class="p">,</span><span class="w"> </span><span class="n">Https</span><span class="p">,</span><span class="w"> </span><span class="n">Ftp</span><span class="p">,</span><span class="w"> </span><span class="n">File</span><span class="p">,</span><span class="w"> </span><span class="n">Data</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">IpVersion</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">V4</span><span class="p">,</span><span class="w"> </span><span class="n">V6</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">OsType</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Windows</span><span class="p">,</span><span class="w"> </span><span class="n">Linux</span><span class="p">,</span><span class="w"> </span><span class="n">MacOs</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">CredentialType</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Password</span><span class="p">,</span><span class="w"> </span><span class="n">Hash</span><span class="p">,</span><span class="w"> </span><span class="n">Token</span><span class="p">,</span><span class="w"> </span><span class="n">Cookie</span><span class="p">,</span><span class="w"> </span><span class="n">ApiKey</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">CryptoType</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PrivateKey</span><span class="p">,</span><span class="w"> </span><span class="n">SeedPhrase</span><span class="p">,</span><span class="w"> </span><span class="n">Wallet</span><span class="p">,</span><span class="w"> </span><span class="n">Certificate</span><span class="p">,</span><span class="w"> </span><span class="n">EncryptionKey</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">CommandType</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Shell</span><span class="p">,</span><span class="w"> </span><span class="n">PowerShell</span><span class="p">,</span><span class="w"> </span><span class="n">Cmd</span><span class="p">,</span><span class="w"> </span><span class="n">Python</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">IocType</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">C2Domain</span><span class="p">,</span><span class="w"> </span><span class="n">MalwareSignature</span><span class="p">,</span><span class="w"> </span><span class="n">SuspiciousPath</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a>
+<a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">StringClassifier</span><span class="p">:</span><span class="w"> </span><span class="nb">Send</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Sync</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-39" name="__codelineno-6-39" href="#__codelineno-6-39"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">;</span>
+<a id="__codelineno-6-40" name="__codelineno-6-40" href="#__codelineno-6-40"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">classify</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="p">(</span><span class="n">StringCategory</span><span class="p">,</span><span class="w"> </span><span class="kt">f32</span><span class="p">)</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-6-41" name="__codelineno-6-41" href="#__codelineno-6-41"></a><span class="p">}</span>
+<a id="__codelineno-6-42" name="__codelineno-6-42" href="#__codelineno-6-42"></a>
+<a id="__codelineno-6-43" name="__codelineno-6-43" href="#__codelineno-6-43"></a><span class="n">inventory</span><span class="p">::</span><span class="n">collect</span><span class="o">!</span><span class="p">(</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">StringClassifier</span><span class="o">&gt;</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="string-extraction">String Extraction<a class="headerlink" href="#string-extraction" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Scan physical memory ranges sequentially</li>
+<li>Extract ASCII (printable 0x20-0x7E), UTF-8, and UTF-16LE strings</li>
+<li>Configurable minimum length (default: 4 characters)</li>
+<li>Deduplication by value (keep first occurrence offset)</li>
+<li>Streaming output to avoid holding all strings in memory</li>
+</ul>
+<h3 id="yara-x-integration">YARA-X Integration<a class="headerlink" href="#yara-x-integration" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">YaraClassifier</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="n">scanner</span><span class="p">:</span><span class="w"> </span><span class="nc">yara_x</span><span class="p">::</span><span class="n">Scanner</span><span class="p">,</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="p">}</span>
+</code></pre></div>
+<ul>
+<li>Load YARA rules from a configurable rules directory</li>
+<li>Ship default rules for common IoCs (C2 URLs, malware strings, tool signatures)</li>
+<li>Users can add custom <code>.yar</code> files</li>
+<li>YARA-X version: <code>0.12</code> (pure Rust, stable since June 2025)</li>
+</ul>
+<h3 id="pre-existing-string-file-support">Pre-existing String File Support<a class="headerlink" href="#pre-existing-string-file-support" title="Permanent link">&para;</a></h3>
+<p>For RapidTriage UAC collections that already contain <code>memory-strings.ascii</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">from_strings_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Path</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="k">impl</span><span class="w"> </span><span class="nb">Iterator</span><span class="o">&lt;</span><span class="n">Item</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ClassifiedString</span><span class="o">&gt;&gt;</span>
+</code></pre></div>
+<ul>
+<li>Parse one-string-per-line format (as produced by <code>strings</code> command)</li>
+<li>Skip classification pipeline's extraction step, feed directly to classifiers</li>
+<li>Supports both raw strings files and offset-prefixed format (<code>offset: string</code>)</li>
+</ul>
+<hr />
+<h2 id="4-symbol-resolution-layer-memf-symbols">4. Symbol Resolution Layer (<code>memf-symbols</code>)<a class="headerlink" href="#4-symbol-resolution-layer-memf-symbols" title="Permanent link">&para;</a></h2>
+<h3 id="three-backend-architecture">Three-Backend Architecture<a class="headerlink" href="#three-backend-architecture" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">SymbolResolver</span><span class="p">:</span><span class="w"> </span><span class="nb">Send</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Sync</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="sd">/// Resolve a struct field offset: e.g., (&quot;task_struct&quot;, &quot;comm&quot;) -&gt; Some(2776)</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">field_offset</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">struct_name</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">,</span><span class="w"> </span><span class="n">field_name</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="sd">/// Resolve a struct&#39;s total size: e.g., &quot;task_struct&quot; -&gt; Some(9792)</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">struct_size</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">struct_name</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="sd">/// Resolve a kernel symbol address: e.g., &quot;init_task&quot; -&gt; Some(0xffffffff82a13780)</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">symbol_address</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">symbol_name</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">    </span><span class="sd">/// Human-readable backend name.</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">backend_name</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">;</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="backend-1-btf-linux-52">Backend 1: BTF (Linux 5.2+)<a class="headerlink" href="#backend-1-btf-linux-52" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Parse <code>.BTF</code> section from vmlinux or extract from the dump itself (some distros embed BTF in the kernel image mapped in memory)</li>
+<li>BTF type format: header (magic <code>0xEB9F</code>) + type section + string section</li>
+<li>Resolves struct layouts, field offsets, and sizes without external files</li>
+<li>Cannot resolve symbol addresses (pair with kallsyms for that)</li>
+</ul>
+<p><strong>kallsyms integration:</strong> Parse <code>/proc/kallsyms</code> equivalent from memory (the <code>kallsyms_names</code>, <code>kallsyms_token_table</code>, <code>kallsyms_token_index</code> arrays in kernel <code>.rodata</code>) to resolve symbol virtual addresses. Combined with BTF for full resolution.</p>
+<h3 id="backend-2-mach-o-symbols-macos">Backend 2: Mach-O Symbols (macOS)<a class="headerlink" href="#backend-2-mach-o-symbols-macos" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Parse the kernel's Mach-O headers from memory (the XNU kernel is a Mach-O executable loaded at a known VA range)</li>
+<li>Extract DWARF debug info from <code>__DWARF</code> segment (if present) for struct layouts</li>
+<li>Extract symbol table (<code>LC_SYMTAB</code> load command) for symbol addresses</li>
+<li>macOS kernels often have DWARF info available in kernel debug kits (KDKs)</li>
+<li>Resolution chain: in-memory Mach-O symbols -&gt; user-supplied KDK DWARF -&gt; ISF fallback</li>
+</ul>
+<h3 id="backend-3-isf-json-all-platforms-fallback">Backend 3: ISF JSON (All platforms, fallback)<a class="headerlink" href="#backend-3-isf-json-all-platforms-fallback" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Volatility 3-compatible Intermediate Symbol Format</li>
+<li>JSON files containing: <code>base_types</code>, <code>user_types</code> (structs), <code>enums</code>, <code>symbols</code></li>
+<li>User provides ISF files for their target kernel version</li>
+<li>Lookup path: <code>$MEMF_SYMBOLS_PATH</code> env var, <code>~/.memf/symbols/</code>, or <code>--symbols</code> CLI flag</li>
+<li>Can download from Volatility's symbol server (optional, requires network)</li>
+</ul>
+<h3 id="resolution-chain">Resolution Chain<a class="headerlink" href="#resolution-chain" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Linux:   BTF (from dump) + kallsyms (from dump) -&gt; ISF JSON (user-supplied)
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>macOS:   Mach-O (from dump) + DWARF (from KDK) -&gt; ISF JSON (user-supplied)
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>Windows: ISF JSON (required, from PDB conversion)
+</code></pre></div>
+<p>Each OS walker requests symbols through the <code>SymbolResolver</code> trait. The implementation tries backends in priority order and returns the first successful resolution.</p>
+<h3 id="kaslr-shift-detection">KASLR Shift Detection<a class="headerlink" href="#kaslr-shift-detection" title="Permanent link">&para;</a></h3>
+<p>All modern kernels randomize their load address. Before symbol resolution works, we must find the actual kernel base:</p>
+<p><strong>Linux:</strong> Scan physical memory for <code>"Linux version "</code> banner string. The banner's physical address, combined with the known virtual address of <code>linux_banner</code> from symbols, yields the KASLR offset.</p>
+<p><strong>macOS:</strong> Scan for the Mach-O <code>MH_MAGIC_64</code> (<code>0xFEEDFACF</code>) header in the expected kernel VA range (<code>0xFFFFFF8000000000</code>+). The <code>__TEXT</code> segment's <code>vmaddr</code> vs its physical location gives the slide.</p>
+<p><strong>Windows:</strong> Scan for <code>"MZ"</code> + <code>"PE\0\0"</code> at aligned addresses in physical memory. Match against <code>ntoskrnl.exe</code> PE header characteristics. Compare to expected base from ISF.</p>
+<hr />
+<h2 id="5-core-memory-model-memf-core">5. Core Memory Model (<code>memf-core</code>)<a class="headerlink" href="#5-core-memory-model-memf-core" title="Permanent link">&para;</a></h2>
+<h3 id="virtual-address-space">Virtual Address Space<a class="headerlink" href="#virtual-address-space" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="sd">/// Translates virtual addresses to physical addresses via page table walking.</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">VirtualAddressSpace</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="n">physical</span><span class="p">:</span><span class="w"> </span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">PhysicalMemoryProvider</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="n">page_table_root</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w">  </span><span class="c1">// CR3 / TTBR0 / PML4 base</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="n">mode</span><span class="p">:</span><span class="w"> </span><span class="nc">TranslationMode</span><span class="p">,</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="p">}</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">TranslationMode</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">    </span><span class="n">X86_64FourLevel</span><span class="p">,</span><span class="w">     </span><span class="c1">// PML4 -&gt; PDPT -&gt; PD -&gt; PT (standard)</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">    </span><span class="n">X86_64FiveLevel</span><span class="p">,</span><span class="w">     </span><span class="c1">// PML5 (LA57, rare)</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">    </span><span class="n">Aarch64</span><span class="p">,</span><span class="w">             </span><span class="c1">// ARM 4-level (macOS Apple Silicon)</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">    </span><span class="n">X86Pae</span><span class="p">,</span><span class="w">              </span><span class="c1">// 32-bit PAE (legacy Windows)</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">    </span><span class="n">X86NonPae</span><span class="p">,</span><span class="w">           </span><span class="c1">// 32-bit non-PAE (very legacy)</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="p">}</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="k">impl</span><span class="w"> </span><span class="n">VirtualAddressSpace</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="w">    </span><span class="sd">/// Read bytes from a virtual address (translates page-by-page).</span>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">read_virt</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">vaddr</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="p">[</span><span class="kt">u8</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="kt">usize</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="w">    </span><span class="sd">/// Translate a single virtual address to physical.</span>
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">virt_to_phys</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">vaddr</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="page-table-walking-x86_64">Page Table Walking (x86_64)<a class="headerlink" href="#page-table-walking-x86_64" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Virtual Address (48-bit):
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>[PML4 index : 9 bits] [PDPT index : 9 bits] [PD index : 9 bits] [PT index : 9 bits] [Offset : 12 bits]
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>Walk:
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>1. PML4E = read_phys(cr3 + pml4_idx * 8)
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>2. PDPTE = read_phys((PML4E &amp; ADDR_MASK) + pdpt_idx * 8)
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>   - If PS bit set: 1GB huge page -&gt; return physical + offset
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>3. PDE = read_phys((PDPTE &amp; ADDR_MASK) + pd_idx * 8)
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>   - If PS bit set: 2MB large page -&gt; return physical + offset
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>4. PTE = read_phys((PDE &amp; ADDR_MASK) + pt_idx * 8)
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>5. Physical = (PTE &amp; ADDR_MASK) + page_offset
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>ADDR_MASK = 0x000F_FFFF_FFFF_F000  (bits 51:12)
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>Present bit = bit 0; must be set or page is not mapped.
+</code></pre></div>
+<h3 id="objectreader">ObjectReader<a class="headerlink" href="#objectreader" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="sd">/// High-level typed reader combining virtual memory + symbol resolution.</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ObjectReader</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="n">vas</span><span class="p">:</span><span class="w"> </span><span class="nc">VirtualAddressSpace</span><span class="p">,</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="n">symbols</span><span class="p">:</span><span class="w"> </span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">SymbolResolver</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="p">}</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="k">impl</span><span class="w"> </span><span class="n">ObjectReader</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">    </span><span class="sd">/// Read a field from a kernel struct at a virtual address.</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">read_field</span><span class="o">&lt;</span><span class="n">T</span><span class="p">:</span><span class="w"> </span><span class="nc">Pod</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">base_vaddr</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w"> </span><span class="n">struct_name</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">,</span><span class="w"> </span><span class="n">field_name</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">    </span><span class="sd">/// Read a null-terminated string from a virtual address.</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">read_string</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">vaddr</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w"> </span><span class="n">max_len</span><span class="p">:</span><span class="w"> </span><span class="kt">usize</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">    </span><span class="sd">/// Walk a Linux `list_head` doubly-linked list, yielding container struct addresses.</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">walk_list</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">head_vaddr</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w"> </span><span class="n">struct_name</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">,</span><span class="w"> </span><span class="n">list_field</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="p">}</span>
+</code></pre></div>
+<p>The <code>Pod</code> trait bound (from <code>bytemuck</code>) ensures only plain-old-data types can be read, maintaining <code>#![deny(unsafe_code)]</code> by using <code>bytemuck::from_bytes</code> for safe transmutation.</p>
+<hr />
+<h2 id="6-os-walker-plugins">6. OS Walker Plugins<a class="headerlink" href="#6-os-walker-plugins" title="Permanent link">&para;</a></h2>
+<h3 id="plugin-trait">Plugin Trait<a class="headerlink" href="#plugin-trait" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">WalkerPlugin</span><span class="p">:</span><span class="w"> </span><span class="nb">Send</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Sync</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">;</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="sd">/// Probe whether this walker can handle the given memory dump.</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">    </span><span class="sd">/// Returns confidence 0-100 (check for OS-specific kernel signatures).</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">probe</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">reader</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">ObjectReader</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u8</span><span class="p">;</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">    </span><span class="sd">/// List processes.</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">processes</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">reader</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">ObjectReader</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ProcessInfo</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="w">    </span><span class="sd">/// List network connections.</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">connections</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">reader</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">ObjectReader</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ConnectionInfo</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="w">    </span><span class="sd">/// List loaded kernel modules.</span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">modules</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">reader</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">ObjectReader</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ModuleInfo</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="p">}</span>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="n">inventory</span><span class="p">::</span><span class="n">collect</span><span class="o">!</span><span class="p">(</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">WalkerPlugin</span><span class="o">&gt;</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="common-output-types">Common Output Types<a class="headerlink" href="#common-output-types" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">ProcessState</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Running</span><span class="p">,</span><span class="w"> </span><span class="n">Sleeping</span><span class="p">,</span><span class="w"> </span><span class="n">Stopped</span><span class="p">,</span><span class="w"> </span><span class="n">Zombie</span><span class="p">,</span><span class="w"> </span><span class="n">Dead</span><span class="p">,</span><span class="w"> </span><span class="n">Unknown</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Protocol</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Tcp</span><span class="p">,</span><span class="w"> </span><span class="n">Udp</span><span class="p">,</span><span class="w"> </span><span class="n">Tcp6</span><span class="p">,</span><span class="w"> </span><span class="n">Udp6</span><span class="p">,</span><span class="w"> </span><span class="n">Unix</span><span class="p">,</span><span class="w"> </span><span class="n">Raw</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">ConnectionState</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Established</span><span class="p">,</span><span class="w"> </span><span class="n">Listen</span><span class="p">,</span><span class="w"> </span><span class="n">TimeWait</span><span class="p">,</span><span class="w"> </span><span class="n">CloseWait</span><span class="p">,</span><span class="w"> </span><span class="n">SynSent</span><span class="p">,</span><span class="w"> </span><span class="n">SynRecv</span><span class="p">,</span><span class="w"> </span><span class="n">FinWait1</span><span class="p">,</span><span class="w"> </span><span class="n">FinWait2</span><span class="p">,</span><span class="w"> </span><span class="n">Closing</span><span class="p">,</span><span class="w"> </span><span class="n">LastAck</span><span class="p">,</span><span class="w"> </span><span class="n">Close</span><span class="p">,</span><span class="w"> </span><span class="n">Unknown</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">ModuleState</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Live</span><span class="p">,</span><span class="w"> </span><span class="n">Loading</span><span class="p">,</span><span class="w"> </span><span class="n">Unloading</span><span class="p">,</span><span class="w"> </span><span class="n">Unknown</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ProcessInfo</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">pid</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">ppid</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">comm</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w">          </span><span class="c1">// short name (Linux: 16 chars)</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">cmdline</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">uid</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">gid</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">state</span><span class="p">:</span><span class="w"> </span><span class="nc">ProcessState</span><span class="p">,</span>
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">start_time</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">,</span><span class="w">  </span><span class="c1">// kernel ticks or ns since boot</span>
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">vaddr</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w">               </span><span class="c1">// virtual address of task struct</span>
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">cr3</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">,</span><span class="w">         </span><span class="c1">// page table root for this process</span>
+<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="p">}</span>
+<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a>
+<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ConnectionInfo</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">protocol</span><span class="p">:</span><span class="w"> </span><span class="nc">Protocol</span><span class="p">,</span>
+<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">local_addr</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">local_port</span><span class="p">:</span><span class="w"> </span><span class="kt">u16</span><span class="p">,</span>
+<a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">remote_addr</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">remote_port</span><span class="p">:</span><span class="w"> </span><span class="kt">u16</span><span class="p">,</span>
+<a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">state</span><span class="p">:</span><span class="w"> </span><span class="nc">ConnectionState</span><span class="p">,</span>
+<a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">pid</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">inode</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a><span class="p">}</span>
+<a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a>
+<a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ModuleInfo</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-32" name="__codelineno-15-32" href="#__codelineno-15-32"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<a id="__codelineno-15-33" name="__codelineno-15-33" href="#__codelineno-15-33"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">base_addr</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span>
+<a id="__codelineno-15-34" name="__codelineno-15-34" href="#__codelineno-15-34"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">size</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span>
+<a id="__codelineno-15-35" name="__codelineno-15-35" href="#__codelineno-15-35"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">path</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-15-36" name="__codelineno-15-36" href="#__codelineno-15-36"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">state</span><span class="p">:</span><span class="w"> </span><span class="nc">ModuleState</span><span class="p">,</span>
+<a id="__codelineno-15-37" name="__codelineno-15-37" href="#__codelineno-15-37"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">taint_flags</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span>
+<a id="__codelineno-15-38" name="__codelineno-15-38" href="#__codelineno-15-38"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="memf-linux-linux-kernel-walkers"><code>memf-linux</code> -- Linux Kernel Walkers<a class="headerlink" href="#memf-linux-linux-kernel-walkers" title="Permanent link">&para;</a></h3>
+<p><strong>Process enumeration:</strong>
+- Walk <code>init_task.tasks</code> list (<code>task_struct</code> linked list via <code>list_head</code>)
+- For each <code>task_struct</code>: read <code>pid</code>, <code>comm</code>, <code>mm-&gt;pgd</code> (CR3), <code>real_parent-&gt;pid</code> (PPID)
+- Thread group: walk <code>thread_group</code> list for threads
+- Cmdline: read <code>mm-&gt;arg_start</code> to <code>mm-&gt;arg_end</code> from process address space</p>
+<p><strong>Network connections:</strong>
+- Walk <code>tcp_hashinfo.listening_hash</code> and <code>tcp_hashinfo.ehash</code> for TCP sockets
+- Walk <code>udp_table.hash</code> / <code>udp_table.hash2</code> for UDP sockets
+- For each <code>inet_sock</code>: extract <code>sk_common.skc_daddr</code>, <code>skc_rcv_saddr</code>, ports, state
+- Map socket to process via <code>sock-&gt;sk_socket-&gt;file</code> -&gt; scan process fd tables</p>
+<p><strong>Kernel modules:</strong>
+- Walk <code>modules</code> list (<code>struct module</code> linked via <code>list</code>)
+- For each module: read <code>name</code>, <code>core_layout.base</code>, <code>core_layout.size</code>
+- Taint flags from <code>taints</code> field</p>
+<p><strong>Kernel version handling:</strong>
+- VMA iteration: <code>mm-&gt;mmap</code> linked list (pre-6.1) vs <code>mm-&gt;mm_mt</code> maple tree (6.1+)
+- Detection: check for <code>maple_tree</code> struct in BTF/symbols; if present, use maple tree walker</p>
+<h3 id="memf-mac-macos-xnu-kernel-walkers"><code>memf-mac</code> -- macOS XNU Kernel Walkers<a class="headerlink" href="#memf-mac-macos-xnu-kernel-walkers" title="Permanent link">&para;</a></h3>
+<p><strong>Process enumeration:</strong>
+- Walk <code>allproc</code> list (<code>proc</code> structures linked via <code>p_list</code>)
+- For each <code>proc</code>: read <code>p_pid</code>, <code>p_comm</code>, <code>p_ppid</code>, <code>task-&gt;map-&gt;pmap-&gt;cr3</code>
+- Mach tasks: <code>proc-&gt;task</code> for thread/port information</p>
+<p><strong>Network connections:</strong>
+- Walk <code>tcbinfo.ipi_listhead</code> (TCP) and <code>udbinfo.ipi_listhead</code> (UDP) inpcb lists
+- Extract <code>inp_laddr</code>, <code>inp_faddr</code>, <code>inp_lport</code>, <code>inp_fport</code></p>
+<p><strong>Kernel extensions:</strong>
+- Walk <code>kmod_info</code> linked list for loaded kexts
+- Extract name, version, base address, size
+- Note: kexts deprecated since macOS 11; newer systems use System Extensions (dext) -- these don't appear in kernel memory</p>
+<p><strong>Zone allocator:</strong>
+- Parse XNU zone allocator metadata for heap forensics
+- Useful for finding freed-but-not-zeroed allocations</p>
+<h3 id="memf-windows-windows-kernel-walkers"><code>memf-windows</code> -- Windows Kernel Walkers<a class="headerlink" href="#memf-windows-windows-kernel-walkers" title="Permanent link">&para;</a></h3>
+<p><strong>Process enumeration:</strong>
+- Walk <code>PsActiveProcessHead</code> doubly-linked list of <code>_EPROCESS</code> structures
+- For each <code>_EPROCESS</code>: read <code>UniqueProcessId</code>, <code>ImageFileName</code>, <code>InheritedFromUniqueProcessId</code>, <code>ActiveThreads</code>, <code>Pcb.DirectoryTableBase</code> (CR3)
+- PEB traversal for command line and loaded DLLs</p>
+<p><strong>Network connections:</strong>
+- Scan pool allocations for <code>_TCP_ENDPOINT</code>, <code>_UDP_ENDPOINT</code> tagged blocks
+- Pool tag scanning: <code>TcpE</code>, <code>UdpA</code> tags
+- Extract local/remote addresses and ports from connection objects</p>
+<p><strong>Kernel modules:</strong>
+- Walk <code>PsLoadedModuleList</code> (<code>_LDR_DATA_TABLE_ENTRY</code> list)
+- Each entry: <code>BaseDllName</code>, <code>DllBase</code>, <code>SizeOfImage</code>, <code>FullDllName</code></p>
+<p><strong>Registry hives (bonus):</strong>
+- Walk <code>CmpHiveListHead</code> for in-memory registry hives
+- Extract hive paths and base addresses for offline analysis</p>
+<hr />
+<h2 id="7-detection-engines-memf-detect">7. Detection Engines (<code>memf-detect</code>)<a class="headerlink" href="#7-detection-engines-memf-detect" title="Permanent link">&para;</a></h2>
+<h3 id="engine-trait">Engine Trait<a class="headerlink" href="#engine-trait" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">DetectionEngine</span><span class="p">:</span><span class="w"> </span><span class="nb">Send</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Sync</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">;</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="sd">/// Run detection on the given memory dump, returning findings.</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">detect</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">DetectionContext</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Finding</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="p">}</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">DetectionContext</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">reader</span><span class="p">:</span><span class="w"> </span><span class="nc">ObjectReader</span><span class="p">,</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">processes</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ProcessInfo</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">modules</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ModuleInfo</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">connections</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ConnectionInfo</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">strings</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ClassifiedString</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="p">}</span>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Finding</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">engine</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">severity</span><span class="p">:</span><span class="w"> </span><span class="nc">Severity</span><span class="p">,</span>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">title</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">description</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">evidence</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Evidence</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a><span class="p">}</span>
+<a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a>
+<a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Severity</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a><span class="w">    </span><span class="n">Critical</span><span class="p">,</span><span class="w">   </span><span class="c1">// confirmed compromise indicator</span>
+<a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a><span class="w">    </span><span class="n">High</span><span class="p">,</span><span class="w">       </span><span class="c1">// strong suspicion</span>
+<a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a><span class="w">    </span><span class="n">Medium</span><span class="p">,</span><span class="w">     </span><span class="c1">// anomaly worth investigating</span>
+<a id="__codelineno-16-28" name="__codelineno-16-28" href="#__codelineno-16-28"></a><span class="w">    </span><span class="n">Low</span><span class="p">,</span><span class="w">        </span><span class="c1">// informational</span>
+<a id="__codelineno-16-29" name="__codelineno-16-29" href="#__codelineno-16-29"></a><span class="p">}</span>
+<a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a>
+<a id="__codelineno-16-31" name="__codelineno-16-31" href="#__codelineno-16-31"></a><span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Evidence</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-32" name="__codelineno-16-32" href="#__codelineno-16-32"></a><span class="w">    </span><span class="n">Process</span><span class="p">(</span><span class="n">ProcessInfo</span><span class="p">),</span>
+<a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a><span class="w">    </span><span class="n">Module</span><span class="p">(</span><span class="n">ModuleInfo</span><span class="p">),</span>
+<a id="__codelineno-16-34" name="__codelineno-16-34" href="#__codelineno-16-34"></a><span class="w">    </span><span class="n">Connection</span><span class="p">(</span><span class="n">ConnectionInfo</span><span class="p">),</span>
+<a id="__codelineno-16-35" name="__codelineno-16-35" href="#__codelineno-16-35"></a><span class="w">    </span><span class="n">MemoryRegion</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">offset</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="kt">u8</span><span class="o">&gt;</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-16-36" name="__codelineno-16-36" href="#__codelineno-16-36"></a><span class="w">    </span><span class="nb">String</span><span class="p">(</span><span class="n">ClassifiedString</span><span class="p">),</span>
+<a id="__codelineno-16-37" name="__codelineno-16-37" href="#__codelineno-16-37"></a><span class="p">}</span>
+<a id="__codelineno-16-38" name="__codelineno-16-38" href="#__codelineno-16-38"></a>
+<a id="__codelineno-16-39" name="__codelineno-16-39" href="#__codelineno-16-39"></a><span class="n">inventory</span><span class="p">::</span><span class="n">collect</span><span class="o">!</span><span class="p">(</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">DetectionEngine</span><span class="o">&gt;</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="engine-1-cross-view-rootkit-detection-linux">Engine 1: Cross-View Rootkit Detection (Linux)<a class="headerlink" href="#engine-1-cross-view-rootkit-detection-linux" title="Permanent link">&para;</a></h3>
+<p>Detects hidden processes and modules by comparing multiple kernel data structures that should agree:</p>
+<p><strong>Process cross-view (4 sources):</strong>
+1. <code>init_task.tasks</code> linked list (standard enumeration)
+2. PID hash table (<code>pid_hash</code> or <code>idr</code> depending on kernel version)
+3. <code>/proc</code> directory entries (reconstruct from <code>proc_dir_entry</code> tree)
+4. Brute-force: scan all physical memory for <code>task_struct</code> signatures (magic fields: <code>stack_canary</code> alignment, valid <code>mm</code> pointer, valid <code>pid</code> range)</p>
+<p><strong>Module cross-view (4 sources):</strong>
+1. <code>modules</code> linked list (standard enumeration)
+2. <code>module_kset</code> kobject set (sysfs view)
+3. Memory section tree (<code>mod_tree</code> in modern kernels)
+4. <code>kallsyms</code> entries referencing module text ranges</p>
+<p>A process or module appearing in some views but not others is flagged as potentially hidden.</p>
+<p><strong>Syscall table integrity:</strong>
+- Read <code>sys_call_table</code> entries
+- Verify each entry points into kernel text or a known module
+- Entries pointing to unknown memory regions indicate hooking
+- Note: Linux 6.9+ removed syscall table patching as an attack vector; check kernel version</p>
+<p><strong>eBPF program detection:</strong>
+- Walk <code>bpf_prog_array</code> and <code>bpf_map</code> structures
+- Flag unexpected BPF programs attached to tracepoints, kprobes, or XDP hooks
+- Modern rootkits increasingly use eBPF instead of kernel module loading</p>
+<h3 id="engine-2-crypto-key-recovery">Engine 2: Crypto Key Recovery<a class="headerlink" href="#engine-2-crypto-key-recovery" title="Permanent link">&para;</a></h3>
+<p>Recovers encryption keys, wallet credentials, and key material from memory using pattern matching and structural analysis.</p>
+<h4 id="2a-full-disk-encryption-keys">2a. Full Disk Encryption Keys<a class="headerlink" href="#2a-full-disk-encryption-keys" title="Permanent link">&para;</a></h4>
+<p><strong>BitLocker (Windows):</strong>
+- Scan for FVEK pool tags and key structures in kernel memory
+- FVEK is always 512 bits (64 bytes) total: encryption key + tweak key
+- Encryption mode identifiers: <code>0x0480</code> (XTS-AES-128), <code>0x8001</code> (AES-256+Diffuser)
+- VMK: 256-bit, header identified by <code>0x2C 0x00 0x00 0x00</code>
+- Recovery key format: 8 groups of 6 digits, each divisible by 11
+- Pool tag scanning varies by Windows version</p>
+<p><strong>FileVault 2 (macOS):</strong>
+- Volume Encryption Key (VEK) in IOKit registry <code>AppleKeyStore</code> service
+- VEK typically at offset +0x430 from service object base
+- Alternatively scan for AES key schedules in <code>kernel_task</code> memory
+- Key wrapped with user password-derived KEK via PBKDF2</p>
+<p><strong>LUKS (Linux):</strong>
+- Scan for <code>crypt_config</code> struct instances (dm-crypt)
+- The <code>key</code> field contains the unwrapped master key
+- <code>crypt_config</code> identifiable by <code>cipher_string</code> field containing algo name (e.g., <code>"aes-xts-plain64"</code>)
+- Key length at known offset from struct base</p>
+<p><strong>VeraCrypt/TrueCrypt:</strong>
+- Volume header: 512 bytes, starts at offset 0 (standard) or 65536 (hidden)
+- In memory: scan for decrypted header structure with <code>"TRUE"</code> magic (TrueCrypt) or <code>"VERA"</code> (VeraCrypt)
+- Master key immediately follows header in memory when volume is mounted</p>
+<h4 id="2b-aes-key-schedule-detection">2b. AES Key Schedule Detection<a class="headerlink" href="#2b-aes-key-schedule-detection" title="Permanent link">&para;</a></h4>
+<p>Generic detection for any AES key material in memory:
+- AES key expansion produces round keys with mathematical relationships between consecutive rounds
+- Scan for 176-byte (AES-128), 208-byte (AES-192), or 240-byte (AES-256) blocks where each 16-byte segment satisfies the AES key schedule recurrence relation
+- Validate by checking inter-round-key relationships (XOR + S-box + Rcon)
+- High confidence when combined with nearby context (crypto library structures)</p>
+<h4 id="2c-ssh-keys">2c. SSH Keys<a class="headerlink" href="#2c-ssh-keys" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>OpenSSH private keys:</strong> Scan for <code>"openssh-key-v1\0"</code> magic (AUTH_MAGIC)</li>
+<li><strong>Shielded private keys (OpenSSH 8.0+):</strong> Key material XORed with prekey derived from <code>ssh-keygen -Y find-principals</code>; look for prekey in <code>ssh-agent</code> process memory</li>
+<li><strong>PEM format:</strong> <code>"-----BEGIN RSA PRIVATE KEY-----"</code>, <code>"-----BEGIN EC PRIVATE KEY-----"</code>, <code>"-----BEGIN OPENSSH PRIVATE KEY-----"</code></li>
+<li><strong>PuTTY <code>.ppk</code>:</strong> <code>"PuTTY-User-Key-File-"</code> header</li>
+</ul>
+<h4 id="2d-blockchain-keys-and-seed-phrases">2d. Blockchain Keys and Seed Phrases<a class="headerlink" href="#2d-blockchain-keys-and-seed-phrases" title="Permanent link">&para;</a></h4>
+<p><strong>Bitcoin private keys:</strong>
+- WIF format: Base58Check, starts with <code>5</code> (uncompressed) or <code>K</code>/<code>L</code> (compressed), 51-52 chars
+- Raw 32-byte secp256k1 private keys: validate by checking if value &lt; group order <code>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141</code>
+- Mini private keys: 22-30 chars starting with <code>S</code>, validate via SHA-256 checksum</p>
+<p><strong>BIP-39 mnemonic seed phrases:</strong>
+- 12/15/18/21/24 words from standardized 2048-word wordlists (10 languages)
+- Each word has a unique 4-character prefix -- scan for sequences of 12+ known prefixes separated by spaces
+- English wordlist most common; also scan Japanese (UTF-8 Hiragana), Korean (UTF-8 Hangul), Chinese
+- Regex approach: build prefix automaton from all 10 wordlists</p>
+<p><strong>BIP-32 extended keys (HD wallets):</strong>
+- Base58Check encoded, 111 chars: <code>xprv...</code> (mainnet private), <code>xpub...</code> (mainnet public)
+- Also <code>yprv</code>/<code>ypub</code> (P2WPKH-nested), <code>zprv</code>/<code>zpub</code> (native SegWit)
+- 78-byte serialization: 4 version + 1 depth + 4 fingerprint + 4 index + 32 chain code + 33 key</p>
+<p><strong>Ethereum:</strong>
+- Raw 32-byte private keys (often hex-encoded with <code>0x</code> prefix, 66 chars total)
+- Keystore JSON v3: <code>{"crypto":{"cipher":"aes-128-ctr"...}}</code> structure in browser/node process memory
+- MetaMask vault: encrypted JSON blob, scan for <code>"data":"</code> + <code>"iv":"</code> + <code>"salt":"</code> pattern</p>
+<p><strong>Other chains:</strong>
+- Monero: 64-char hex spend key + view key
+- Solana: Base58-encoded 64-byte keypair
+- Substrate/Polkadot: Sr25519 keypairs</p>
+<h4 id="2e-oauth-tokens-api-keys-and-session-credentials">2e. OAuth Tokens, API Keys, and Session Credentials<a class="headerlink" href="#2e-oauth-tokens-api-keys-and-session-credentials" title="Permanent link">&para;</a></h4>
+<p><strong>JWT detection:</strong>
+- Universal prefix: <code>eyJ</code> (Base64URL of <code>{"</code>) -- scan for <code>eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+</code>
+- Decode payload for <code>exp</code>, <code>iss</code>, <code>sub</code> fields to classify token type
+- Azure AD tokens: <code>eyJ0eX</code> prefix (from <code>{"typ"</code>)</p>
+<p><strong>API key patterns (50+ providers):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Pattern</th>
+<th>Regex</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AWS Access Key</td>
+<td><code>AKIA...</code> (20 chars)</td>
+<td><code>AKIA[0-9A-Z]{16}</code></td>
+</tr>
+<tr>
+<td>AWS Session</td>
+<td><code>ASIA...</code> (20 chars)</td>
+<td><code>ASIA[0-9A-Z]{16}</code></td>
+</tr>
+<tr>
+<td>GitHub PAT</td>
+<td><code>ghp_...</code> (40 chars)</td>
+<td><code>ghp_[0-9a-zA-Z]{36}</code></td>
+</tr>
+<tr>
+<td>GitHub OAuth</td>
+<td><code>gho_...</code></td>
+<td><code>gho_[0-9a-zA-Z]{36}</code></td>
+</tr>
+<tr>
+<td>Slack Bot</td>
+<td><code>xoxb-...</code></td>
+<td><code>xoxb-[0-9]{10,13}-[0-9a-zA-Z-]+</code></td>
+</tr>
+<tr>
+<td>Slack User</td>
+<td><code>xoxp-...</code></td>
+<td><code>xoxp-[0-9]{10,13}-[0-9a-zA-Z-]+</code></td>
+</tr>
+<tr>
+<td>Stripe Live</td>
+<td><code>sk_live_...</code></td>
+<td><code>sk_live_[0-9a-zA-Z]{24,}</code></td>
+</tr>
+<tr>
+<td>Google API</td>
+<td><code>AIza...</code></td>
+<td><code>AIza[0-9A-Za-z_-]{35}</code></td>
+</tr>
+<tr>
+<td>Google OAuth</td>
+<td><code>ya29.</code></td>
+<td><code>ya29\.[A-Za-z0-9_-]{50,}</code></td>
+</tr>
+<tr>
+<td>SendGrid</td>
+<td><code>SG.</code></td>
+<td><code>SG\.[0-9A-Za-z_-]{22}\.[0-9A-Za-z_-]{43}</code></td>
+</tr>
+<tr>
+<td>Twilio</td>
+<td><code>SK</code> (34 chars)</td>
+<td><code>SK[0-9a-fA-F]{32}</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Kerberos tickets:</strong>
+- TGT/TGS: ASN.1 DER-encoded, scan for Kerberos application tags
+- Windows: in LSASS process memory, near <code>kerberos.dll</code> allocations
+- Linux: ccache files, KEYRING entries, or KCM socket data
+- kirbi format detection for offline ticket extraction</p>
+<p><strong>Session cookies:</strong>
+- Framework-specific patterns: <code>PHPSESSID=</code>, <code>ASP.NET_SessionId=</code>, <code>JSESSIONID=</code>, <code>connect.sid=</code>
+- Browser cookie stores: Chrome (DPAPI/App-Bound Encryption), Firefox (NSS), Safari (Keychain)</p>
+<p><strong>Password manager vaults:</strong>
+- 1Password: encrypted vault, memory-resident master key
+- LastPass: <code>"lastpass rocks"</code> sentinel string near vault blob
+- KeePass: KDBX header <code>0x03D9A29A67FB4BB5</code>, CVE-2023-32784 master password recovery from .NET strings
+- Bitwarden: CVE-2023-38840 plaintext master password in process memory</p>
+<p><strong>TOTP/HOTP secrets:</strong>
+- Base32-encoded shared secrets (16-32 uppercase chars A-Z, 2-7)
+- <code>otpauth://totp/</code> and <code>otpauth://hotp/</code> URI patterns
+- Google Authenticator migration format (protobuf)</p>
+<p><strong>Certificate private keys:</strong>
+- PEM markers: <code>-----BEGIN RSA PRIVATE KEY-----</code>, <code>-----BEGIN EC PRIVATE KEY-----</code>, <code>-----BEGIN PRIVATE KEY-----</code> (PKCS#8)
+- DER binary: ASN.1 SEQUENCE tag <code>0x30</code> followed by OID for RSA (<code>2a 86 48 86 f7 0d 01 01 01</code>) or EC (<code>2a 86 48 ce 3d 02 01</code>)
+- PKCS#12 containers: <code>0x30 0x82</code> followed by content type OID</p>
+<h3 id="engine-3-dkom-data-structure-manipulation-windows">Engine 3: DKOM / Data Structure Manipulation (Windows)<a class="headerlink" href="#engine-3-dkom-data-structure-manipulation-windows" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Detect DKOM (Direct Kernel Object Manipulation) by walking <code>_EPROCESS</code> list and comparing with pool tag scans</li>
+<li>Check <code>ObjectTable</code> handles for consistency</li>
+<li>Validate <code>_OBJECT_HEADER</code> type index for each kernel object</li>
+<li>Detect process hollowing: <code>_EPROCESS.ImageFileName</code> vs actual PEB <code>ImagePathName</code></li>
+</ul>
+<hr />
+<h2 id="8-cli-memf">8. CLI (<code>memf</code>)<a class="headerlink" href="#8-cli-memf" title="Permanent link">&para;</a></h2>
+<h3 id="command-structure">Command Structure<a class="headerlink" href="#command-structure" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>memf &lt;COMMAND&gt; [OPTIONS] &lt;dump_file&gt;
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>Commands:
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>  info        Show dump format, OS detection, and basic metadata
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>  strings     Extract and classify strings from memory dump
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>  ps          List processes
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>  netstat     List network connections
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>  modules     List loaded kernel modules
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>  detect      Run detection engines (rootkit, crypto, credentials)
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>  symbols     Manage symbol resolution (list backends, download ISF)
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>  yara        Run YARA-X rules against memory
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>Global Options:
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>  --format &lt;fmt&gt;       Force dump format (skip probing)
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>  --symbols &lt;path&gt;     Path to ISF JSON or BTF file
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>  --output &lt;fmt&gt;       Output format: table (default), json, csv
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>  -v, --verbose        Increase verbosity
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>  -q, --quiet          Suppress non-essential output
+</code></pre></div>
+<h3 id="example-usage">Example Usage<a class="headerlink" href="#example-usage" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Basic info about a dump</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>memf<span class="w"> </span>info<span class="w"> </span>memory.lime
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Extract and classify strings</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>memf<span class="w"> </span>strings<span class="w"> </span>memory.lime<span class="w"> </span>--min-length<span class="w"> </span><span class="m">8</span><span class="w"> </span>--encoding<span class="w"> </span>utf8,utf16le
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="c1"># Classify pre-extracted strings file (from UAC collection)</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>memf<span class="w"> </span>strings<span class="w"> </span>--from-file<span class="w"> </span>memory-strings.ascii
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="c1"># List processes</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>memf<span class="w"> </span>ps<span class="w"> </span>memory.lime<span class="w"> </span>--output<span class="w"> </span>json
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="c1"># Run all detection engines</span>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a>memf<span class="w"> </span>detect<span class="w"> </span>memory.lime<span class="w"> </span>--engines<span class="w"> </span>all
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="c1"># Run only crypto key recovery</span>
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a>memf<span class="w"> </span>detect<span class="w"> </span>memory.lime<span class="w"> </span>--engines<span class="w"> </span>crypto
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a>
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="c1"># Run YARA rules</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a>memf<span class="w"> </span>yara<span class="w"> </span>memory.lime<span class="w"> </span>--rules<span class="w"> </span>./my-rules/
+</code></pre></div>
+<h3 id="output-formats">Output Formats<a class="headerlink" href="#output-formats" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Table</strong> (default): Human-readable aligned columns via <code>comfy-table</code> crate</li>
+<li><strong>JSON</strong>: Machine-parseable, one JSON object per line (JSONL) or pretty-printed</li>
+<li><strong>CSV</strong>: For spreadsheet import</li>
+</ul>
+<h3 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">[dependencies]</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="n">clap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;4&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;derive&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="n">anyhow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1&quot;</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="n">comfy-table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;7&quot;</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="n">serde_json</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="9-testing-strategy">9. Testing Strategy<a class="headerlink" href="#9-testing-strategy" title="Permanent link">&para;</a></h2>
+<h3 id="synthetic-test-fixtures">Synthetic Test Fixtures<a class="headerlink" href="#synthetic-test-fixtures" title="Permanent link">&para;</a></h3>
+<p>All unit tests use builder-pattern synthetic fixtures -- no real memory dumps in the test suite (they're too large for git):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="sd">/// Builder for creating test LiME dumps in memory.</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">LimeBuilder</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="n">ranges</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="p">(</span><span class="kt">u64</span><span class="p">,</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="kt">u8</span><span class="o">&gt;</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="n">version</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="p">}</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="k">impl</span><span class="w"> </span><span class="n">LimeBuilder</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">new</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">Self</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">..</span><span class="p">.</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">add_range</span><span class="p">(</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">start</span><span class="p">:</span><span class="w"> </span><span class="kt">u64</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="kt">u8</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">Self</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">..</span><span class="p">.</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="kt">u8</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">..</span><span class="p">.</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="p">}</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>
+<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="cp">#[test]</span>
+<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="k">fn</span><span class="w"> </span><span class="nf">test_lime_two_ranges</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">dump</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LimeBuilder</span><span class="p">::</span><span class="n">new</span><span class="p">()</span>
+<a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a><span class="w">        </span><span class="p">.</span><span class="n">add_range</span><span class="p">(</span><span class="mh">0x0000_0000</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">[</span><span class="mh">0xAA</span><span class="p">;</span><span class="w"> </span><span class="mi">4096</span><span class="p">])</span>
+<a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a><span class="w">        </span><span class="p">.</span><span class="n">add_range</span><span class="p">(</span><span class="mh">0x0010_0000</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">[</span><span class="mh">0xBB</span><span class="p">;</span><span class="w"> </span><span class="mi">4096</span><span class="p">])</span>
+<a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a><span class="w">        </span><span class="p">.</span><span class="n">build</span><span class="p">();</span>
+<a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LimeProvider</span><span class="p">::</span><span class="n">from_bytes</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dump</span><span class="p">).</span><span class="n">unwrap</span><span class="p">();</span>
+<a id="__codelineno-20-20" name="__codelineno-20-20" href="#__codelineno-20-20"></a><span class="w">    </span><span class="fm">assert_eq!</span><span class="p">(</span><span class="n">provider</span><span class="p">.</span><span class="n">ranges</span><span class="p">().</span><span class="n">len</span><span class="p">(),</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+<a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a>
+<a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="k">u8</span><span class="p">;</span><span class="w"> </span><span class="mi">4</span><span class="p">];</span>
+<a id="__codelineno-20-23" name="__codelineno-20-23" href="#__codelineno-20-23"></a><span class="w">    </span><span class="n">provider</span><span class="p">.</span><span class="n">read_phys</span><span class="p">(</span><span class="mh">0x0000_0000</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="n">buf</span><span class="p">).</span><span class="n">unwrap</span><span class="p">();</span>
+<a id="__codelineno-20-24" name="__codelineno-20-24" href="#__codelineno-20-24"></a><span class="w">    </span><span class="fm">assert_eq!</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mh">0xAA</span><span class="p">;</span><span class="w"> </span><span class="mi">4</span><span class="p">]);</span>
+<a id="__codelineno-20-25" name="__codelineno-20-25" href="#__codelineno-20-25"></a><span class="p">}</span>
+</code></pre></div>
+<p>Similar builders for:
+- <code>AvmlBuilder</code> -- AVML v2 dumps with Snappy compression
+- <code>ElfCoreBuilder</code> -- ELF core dumps with <code>PT_LOAD</code> segments
+- <code>DmpBuilder</code> -- Windows DMP headers + physical memory pages
+- <code>PageTableBuilder</code> -- synthetic 4-level page tables for address translation tests
+- <code>TaskStructBuilder</code> -- synthetic <code>task_struct</code> chains for process walking tests</p>
+<h3 id="integration-tests-with-real-data">Integration Tests with Real Data<a class="headerlink" href="#integration-tests-with-real-data" title="Permanent link">&para;</a></h3>
+<p>Tests requiring real dumps use <code>#[ignore]</code> and a <code>MEMF_TEST_DATA</code> env var:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="cp">#[test]</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="cp">#[ignore = </span><span class="s">&quot;requires real dump: set MEMF_TEST_DATA=/path/to/dumps&quot;</span><span class="cp">]</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="k">fn</span><span class="w"> </span><span class="nf">test_avml_real_dump</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">env</span><span class="p">::</span><span class="n">var</span><span class="p">(</span><span class="s">&quot;MEMF_TEST_DATA&quot;</span><span class="p">).</span><span class="n">unwrap</span><span class="p">();</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">dump_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PathBuf</span><span class="p">::</span><span class="n">from</span><span class="p">(</span><span class="n">path</span><span class="p">).</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;avml.lime&quot;</span><span class="p">);</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">!</span><span class="n">dump_path</span><span class="p">.</span><span class="n">exists</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">open_dump</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dump_path</span><span class="p">).</span><span class="n">unwrap</span><span class="p">();</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="w">    </span><span class="fm">assert!</span><span class="p">(</span><span class="n">provider</span><span class="p">.</span><span class="n">total_size</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1_000_000_000</span><span class="p">);</span><span class="w"> </span><span class="c1">// &gt; 1GB</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="p">}</span>
+</code></pre></div>
+<p>Real test data source: <code>~/src/RapidTriage/tests/data/uac-vbox-linux-20260324234043.tar.gz</code> contains an 8GB <code>avml.lime</code> dump + 2.2GB <code>memory-strings.ascii</code>.</p>
+<h3 id="test-coverage-targets">Test Coverage Targets<a class="headerlink" href="#test-coverage-targets" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Crate</th>
+<th>Unit Tests</th>
+<th>Integration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>memf-format</td>
+<td>Each format: probe, open, read, boundary conditions, corrupt headers</td>
+<td>Real dumps per format</td>
+</tr>
+<tr>
+<td>memf-symbols</td>
+<td>BTF parsing, ISF loading, field resolution, missing fields</td>
+<td>Real kernel BTF sections</td>
+</tr>
+<tr>
+<td>memf-core</td>
+<td>Page table walk (all modes), ObjectReader, list traversal</td>
+<td>Real dump + symbols</td>
+</tr>
+<tr>
+<td>memf-linux</td>
+<td>Process list, connections, modules (synthetic chains)</td>
+<td>Real Linux dump</td>
+</tr>
+<tr>
+<td>memf-mac</td>
+<td>Process list, connections, kexts (synthetic)</td>
+<td>Real macOS dump</td>
+</tr>
+<tr>
+<td>memf-windows</td>
+<td>Process list, connections, modules (synthetic)</td>
+<td>Real Windows dump</td>
+</tr>
+<tr>
+<td>memf-strings</td>
+<td>Extraction, classification, YARA rules, pre-existing file</td>
+<td>Real strings files</td>
+</tr>
+<tr>
+<td>memf-detect</td>
+<td>Each engine with planted indicators (synthetic)</td>
+<td>Real dumps with known artifacts</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tdd-discipline">TDD Discipline<a class="headerlink" href="#tdd-discipline" title="Permanent link">&para;</a></h3>
+<p>Every feature follows strict red-green-refactor:
+1. Write failing test first
+2. Run test, verify it fails for the right reason
+3. Write minimal implementation to pass
+4. Run test, verify it passes
+5. Refactor if needed (tests still pass)
+6. Commit</p>
+<hr />
+<h2 id="10-phasing-external-dependencies">10. Phasing &amp; External Dependencies<a class="headerlink" href="#10-phasing-external-dependencies" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-format-detection-string-analysis">Phase 1: Format Detection + String Analysis<a class="headerlink" href="#phase-1-format-detection-string-analysis" title="Permanent link">&para;</a></h3>
+<p><strong>Crates built:</strong> <code>memf-format</code> (Tier 1 formats), <code>memf-strings</code>, <code>memf</code> (CLI: <code>info</code>, <code>strings</code>)</p>
+<p><strong>Deliverables:</strong>
+- Open LiME, AVML v2, and raw dumps
+- Extract strings with configurable encoding and min-length
+- Classify strings via regex classifiers (URLs, IPs, paths, credentials, crypto)
+- YARA-X rule scanning
+- <code>--from-file</code> mode for pre-extracted string files</p>
+<p><strong>Key dependency:</strong> <code>yara-x = "0.12"</code></p>
+<p><strong>Value:</strong> Immediate utility for RapidTriage UAC collections containing <code>memory-strings.ascii</code>. The <code>memf strings --from-file</code> command provides IoC classification without needing to parse the actual dump.</p>
+<h3 id="phase-2-linux-macos-processnetwork-extraction">Phase 2: Linux + macOS Process/Network Extraction<a class="headerlink" href="#phase-2-linux-macos-processnetwork-extraction" title="Permanent link">&para;</a></h3>
+<p><strong>Crates built:</strong> <code>memf-symbols</code> (BTF + ISF), <code>memf-core</code>, <code>memf-linux</code>, <code>memf-mac</code>, <code>memf-format</code> (Tier 2 formats)</p>
+<p><strong>Deliverables:</strong>
+- Symbol resolution via BTF (Linux) and ISF JSON (all)
+- KASLR shift detection for Linux and macOS
+- Virtual address translation (x86_64 4-level, AArch64)
+- Linux process/connection/module walking
+- macOS process/connection/kext walking
+- CLI: <code>ps</code>, <code>netstat</code>, <code>modules</code> commands
+- ELF core dump support, VMware <code>.vmem</code> support</p>
+<p><strong>Key dependencies:</strong> <code>bytemuck = "1"</code> (safe transmutation), <code>scroll = "0.12"</code> (binary parsing)</p>
+<h3 id="phase-3-detection-engines-windows">Phase 3: Detection Engines + Windows<a class="headerlink" href="#phase-3-detection-engines-windows" title="Permanent link">&para;</a></h3>
+<p><strong>Crates built:</strong> <code>memf-detect</code>, <code>memf-windows</code>, <code>memf-format</code> (Tier 3 formats), <code>memf-symbols</code> (Mach-O backend)</p>
+<p><strong>Deliverables:</strong>
+- Cross-view rootkit detection (Linux + Windows)
+- Crypto key recovery (FDE keys, blockchain wallets, SSH keys)
+- Credential extraction (DPAPI, LSASS concepts, OAuth tokens, session cookies)
+- Windows process/connection/module walking
+- Windows DMP, hiberfil.sys, Hyper-V format support
+- DKOM detection
+- CLI: <code>detect</code> command with engine selection</p>
+<p><strong>Key dependencies:</strong> <code>yara-x = "0.12"</code> (already from Phase 1), no new major deps</p>
+<h3 id="external-dependencies-summary">External Dependencies Summary<a class="headerlink" href="#external-dependencies-summary" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Dependency</th>
+<th>Version</th>
+<th>Used By</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>thiserror</code></td>
+<td>2</td>
+<td>all crates</td>
+<td>Error types</td>
+</tr>
+<tr>
+<td><code>anyhow</code></td>
+<td>1</td>
+<td>CLI only</td>
+<td>Error context</td>
+</tr>
+<tr>
+<td><code>inventory</code></td>
+<td>0.3</td>
+<td>all plugin crates</td>
+<td>Compile-time registration</td>
+</tr>
+<tr>
+<td><code>memmap2</code></td>
+<td>0.9</td>
+<td>memf-format</td>
+<td>Memory-mapped I/O</td>
+</tr>
+<tr>
+<td><code>yara-x</code></td>
+<td>0.12</td>
+<td>memf-strings</td>
+<td>YARA rule engine</td>
+</tr>
+<tr>
+<td><code>bytemuck</code></td>
+<td>1</td>
+<td>memf-core</td>
+<td>Safe byte-to-type casting</td>
+</tr>
+<tr>
+<td><code>scroll</code></td>
+<td>0.12</td>
+<td>memf-format, memf-symbols</td>
+<td>Binary struct parsing</td>
+</tr>
+<tr>
+<td><code>clap</code></td>
+<td>4</td>
+<td>CLI</td>
+<td>Argument parsing</td>
+</tr>
+<tr>
+<td><code>comfy-table</code></td>
+<td>7</td>
+<td>CLI</td>
+<td>Table output formatting</td>
+</tr>
+<tr>
+<td><code>serde</code> / <code>serde_json</code></td>
+<td>1</td>
+<td>memf-symbols (ISF), CLI</td>
+<td>JSON parsing + output</td>
+</tr>
+<tr>
+<td><code>snap</code></td>
+<td>1</td>
+<td>memf-format (AVML)</td>
+<td>Snappy decompression</td>
+</tr>
+<tr>
+<td><code>flate2</code></td>
+<td>1</td>
+<td>memf-format (kdump)</td>
+<td>zlib/gzip decompression</td>
+</tr>
+<tr>
+<td><code>regex</code></td>
+<td>1</td>
+<td>memf-strings, memf-detect</td>
+<td>Pattern matching</td>
+</tr>
+<tr>
+<td><code>aho-corasick</code></td>
+<td>1</td>
+<td>memf-strings, memf-detect</td>
+<td>Multi-pattern scanning</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<h3 id="research-corpus">Research Corpus<a class="headerlink" href="#research-corpus" title="Permanent link">&para;</a></h3>
+<p>All research files located at <code>~/src/RapidTriage/research/</code>:</p>
+<ul>
+<li><code>memory-forensics-landscape.md</code> -- Tool comparison (Volatility 3, Rekall, MemProcFS, mquire), Rust ecosystem gaps</li>
+<li><code>memory-dump-file-formats-specification.md</code> -- All 13+ format specs with magic bytes, header layouts, compression</li>
+<li><code>linux-kernel-memory-forensics-data-structures.md</code> -- task_struct, sockets, modules, rootkit detection, key recovery</li>
+<li><code>volatility3-architecture-deep-dive.md</code> -- ISF format, layer system, Linux plugin internals</li>
+<li><code>memory-strings-analysis-techniques.md</code> -- IoC patterns, YARA rules, sockstat analysis</li>
+<li><code>fde-keys-credential-stores-memory-forensics.md</code> -- BitLocker, FileVault, LUKS, DPAPI, LSASS, SSH, browser creds</li>
+<li><code>oauth-cookies-tokens-memory-forensics.md</code> -- JWT, OAuth, SAML, Kerberos, API keys, session cookies, TOTP, cert keys</li>
+<li><code>blockchain-key-formats-memory-forensics.md</code> -- Bitcoin WIF, BIP-39, BIP-32, Ethereum, Monero, Solana</li>
+</ul>
+<h3 id="inspirations">Inspirations<a class="headerlink" href="#inspirations" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/volatilityfoundation/volatility3">Volatility 3</a> -- Python, ISF symbol format, plugin architecture</li>
+<li><a href="https://github.com/mtth-bfft/mquire">mquire</a> -- Rust, Windows memory forensics</li>
+<li><a href="https://github.com/ufrisk/MemProcFS">MemProcFS</a> -- C, FUSE-based memory filesystem</li>
+<li><a href="https://github.com/microsoft/avml">AVML</a> -- Rust, Azure memory acquisition</li>
+<li><a href="https://github.com/VirusTotal/yara-x">YARA-X</a> -- Rust, pattern matching engine</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.code.copy", "navigation.tabs", "navigation.sections", "navigation.top", "search.highlight"], "search": "../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>
