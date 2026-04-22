@@ -43,6 +43,7 @@ pub fn evaluate_correlation(
 ///
 /// Returns an error if the bundled rule pack cannot be loaded.
 #[deprecated(since = "0.1.0", note = "use evaluate_correlation instead")]
+#[allow(dead_code)]
 pub fn evaluate_pivot(
     rootkit_findings: &[RootkitFinding],
     hidden: &HiddenProcessAnalysis,

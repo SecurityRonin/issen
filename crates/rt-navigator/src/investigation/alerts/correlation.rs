@@ -216,7 +216,6 @@ mod tests {
         AlertInput, AlertSeverity, MftFileEntry, TimestampedConnection, WindowsEvent,
     };
     use super::*;
-    use rt_parser_uac::parsers::bodyfile::BodyfileEntry;
     use rt_parser_uac::parsers::network::NetworkConnection;
     use rt_parser_uac::parsers::process::ProcessInfo;
 

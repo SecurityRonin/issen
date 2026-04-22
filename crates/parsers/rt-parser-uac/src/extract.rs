@@ -172,8 +172,6 @@ mod tests {
 
     #[test]
     fn test_extract_uac_synthetic() {
-        use std::io::Write;
-
         let dir = tempfile::tempdir().expect("tmpdir");
         let tar_gz_path = dir.path().join("uac-testhost-20260101000000.tar.gz");
         let dest = dir.path().join("extracted");
