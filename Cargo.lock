@@ -6922,6 +6922,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "rt-parser-macos"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "rt-core",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "rt-parser-mft"
 version = "0.1.0"
 dependencies = [

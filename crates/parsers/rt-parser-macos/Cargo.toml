@@ -1,0 +1,19 @@
+[package]
+name = "rt-parser-macos"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+rt-core = { path = "../../rt-core" }
+serde_json = { workspace = true }
+inventory = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

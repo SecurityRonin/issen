@@ -18,6 +18,7 @@ members = [
     "crates/parsers/rt-parser-prefetch",
     "crates/parsers/rt-parser-lnk",
     "crates/parsers/rt-parser-linux",
+    "crates/parsers/rt-parser-macos",
     "crates/rt-report",
     "crates/rt-cli",
     "crates/rt-navigator",
@@ -52,6 +53,7 @@ rt-parser-registry     = { path = "crates/parsers/rt-parser-registry" }
 rt-parser-prefetch     = { path = "crates/parsers/rt-parser-prefetch" }
 rt-parser-lnk          = { path = "crates/parsers/rt-parser-lnk" }
 rt-parser-linux        = { path = "crates/parsers/rt-parser-linux" }
+rt-parser-macos        = { path = "crates/parsers/rt-parser-macos" }
 rt-report         = { path = "crates/rt-report" }
 rt-signatures = { path = "crates/rt-signatures" }
 rt-remote-access = { path = "crates/rt-remote-access" }
