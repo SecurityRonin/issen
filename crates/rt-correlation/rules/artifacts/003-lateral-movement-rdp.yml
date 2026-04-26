@@ -1,0 +1,26 @@
+id: artifact.lateral-movement.rdp
+title: Lateral movement via RDP
+severity: high
+description: >
+  Inbound RDP event log, RDP session tracking, and NTLM authentication events
+  together indicate authenticated lateral movement via Remote Desktop Protocol.
+  The combination of session establishment (4778/4779) and NTLM pass-the-hash
+  indicators (4624 Type 3 with NTLM) narrows attribution beyond a single source.
+artifact_ids:
+  - evtx_rdp_inbound
+  - evtx_rdp_session
+  - evtx_ntlm
+requirement:
+  kind: all
+mitre_techniques:
+  - T1021.001
+  - T1550.002
+absence_note: >
+  NTLM log absent may indicate Kerberos was used instead (pass-the-ticket) — check
+  evtx_security for 4624 Type 3 with Kerberos auth package. RDP session log absent
+  on Server Core or headless installations where RDP is disabled.
+references:
+  - https://attack.mitre.org/techniques/T1021/001/
+  - https://attack.mitre.org/techniques/T1550/002/
+  - https://www.13cubed.com/downloads/rdp_flowchart.pdf
+  - https://ponderthebits.com/2018/02/windows-rdp-related-event-logs-identification-tracking-and-investigation/

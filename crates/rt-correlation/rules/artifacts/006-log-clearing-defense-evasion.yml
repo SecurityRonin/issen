@@ -1,0 +1,28 @@
+id: artifact.defense-evasion.log-clearing
+title: Event log clearing — defense evasion
+severity: critical
+description: >
+  Security and System event log gaps combined with WMI activity logs indicating
+  log management operations are a strong indicator of intentional log clearing
+  (T1070.001). Windows records event 1102 (Security log cleared) and 104 (System
+  log cleared) — their absence from an otherwise intact log is itself suspicious.
+artifact_ids:
+  - evtx_security
+  - evtx_system
+  - evtx_wmi_activity
+requirement:
+  kind: at_least_n
+  n: 2
+mitre_techniques:
+  - T1070.001
+  - T1562.002
+absence_note: >
+  If evtx_security and evtx_system are both absent (files missing rather than
+  empty), consider total log deletion rather than clearing — more aggressive
+  evasion. WMI activity absent may indicate wevtutil.exe or PowerShell
+  Clear-EventLog was used directly without WMI. Look for wevtutil.exe or
+  Clear-EventLog references in Prefetch and PSReadLine history.
+references:
+  - https://attack.mitre.org/techniques/T1070/001/
+  - https://attack.mitre.org/techniques/T1562/002/
+  - https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/event.aspx?eventID=1102

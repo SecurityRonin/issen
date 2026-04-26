@@ -1,0 +1,31 @@
+id: artifact.defense-evasion.powershell-abuse
+title: PowerShell abuse cluster
+severity: high
+description: >
+  PSReadLine history, PowerShell transcript files, and the PowerShell operational
+  event log together provide layered evidence of PowerShell activity. When two or
+  more of these sources are present and reference similar timeframes or commands,
+  it substantially corroborates PowerShell-based attack activity and reduces the
+  likelihood of a benign administrative explanation.
+artifact_ids:
+  - psreadline_history
+  - powershell_transcripts
+  - evtx_powershell_classic
+requirement:
+  kind: at_least_n
+  n: 2
+mitre_techniques:
+  - T1059.001
+  - T1027
+  - T1140
+absence_note: >
+  Transcript files require transcription to have been enabled via Group Policy or
+  registry — absence does not mean no PowerShell was run. PSReadLine history is
+  per-user and may be cleared (del (Get-PSReadlineOption).HistorySavePath). The
+  classic PowerShell log (Windows PowerShell.evtx) is less detailed than the
+  operational log — prefer evtx_microsoft_windows_powershell_operational when
+  available (ScriptBlock logging enabled).
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://www.fireeye.com/blog/threat-research/2016/02/greater_visibilityt.html
+  - https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_logging_windows
