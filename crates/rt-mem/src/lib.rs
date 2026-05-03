@@ -38,9 +38,12 @@
 #![allow(clippy::doc_markdown)]
 
 pub mod cmd_memf;
+pub mod correlate;
 pub mod dispatch;
+pub mod hashdb;
 pub mod open;
 pub mod output;
+pub mod strings;
 
 pub use cmd_memf::run_memf_command;
 pub use open::{detect_format, DumpFormat};
