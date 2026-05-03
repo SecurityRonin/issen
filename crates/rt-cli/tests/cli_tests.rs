@@ -1958,3 +1958,177 @@ fn ingest_without_source_flag_still_works() {
         .success()
         .stdout(predicate::str::contains("Artifacts found:"));
 }
+
+// ── WS-8: rt analyse synthetic fixture ───────────────────────────────
+
+/// Build a minimal UAC tar.gz in `dest` that triggers:
+///   - ROOTKIT INDICATORS (ld.so.preload populated)
+///   - HIDDEN PROCESSES   (PID 977 in hidden_pids_for_ps_command.txt)
+///   - CORRELATION FINDINGS (rootkit_indicator + miner_thread + mining_pool)
+///
+/// Returns the path to the archive.
+fn build_synthetic_uac_fixture(dest: &std::path::Path) -> std::path::PathBuf {
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+
+    // Volatile sockstat TSV — Volatility linux.sockstat output for PID 977
+    // Columns: NetNS  ProcessName  PID  TID  FD  SockOffset  Family  Type  Proto
+    //          SrcAddr  SrcPort  DstAddr  DstPort  State  Filter
+    let sockstat = "\
+NetNS\tProcess Name\tPID\tTID\tFD\tSock Offset\tFamily\tType\tProto\tSource Addr\tSource Port\tDestination Addr\tDestination Port\tState\tFilter\n\
+4026531992\ttop\t977\t977\t5\t0xffff880012345678\tAF_INET\tSOCK_STREAM\tTCP\t127.0.0.1\t59182\t127.0.0.1\t3333\tESTABLISHED\t\n";
+
+    let files: &[(&str, &str)] = &[
+        // Metadata
+        ("uac.log", "2026-03-24 23:40:43 UTC - UAC collection started\nLinux vbox-linux\n"),
+        // Rootkit: ld.so.preload populated → triggers rootkit_indicator tag
+        ("chkrootkit/etc_ld_so_preload.txt", "/lib/x86_64-linux-gnu/libymv.so.3\n"),
+        // Hidden PIDs: PID 977 hidden from ps
+        ("live_response/process/hidden_pids_for_ps_command.txt", "977\n"),
+        // Memory sockstat: PID 977 "top" → dst_port 3333 (Stratum)
+        ("memory_dump/output-sockstat", sockstat),
+        // CPU: 97.7% user → cpu_anomaly evidence
+        ("live_response/process/top_-b_-n1.txt",
+         "%Cpu(s): 97.7 us,  2.3 sy,  0.0 ni,  0.0 id,  0.0 wa\n"),
+        // Network dir placeholder so the section renders
+        ("live_response/network/.keep", ""),
+        // Env (no LD_PRELOAD in env, so no duplicate warning)
+        ("live_response/system/env.txt", "PATH=/usr/bin:/bin\n"),
+        // Lsmod: no known rootkit modules
+        ("live_response/system/lsmod.txt", "Module                  Size  Used by\next4                  729088  2\n"),
+        // Taint: 0 (clean)
+        ("live_response/system/cat_proc_sys_kernel_tainted.txt", "0\n"),
+    ];
+
+    let archive_path = dest.join("uac-vbox-linux-20260324234043.tar.gz");
+    let file = std::fs::File::create(&archive_path).expect("create archive");
+    let gz = GzEncoder::new(file, Compression::default());
+    let mut builder = tar::Builder::new(gz);
+
+    for (rel_path, content) in files {
+        let data = content.as_bytes();
+        let mut header = tar::Header::new_gnu();
+        header.set_size(data.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        let archive_path_str = format!("uac-vbox-linux-20260324234043/{rel_path}");
+        builder
+            .append_data(&mut header, &archive_path_str, data)
+            .expect("append file");
+    }
+
+    builder.finish().expect("finish tar");
+    archive_path
+}
+
+/// `rt analyse` — minimal: binary accepts the subcommand.
+#[test]
+fn analyse_help_exits_success() {
+    rt_cmd()
+        .args(["analyse", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("collection"));
+}
+
+/// `rt analyse` on a nonexistent path must fail with an error.
+#[test]
+fn analyse_nonexistent_path_fails() {
+    rt_cmd()
+        .args(["analyse", "/nonexistent/path/uac-fake.tar.gz"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Error").or(predicate::str::contains("error")));
+}
+
+/// `rt analyse` against a synthetic UAC fixture must:
+///   1. Exit successfully
+///   2. Print all expected section headers
+///   3. Emit at least one CORRELATION FINDING (rootkit-concealed miner rule)
+///   4. Use calibrated language ("consistent with" or "likely")
+///   5. NOT contain exact hook function names (readdir / getdents) as
+///      factual claims — these are not observable without YARA/reverse-engineering
+#[test]
+fn analyse_synthetic_fixture_emits_expected_sections() {
+    let dir = TempDir::new().expect("tmpdir");
+    let archive = build_synthetic_uac_fixture(dir.path());
+
+    let output = rt_cmd()
+        .args(["analyse", archive.to_str().unwrap()])
+        .output()
+        .expect("run rt analyse");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Must succeed
+    assert!(
+        output.status.success(),
+        "rt analyse should exit 0\nstdout: {stdout}\nstderr: {stderr}"
+    );
+
+    // Section headers
+    assert!(
+        stdout.contains("ROOTKIT INDICATORS"),
+        "missing ROOTKIT INDICATORS section\n{stdout}"
+    );
+    assert!(
+        stdout.contains("HIDDEN PROCESSES"),
+        "missing HIDDEN PROCESSES section\n{stdout}"
+    );
+    assert!(
+        stdout.contains("CORRELATION FINDINGS"),
+        "missing CORRELATION FINDINGS section — rootkit+miner+pool rule did not fire\n{stdout}"
+    );
+
+    // Calibrated language — must hedge rather than assert
+    let has_calibrated = stdout.contains("consistent with")
+        || stdout.contains("likely")
+        || stdout.contains("may enable");
+    assert!(
+        has_calibrated,
+        "explanation must use calibrated language ('consistent with', 'likely', or 'may enable')\n{stdout}"
+    );
+
+    // No exact hook claims without supporting forensic evidence
+    assert!(
+        !stdout.contains("readdir"),
+        "output must not claim readdir hook without YARA evidence\n{stdout}"
+    );
+    assert!(
+        !stdout.contains("getdents"),
+        "output must not claim getdents hook without YARA evidence\n{stdout}"
+    );
+
+    // Analysis complete footer
+    assert!(
+        stdout.contains("analysis complete"),
+        "missing analysis complete footer\n{stdout}"
+    );
+}
+
+/// `rt analyse` narrative must reference the ld.so.preload library path.
+#[test]
+fn analyse_synthetic_fixture_shows_rootkit_evidence() {
+    let dir = TempDir::new().expect("tmpdir");
+    let archive = build_synthetic_uac_fixture(dir.path());
+
+    rt_cmd()
+        .args(["analyse", archive.to_str().unwrap()])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("libymv"));
+}
+
+/// `rt analyse` must show PID 977 in the hidden process section.
+#[test]
+fn analyse_synthetic_fixture_shows_hidden_pid() {
+    let dir = TempDir::new().expect("tmpdir");
+    let archive = build_synthetic_uac_fixture(dir.path());
+
+    rt_cmd()
+        .args(["analyse", archive.to_str().unwrap()])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("977"));
+}
