@@ -6,6 +6,12 @@
 //!
 //! Presence of a path in Shimcache proves the binary existed on disk; it does
 //! NOT prove execution (use Prefetch or AmCache for that).
+//!
+//! Binary format (Win8/10 — most common):
+//! - Bytes 0..4: signature `[0x30, 0x00, 0x00, 0x00]`
+//! - Bytes 4..8: entry count (u32 LE)
+//! - Entries from offset 8, each: magic `b"10ts"`, data_len (u16), path_len (u16),
+//!   path (UTF-16LE), last-modified FILETIME (u64), optional flags.
 
 #![allow(
     clippy::doc_markdown,
@@ -21,26 +27,213 @@ use rt_core::plugin::registry::ParserRegistration;
 use rt_core::plugin::traits::{
     DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
 };
-use rt_core::timeline::event::TimelineEvent;
+use rt_core::timeline::event::{EventType, TimelineEvent};
+
+// ---------------------------------------------------------------------------
+// Known shimcache signatures (first 4 bytes of AppCompatCache value)
+// ---------------------------------------------------------------------------
+
+/// Win XP   — `[0xEE, 0x0F, 0xDC, 0xBA]`
+const SIG_XP: [u8; 4] = [0xEE, 0x0F, 0xDC, 0xBA];
+/// Win 5.2 / Server 2003 — `[0x30, 0x10, 0x00, 0x00]`
+const SIG_WIN52: [u8; 4] = [0x30, 0x10, 0x00, 0x00];
+/// Win 7 / 2008 R2 — `[0x00, 0x00, 0x00, 0x80]`
+const SIG_WIN7: [u8; 4] = [0x00, 0x00, 0x00, 0x80];
+/// Win 8+ / 10 — `[0x30, 0x00, 0x00, 0x00]`
+const SIG_WIN8: [u8; 4] = [0x30, 0x00, 0x00, 0x00];
+
+/// Entry magic for Win8/10 entries.
+const ENTRY_MAGIC: &[u8; 4] = b"10ts";
+
+// ---------------------------------------------------------------------------
+// Binary blob parser
+// ---------------------------------------------------------------------------
+
+/// Read a little-endian u16 from `data` at `offset`, returning `None` if out
+/// of range.
+fn read_u16_le(data: &[u8], offset: usize) -> Option<u16> {
+    data.get(offset..offset + 2)
+        .map(|b| u16::from_le_bytes([b[0], b[1]]))
+}
+
+/// Decode a UTF-16LE byte slice into a `String`, replacing invalid code units
+/// with the Unicode replacement character.
+fn decode_utf16le(bytes: &[u8]) -> String {
+    let words: Vec<u16> = bytes
+        .chunks_exact(2)
+        .map(|c| u16::from_le_bytes([c[0], c[1]]))
+        .collect();
+    String::from_utf16_lossy(&words).to_owned()
+}
+
+/// Parse Win8/10 shimcache entries from `data` starting at `offset`.
+///
+/// Each entry layout:
+/// ```text
+/// [4 bytes magic "10ts"][2 bytes data_len][2 bytes path_len]
+/// [path_len bytes UTF-16LE path][8 bytes FILETIME][... data_len - path_len - 8 bytes padding]
+/// ```
+fn parse_win8_entries(data: &[u8], start: usize) -> Vec<String> {
+    let mut paths = Vec::new();
+    let mut pos = start;
+
+    while pos + 8 <= data.len() {
+        // Each entry starts with the "10ts" magic.
+        if data.get(pos..pos + 4) != Some(ENTRY_MAGIC.as_ref()) {
+            // Scan forward one byte looking for the next entry.
+            pos += 1;
+            continue;
+        }
+
+        let data_len = match read_u16_le(data, pos + 4) {
+            Some(v) => v as usize,
+            None => break,
+        };
+        let path_len = match read_u16_le(data, pos + 6) {
+            Some(v) => v as usize,
+            None => break,
+        };
+
+        let path_start = pos + 8;
+        let path_end = path_start + path_len;
+
+        if path_end > data.len() {
+            break;
+        }
+
+        let path = decode_utf16le(&data[path_start..path_end]);
+        if !path.is_empty() {
+            paths.push(path);
+        }
+
+        // Advance past: magic(4) + data_len_field(2) + path_len_field(2) + data_len bytes
+        let next = pos + 4 + 2 + 2 + data_len;
+        if next <= pos {
+            // Protect against zero-length infinite loop.
+            break;
+        }
+        pos = next;
+    }
+
+    paths
+}
 
 /// Parse paths out of a raw shimcache binary blob.
 ///
 /// Returns a (possibly empty) list of executable path strings.
 /// Never fails — unknown or malformed data returns an empty vec.
 pub fn parse_shimcache_blob(data: &[u8]) -> Vec<String> {
-    // Stub — GREEN implementation goes here.
-    let _ = data;
-    vec![]
+    if data.len() < 8 {
+        return vec![];
+    }
+
+    let sig: [u8; 4] = match data.get(0..4) {
+        Some(s) => [s[0], s[1], s[2], s[3]],
+        None => return vec![],
+    };
+
+    match sig {
+        SIG_WIN8 => {
+            // Bytes 4..8 = entry count (informational; we scan by magic instead).
+            // Entries start at offset 8.
+            parse_win8_entries(data, 8)
+        }
+        SIG_WIN7 | SIG_WIN52 | SIG_XP => {
+            // Complex, version-specific formats — return empty rather than
+            // risk misidentification.  Can be expanded in future iterations.
+            vec![]
+        }
+        _ => vec![],
+    }
 }
+
+// ---------------------------------------------------------------------------
+// Hive-level parsing
+// ---------------------------------------------------------------------------
+
+/// ControlSet key names to try, in preference order.
+const CONTROL_SETS: &[&str] = &["ControlSet001", "ControlSet002", "CurrentControlSet"];
+
+/// Registry path suffix for the AppCompatCache value.
+const APPCOMPAT_KEY_SUFFIX: &str =
+    "Control\\Session Manager\\AppCompatCache";
 
 /// Parse a SYSTEM hive file for AppCompatCache (Shimcache) entries.
 ///
 /// On any error or missing key, returns `Ok(vec![])`.
 pub fn parse_shimcache(path: &Path, source_id: &str) -> anyhow::Result<Vec<TimelineEvent>> {
-    // Stub — GREEN implementation goes here.
-    let _ = (path, source_id);
-    Ok(vec![])
+    use notatin::cell_value::CellValue;
+    use notatin::parser_builder::ParserBuilder;
+
+    // Nonexistent / zero-byte → empty without error.
+    let size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    if size == 0 {
+        return Ok(vec![]);
+    }
+
+    let owned = path.to_path_buf();
+    let mut parser = match ParserBuilder::from_path(owned).build() {
+        Ok(p) => p,
+        Err(_) => return Ok(vec![]),
+    };
+
+    let hive_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("SYSTEM");
+
+    // Try each ControlSet in order until we find the AppCompatCache key.
+    let mut raw_blob: Option<Vec<u8>> = None;
+
+    'outer: for control_set in CONTROL_SETS {
+        let key_path = format!("{control_set}\\{APPCOMPAT_KEY_SUFFIX}");
+        let key = match parser.get_key(&key_path, false) {
+            Ok(Some(k)) => k,
+            _ => continue,
+        };
+
+        if let Some(value) = key.get_value("AppCompatCache") {
+            let (cv, _) = value.get_content();
+            if let CellValue::Binary(bytes) = cv {
+                raw_blob = Some(bytes);
+                break 'outer;
+            }
+        }
+    }
+
+    let blob = match raw_blob {
+        Some(b) => b,
+        None => return Ok(vec![]),
+    };
+
+    let paths = parse_shimcache_blob(&blob);
+
+    let artifact_path = format!("{hive_name}\\AppCompatCache");
+    let events = paths
+        .into_iter()
+        .map(|exe_path| {
+            let description = format!("Shimcache: {exe_path}");
+            TimelineEvent::new(
+                0, // Shimcache entries carry no reliable per-entry timestamp.
+                "unknown".to_string(),
+                EventType::FileAccess,
+                ArtifactType::Registry,
+                artifact_path.clone(),
+                description,
+                source_id.to_string(),
+            )
+            .with_metadata("path", serde_json::json!(exe_path))
+            .with_metadata("hive", serde_json::json!(hive_name))
+            .with_metadata("artifact", serde_json::json!("shimcache"))
+        })
+        .collect();
+
+    Ok(events)
 }
+
+// ---------------------------------------------------------------------------
+// Plugin struct
+// ---------------------------------------------------------------------------
 
 /// AppCompatCache (Shimcache) parser — reads from the SYSTEM hive.
 pub struct ShimcacheParser;
@@ -147,10 +340,7 @@ mod tests {
         );
     }
 
-    /// This test verifies that the parser returns `Ok(vec![])` when the SYSTEM
-    /// hive does not contain an AppCompatCache key (e.g. a zero-byte file).
-    /// The stub already returns empty so this test PASSES in RED state.
-    /// It remains as a regression guard after GREEN.
+    /// Verifies that a zero-byte / empty hive returns Ok(vec![]).
     #[test]
     fn parse_system_hive_without_appcompat_key_returns_empty() {
         let tmp = tempfile::NamedTempFile::new().expect("tempfile");
@@ -179,8 +369,7 @@ mod tests {
         assert!(parse_shimcache_blob(&[0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x00]).is_empty());
     }
 
-    /// RED test: a minimal Win8+ shimcache blob should produce at least one path.
-    /// The stub returns empty, so this FAILS until GREEN.
+    /// GREEN test: a minimal Win8+ shimcache blob should produce at least one path.
     #[test]
     fn blob_win8_signature_yields_paths() {
         // Win8+ magic: [0x30, 0x00, 0x00, 0x00]
@@ -193,27 +382,27 @@ mod tests {
             .collect();
         let path_len = path_utf16.len() as u16;
 
+        // data_len covers: path + 8-byte FILETIME (no extra flags in this minimal blob)
+        let data_len = path_len + 8;
+
         let mut blob = Vec::new();
         // Header: Win8+ signature
         blob.extend_from_slice(&[0x30, 0x00, 0x00, 0x00]);
         // Entry count (1)
         blob.extend_from_slice(&1u32.to_le_bytes());
         // Entry magic "10ts"
-        blob.extend_from_slice(b"10ts");
-        // data_len (arbitrary, e.g. 9 extra bytes after the path)
-        blob.extend_from_slice(&(path_len + 9).to_le_bytes());
-        // path_len
+        blob.extend_from_slice(ENTRY_MAGIC);
+        // data_len (u16 LE)
+        blob.extend_from_slice(&data_len.to_le_bytes());
+        // path_len (u16 LE)
         blob.extend_from_slice(&path_len.to_le_bytes());
         // path bytes (UTF-16LE)
         blob.extend_from_slice(&path_utf16);
         // last-modified FILETIME (8 bytes)
         blob.extend_from_slice(&0u64.to_le_bytes());
-        // flags (1 byte padding)
-        blob.push(0);
 
         let paths = parse_shimcache_blob(&blob);
 
-        // Stub returns empty — RED.
         assert!(
             !paths.is_empty(),
             "Win8+ shimcache blob must yield at least one path"
