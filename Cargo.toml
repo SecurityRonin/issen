@@ -23,6 +23,7 @@ members = [
     "crates/parsers/rt-parser-shimcache",
     "crates/parsers/rt-parser-shellbags",
     "crates/parsers/rt-parser-setupapi",
+    "crates/parsers/rt-parser-srum",
     "crates/rt-report",
     "crates/rt-cli",
     "crates/rt-navigator",
@@ -134,6 +135,8 @@ tar          = "0.4"
 
 # Forensic artifact parsers
 usnjrnl-forensic = { path = "../usnjrnl-forensic", default-features = false }
+srum-parser      = { path = "../srum-forensic/crates/srum-parser" }
+srum-core        = { path = "../srum-forensic/crates/srum-core" }
 ewf          = "0.1"
 evtx         = { version = "0.11", default-features = false }
 mft          = "0.6"

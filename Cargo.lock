@@ -2547,6 +2547,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ese-core"
+version = "0.1.0"
+dependencies = [
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "etcd-client"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7129,6 +7136,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "rt-parser-srum"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "rt-core",
+ "serde_json",
+ "srum-core",
+ "srum-parser",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
 name = "rt-parser-uac"
 version = "0.1.0"
 dependencies = [
@@ -8256,6 +8278,26 @@ dependencies = [
  "thiserror 2.0.18",
  "tracing",
  "url",
+]
+
+[[package]]
+name = "srum-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "srum-parser"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ese-core",
+ "srum-core",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
