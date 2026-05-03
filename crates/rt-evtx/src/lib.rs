@@ -42,7 +42,7 @@ pub fn analyse_evtx_sessions(evtx_files: &[PathBuf]) -> anyhow::Result<EvtxSessi
     use evtx::{EvtxParser, ParserSettings};
     use winevt_core::EvtxEvent;
     use crate::session::{correlate_sessions, extract_process_events, find_lateral_movement, link_processes_to_sessions};
-    use winevt_analyze::{frequency_analysis, FrequencyKey};
+    use crate::analyze::{frequency_analysis, FrequencyKey};
 
     let settings = ParserSettings::default()
         .separate_json_attributes(true)
