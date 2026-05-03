@@ -1,0 +1,9 @@
+id: pivot.miner.stratum-port
+name: Stratum Mining Port Active
+description: Network connection to common Stratum mining port (3333/4444/14444)
+severity: High
+assertion_level: Correlated
+default_confidence: 70
+clauses:
+  - kind: Port
+    value_contains: "3333"

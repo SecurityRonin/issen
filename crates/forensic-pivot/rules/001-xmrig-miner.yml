@@ -1,0 +1,9 @@
+id: pivot.miner.xmrig-process
+name: XMRig Miner Process Detected
+description: Process named xmrig or matching XMRig YARA signature detected
+severity: Critical
+assertion_level: Observed
+default_confidence: 95
+clauses:
+  - kind: ProcessName
+    value_contains: xmrig

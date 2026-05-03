@@ -1,0 +1,9 @@
+id: pivot.rootkit.ld-preload
+name: LD_PRELOAD Rootkit Indicator
+description: /etc/ld.so.preload exists or LD_PRELOAD set to non-standard library
+severity: Critical
+assertion_level: Observed
+default_confidence: 90
+clauses:
+  - kind: FilePath
+    value_contains: ld.so.preload
