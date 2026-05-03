@@ -45,6 +45,21 @@ impl std::fmt::Display for EventType {
     }
 }
 
+/// A typed reference to the entity (file, process, user, IP) that an event
+/// relates to. Used by `EntityIndex` and `temporal_join` to correlate events
+/// from different artifact sources that share the same entity.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum EntityRef {
+    /// A file system path (absolute or relative).
+    FilePath(String),
+    /// A process name or full image path.
+    Process(String),
+    /// A user account name or SID.
+    User(String),
+    /// An IP address (v4 or v6).
+    Ip(String),
+}
+
 /// A single event in the unified forensic timeline.
 ///
 /// This is the canonical data structure that flows through the entire
@@ -76,6 +91,11 @@ pub struct TimelineEvent {
     pub record_hash: String,
     /// Evidence source identifier for chain-of-custody tracking.
     pub evidence_source_id: String,
+    /// Entity references for temporal cross-correlation.
+    /// Populated by parsers that know the entity (file path, process, user, IP)
+    /// an event relates to. Defaults to empty for backwards compatibility.
+    #[serde(default)]
+    pub entity_refs: Vec<EntityRef>,
 }
 
 impl TimelineEvent {
@@ -135,6 +155,7 @@ impl TimelineEvent {
             tags: Vec::new(),
             record_hash,
             evidence_source_id,
+            entity_refs: Vec::new(),
         }
     }
 
@@ -163,6 +184,13 @@ impl TimelineEvent {
     #[must_use]
     pub fn with_tag(mut self, tag: impl Into<String>) -> Self {
         self.tags.push(tag.into());
+        self
+    }
+
+    /// Add an entity reference. Returns self for chaining.
+    #[must_use]
+    pub fn with_entity_ref(mut self, entity: EntityRef) -> Self {
+        self.entity_refs.push(entity);
         self
     }
 }
