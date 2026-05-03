@@ -2,6 +2,10 @@ id: correlation.miner.ssh-stratum-tunnel
 title: Miner traffic tunneled over SSH
 severity: critical
 description: Correlates SSH tunnel behavior with mining-pool activity on the same subject.
+summary_template: "Crypto miner tunnelling Stratum traffic via SSH"
+explanation_template: "A Stratum mining connection (port 3333/4444) is being forwarded through an SSH tunnel, making mining traffic appear as legitimate SSH to network monitors."
+default_confidence: 80
+assertion_level: correlated
 within_seconds: 900
 references:
   - https://redcanary.com/threat-detection-report/trends/linux-coinminers/

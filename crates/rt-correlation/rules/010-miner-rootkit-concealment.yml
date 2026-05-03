@@ -2,6 +2,10 @@ id: correlation.miner.rootkit-concealment
 title: Rootkit concealed miner activity
 severity: critical
 description: Correlates rootkit evidence, hidden process visibility mismatch, and mining-pool activity.
+summary_template: "Rootkit-concealed crypto miner detected"
+explanation_template: "An LD_PRELOAD rootkit is hiding a crypto miner process. The rootkit intercepts readdir()/getdents() to filter the miner's PID from /proc, making it invisible to ps, top, and ss. Mining traffic is tunnelled through SSH local port-forwarding to evade network monitoring."
+default_confidence: 87
+assertion_level: correlated
 within_seconds: 900
 references:
   - https://www.elastic.co/security-labs/elastic-security-labs-steps-through-the-r77-rootkit

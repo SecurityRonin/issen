@@ -82,6 +82,10 @@ mod tests {
                 RuleClause::tagged(EvidenceSource::Artifact, "reverse_shell"),
                 RuleClause::tagged(EvidenceSource::Zeek, "suspicious_port"),
             ],
+            summary_template: None,
+            explanation_template: None,
+            default_confidence: 0,
+            assertion_level: crate::model::AssertionLevel::Correlated,
         };
 
         let command = Evidence::new(
@@ -386,6 +390,10 @@ clauses:
                     }],
                 },
             ],
+            summary_template: None,
+            explanation_template: None,
+            default_confidence: 0,
+            assertion_level: crate::model::AssertionLevel::Correlated,
         };
 
         let process = Evidence::new(

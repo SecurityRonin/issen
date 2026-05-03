@@ -188,34 +188,34 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
         }
     }
 
-    // ── 6. Pivot rule findings ─────────────────────────────────────────────
-    match super::pivot::evaluate_correlation(&rootkit_findings, &hidden, &net_conns, cpu_user_pct) {
-        Ok(findings) if !findings.is_empty() => {
-            println!("┌─ CORRELATION FINDINGS ──────────────────────────────────");
-            for f in &findings {
-                let severity_label = f.severity.to_uppercase();
-                println!("│  [{severity_label}] {}", f.title);
-                println!("│         Rule : {}", f.rule_id);
-                if f.evidence_rendered.is_empty() {
-                    println!("│         Evidence : {}", f.evidence_ids.join(", "));
-                } else {
-                    for line in &f.evidence_rendered {
-                        println!("│           • {line}");
-                    }
+    // ── 6. Pivot rule findings + narrative ────────────────────────────────
+    let correlation_findings =
+        super::pivot::evaluate_correlation(&rootkit_findings, &hidden, &net_conns, cpu_user_pct)
+            .unwrap_or_else(|e| {
+                tracing::warn!("Pivot rule evaluation failed: {e}");
+                Vec::new()
+            });
+
+    if !correlation_findings.is_empty() {
+        println!("┌─ CORRELATION FINDINGS ──────────────────────────────────");
+        for f in &correlation_findings {
+            let severity_label = f.severity.to_uppercase();
+            println!("│  [{severity_label}] {}", f.title);
+            println!("│         Rule : {}", f.rule_id);
+            if f.evidence_rendered.is_empty() {
+                println!("│         Evidence : {}", f.evidence_ids.join(", "));
+            } else {
+                for line in &f.evidence_rendered {
+                    println!("│           • {line}");
                 }
-                println!("│");
             }
-            println!();
+            println!("│");
         }
-        Ok(_) => {}
-        Err(e) => {
-            tracing::warn!("Pivot rule evaluation failed: {e}");
-        }
+        println!();
     }
 
     // ── 7. Attack narrative ───────────────────────────────────────────────
-    println!("┌─ NARRATIVE ─────────────────────────────────────────────");
-    build_narrative(&hidden, &rootkit_findings, &established);
+    build_narrative(&correlation_findings);
     println!();
 
     // ── 7. Hashed executables suspicious check ────────────────────────────
@@ -262,101 +262,45 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn build_narrative(
-    hidden: &parsers::HiddenProcessAnalysis,
-    rootkit: &[parsers::rootkit::RootkitFinding],
-    _established: &[&parsers::network::NetworkConnection],
-) {
-    // Detect the rootkit library name.
-    let preload_lib = rootkit
-        .iter()
-        .find(|f| f.check == "ld_preload")
-        .map(|f| f.evidence.as_str());
-
-    if let Some(lib) = preload_lib {
-        println!("│  1. LD_PRELOAD rootkit installed:");
-        println!("│       {lib}");
-        println!("│     This library intercepts readdir()/opendir() to filter PIDs");
-        println!("│     from /proc, making hidden processes invisible to ps, top,");
-        println!("│     ss, and any tool that lists processes via /proc.");
-        println!("│");
+fn build_narrative(findings: &[rt_correlation::model::Finding]) {
+    if findings.is_empty() {
+        return;
     }
-
-    // Detect reverse shell.
-    let has_pty = hidden.findings.iter().any(|f| {
-        f.process_name.as_deref() == Some("python3")
-            && f.connections.iter().any(|c| c.src_port == Some(22))
-    });
-    if has_pty {
-        println!("│  2. Attacker gained interactive shell via SSH (port 22):");
-        println!("│       python3 -c 'import pty; pty.spawn(\"/bin/bash\")'");
-        println!("│     The NMS alert was triggered by this string in the SSH session.");
-        println!("│");
-    }
-
-    // Detect miner via libuv threads.
-    let miner = hidden
-        .findings
-        .iter()
-        .find(|f| f.thread_names.iter().any(|t| t == "libuv-worker"));
-    if let Some(m) = miner {
-        let name = m.process_name.as_deref().unwrap_or("(unknown)");
-        println!(
-            "│  3. Crypto miner deployed (PID {}, disguised as '{name}'):",
-            m.pid
-        );
-        println!("│       libuv-worker threads indicate XMRig or compatible miner.");
-        println!("│       Connections:");
-        let mut seen = std::collections::HashSet::new();
-        for conn in &m.connections {
-            let key = format!(
-                "{}:{} → {}:{}",
-                conn.src_addr,
-                conn.src_port.map_or("?".to_string(), |p| p.to_string()),
-                conn.dst_addr,
-                conn.dst_port.map_or("?".to_string(), |p| p.to_string()),
-            );
-            if seen.insert(key.clone()) {
-                let annotation = if conn.dst_port == Some(3333) || conn.src_port == Some(3333) {
-                    "  ← Stratum tunnel"
-                } else if conn.dst_port == Some(22) || conn.src_port == Some(22) {
-                    "  ← shared SSH shell socket"
-                } else {
-                    ""
-                };
-                println!("│         {} [{}]{}", key, conn.state, annotation);
+    println!("┌─ NARRATIVE ────────────────────────────────────────────────");
+    for (i, f) in findings.iter().enumerate() {
+        let num = i + 1;
+        if let Some(s) = &f.summary {
+            println!("│  {num}. {s}");
+        } else {
+            println!("│  {num}. {} [{}]", f.title, f.severity);
+        }
+        if let Some(e) = &f.explanation {
+            for line in wrap_text(e, 68) {
+                println!("│       {line}");
             }
+            println!("│");
         }
-        println!("│       This explains the CPU anomaly and the 'hidden' process.");
-        println!("│");
     }
+}
 
-    // Detect SSH tunnel.
-    let tunnel = hidden.findings.iter().find(|f| {
-        f.process_name.as_deref() == Some("ssh")
-            && f.connections
-                .iter()
-                .any(|c| c.src_port == Some(3333) || c.dst_port == Some(3333))
-    });
-    if let Some(t) = tunnel {
-        if let Some(conn) = t
-            .connections
-            .iter()
-            .find(|c| c.state == "ESTABLISHED" && c.dst_port == Some(22))
-        {
-            println!(
-                "│  4. SSH tunnel to {}:{} established (PID {}):",
-                conn.dst_addr,
-                conn.dst_port.unwrap_or(22),
-                t.pid
-            );
-            println!(
-                "│       ssh -L 127.0.0.1:3333:<pool>:3333 user@{}",
-                conn.dst_addr
-            );
-            println!("│     Mining traffic appears as SSH to the NMS — evasion technique.");
+fn wrap_text(text: &str, width: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut current = String::new();
+    for word in text.split_whitespace() {
+        if current.is_empty() {
+            current.push_str(word);
+        } else if current.len() + 1 + word.len() <= width {
+            current.push(' ');
+            current.push_str(word);
+        } else {
+            lines.push(current.clone());
+            current = word.to_string();
         }
     }
+    if !current.is_empty() {
+        lines.push(current);
+    }
+    lines
 }
 
 /// Replace well-known service names in an addr string with port numbers

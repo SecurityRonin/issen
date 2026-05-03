@@ -163,6 +163,18 @@ pub struct PivotRule {
     #[serde(default)]
     pub references: Vec<String>,
     pub clauses: Vec<RuleClause>,
+    /// Short one-line summary template (static string for now).
+    #[serde(default)]
+    pub summary_template: Option<String>,
+    /// Explanation template for analyst context (static string for now).
+    #[serde(default)]
+    pub explanation_template: Option<String>,
+    /// Default confidence 0–100 for findings from this rule.
+    #[serde(default)]
+    pub default_confidence: u8,
+    /// Assertion level for findings from this rule.
+    #[serde(default)]
+    pub assertion_level: AssertionLevel,
 }
 
 pub type CorrelationRule = PivotRule;

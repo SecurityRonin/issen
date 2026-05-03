@@ -57,10 +57,13 @@ impl CorrelationEngine {
                     title: rule.title.clone(),
                     severity: rule.severity.clone(),
                     evidence_ids: matched,
-                    summary: None,
-                    explanation: rule.description.clone(),
-                    confidence: 0,
-                    assertion_level: crate::model::AssertionLevel::Correlated,
+                    summary: rule.summary_template.clone(),
+                    explanation: rule
+                        .explanation_template
+                        .clone()
+                        .or_else(|| rule.description.clone()),
+                    confidence: rule.default_confidence,
+                    assertion_level: rule.assertion_level.clone(),
                     evidence_rendered,
                 });
             }

@@ -2,6 +2,10 @@ id: correlation.persistence.ld-preload
 title: LD_PRELOAD rootkit persistence configured
 severity: critical
 description: LD_PRELOAD configured for system-wide library injection — all new processes will load the injected library.
+summary_template: "LD_PRELOAD rootkit persistence established"
+explanation_template: "A malicious shared library has been registered in /etc/ld.so.preload. This library is loaded into every process at startup, enabling persistent user-space rootkit behaviour including process/network hiding."
+default_confidence: 95
+assertion_level: observed
 within_seconds: 900
 references:
   - https://attack.mitre.org/techniques/T1574/006/

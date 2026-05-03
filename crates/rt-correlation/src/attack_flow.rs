@@ -291,6 +291,10 @@ pub fn bundle_to_correlation_rules(bundle: &AttackFlowBundle) -> Vec<Correlation
         within_seconds: None,
         references: vec![],
         clauses,
+        summary_template: None,
+        explanation_template: None,
+        default_confidence: 0,
+        assertion_level: crate::model::AssertionLevel::default(),
     }]
 }
 

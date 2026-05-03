@@ -2,6 +2,10 @@ id: correlation.network.ssh-tunnel-stratum
 title: SSH tunnel carrying Stratum mining traffic
 severity: high
 description: SSH local port-forward carrying Stratum mining traffic over an encrypted channel.
+summary_template: "SSH local port-forward carrying Stratum protocol"
+explanation_template: "SSH is being used as a transport for Stratum protocol traffic. This is consistent with ssh -L 127.0.0.1:3333:<pool>:3333 to evade network-layer mining detection."
+default_confidence: 75
+assertion_level: inferred
 within_seconds: 300
 references:
   - https://redcanary.com/threat-detection-report/trends/linux-coinminers/

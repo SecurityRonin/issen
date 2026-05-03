@@ -86,7 +86,7 @@ pub fn evaluate_artifacts(
     present: &[impl AsRef<str>],
 ) -> Vec<ArtifactCorrelationFinding> {
     let present_set: std::collections::HashSet<&str> =
-        present.iter().map(|s| s.as_ref()).collect();
+        present.iter().map(AsRef::as_ref).collect();
 
     let mut findings = Vec::new();
 
