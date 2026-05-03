@@ -6875,6 +6875,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "rt-evtx"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "evtx",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "winevt-analyze",
+ "winevt-core",
+ "winevt-session",
+]
+
+[[package]]
 name = "rt-ewf"
 version = "0.1.0"
 dependencies = [
@@ -7041,6 +7056,34 @@ dependencies = [
 
 [[package]]
 name = "rt-parser-registry"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "notatin",
+ "rt-core",
+ "rt-plugin-sdk",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "rt-parser-setupapi"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "regex",
+ "rt-core",
+ "rt-plugin-sdk",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "rt-parser-shellbags"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -10161,6 +10204,25 @@ name = "windows_x86_64_msvc"
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
+
+[[package]]
+name = "winevt-analyze"
+version = "0.1.0"
+dependencies = [
+ "winevt-core",
+ "winevt-session",
+]
+
+[[package]]
+name = "winevt-core"
+version = "0.1.0"
+
+[[package]]
+name = "winevt-session"
+version = "0.1.0"
+dependencies = [
+ "winevt-core",
+]
 
 [[package]]
 name = "winnow"
