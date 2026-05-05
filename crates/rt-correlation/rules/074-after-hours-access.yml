@@ -1,0 +1,24 @@
+id: temporal.after-hours-access
+title: File Access Outside Working Hours
+severity: medium
+description: >
+  File access or LNK creation recorded outside Mon-Fri 09:00-17:00 UTC.
+  In corporate environments, after-hours access to sensitive files or network
+  shares is an insider threat and data exfiltration indicator, particularly
+  when combined with USB/removable drive activity.
+summary_template: "After-hours file access detected outside Mon-Fri 09:00-17:00"
+explanation_template: >
+  A file access or LNK creation event was recorded outside standard working hours
+  (Mon-Fri 09:00-17:00 UTC). After-hours access to sensitive files or network
+  shares is a known insider threat indicator and may indicate data staging or
+  exfiltration. Correlate with USB activity (drive_type:removable) or network
+  share access (drive_type:network) for higher confidence.
+default_confidence: 55
+assertion_level: inferred
+within_seconds: 0
+references:
+  - https://attack.mitre.org/techniques/T1052/001/
+  - https://attack.mitre.org/techniques/T1078/
+clauses:
+  - source: artifact
+    required_tag: after_hours_access

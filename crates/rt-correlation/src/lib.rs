@@ -9,7 +9,9 @@ pub mod model;
 pub mod render;
 pub mod rules;
 pub mod sync;
+pub mod temporal_checks;
 pub mod temporal_rule;
+pub mod time_of_day;
 pub mod warninglist;
 pub mod zeek_intel;
 
@@ -1063,13 +1065,13 @@ clauses:
     // ── Batch 1: time_of_day classifier ──────────────────────────────────────
 
     // 2024-03-15 14:30:00 UTC = Friday 14:30 (within working hours)
-    const FRIDAY_2PM_NS: i64 = 1_710_509_400_000_000_000;
+    const FRIDAY_2PM_NS: i64 = 1_710_513_000_000_000_000;
     // 2024-03-16 02:00:00 UTC = Saturday 02:00 (weekend + outside hours)
-    const SATURDAY_2AM_NS: i64 = 1_710_547_200_000_000_000;
+    const SATURDAY_2AM_NS: i64 = 1_710_554_400_000_000_000;
     // 2024-03-18 08:30:00 UTC = Monday 08:30 (before working hours)
-    const MONDAY_830AM_NS: i64 = 1_710_757_800_000_000_000;
+    const MONDAY_830AM_NS: i64 = 1_710_750_600_000_000_000;
     // 2024-03-18 18:00:00 UTC = Monday 18:00 (after working hours)
-    const MONDAY_6PM_NS: i64 = 1_710_799_200_000_000_000;
+    const MONDAY_6PM_NS: i64 = 1_710_784_800_000_000_000;
 
     #[test]
     fn friday_2pm_is_within_working_hours() {
