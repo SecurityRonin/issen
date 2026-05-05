@@ -14,23 +14,32 @@
 /// # Arguments
 /// - `file_born_ns` — file `$STANDARD_INFORMATION` birth time, nanoseconds
 /// - `os_install_ns` — OS install date, nanoseconds
-/// - `threshold_ns` — minimum gap required to fire (e.g. 86_400_000_000_000 = 24h)
-pub fn is_born_before_install(_file_born_ns: i64, _os_install_ns: i64, _threshold_ns: i64) -> bool {
-    unimplemented!("RED: not yet implemented")
+/// - `threshold_ns` — minimum gap required to fire (e.g. `86_400_000_000_000` = 24 h)
+#[must_use]
+pub fn is_born_before_install(file_born_ns: i64, os_install_ns: i64, threshold_ns: i64) -> bool {
+    file_born_ns < os_install_ns - threshold_ns
 }
 
 /// Convert a Windows FILETIME (100-ns intervals since 1601-01-01 UTC) to
 /// nanoseconds since the Unix epoch.
 ///
-/// Windows epoch offset: 11 644 473 600 seconds = 11_644_473_600_000_000_000 ns.
-pub fn filetime_to_unix_ns(_filetime: u64) -> i64 {
-    unimplemented!("RED: not yet implemented")
+/// Windows epoch offset: 11 644 473 600 seconds = `11_644_473_600_000_000_000` ns.
+#[must_use]
+pub fn filetime_to_unix_ns(filetime: u64) -> i64 {
+    // Windows epoch is 11 644 473 600 seconds before Unix epoch.
+    // In 100-ns ticks: 116_444_736_000_000_000.
+    // In nanoseconds:  11_644_473_600_000_000_000 (exceeds i64::MAX — use i128).
+    const EPOCH_DIFF_100NS: i128 = 116_444_736_000_000_000;
+    let unix_100ns = i128::from(filetime) - EPOCH_DIFF_100NS;
+    // Saturate on overflow; realistic forensic timestamps fit comfortably in i64.
+    i64::try_from(unix_100ns * 100).unwrap_or(i64::MAX)
 }
 
 /// Convert a Windows registry `InstallDate` value (Unix timestamp, seconds,
 /// stored as a `u32`) to nanoseconds since the Unix epoch.
-pub fn install_date_to_ns(_install_date_secs: u32) -> i64 {
-    unimplemented!("RED: not yet implemented")
+#[must_use]
+pub fn install_date_to_ns(install_date_secs: u32) -> i64 {
+    i64::from(install_date_secs) * 1_000_000_000
 }
 
 // ---------------------------------------------------------------------------
@@ -71,9 +80,9 @@ mod tests {
 
     #[test]
     fn filetime_to_unix_ns_known_value() {
-        // Windows FILETIME for 2020-01-01 00:00:00 UTC = 132_225_408_000_000_000
+        // Windows FILETIME for 2020-01-01 00:00:00 UTC = 132_223_104_000_000_000
         // Unix timestamp: 1_577_836_800 s = 1_577_836_800_000_000_000 ns
-        let filetime: u64 = 132_225_408_000_000_000;
+        let filetime: u64 = 132_223_104_000_000_000;
         let unix_ns = filetime_to_unix_ns(filetime);
         assert_eq!(unix_ns, 1_577_836_800_000_000_000i64);
     }
