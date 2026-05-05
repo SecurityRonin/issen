@@ -349,3 +349,76 @@ fn normalize_port_names(addr: &str) -> String {
     }
     s
 }
+
+// ── STORAGE MEDIUM BREAKDOWN ──────────────────────────────────────────────────
+
+/// Counts of timeline events grouped by `drive_type:*` tag.
+pub struct DriveBreakdown {
+    pub fixed: usize,
+    pub removable: usize,
+    pub network: usize,
+    pub unknown: usize,
+}
+
+impl DriveBreakdown {
+    /// Total events across all drive types.
+    pub fn total(&self) -> usize {
+        self.fixed + self.removable + self.network + self.unknown
+    }
+
+    /// Returns `true` if any removable/USB events are present.
+    pub fn has_removable(&self) -> bool {
+        self.removable > 0
+    }
+
+    /// Returns `true` if any network drive events are present.
+    pub fn has_network(&self) -> bool {
+        self.network > 0
+    }
+
+    /// Render the STORAGE MEDIUM BREAKDOWN section for display.
+    pub fn render(&self) -> String {
+        let removable_suffix = if self.has_removable() {
+            "  \u{2190} potential exfiltration"
+        } else {
+            ""
+        };
+        format!(
+            "\u{250c}\u{2500} STORAGE MEDIUM BREAKDOWN \u{2500}{bar}\n\
+             \u{2502}  Fixed disk:    {fixed:>4} events\n\
+             \u{2502}  Removable/USB: {removable:>4} events{removable_suffix}\n\
+             \u{2502}  Network:       {network:>4} events\n\
+             \u{2502}  Unknown:       {unknown:>4} events\n\
+             \u{2502}  Total:         {total:>4} LNK events",
+            bar = "\u{2500}".repeat(21),
+            fixed = self.fixed,
+            removable = self.removable,
+            removable_suffix = removable_suffix,
+            network = self.network,
+            unknown = self.unknown,
+            total = self.total(),
+        )
+    }
+}
+
+/// Aggregate timeline events by `drive_type:*` tag and return a [`DriveBreakdown`].
+pub fn drive_breakdown(events: &[rt_core::timeline::event::TimelineEvent]) -> DriveBreakdown {
+    DriveBreakdown {
+        fixed: events
+            .iter()
+            .filter(|e| e.tags.iter().any(|t| t == "drive_type:fixed"))
+            .count(),
+        removable: events
+            .iter()
+            .filter(|e| e.tags.iter().any(|t| t == "drive_type:removable"))
+            .count(),
+        network: events
+            .iter()
+            .filter(|e| e.tags.iter().any(|t| t == "drive_type:network"))
+            .count(),
+        unknown: events
+            .iter()
+            .filter(|e| !e.tags.iter().any(|t| t.starts_with("drive_type:")))
+            .count(),
+    }
+}
