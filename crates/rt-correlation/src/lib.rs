@@ -1138,4 +1138,15 @@ clauses:
             "expected temporal.after-hours-access in bundled rules"
         );
     }
+
+    #[test]
+    fn born_before_install_rule_is_bundled() {
+        let rules = load_rule_pack(&bundled_rule_dir()).expect("load bundled rules");
+        assert!(
+            rules
+                .iter()
+                .any(|r| r.id == "temporal.file-born-before-os-install"),
+            "temporal.file-born-before-os-install must be bundled"
+        );
+    }
 }
