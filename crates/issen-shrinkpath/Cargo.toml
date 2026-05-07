@@ -1,0 +1,11 @@
+[package]
+name = "issen-shrinkpath"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT"
+description = "Path shortening utility"
+repository.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,33 @@
+[package]
+name = "issen-remote-access"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Remote access infrastructure detection for Issen"
+repository.workspace = true
+
+[dependencies]
+issen-core = { workspace = true }
+issen-timeline = { workspace = true }
+duckdb = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+uuid = { version = "1", features = ["v4"] }
+glob = "0.3"
+quick-xml = "0.37"
+
+# Forensic artifact parsers
+notatin = "1.0"
+
+[features]
+test-utils = []
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

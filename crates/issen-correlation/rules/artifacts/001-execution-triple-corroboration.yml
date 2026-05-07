@@ -1,0 +1,31 @@
+id: artifact.execution.triple-corroboration
+title: Execution triple corroboration
+severity: high
+description: >
+  UserAssist, Prefetch, and ShimCache all independently record program execution.
+  When all three reference the same binary this constitutes definitive multi-source
+  evidence of execution — each artifact is written by a different Windows subsystem
+  (shell/Explorer, Memory Manager, Application Compatibility) making coordinated
+  fabrication implausible.
+artifact_ids:
+  - userassist_exe
+  - prefetch_file
+  - shimcache
+requirement:
+  kind: all
+mitre_techniques:
+  - T1059
+  - T1204
+  - T1106
+absence_note: >
+  ShimCache present but Prefetch absent may indicate Prefetch was disabled via
+  registry (HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\
+  PrefetchParameters\EnablePrefetcher=0) or Prefetch files were deleted
+  (T1070.004). Absence of ShimCache is unusual and may indicate hive tampering.
+  Absence of UserAssist only applies to GUI-launched binaries; CLI execution may
+  legitimately be absent here.
+references:
+  - https://www.sans.org/cyber-security-courses/windows-forensic-analysis/
+  - https://ericzimmerman.github.io/#!index.md
+  - https://www.mandiant.com/resources/blog/caching-out-the-val
+  - https://attack.mitre.org/techniques/T1059/

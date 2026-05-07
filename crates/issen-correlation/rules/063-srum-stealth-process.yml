@@ -1,0 +1,16 @@
+id: srum.stealth-process
+title: "SRUM: Process with no EventLog 4688 or Prefetch trace"
+severity: critical
+assertion_level: correlated
+default_confidence: 80
+description: >
+  SRUM AppUsageRecord references a process name that does not appear in Windows
+  Event Log 4688 (process creation) or Prefetch records. Process may have been
+  executed and had traces deleted.
+explanation_template: >
+  SRUM records show execution of a process for which no corresponding EventLog 4688
+  process creation or Prefetch evidence was found. This is consistent with
+  anti-forensic deletion of execution traces.
+clauses:
+  - source: artifact
+    required_tag: srum_app_usage

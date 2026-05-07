@@ -1,0 +1,27 @@
+id: temporal.kit-deleted-after-deployment
+title: Staging Kit Deleted After Deployment
+severity: high
+description: >
+  Attacker staged toolkit in /dev/shm/kit/ then deleted it after deployment.
+  The executable continued running from the deleted file path (Linux keeps
+  the file alive via open file descriptor). Pattern: staging path present in
+  collection artefacts, then deletion event within 300 seconds.
+summary_template: "Toolkit staged in /dev/shm then deleted — deleted-file execution likely"
+explanation_template: >
+  Files were created under /dev/shm/ (a memory-backed tmpfs path commonly used
+  for staging) and a deletion event was recorded within 300 seconds. This is
+  consistent with an attacker deploying a toolkit then removing the on-disk copy
+  to hinder recovery, while the process continues executing from the deleted
+  file via an open file descriptor. The deleted file may be recoverable from
+  /proc/<pid>/fd or memory.
+default_confidence: 75
+assertion_level: inferred
+within_seconds: 300
+references:
+  - https://attack.mitre.org/techniques/T1036/005/
+  - https://attack.mitre.org/techniques/T1070/004/
+clauses:
+  - source: artifact
+    required_tag: shm_staging
+  - source: artifact
+    required_tag: kit_deleted

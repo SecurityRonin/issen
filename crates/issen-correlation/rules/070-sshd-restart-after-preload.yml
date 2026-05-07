@@ -1,0 +1,25 @@
+id: temporal.sshd-restart-after-preload
+title: sshd Restart Within 120s of ld.so.preload Write
+severity: critical
+description: >
+  Father rootkit activates by writing /etc/ld.so.preload then restarting sshd
+  so the LD_PRELOAD hook takes effect. Correlation of a preload file write
+  followed within 120 seconds by an sshd restart is a strong rootkit activation
+  indicator.
+summary_template: "Rootkit activation sequence: ld.so.preload written then sshd restarted"
+explanation_template: >
+  /etc/ld.so.preload was written and sshd was restarted within 120 seconds.
+  This sequence is consistent with Father rootkit activation — the injected
+  shared library requires sshd to restart before its accept() hook takes effect,
+  intercepting all incoming SSH connections.
+default_confidence: 85
+assertion_level: correlated
+within_seconds: 120
+references:
+  - https://attack.mitre.org/techniques/T1574/006/
+  - https://attack.mitre.org/techniques/T1543/002/
+clauses:
+  - source: artifact
+    required_tag: ld_preload_write
+  - source: artifact
+    required_tag: sshd_restart

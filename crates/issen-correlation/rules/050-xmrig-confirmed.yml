@@ -1,0 +1,16 @@
+id: correlation.miner.confirmed-xmrig
+title: XMRig miner confirmed by direct process evidence
+severity: critical
+description: Direct evidence confirms XMRig or a named compatible miner — process name, YARA hit, binary hash, or command-line artifact.
+summary_template: "XMRig miner confirmed by direct process evidence"
+explanation_template: "The process name 'xmrig', a YARA signature hit, or a direct command-line artifact directly identifies the miner. This is observed evidence — no inference required. Combined with rootkit concealment and SSH tunnelling this indicates a fully operational cryptomining intrusion."
+default_confidence: 97
+assertion_level: observed
+within_seconds: 900
+references:
+  - https://attack.mitre.org/techniques/T1496/
+  - https://redcanary.com/threat-detection-report/trends/linux-coinminers/
+  - https://unit42.paloaltonetworks.com/hildegard-malware-teamtnt/
+clauses:
+  - source: memory
+    required_tag: confirmed_xmrig

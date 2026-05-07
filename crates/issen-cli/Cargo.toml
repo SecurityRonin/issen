@@ -1,0 +1,57 @@
+[package]
+name = "issen-cli"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "Command-line interface for Issen"
+repository.workspace = true
+
+[[bin]]
+name = "issen"
+path = "src/main.rs"
+
+[lib]
+name = "rt_cli"
+path = "src/lib.rs"
+
+[dependencies]
+forensic-pivot = { workspace = true }
+issen-core = { workspace = true }
+issen-fswalker = { workspace = true }
+issen-timeline = { workspace = true }
+issen-signatures = { workspace = true }
+usnjrnl-forensic = { workspace = true }
+mft = { workspace = true }
+chrono = { workspace = true }
+inventory = { workspace = true }
+issen-parser-evtx = { workspace = true }
+issen-report = { workspace = true }
+issen-remote-access = { workspace = true }
+issen-parser-velociraptor = { workspace = true }
+issen-parser-uac = { workspace = true }
+issen-correlation = { workspace = true, features = ["remote"] }
+issen-unpack = { workspace = true }
+issen-mem = { workspace = true }
+issen-evtx = { workspace = true }
+issen-remote-io = { workspace = true, features = ["remote"] }
+srum-parser  = { workspace = true }
+srum-core    = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+duckdb = { workspace = true }
+serde_json = { workspace = true }
+csv = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+flate2 = { workspace = true }
+predicates = { workspace = true }
+sha2 = { workspace = true }
+tar = { workspace = true }
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

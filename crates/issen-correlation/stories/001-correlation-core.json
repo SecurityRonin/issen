@@ -1,0 +1,48 @@
+{
+  "id": "rt-correlation-001",
+  "title": "Bootstrap correlation engine, rule database, and feed sync primitives",
+  "status": "in_progress",
+  "description": "Build the first usable version of Issen's proprietary correlation subsystem as a workspace crate with strict TDD.",
+  "acceptance_criteria": [
+    {
+      "id": "ac-1",
+      "text": "The crate exposes a correlation engine that can join cross-source evidence on subject and time window.",
+      "status": "passed"
+    },
+    {
+      "id": "ac-2",
+      "text": "Correlation rules can be loaded from YAML files instead of being hardcoded in Rust branches.",
+      "status": "passed"
+    },
+    {
+      "id": "ac-3",
+      "text": "The bundled rule pack contains miner, reverse-shell, tunnel, and persistence-oriented rules with source references.",
+      "status": "passed"
+    },
+    {
+      "id": "ac-4",
+      "text": "Rule clauses can match evidence attributes directly so detection logic can live in data.",
+      "status": "passed"
+    },
+    {
+      "id": "ac-5",
+      "text": "The crate can render latest-feed URLs and materialize downloaded archives for Sigma, YARA, Suricata, and Zeek sources.",
+      "status": "passed"
+    },
+    {
+      "id": "ac-6",
+      "text": "Sync metadata can be persisted and loaded deterministically for later integration with rt-cli and rt-navigator.",
+      "status": "passed"
+    },
+    {
+      "id": "ac-7",
+      "text": "Downstream Issen commands can evaluate loaded evidence against bundled and custom correlation rule packs.",
+      "status": "pending"
+    },
+    {
+      "id": "ac-8",
+      "text": "Feed synchronization is exercised against live upstream sources and imported into rule-source bookkeeping.",
+      "status": "pending"
+    }
+  ]
+}

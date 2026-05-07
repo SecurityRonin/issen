@@ -1,0 +1,15 @@
+id: srum.background-miner
+title: "SRUM: High background CPU with zero foreground cycles"
+severity: high
+assertion_level: correlated
+default_confidence: 75
+description: >
+  SRUM AppUsageRecord shows high background_cycles with zero foreground_cycles,
+  consistent with a cryptominer running silently without user-visible windows.
+explanation_template: >
+  SRUM records show the process consumed significant CPU cycles exclusively in the
+  background with 0 foreground cycles. This is consistent with hidden cryptomining
+  or other compute-intensive background processes.
+clauses:
+  - source: artifact
+    required_tag: srum_background_cpu

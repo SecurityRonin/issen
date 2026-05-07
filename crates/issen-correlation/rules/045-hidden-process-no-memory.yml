@@ -1,0 +1,17 @@
+id: correlation.process.hidden-no-memory
+title: Hidden process with no memory dump for identification
+severity: high
+description: Process hidden from userspace tools with no corresponding memory dump — cannot be identified or attributed.
+summary_template: "Hidden process cannot be identified — no memory dump available"
+explanation_template: "A process is hidden from userspace enumeration tools (/proc visibility mismatch) but no memory dump exists to identify it. Collection should be repeated with memory acquisition to attribute this process."
+default_confidence: 70
+assertion_level: inferred
+within_seconds: 600
+references:
+  - https://attack.mitre.org/techniques/T1564/001/
+  - https://unit42.paloaltonetworks.com/hildegard-malware-teamtnt/
+clauses:
+  - source: artifact
+    required_tag: hidden_process
+  - source: memory
+    required_tag: hidden_process

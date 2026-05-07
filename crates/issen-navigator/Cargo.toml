@@ -1,0 +1,39 @@
+[package]
+name = "issen-navigator"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "MFT-based forensic file navigator for Issen"
+repository.workspace = true
+
+[lib]
+name = "rt_navigator"
+path = "src/lib.rs"
+
+[[bin]]
+name = "issen-nav"
+path = "src/main.rs"
+
+[dependencies]
+issen-mft-tree = { workspace = true }
+chrono = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+indicatif = { workspace = true }
+usnjrnl-forensic = { workspace = true }
+issen-signatures = { workspace = true, features = ["heuristics"] }
+shrinkpath = { workspace = true }
+issen-core = { workspace = true }
+issen-unpack = { workspace = true }
+issen-parser-uac = { workspace = true }
+issen-parser-velociraptor = { workspace = true }
+inventory = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,32 @@
+[package]
+name = "issen-report"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "HTML report generator for Issen"
+repository.workspace = true
+
+[features]
+remote = ["dep:reqwest"]
+
+[dependencies]
+issen-core = { workspace = true }
+issen-timeline = { workspace = true }
+issen-correlation = { workspace = true }
+duckdb = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+uuid = { workspace = true }
+tempfile = { workspace = true }
+printpdf = "0.9"
+reqwest = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

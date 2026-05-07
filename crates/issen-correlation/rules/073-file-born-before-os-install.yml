@@ -1,0 +1,26 @@
+id: temporal.file-born-before-os-install
+title: File Birth Timestamp Predates OS Installation
+severity: high
+description: >
+  A file's $STANDARD_INFORMATION birth time precedes the OS installation date
+  by more than 24 hours. This is a strong indicator of timestamp manipulation
+  (timestomping) for executables and scripts, or evidence of files copied from
+  another system with original timestamps preserved. In either case, the file's
+  origin requires explanation.
+
+  Windows stores OS install date at:
+  SOFTWARE\Microsoft\Windows NT\CurrentVersion\InstallDate (Unix u32 seconds).
+
+  Priority: executables (.exe, .dll, .sys, .ps1, .bat) >> documents.
+
+  Maps to MITRE ATT&CK T1070.006 (Indicator Removal: Timestomp) and
+  T1036.005 (Masquerading: Match Legitimate Name or Location).
+default_confidence: 72
+assertion_level: inferred
+within_seconds: 0
+references:
+  - "https://attack.mitre.org/techniques/T1070/006/"
+  - "https://github.com/EricZimmerman/LECmd"
+clauses:
+  - source: artifact
+    required_tag: file_born_before_install

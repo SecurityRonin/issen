@@ -1,0 +1,14 @@
+id: srum.c2-beacon
+title: "SRUM: Regular fixed-size network sends across multiple intervals"
+severity: high
+assertion_level: correlated
+default_confidence: 70
+description: >
+  Multiple SRUM hourly intervals show consistent fixed-size outbound traffic
+  from the same process, consistent with C2 beaconing behaviour.
+explanation_template: >
+  SRUM records show consistent fixed-size outbound traffic across multiple hourly
+  intervals. Regular beaconing to a C2 infrastructure is consistent with this pattern.
+clauses:
+  - source: artifact
+    required_tag: srum_network_bandwidth

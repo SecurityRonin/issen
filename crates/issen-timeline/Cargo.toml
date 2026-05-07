@@ -1,0 +1,25 @@
+[package]
+name = "issen-timeline"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "DuckDB timeline store for Issen"
+repository.workspace = true
+
+[dependencies]
+issen-core = { workspace = true }
+duckdb = { workspace = true }
+rusqlite = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+insta = { workspace = true }
+
+[lints]
+workspace = true

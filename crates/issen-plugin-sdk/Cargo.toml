@@ -1,0 +1,17 @@
+[package]
+name = "issen-plugin-sdk"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "Plugin development kit for Issen parsers"
+repository.workspace = true
+
+[dependencies]
+issen-core = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

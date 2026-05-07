@@ -1,0 +1,46 @@
+Name: eHorus
+Category: RMM
+Description: eHorus is a remote monitoring and management (RMM) tool. More information will be added as it becomes available.
+Author: ''
+Created: '2024-08-02'
+LastModified: '2024-08-02'
+Details:
+    Website: 'https://ehorus.com'
+    PEMetadata:
+        Filename: ''
+        OriginalFileName: ''
+        Description: ''
+    Privileges: ''
+    Free: ''
+    Verification: 'true'
+    SupportedOS:
+        - Windows
+        - Linux
+        - Mac
+    Capabilities: []
+    Vulnerabilities: []
+    InstallationPaths:
+        - 'C:\Program Files\ehorus_agent\*'
+        - 'ehorus standalone.exe'
+        - 'ehorus_agent.exe'
+        - 'ehorus_cmd.exe'
+        - 'ehorus_launcher.exe'
+        - 'ehorus_uit.exe'
+Artifacts:
+    Disk: []
+    EventLog: []
+    Registry: []
+    Network:
+        - Description: Known remote domains
+          Domains:
+              - ehorus.com
+          Ports: []
+Detections:
+    - Sigma: https://github.com/magicsword-io/LOLRMM/blob/main/detections/sigma/ehorus_network_sigma.yml
+      Description: Detects potential network activity of eHorus RMM tool
+    - Sigma: https://github.com/magicsword-io/LOLRMM/blob/main/detections/sigma/ehorus_processes_sigma.yml
+      Description: Detects potential processes activity of eHorus RMM tool
+References: []
+Acknowledgement:
+    - Person: 'Daniel Koifman'
+      Handle: '@KoifSec'

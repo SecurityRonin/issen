@@ -1,0 +1,30 @@
+Name: OpenVPN
+Category: VPN
+Description: |
+    OpenVPN is an open-source VPN solution that uses SSL/TLS for
+    key exchange and can operate over UDP or TCP transports.
+Details:
+    Website: https://openvpn.net
+    SupportedOS:
+        - Windows
+        - macOS
+        - Linux
+    InstallationPaths:
+        - C:\Program Files\OpenVPN\*
+        - C:\Program Files (x86)\OpenVPN\*
+Artifacts:
+    Disk:
+        - File: '%ProgramFiles%\OpenVPN\bin\openvpn.exe'
+          Description: OpenVPN daemon
+          OS: Windows
+        - File: '%ProgramFiles%\OpenVPN\bin\openvpn-gui.exe'
+          Description: OpenVPN GUI client
+          OS: Windows
+    Registry:
+        - Path: HKLM\SOFTWARE\OpenVPN
+          Description: OpenVPN software registration
+    Network:
+        - Description: OpenVPN default tunnel traffic
+          Domains: []
+          Ports:
+              - 1194

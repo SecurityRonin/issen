@@ -1,0 +1,20 @@
+[package]
+name = "issen-ewf"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT"
+description = "E01/EWF forensic image reader"
+repository.workspace = true
+
+[dependencies]
+issen-core = { workspace = true }
+ewf = { workspace = true }
+thiserror = { workspace = true }
+bytes = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

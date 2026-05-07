@@ -1,0 +1,15 @@
+id: srum.exfil-candidate
+title: "SRUM: High outbound from background-only process"
+severity: high
+assertion_level: inferred
+default_confidence: 65
+description: >
+  SRUM NetworkUsageRecord shows high bytes_sent with zero foreground_cycles,
+  consistent with a background process exfiltrating data without user interaction.
+explanation_template: >
+  SRUM records show the process transmitted significant bytes outbound while running
+  exclusively in the background (0 foreground cycles). This pattern is consistent with
+  automated data exfiltration.
+clauses:
+  - source: artifact
+    required_tag: srum_network_bandwidth

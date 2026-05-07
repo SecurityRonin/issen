@@ -1,0 +1,30 @@
+id: artifact.execution.extended-cluster
+title: Execution extended evidence cluster
+severity: high
+description: >
+  AmCache, BAM (Background Activity Monitor), and SRUM (System Resource Usage
+  Monitor) each independently track program execution and resource consumption.
+  Four or more of these artifacts present provides strong corroboration of
+  sustained execution activity across multiple Windows subsystems.
+artifact_ids:
+  - amcache_app_file
+  - bam_user
+  - srum_app_resource
+  - userassist_exe
+  - prefetch_file
+  - shimcache
+requirement:
+  kind: at_least_n
+  n: 4
+mitre_techniques:
+  - T1059
+  - T1204
+  - T1106
+absence_note: >
+  BAM is only present on Windows 10 1709 and later; absence on earlier systems
+  is expected. SRUM database may be corrupted or cleared by ransomware prior to
+  encryption. AmCache is not populated on Windows Server Core editions.
+references:
+  - https://www.sans.org/cyber-security-courses/windows-forensic-analysis/
+  - https://www.crowdstrike.com/blog/how-to-use-srum-for-ir/
+  - https://jsac.jpcert.or.jp/archive/2023/pdf/JSAC2023_1_1_yamamoto-zhu_en.pdf

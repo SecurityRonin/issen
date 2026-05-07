@@ -1,0 +1,20 @@
+id: correlation.miner.rootkit-concealment
+title: Rootkit concealed miner activity
+severity: critical
+description: Correlates rootkit evidence, hidden process visibility mismatch, and mining-pool activity.
+summary_template: "Rootkit-concealed crypto miner likely active"
+explanation_template: "An LD_PRELOAD library is configured and a hidden process with miner-compatible thread names (libuv-worker) connects to a mining-pool port. This is consistent with a userspace rootkit hiding a crypto miner. Mining traffic is likely forwarded through SSH local port-forwarding to evade network-layer detection."
+default_confidence: 87
+assertion_level: correlated
+within_seconds: 900
+references:
+  - https://www.elastic.co/security-labs/elastic-security-labs-steps-through-the-r77-rootkit
+  - https://www.elastic.co/es/security-labs/linux-rootkits-2-caught-in-the-act
+  - https://unit42.paloaltonetworks.com/hildegard-malware-teamtnt/
+clauses:
+  - source: artifact
+    required_tag: rootkit_indicator
+  - source: memory
+    required_tag: miner_thread
+  - source: memory
+    required_tag: mining_pool

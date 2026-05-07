@@ -1,0 +1,27 @@
+id: temporal.failed-preload-then-success
+title: Prior Failed Preload Deployment Then Successful Redeployment
+severity: high
+description: >
+  ld.so.preload error indicates first rootkit deployment failed (wrong ELF class,
+  wrong architecture). Attacker adapted and redeployed within 1 hour.
+  Sequence: preload error recorded, then sshd restart or reboot within 3600 seconds
+  with no further preload errors. The boot log timestamp predating subsequent
+  activity confirms two deployment attempts.
+summary_template: "Two-attempt rootkit deployment: initial failure followed by successful redeployment"
+explanation_template: >
+  An ld.so error (likely wrong ELF class or missing symbol) was recorded,
+  indicating a first rootkit library deployment that failed to load. A subsequent
+  sshd restart or system reboot was observed within one hour, consistent with
+  an attacker correcting the library (e.g. recompiling for the correct
+  architecture) and redeploying. Two-attempt patterns indicate an adaptive
+  adversary who diagnosed and fixed a deployment failure.
+default_confidence: 70
+assertion_level: inferred
+within_seconds: 3600
+references:
+  - https://attack.mitre.org/techniques/T1574/006/
+clauses:
+  - source: artifact
+    required_tag: ld_preload_error
+  - source: artifact
+    required_tag: sshd_restart

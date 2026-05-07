@@ -1,0 +1,23 @@
+[package]
+name = "issen-parser-mft"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "MFT parser for Issen (wraps usnjrnl-forensic)"
+repository.workspace = true
+
+[dependencies]
+issen-core = { workspace = true }
+usnjrnl-forensic = { workspace = true }
+mft = { workspace = true }
+inventory = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true
