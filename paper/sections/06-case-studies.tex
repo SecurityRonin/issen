@@ -7,7 +7,7 @@ adversarial conditions. Case~1 demonstrates cross-source fusion across
 \src{P}, \src{M}, and \src{Q} on a single host with an active rootkit;
 Case~2 demonstrates hash-pivot through \src{C} stores to resolve a
 supply-chain compromise; Case~3 is an empirical demonstration of
-Theorem~\ref{thm:parser-indep}: the same Chrome history file is read
+Proposition~\ref{thm:parser-indep}: the same Chrome history file is read
 through four distinct sources and shown to yield byte-identical SHA-256
 hashes of the parser output; Case~4 is the missing-evidence
 \emph{counterfactual} -- it exhibits a concrete adversarial timing window
@@ -189,7 +189,7 @@ canonicalizes parser output by (a) sorting records by \texttt{(url,
 visit\_time)}, (b) emitting each record in CBOR with a fixed key order,
 (c) computing the SHA-256 of the resulting byte stream. The
 canonicalization function is deterministic and is itself the same Rust
-function across all four invocations. By Theorem~\ref{thm:parser-indep},
+function across all four invocations. By Proposition~\ref{thm:parser-indep},
 identical input bytes must yield identical canonical SHA-256.
 
 \paragraph{Result.}
@@ -229,12 +229,12 @@ all four & varied  & 418/1189 & \texttt{f1d92e$\ldots$} \\
 Reproducibility note: the SHA-256 prefixes shown are placeholders for the
 publicly released artifact set; the full hashes, the canonicalizer, the
 captured bytes from each source, and a verification script are released
-alongside this paper. Theorem~\ref{thm:parser-indep} predicts that
+alongside this paper. Proposition~\ref{thm:parser-indep} predicts that
 re-running the verification yields the same prefixes; any deviation
 falsifies the empirical claim.
 
 \paragraph{Interpretation.}
-Theorem~\ref{thm:parser-indep} predicts identical parser output for
+Proposition~\ref{thm:parser-indep} predicts identical parser output for
 identical input bytes. The result confirms the prediction: where bytes are
 identical (\src{P}-live, \src{P}-image, \src{Q}), records are identical;
 where bytes diverge (\src{M}, due to the WAL not being merged), records
@@ -249,7 +249,7 @@ a path on the analyst workstation) would have required a temporary-file
 shim. Had the parser been written against an SQLite-on-disk assumption,
 source 3 (\src{M} -- where the bytes are a reassembled blob, not a file
 the OS recognizes) would have required a custom adapter. Both shims are
-the kind of incidental complexity that Theorem~\ref{thm:layer-rule} forbids
+the kind of incidental complexity that Proposition~\ref{thm:layer-rule} forbids
 in PARSER crates and that the taxonomy avoids by construction.
 
 \subsection{Case 4: The Missing Evidence -- A \src{Q}-Only Witness}

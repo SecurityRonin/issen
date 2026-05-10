@@ -7,9 +7,9 @@ traversed. We presented a taxonomy of five navigation primitives --
 persistent storage \src{P}, memory \src{M}, log \src{L}, live query
 \src{Q}, and content-addressed \src{C} -- and developed its formal
 consequences. We proved that parsers operating on byte sequences compose
-uniformly with all five primitives (Theorem~\ref{thm:parser-indep}); we
+uniformly with all five primitives (Proposition~\ref{thm:parser-indep}); we
 derived from that theorem a layer-dependency rule that constrains how
-forensic software is to be organized (Theorem~\ref{thm:layer-rule}); we
+forensic software is to be organized (Proposition~\ref{thm:layer-rule}); we
 formalized attacker-durability and characterized its distinct profiles
 across the primitives (Definition~\ref{def:durable},
 Propositions~\ref{prop:q-durability}~and~\ref{prop:c-durability},
@@ -22,7 +22,7 @@ correlation that has been an open challenge since Garfinkel's 2010
 agenda~\cite{garfinkel2010digital}. By distinguishing source types by
 navigation primitive rather than by artifact category, a correlation
 engine can route evidence to a parser-of-record that is independent of
-the source (Theorem~\ref{thm:parser-indep}), can apply source-appropriate
+the source (Proposition~\ref{thm:parser-indep}), can apply source-appropriate
 trust weights (Propositions~\ref{prop:q-durability}~and~\ref{prop:c-durability},
 Corollary~\ref{cor:c-anchor-free}), and can pivot across sources -- in
 particular, can pivot across the cryptographic-hash address space of

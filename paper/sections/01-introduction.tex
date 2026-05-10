@@ -81,11 +81,12 @@ We make five claims, each tied to the section that delivers it.
     address-space algebras. The three-source folk model (P/M/L) is the proper
     subset that emerges when one ignores addressing.
 
-    \item \textbf{Contribution 2 (Section~\ref{sec:properties}, Theorem~\ref{thm:parser-indep}).}
-    A semantically strong Parser Independence theorem: identical bytes
-    yield identical records under a fixed parser, regardless of the
-    navigation primitive that retrieved the bytes. This elevates a folk
-    design principle to a formal claim with empirical content
+    \item \textbf{Contribution 2 (Section~\ref{sec:properties}, Proposition~\ref{thm:parser-indep}).}
+    A Parser Independence proposition: identical bytes yield identical
+    records under a fixed deterministic parser, regardless of the navigation
+    primitive that retrieved the bytes. The result is structural -- it
+    follows from the type-theoretic definitions -- but converts a folk
+    design principle into an explicitly named, empirically falsifiable claim
     (Section~\ref{sec:case3}).
 
     \item \textbf{Contribution 3 (Section~\ref{sec:properties}, Propositions~\ref{prop:q-durability} and~\ref{prop:c-durability}, Corollary~\ref{cor:c-anchor-free}).}
@@ -96,11 +97,12 @@ We make five claims, each tied to the section that delivers it.
     \src{Q} nor \src{C} has previously been admitted to the forensic source
     taxonomy as a peer of the disk-memory-log triad.
 
-    \item \textbf{Contribution 4 (Section~\ref{sec:properties}, Theorem~\ref{thm:layer-rule}, and Section~\ref{sec:implementation}).}
+    \item \textbf{Contribution 4 (Section~\ref{sec:properties}, Proposition~\ref{thm:layer-rule}, and Section~\ref{sec:implementation}).}
     The PARSER-NAVIGATE layer dependency rule, derived as the contrapositive
-    of Theorem~\ref{thm:parser-indep}; the rule converts a folk software
-    discipline into a formal architectural constraint that build systems can
-    enforce, and we instantiate it in Issen's crate boundaries.
+    of Proposition~\ref{thm:parser-indep}; the rule converts a folk software
+    discipline into an explicitly-stated architectural constraint and we
+    instantiate it in Issen's crate boundaries, enforced mechanically by the
+    build system.
 
     \item \textbf{Contribution 5 (Sections~\ref{sec:cases}~and~\ref{sec:discussion}).}
     Four case studies, including (i) an empirical Parser Independence
@@ -114,7 +116,7 @@ We make five claims, each tied to the section that delivers it.
 The remainder of the paper is organized as follows. Section~\ref{sec:bg}
 reviews existing process and evidence models and motivates the gap.
 Section~\ref{sec:taxonomy} develops the formal taxonomy.
-Section~\ref{sec:properties} states and proves the central theorems.
+Section~\ref{sec:properties} establishes the central structural propositions.
 Section~\ref{sec:implementation} describes the Issen reference
 implementation. Section~\ref{sec:cases} presents the case studies.
 Section~\ref{sec:related} situates the work against prior literature.

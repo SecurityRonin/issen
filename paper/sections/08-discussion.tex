@@ -4,7 +4,7 @@
 \subsection{Completeness of the Five Primitives}
 
 Section~\ref{sec:completeness-formal} states what we can prove and what we
-cannot. Theorem~\ref{thm:partial-complete} establishes partial completeness
+cannot. Proposition~\ref{thm:partial-complete} establishes partial completeness
 under the restriction that the navigation function be computable by a
 deterministic Turing machine accessing oracles drawn from five standard
 disciplines. Conjecture~\ref{conj:full-complete} states the open question:
@@ -16,7 +16,7 @@ Section~\ref{sec:completeness-formal} (PCAP, blockchain, database tables,
 cloud audit logs, mobile extractions, stream-processing state) all reduce.
 Quantum-entangled storage is set aside because its non-cloning property
 falls outside the deterministic-Turing-machine model that
-Theorem~\ref{thm:partial-complete} assumes; whether quantum substrates
+Proposition~\ref{thm:partial-complete} assumes; whether quantum substrates
 admit forensic admissibility in the long run is a separate question.
 
 We are explicit that ``cannot construct a counterexample'' is a weaker
@@ -67,13 +67,13 @@ view this as a candidate for future work in a Rust effect-system
 extension.
 
 \paragraph{Internal validity of Case 3 (parser-independence circularity).}
-The empirical demonstration of Theorem~\ref{thm:parser-indep}
+The empirical demonstration of Proposition~\ref{thm:parser-indep}
 (Section~\ref{sec:case3}) uses Issen as the reference implementation, and
 Issen was designed to satisfy the theorem. This is a real threat to
 internal validity: the implementation was built to satisfy the theory, so
 the theory cannot be falsified by it without an independent implementation.
 We acknowledge this threat explicitly. A stronger evaluation -- which we
-propose as future work -- would re-implement Theorem~\ref{thm:parser-indep}'s
+propose as future work -- would re-implement Proposition~\ref{thm:parser-indep}'s
 required conditions in a forensic toolkit that was not designed with the
 taxonomy in mind (TSK, Volatility, Plaso) and report on the modifications
 required to satisfy parser independence. We hypothesize that the
@@ -121,7 +121,7 @@ network access to look up an external schema) violate the assumption and
 should not claim source-agnosticism.
 
 \paragraph{Internal validity of Case 3.} The empirical demonstration of
-Theorem~\ref{thm:parser-indep} (Section~\ref{sec:case3}) is a single-host,
+Proposition~\ref{thm:parser-indep} (Section~\ref{sec:case3}) is a single-host,
 single-artifact study. We selected Chrome \texttt{History} because of its
 prevalence and its non-trivial schema, but a stronger evaluation would
 exercise the parser-independence claim across a battery of artifacts (EVTX,

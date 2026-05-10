@@ -62,12 +62,12 @@ query \src{Q}, and content-addressed \src{C}. We formalize evidence sources
 as triples $(A, f_{\text{nav}}, f_{\text{parse}})$ where $f_{\text{nav}}: A
 \rightharpoonup B^{*}$ is a navigation function valued in byte sequences and
 $f_{\text{parse}}: B^{*} \to R$ is a parser valued in records. From this
-definition we prove a \emph{Parser Independence} theorem: any two evidence
-sources with the same parser produce identical records on identical byte
-inputs, regardless of the navigation primitive that retrieved them; we
-further establish that the dependency rule (PARSER must not import NAVIGATE)
-is the contrapositive of this theorem and is thus a formal architectural
-constraint. We define \emph{attacker-durability} of captured evidence and
+definition we establish a \emph{Parser Independence} proposition: any two
+evidence sources with the same parser produce identical records on identical byte
+inputs, regardless of the navigation primitive that retrieved the bytes; the
+dependency rule (PARSER must not import NAVIGATE) is the contrapositive of
+this proposition and is thus a formal architectural constraint that build
+systems can mechanically enforce. We define \emph{attacker-durability} of captured evidence and
 prove that \src{Q} achieves durability by transmission to investigator
 storage (Proposition~\ref{prop:q-durability}) and that \src{C} achieves
 durability \emph{intrinsically} from collision-resistance of the addressing

@@ -8,7 +8,7 @@ that wires the five navigation primitives into a unified investigation
 pipeline. Issen is not a monolithic tool; it is a constellation of
 independently-released crates whose layer membership is fixed by the
 taxonomy and whose dependency graph is a direct realization of
-Theorems~\ref{thm:parser-indep}~and~\ref{thm:layer-rule}.
+Propositions~\ref{thm:parser-indep}~and~\ref{thm:layer-rule}.
 
 \subsection{Architecture}
 
@@ -54,7 +54,7 @@ separable.
 
 \subsection{Dependency Discipline}
 
-The crate boundaries enforce Theorem~\ref{thm:layer-rule} mechanically.
+The crate boundaries enforce Proposition~\ref{thm:layer-rule} mechanically.
 \texttt{browser-forensic} depends on \texttt{forensicnomicon} (KNOWLEDGE) and
 on a minimal SQLite reader; it does \emph{not} depend on \texttt{ewf},
 \texttt{ext4fs-forensic}, \texttt{memf-format}, \texttt{memf-hw},
@@ -91,7 +91,7 @@ The orchestrator iterates the registry at startup, builds a probe table
 keyed by file signatures and content patterns, and routes byte sequences to
 parsers without runtime configuration. New parser crates can be added to the
 build; the registry picks them up automatically. The architecture fits
-Theorem~\ref{thm:parser-indep} naturally: the registry is a set of $\Bstar
+Proposition~\ref{thm:parser-indep} naturally: the registry is a set of $\Bstar
 \to R$ functions, and the dispatcher cares only about that signature.
 
 \subsection{The PARSER Crate Interface}
@@ -104,7 +104,7 @@ pub fn parse\_bytes(b: \&[u8]) -\textgreater{} Result\textless{}Vec\textless{}Re
 \noindent
 The \texttt{parse\_path} variant is a thin convenience over
 \texttt{parse\_bytes}: it memory-maps or reads the file and forwards. From
-Theorem~\ref{thm:parser-indep}'s standpoint there is only one parser; the
+Proposition~\ref{thm:parser-indep}'s standpoint there is only one parser; the
 two entry points are presentational sugar for the two most common calling
 contexts.
 

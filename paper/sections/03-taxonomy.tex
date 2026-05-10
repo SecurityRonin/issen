@@ -240,7 +240,7 @@ layers to concrete crates in the Issen reference implementation.
 \end{tabular}
 \caption{Five-layer architecture induced by the taxonomy. Higher layers
 depend only on lower layers. PARSER is independent of NAVIGATE because both
-operate at the byte-sequence interface (Theorem~\ref{thm:parser-indep}).}
+operate at the byte-sequence interface (Proposition~\ref{thm:parser-indep}).}
 \label{fig:layers}
 \end{figure}
 
@@ -257,5 +257,5 @@ all of the above, and is responsible for routing artifacts to parsers and
 for cross-source correlation.
 
 We will see in Section~\ref{sec:properties} that the dependency rules are not
-merely a stylistic convention; they are forced by Theorem~\ref{thm:parser-indep}
-and by the contrapositive of Theorem~\ref{thm:layer-rule}.
+merely a stylistic convention; they are forced by Proposition~\ref{thm:parser-indep}
+and by the contrapositive of Proposition~\ref{thm:layer-rule}.

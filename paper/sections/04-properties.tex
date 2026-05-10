@@ -1,21 +1,33 @@
 \section{Formal Properties}
 \label{sec:properties}
 
-This section delivers Contributions~2,~3, and~4. We prove a semantically
-strong Parser Independence theorem, derive the layer dependency rule from
-its contrapositive, formalize attacker-durability, characterize the distinct
+This section delivers Contributions~2,~3, and~4. We establish a Parser
+Independence proposition, derive the layer dependency rule as its
+contrapositive, formalize attacker-durability, characterize the distinct
 durability profiles of \src{Q} and \src{C}, and give a schema-conscious
 definition of hash-pivot.
 
+\smallskip\noindent\textbf{On the nature of the results below.}
+The propositions in Sections~\ref{sec:properties}A and~\ref{sec:properties}B
+are \emph{structural}: they follow from the type-theoretic definitions of
+navigation primitive and parser rather than from non-trivial mathematical
+analysis. Their value is not mathematical depth but architectural
+\emph{explicitness}. Naming them converts implicit engineering folk wisdom
+into falsifiable claims: the Parser Independence proposition becomes an
+empirically testable prediction (Section~\ref{sec:case3}); the Layer
+Dependency Rule becomes an architectural constraint admissible to automated
+enforcement. The attacker-durability results (Section~\ref{sec:properties}C)
+are genuine conditional propositions whose hypotheses carry real content.
+
 \subsection{Parser Independence}
 
-The theorem we want is not merely a type-checking observation. We need a
+The proposition we want is not merely a type-checking observation. We need a
 \emph{semantic} claim: that two distinct navigation paths into the
 ``same'' artifact yield the \emph{same} record under a fixed parser. We
-make this precise with the following theorem, which has two halves -- a
+make this precise with the following proposition, which has two halves -- a
 syntactic well-typedness half, and a semantic equality half.
 
-\begin{theorem}[Parser Independence]
+\begin{proposition}[Parser Independence]
 \label{thm:parser-indep}
 Let $p : \Bstar \to R$ be a deterministic, side-effect-free parser, and let
 $S = (A, f_{\mathrm{nav}}, p)$ and $S' = (A', f'_{\mathrm{nav}}, p)$ be two
@@ -35,7 +47,7 @@ f'_{\mathrm{nav}}(a') = b \in \Bstar$ (\ie{}, the two navigation paths
 return identical bytes), $p(f_{\mathrm{nav}}(a)) = p(f'_{\mathrm{nav}}(a'))$
 as values in $R$. The equality holds bit-for-bit under any canonical
 serialization of $R$.
-\end{theorem}
+\end{proposition}
 
 \begin{proof}
 \textbf{(I).} By Definition~\ref{def:source} the parser's domain is $\Bstar$,
@@ -61,16 +73,18 @@ is itself a deterministic function of the record. \qedhere
 Half (I) is the syntactic content -- type composition -- which has been an
 implicit design principle in tools like TSK and Volatility but has not
 previously been stated formally for cross-source composition. Half (II) is
-the semantic content and is the load-bearing claim of the theorem: it says
+the semantic content and is the load-bearing claim of the proposition: it says
 that for a properly written parser, four distinct navigation paths into
 the ``same'' bytes (\src{P}-live, \src{P}-image, \src{M}-carve, \src{Q}-pull
 of the Chrome \texttt{History} file in Section~\ref{sec:case3}) produce
 identical records, and -- because canonical serializations are
 deterministic -- identical SHA-256 hashes of those records. This converts
 Parser Independence from a folk principle into an empirically falsifiable
-prediction.
+prediction. We note that both halves of the proof are short substitutions
+from the definitions; the value of the proposition is in making the
+principle explicit and testable, not in the mathematical derivation.
 
-\paragraph{Scope of the determinism assumption.} The theorem requires the
+\paragraph{Scope of the determinism assumption.} The proposition requires the
 parser to be free of nondeterminism (\eg{}, hash randomization of internal
 maps, system-clock-dependent fields) and free of externalized state (\eg{},
 no calls to schema-resolution services). These are standard
@@ -79,35 +93,35 @@ threat-to-validity (Section~\ref{sec:discussion}).
 
 \subsection{Layer Dependency Rule}
 
-The dependency rule is best understood not as an independent theorem but as
-the contrapositive of Theorem~\ref{thm:parser-indep}. We state it
-correspondingly. The structure is: \emph{if Parser Independence is required
-of a parser, then the parser must not depend on NAVIGATE.}
+The dependency rule is best understood as the contrapositive of
+Proposition~\ref{thm:parser-indep}. We state it correspondingly. The
+structure is: \emph{if Parser Independence is required of a parser, then
+the parser must not depend on NAVIGATE.}
 
-\begin{theorem}[Layer Dependency Rule, Contrapositive Form]
+\begin{proposition}[Layer Dependency Rule]
 \label{thm:layer-rule}
 Let $p$ be a parser, and let $\Pi$ denote the set of navigation primitives
 that some deployment of $p$ may encounter. If $|\Pi| \geq 2$ and $p$ is
-required to satisfy Parser Independence (Theorem~\ref{thm:parser-indep})
+required to satisfy Parser Independence (Proposition~\ref{thm:parser-indep})
 across $\Pi$, then $p$'s domain must equal $\Bstar$ -- equivalently, $p$
 must not import or otherwise depend on any NAVIGATE component specific to a
 particular $\pi \in \Pi$.
-\end{theorem}
+\end{proposition}
 
 \begin{proof}
-Theorem~\ref{thm:parser-indep} states that semantic invariance holds for
+Proposition~\ref{thm:parser-indep} states that semantic invariance holds for
 parsers $p : \Bstar \to R$. The hypothesis is unconditional in $\pi$: the
 domain of $p$ is $\Bstar$, not any $A_\pi$. Now suppose $p$ has domain
 $A_\pi$ for some particular $\pi$ -- equivalently, $p$ depends on a
 NAVIGATE component fixing the address space to $A_\pi$. Then $p$ is not a
-function on $\Bstar$, and Theorem~\ref{thm:parser-indep} does not apply to
+function on $\Bstar$, and Proposition~\ref{thm:parser-indep} does not apply to
 $p$. We must check that $p$ also \emph{cannot} satisfy Parser Independence
 under any alternative argument. Take $\pi' \neq \pi$ in $\Pi$ and a source
 $S' = (A', f'_{\mathrm{nav}}, p)$ of primitive $\pi'$. The domain of $p$
 contains addresses of type $A_\pi$ but not $A_\pi$-typed values produced
 through $f'_{\mathrm{nav}}$, which produces values in $\Bstar$ (or in
 $A'$). The composition $p \circ f'_{\mathrm{nav}}$ is therefore not even
-well-typed. Hence $p$ fails Type composition (Theorem~\ref{thm:parser-indep}.I)
+well-typed. Hence $p$ fails Type composition (Proposition~\ref{thm:parser-indep}.I)
 and \emph{a fortiori} fails Semantic invariance. The contrapositive
 direction is established without circularity: we have shown that the
 \emph{absence} of an unconditional-in-$\pi$ domain forces a type failure on
@@ -326,7 +340,7 @@ the question in two parts: a partial-completeness theorem that we can prove
 under structural assumptions, and an open conjecture that fully would close
 the question.
 
-\begin{theorem}[Partial Completeness over Locally-Computable Oracles]
+\begin{proposition}[Partial Completeness over Locally-Computable Oracles]
 \label{thm:partial-complete}
 Let $S = (A, f_{\mathrm{nav}}, f_{\mathrm{parse}})$ be an evidence source
 whose navigation function $f_{\mathrm{nav}}$ is computable by a
@@ -342,7 +356,7 @@ finite map from $\{0,1\}^n$ to byte arrays. Then $S$'s navigation primitive
 $\pi$ (Definition~\ref{def:nav-primitive}) is equivalent under $\sim$ to
 one of $\pi_{\mathrm{P}}, \pi_{\mathrm{M}}, \pi_{\mathrm{L}}, \pi_{\mathrm{Q}},
 \pi_{\mathrm{C}}$, depending on which oracle dominates the navigation.
-\end{theorem}
+\end{proposition}
 
 \begin{proof}[Proof sketch]
 The five oracle disciplines are constructed precisely to encode the address
@@ -405,7 +419,7 @@ nor produced ad-hoc by an investigator query. We classify these as a
 
 \paragraph{Quantum-entangled storage.} Theoretically interesting; not
 currently a practical evidence substrate; the oracle restriction in
-Theorem~\ref{thm:partial-complete} is over deterministic Turing machines
+Proposition~\ref{thm:partial-complete} is over deterministic Turing machines
 and would need extension for a formal account.
 
 The remaining open question is whether Conjecture~\ref{conj:full-complete}
