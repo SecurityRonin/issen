@@ -61,13 +61,13 @@ practice: persistent storage \src{P}, memory \src{M}, log \src{L}, live
 query \src{Q}, and content-addressed \src{C}. We formalize evidence sources
 as triples $(A, f_{\text{nav}}, f_{\text{parse}})$ where $f_{\text{nav}}: A
 \rightharpoonup B^{*}$ is a navigation function valued in byte sequences and
-$f_{\text{parse}}: B^{*} \to R$ is a parser valued in records. From this
-definition we establish a \emph{Parser Independence} proposition: any two
-evidence sources with the same parser produce identical records on identical byte
-inputs, regardless of the navigation primitive that retrieved the bytes; the
-dependency rule (PARSER must not import NAVIGATE) is the contrapositive of
-this proposition and is thus a formal architectural constraint that build
-systems can mechanically enforce. We define \emph{attacker-durability} of captured evidence and
+$f_{\text{parse}}: B^{*} \to R$ is a parser valued in records. We name two
+architectural principles that follow from this definition: \emph{Parser
+Independence} (identical bytes yield identical records under a fixed
+deterministic parser, regardless of navigation primitive) and the
+\emph{Layer Dependency Rule} (a parser that imports a NAVIGATE component
+cannot be source-agnostic); the second is the contrapositive of the first,
+and both are enforced mechanically by Issen's crate boundaries. We define \emph{attacker-durability} of captured evidence and
 prove that \src{Q} achieves durability by transmission to investigator
 storage (Proposition~\ref{prop:q-durability}) and that \src{C} achieves
 durability \emph{intrinsically} from collision-resistance of the addressing

@@ -82,11 +82,11 @@ We make five claims, each tied to the section that delivers it.
     subset that emerges when one ignores addressing.
 
     \item \textbf{Contribution 2 (Section~\ref{sec:properties}, Proposition~\ref{thm:parser-indep}).}
-    A Parser Independence proposition: identical bytes yield identical
+    The \emph{Parser Independence} principle: identical bytes yield identical
     records under a fixed deterministic parser, regardless of the navigation
-    primitive that retrieved the bytes. The result is structural -- it
-    follows from the type-theoretic definitions -- but converts a folk
-    design principle into an explicitly named, empirically falsifiable claim
+    primitive that retrieved the bytes. Naming it converts a folk design
+    principle into an explicitly testable claim -- demonstrated empirically
+    with byte-identical SHA-256 hashes across four navigation paths
     (Section~\ref{sec:case3}).
 
     \item \textbf{Contribution 3 (Section~\ref{sec:properties}, Propositions~\ref{prop:q-durability} and~\ref{prop:c-durability}, Corollary~\ref{cor:c-anchor-free}).}
@@ -98,10 +98,10 @@ We make five claims, each tied to the section that delivers it.
     taxonomy as a peer of the disk-memory-log triad.
 
     \item \textbf{Contribution 4 (Section~\ref{sec:properties}, Proposition~\ref{thm:layer-rule}, and Section~\ref{sec:implementation}).}
-    The PARSER-NAVIGATE layer dependency rule, derived as the contrapositive
-    of Proposition~\ref{thm:parser-indep}; the rule converts a folk software
-    discipline into an explicitly-stated architectural constraint and we
-    instantiate it in Issen's crate boundaries, enforced mechanically by the
+    The \emph{Layer Dependency Rule}: a parser that imports a navigation
+    component cannot be source-agnostic, because its domain is then
+    $A_\pi$, not $\Bstar$. This is the contrapositive of Parser Independence.
+    Issen instantiates the rule in Cargo crate boundaries enforced by the
     build system.
 
     \item \textbf{Contribution 5 (Sections~\ref{sec:cases}~and~\ref{sec:discussion}).}

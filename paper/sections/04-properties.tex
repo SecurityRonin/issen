@@ -7,17 +7,12 @@ contrapositive, formalize attacker-durability, characterize the distinct
 durability profiles of \src{Q} and \src{C}, and give a schema-conscious
 definition of hash-pivot.
 
-\smallskip\noindent\textbf{On the nature of the results below.}
-The propositions in Sections~\ref{sec:properties}A and~\ref{sec:properties}B
-are \emph{structural}: they follow from the type-theoretic definitions of
-navigation primitive and parser rather than from non-trivial mathematical
-analysis. Their value is not mathematical depth but architectural
-\emph{explicitness}. Naming them converts implicit engineering folk wisdom
-into falsifiable claims: the Parser Independence proposition becomes an
-empirically testable prediction (Section~\ref{sec:case3}); the Layer
-Dependency Rule becomes an architectural constraint admissible to automated
-enforcement. The attacker-durability results (Section~\ref{sec:properties}C)
-are genuine conditional propositions whose hypotheses carry real content.
+\smallskip\noindent\textbf{Nature of the results.}
+Parser Independence and Layer Dependency are \emph{architectural principles}
+stated in formal language so they can be named, referenced, and empirically
+tested. The attacker-durability propositions (Section~\ref{sec:attacker-durability})
+are genuine conditional results whose adversary-model hypotheses carry
+substantive content.
 
 \subsection{Parser Independence}
 
@@ -49,46 +44,18 @@ as values in $R$. The equality holds bit-for-bit under any canonical
 serialization of $R$.
 \end{proposition}
 
-\begin{proof}
-\textbf{(I).} By Definition~\ref{def:source} the parser's domain is $\Bstar$,
-independent of $A$. Both $f_{\mathrm{nav}}: A \rightharpoonup \Bstar$ and
-$f'_{\mathrm{nav}}: A' \rightharpoonup \Bstar$ have codomain $\Bstar$,
-matching the domain of $p$. Composition in $\mathbf{PFn}$ is defined when
-the codomain of the inner function matches the domain of the outer; thus
-$p \circ f_{\mathrm{nav}}$ and $p \circ f'_{\mathrm{nav}}$ are both
-well-typed in $\mathbf{PFn}$. The construction does not reference $\pi$ or
-$\pi'$.
+Both halves follow directly from the definitions. Half (I) holds because the
+parser's domain is $\Bstar$ by Definition~\ref{def:source}, independent of
+which $A$ or $\pi$ produced the bytes. Half (II) holds because a
+deterministic parser is a function of its input alone: if the two navigation
+paths return the same bytes, the parser returns the same record. The
+proposition's value is not mathematical novelty -- it is naming the principle
+so that it can be empirically tested (Section~\ref{sec:case3}) and
+mechanically enforced (Section~\ref{sec:implementation}).
 
-\smallskip\noindent
-\textbf{(II).} By assumption, $p$ is deterministic and side-effect-free: $p$
-is mathematically a total function on its domain modulo the partiality
-inherited from $f_{\mathrm{nav}}$, with no implicit dependency on global
-state. Determinism implies $p(b) = p(b)$ for any fixed $b \in \Bstar$.
-Substituting $b = f_{\mathrm{nav}}(a) = f'_{\mathrm{nav}}(a')$ yields
-$p(f_{\mathrm{nav}}(a)) = p(b) = p(f'_{\mathrm{nav}}(a'))$. Bit-for-bit
-equality of canonical serializations follows because record canonicalization
-is itself a deterministic function of the record. \qedhere
-\end{proof}
-
-Half (I) is the syntactic content -- type composition -- which has been an
-implicit design principle in tools like TSK and Volatility but has not
-previously been stated formally for cross-source composition. Half (II) is
-the semantic content and is the load-bearing claim of the proposition: it says
-that for a properly written parser, four distinct navigation paths into
-the ``same'' bytes (\src{P}-live, \src{P}-image, \src{M}-carve, \src{Q}-pull
-of the Chrome \texttt{History} file in Section~\ref{sec:case3}) produce
-identical records, and -- because canonical serializations are
-deterministic -- identical SHA-256 hashes of those records. This converts
-Parser Independence from a folk principle into an empirically falsifiable
-prediction. We note that both halves of the proof are short substitutions
-from the definitions; the value of the proposition is in making the
-principle explicit and testable, not in the mathematical derivation.
-
-\paragraph{Scope of the determinism assumption.} The proposition requires the
-parser to be free of nondeterminism (\eg{}, hash randomization of internal
-maps, system-clock-dependent fields) and free of externalized state (\eg{},
-no calls to schema-resolution services). These are standard
-``pure-function'' constraints; we discuss empirical compliance as a
+The proposition requires the parser to be deterministic and side-effect-free:
+no hash-randomized internal maps, no system-clock-dependent fields, no calls
+to external schema-resolution services. We discuss empirical compliance as a
 threat-to-validity (Section~\ref{sec:discussion}).
 
 \subsection{Layer Dependency Rule}
@@ -108,33 +75,12 @@ must not import or otherwise depend on any NAVIGATE component specific to a
 particular $\pi \in \Pi$.
 \end{proposition}
 
-\begin{proof}
-Proposition~\ref{thm:parser-indep} states that semantic invariance holds for
-parsers $p : \Bstar \to R$. The hypothesis is unconditional in $\pi$: the
-domain of $p$ is $\Bstar$, not any $A_\pi$. Now suppose $p$ has domain
-$A_\pi$ for some particular $\pi$ -- equivalently, $p$ depends on a
-NAVIGATE component fixing the address space to $A_\pi$. Then $p$ is not a
-function on $\Bstar$, and Proposition~\ref{thm:parser-indep} does not apply to
-$p$. We must check that $p$ also \emph{cannot} satisfy Parser Independence
-under any alternative argument. Take $\pi' \neq \pi$ in $\Pi$ and a source
-$S' = (A', f'_{\mathrm{nav}}, p)$ of primitive $\pi'$. The domain of $p$
-contains addresses of type $A_\pi$ but not $A_\pi$-typed values produced
-through $f'_{\mathrm{nav}}$, which produces values in $\Bstar$ (or in
-$A'$). The composition $p \circ f'_{\mathrm{nav}}$ is therefore not even
-well-typed. Hence $p$ fails Type composition (Proposition~\ref{thm:parser-indep}.I)
-and \emph{a fortiori} fails Semantic invariance. The contrapositive
-direction is established without circularity: we have shown that the
-\emph{absence} of an unconditional-in-$\pi$ domain forces a type failure on
-some pair of primitives, not that a parser ``cannot be reused'' as a
-premise. \qedhere
-\end{proof}
-
-The contrapositive is the practitioner's rule of thumb: \emph{if your
-parser imports a navigation crate, it cannot satisfy Parser Independence
-across primitives, and you must accept that limitation explicitly}. In the
-Issen implementation (Section~\ref{sec:implementation}), this is enforced
-both by crate boundaries and by build-system rejection of cyclic or upward
-dependencies.
+The rule is the practitioner's read of Proposition~\ref{thm:parser-indep}:
+a parser that imports a navigation crate has domain $A_\pi$, not $\Bstar$,
+so the composition $p \circ f'_{\mathrm{nav}}$ for any $\pi' \neq \pi$ is
+ill-typed. Parser Independence fails not by coincidence but by construction.
+In Issen, this is enforced by crate boundaries and build-system rejection
+of cyclic or upward dependencies (Section~\ref{sec:implementation}).
 
 \subsection{Attacker-Durability}
 
@@ -358,19 +304,11 @@ one of $\pi_{\mathrm{P}}, \pi_{\mathrm{M}}, \pi_{\mathrm{L}}, \pi_{\mathrm{Q}},
 \pi_{\mathrm{C}}$, depending on which oracle dominates the navigation.
 \end{proposition}
 
-\begin{proof}[Proof sketch]
-The five oracle disciplines are constructed precisely to encode the address
-algebra (Definition~\ref{def:addr-algebra}) of, respectively,
-\src{P}, \src{M}, \src{L}, \src{Q}, and \src{C}. A navigation function
-restricted to oracle (i) has address-space algebra equivalent to $A_P$
-under the bijection that identifies linearly-addressable bytes with block
-sequences. Likewise for the other four. A navigation function using
-multiple oracles can be decomposed into a primary oracle (the one whose
-address space dominates the partial-function-composition lattice in
-$\mathbf{PFn}$) and auxiliary oracles; the equivalence class of the
-composition is determined by the primary. Cases (i)-(v) are exhaustive
-under the hypothesis. \qedhere
-\end{proof}
+The five oracle disciplines are constructed to match the address algebra of
+each primitive (Definition~\ref{def:addr-algebra}): oracle (i) corresponds
+to $A_P$, (ii) to $A_M$, (iii) to $A_L$, (iv) to $A_Q$, (v) to $A_C$.
+A navigation function using multiple oracles reduces to its primary oracle
+under the address-space equivalence $\sim$.
 
 \begin{conjecture}[Full Completeness]
 \label{conj:full-complete}
