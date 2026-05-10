@@ -268,12 +268,12 @@ mod tests {
 
     #[test]
     fn detect_os_lime_is_linux() {
-        asseissen_eq!(detect_os(crate::open::DumpFormat::Lime), TargetOs::Linux);
+        assert_eq!(detect_os(crate::open::DumpFormat::Lime), TargetOs::Linux);
     }
 
     #[test]
     fn detect_os_crash_dump_is_windows() {
-        asseissen_eq!(
+        assert_eq!(
             detect_os(crate::open::DumpFormat::WindowsCrashDump),
             TargetOs::Windows
         );
@@ -281,12 +281,12 @@ mod tests {
 
     #[test]
     fn detect_os_raw_is_unknown() {
-        asseissen_eq!(detect_os(crate::open::DumpFormat::Raw), TargetOs::Unknown);
+        assert_eq!(detect_os(crate::open::DumpFormat::Raw), TargetOs::Unknown);
     }
 
     #[test]
     fn detect_os_avml_is_linux() {
-        asseissen_eq!(detect_os(crate::open::DumpFormat::Avml), TargetOs::Linux);
+        assert_eq!(detect_os(crate::open::DumpFormat::Avml), TargetOs::Linux);
     }
 
     // -----------------------------------------------------------------------
@@ -356,14 +356,14 @@ mod tests {
     fn memf_command_all_variants_are_display() {
         // Ensure every variant has a Display impl (compilation check +
         // spot-check a few values).
-        asseissen_eq!(MemfCommand::Ps.to_string(), "ps");
-        asseissen_eq!(MemfCommand::Modules.to_string(), "modules");
-        asseissen_eq!(MemfCommand::Netstat.to_string(), "netstat");
-        asseissen_eq!(MemfCommand::Check.to_string(), "check");
-        asseissen_eq!(MemfCommand::Timeline.to_string(), "timeline");
-        asseissen_eq!(MemfCommand::Scan.to_string(), "scan");
-        asseissen_eq!(MemfCommand::Creds.to_string(), "creds");
-        asseissen_eq!(MemfCommand::All.to_string(), "all");
+        assert_eq!(MemfCommand::Ps.to_string(), "ps");
+        assert_eq!(MemfCommand::Modules.to_string(), "modules");
+        assert_eq!(MemfCommand::Netstat.to_string(), "netstat");
+        assert_eq!(MemfCommand::Check.to_string(), "check");
+        assert_eq!(MemfCommand::Timeline.to_string(), "timeline");
+        assert_eq!(MemfCommand::Scan.to_string(), "scan");
+        assert_eq!(MemfCommand::Creds.to_string(), "creds");
+        assert_eq!(MemfCommand::All.to_string(), "all");
     }
 
     #[test]

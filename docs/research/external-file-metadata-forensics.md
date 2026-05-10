@@ -1,6 +1,6 @@
 # External File Metadata Forensics: Complete Reference for Rust Parser Development
 
-> Research compiled 2026-03-25 for RapidTriage forensic parser development.
+> Research compiled 2026-03-25 for Issen forensic parser development.
 > Covers NTFS ADS, macOS xattrs, Linux xattrs, ACLs, and related external metadata systems.
 
 ---

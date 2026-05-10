@@ -16,9 +16,9 @@ A standalone Rust workspace at `~/src/memory-forensic` providing a pure-Rust mem
 ## Non-Goals
 
 - Live memory acquisition (use AVML, LiME, WinPmem for capture -- this tool reads dumps only)
-- TUI or GUI (CLI only; RapidTriage rt-navigator may integrate later)
+- TUI or GUI (CLI only; Issen rt-navigator may integrate later)
 - Network-based analysis (no packet capture parsing)
-- Disk image mounting or filesystem analysis (that's RapidTriage's domain)
+- Disk image mounting or filesystem analysis (that's Issen's domain)
 - Android/iOS mobile memory analysis (future work)
 
 ---
@@ -247,7 +247,7 @@ pub struct YaraClassifier {
 
 ### Pre-existing String File Support
 
-For RapidTriage UAC collections that already contain `memory-strings.ascii`:
+For Issen UAC collections that already contain `memory-strings.ascii`:
 
 ```rust
 pub fn from_strings_file(path: &Path) -> Result<impl Iterator<Item = ClassifiedString>>
@@ -864,7 +864,7 @@ fn test_avml_real_dump() {
 }
 ```
 
-Real test data source: `~/src/RapidTriage/tests/data/uac-vbox-linux-20260324234043.tar.gz` contains an 8GB `avml.lime` dump + 2.2GB `memory-strings.ascii`.
+Real test data source: `~/src/Issen/tests/data/uac-vbox-linux-20260324234043.tar.gz` contains an 8GB `avml.lime` dump + 2.2GB `memory-strings.ascii`.
 
 ### Test Coverage Targets
 
@@ -906,7 +906,7 @@ Every feature follows strict red-green-refactor:
 
 **Key dependency:** `yara-x = "0.12"`
 
-**Value:** Immediate utility for RapidTriage UAC collections containing `memory-strings.ascii`. The `memf strings --from-file` command provides IoC classification without needing to parse the actual dump.
+**Value:** Immediate utility for Issen UAC collections containing `memory-strings.ascii`. The `memf strings --from-file` command provides IoC classification without needing to parse the actual dump.
 
 ### Phase 2: Linux + macOS Process/Network Extraction
 
@@ -963,7 +963,7 @@ Every feature follows strict red-green-refactor:
 
 ### Research Corpus
 
-All research files located at `~/src/RapidTriage/research/`:
+All research files located at `~/src/Issen/research/`:
 
 - `memory-forensics-landscape.md` -- Tool comparison (Volatility 3, Rekall, MemProcFS, mquire), Rust ecosystem gaps
 - `memory-dump-file-formats-specification.md` -- All 13+ format specs with magic bytes, header layouts, compression

@@ -150,12 +150,12 @@ mod tests {
     #[test]
     fn test_confidence_max_selects_highest() {
         let levels = vec![Confidence::Low, Confidence::High, Confidence::Medium];
-        asseissen_eq!(levels.into_iter().max(), Some(Confidence::High));
+        assert_eq!(levels.into_iter().max(), Some(Confidence::High));
     }
 
     #[test]
     fn test_confidence_none_is_lowest() {
-        asseissen_eq!(
+        assert_eq!(
             vec![Confidence::None, Confidence::Low].into_iter().min(),
             Some(Confidence::None)
         );
@@ -169,18 +169,18 @@ mod tests {
 
     #[test]
     fn test_confidence_equality() {
-        asseissen_eq!(Confidence::None, Confidence::None);
-        asseissen_eq!(Confidence::Low, Confidence::Low);
-        asseissen_eq!(Confidence::Medium, Confidence::Medium);
-        asseissen_eq!(Confidence::High, Confidence::High);
+        assert_eq!(Confidence::None, Confidence::None);
+        assert_eq!(Confidence::Low, Confidence::Low);
+        assert_eq!(Confidence::Medium, Confidence::Medium);
+        assert_eq!(Confidence::High, Confidence::High);
     }
 
     #[test]
     fn test_confidence_debug() {
-        asseissen_eq!(format!("{:?}", Confidence::None), "None");
-        asseissen_eq!(format!("{:?}", Confidence::Low), "Low");
-        asseissen_eq!(format!("{:?}", Confidence::Medium), "Medium");
-        asseissen_eq!(format!("{:?}", Confidence::High), "High");
+        assert_eq!(format!("{:?}", Confidence::None), "None");
+        assert_eq!(format!("{:?}", Confidence::Low), "Low");
+        assert_eq!(format!("{:?}", Confidence::Medium), "Medium");
+        assert_eq!(format!("{:?}", Confidence::High), "High");
     }
 
     #[test]
@@ -188,7 +188,7 @@ mod tests {
         let c = Confidence::High;
         let d = c; // Copy
         let e = c.clone(); // Clone
-        asseissen_eq!(d, e);
+        assert_eq!(d, e);
     }
 
     #[test]
@@ -197,7 +197,7 @@ mod tests {
             path: PathBuf::from("$MFT"),
             artifact_type: Some(ArtifactType::Mft),
         };
-        asseissen_eq!(entry.artifact_type, Some(ArtifactType::Mft));
+        assert_eq!(entry.artifact_type, Some(ArtifactType::Mft));
     }
 
     #[test]
@@ -215,7 +215,7 @@ mod tests {
             path: PathBuf::from("C:/Windows/System32/config/SAM"),
             artifact_type: None,
         };
-        asseissen_eq!(entry.path, PathBuf::from("C:/Windows/System32/config/SAM"));
+        assert_eq!(entry.path, PathBuf::from("C:/Windows/System32/config/SAM"));
     }
 
     #[test]
@@ -235,53 +235,53 @@ mod tests {
             artifact_type: Some(ArtifactType::Mft),
         };
         let cloned = entry.clone();
-        asseissen_eq!(cloned.path, entry.path);
-        asseissen_eq!(cloned.artifact_type, entry.artifact_type);
+        assert_eq!(cloned.path, entry.path);
+        assert_eq!(cloned.artifact_type, entry.artifact_type);
     }
 
     #[test]
     fn test_os_type_windows() {
         let os = OsType::Windows;
-        asseissen_eq!(os, OsType::Windows);
+        assert_eq!(os, OsType::Windows);
     }
 
     #[test]
     fn test_os_type_linux() {
         let os = OsType::Linux;
-        asseissen_eq!(os, OsType::Linux);
+        assert_eq!(os, OsType::Linux);
     }
 
     #[test]
     fn test_os_type_macos() {
         let os = OsType::MacOS;
-        asseissen_eq!(os, OsType::MacOS);
+        assert_eq!(os, OsType::MacOS);
     }
 
     #[test]
     fn test_os_type_unknown() {
         let os = OsType::Unknown;
-        asseissen_eq!(os, OsType::Unknown);
+        assert_eq!(os, OsType::Unknown);
     }
 
     #[test]
     fn test_os_type_debug() {
-        asseissen_eq!(format!("{:?}", OsType::Windows), "Windows");
-        asseissen_eq!(format!("{:?}", OsType::Linux), "Linux");
-        asseissen_eq!(format!("{:?}", OsType::MacOS), "MacOS");
-        asseissen_eq!(format!("{:?}", OsType::Unknown), "Unknown");
+        assert_eq!(format!("{:?}", OsType::Windows), "Windows");
+        assert_eq!(format!("{:?}", OsType::Linux), "Linux");
+        assert_eq!(format!("{:?}", OsType::MacOS), "MacOS");
+        assert_eq!(format!("{:?}", OsType::Unknown), "Unknown");
     }
 
     #[test]
     fn test_os_type_clone() {
         let os = OsType::Linux;
         let cloned = os.clone();
-        asseissen_eq!(os, cloned);
+        assert_eq!(os, cloned);
     }
 
     #[test]
     fn test_os_type_ne() {
-        asseissen_ne!(OsType::Windows, OsType::Linux);
-        asseissen_ne!(OsType::MacOS, OsType::Unknown);
+        assert_ne!(OsType::Windows, OsType::Linux);
+        assert_ne!(OsType::MacOS, OsType::Unknown);
     }
 
     #[test]
@@ -292,7 +292,7 @@ mod tests {
             os_type: OsType::Unknown,
             tool_version: None,
         };
-        asseissen_eq!(meta.os_type, OsType::Unknown);
+        assert_eq!(meta.os_type, OsType::Unknown);
         assert!(meta.hostname.is_none());
     }
 
@@ -305,9 +305,9 @@ mod tests {
             os_type: OsType::Windows,
             tool_version: Some("6.0.0".to_string()),
         };
-        asseissen_eq!(meta.hostname.as_deref(), Some("DESKTOP-ABC123"));
-        asseissen_eq!(meta.os_type, OsType::Windows);
-        asseissen_eq!(meta.tool_version.as_deref(), Some("6.0.0"));
+        assert_eq!(meta.hostname.as_deref(), Some("DESKTOP-ABC123"));
+        assert_eq!(meta.os_type, OsType::Windows);
+        assert_eq!(meta.tool_version.as_deref(), Some("6.0.0"));
         assert!(meta.collection_time.is_some());
     }
 
@@ -319,8 +319,8 @@ mod tests {
             os_type: OsType::Linux,
             tool_version: None,
         };
-        asseissen_eq!(meta.os_type, OsType::Linux);
-        asseissen_eq!(meta.hostname.as_deref(), Some("ubuntu-server"));
+        assert_eq!(meta.os_type, OsType::Linux);
+        assert_eq!(meta.hostname.as_deref(), Some("ubuntu-server"));
     }
 
     #[test]
@@ -331,7 +331,7 @@ mod tests {
             os_type: OsType::MacOS,
             tool_version: Some("2.1.0".to_string()),
         };
-        asseissen_eq!(meta.os_type, OsType::MacOS);
+        assert_eq!(meta.os_type, OsType::MacOS);
     }
 
     #[test]
@@ -356,9 +356,9 @@ mod tests {
             tool_version: Some("1.0".to_string()),
         };
         let cloned = meta.clone();
-        asseissen_eq!(cloned.hostname, meta.hostname);
-        asseissen_eq!(cloned.os_type, meta.os_type);
-        asseissen_eq!(cloned.tool_version, meta.tool_version);
+        assert_eq!(cloned.hostname, meta.hostname);
+        assert_eq!(cloned.os_type, meta.os_type);
+        assert_eq!(cloned.tool_version, meta.tool_version);
     }
 
     #[test]
@@ -378,7 +378,7 @@ mod tests {
         );
         // Temp directory should still exist while manifest is alive
         assert!(path.exists());
-        asseissen_eq!(manifest.extracted_root, path);
+        assert_eq!(manifest.extracted_root, path);
         drop(manifest);
         // After drop, temp directory is cleaned up
         assert!(!path.exists());
@@ -398,7 +398,7 @@ mod tests {
                 tool_version: None,
             },
         );
-        asseissen_eq!(manifest.format_name, "Velociraptor");
+        assert_eq!(manifest.format_name, "Velociraptor");
     }
 
     #[test]
@@ -425,9 +425,9 @@ mod tests {
                 tool_version: None,
             },
         );
-        asseissen_eq!(manifest.artifacts.len(), 2);
-        asseissen_eq!(manifest.artifacts[0].path, PathBuf::from("$MFT"));
-        asseissen_eq!(manifest.artifacts[1].artifact_type, None);
+        assert_eq!(manifest.artifacts.len(), 2);
+        assert_eq!(manifest.artifacts[0].path, PathBuf::from("$MFT"));
+        assert_eq!(manifest.artifacts[1].artifact_type, None);
     }
 
     #[test]
@@ -444,9 +444,9 @@ mod tests {
                 tool_version: Some("3.0".to_string()),
             },
         );
-        asseissen_eq!(manifest.metadata.hostname.as_deref(), Some("testhost"));
-        asseissen_eq!(manifest.metadata.os_type, OsType::Windows);
-        asseissen_eq!(manifest.metadata.tool_version.as_deref(), Some("3.0"));
+        assert_eq!(manifest.metadata.hostname.as_deref(), Some("testhost"));
+        assert_eq!(manifest.metadata.os_type, OsType::Windows);
+        assert_eq!(manifest.metadata.tool_version.as_deref(), Some("3.0"));
     }
 
     #[test]

@@ -214,10 +214,10 @@ mod tests {
     #[test]
     fn test_event_construction() {
         let event = sample_event();
-        asseissen_eq!(event.timestamp_ns, 1_700_000_000_000_000_000);
-        asseissen_eq!(event.event_type, EventType::FileCreate);
-        asseissen_eq!(event.source, ArtifactType::UsnJournal);
-        asseissen_eq!(
+        assert_eq!(event.timestamp_ns, 1_700_000_000_000_000_000);
+        assert_eq!(event.event_type, EventType::FileCreate);
+        assert_eq!(event.source, ArtifactType::UsnJournal);
+        assert_eq!(
             event.artifact_path,
             "C:/Users/analyst/Documents/report.docx"
         );
@@ -226,14 +226,14 @@ mod tests {
         assert!(event.hostname.is_none());
         assert!(event.tags.is_empty());
         assert!(!event.record_hash.is_empty());
-        asseissen_eq!(event.evidence_source_id, "evidence-001");
+        assert_eq!(event.evidence_source_id, "evidence-001");
     }
 
     #[test]
     fn test_record_hash_deterministic() {
         let event1 = sample_event();
         let event2 = sample_event();
-        asseissen_eq!(
+        assert_eq!(
             event1.record_hash, event2.record_hash,
             "Same inputs must produce same hash"
         );
@@ -251,7 +251,7 @@ mod tests {
             "File created: report.docx".to_string(),
             "evidence-001".to_string(),
         );
-        asseissen_ne!(
+        assert_ne!(
             event1.record_hash, event2.record_hash,
             "Different timestamps must produce different hashes"
         );
@@ -260,7 +260,7 @@ mod tests {
     #[test]
     fn test_record_hash_is_sha256_hex() {
         let event = sample_event();
-        asseissen_eq!(event.record_hash.len(), 64, "SHA-256 hex is 64 chars");
+        assert_eq!(event.record_hash.len(), 64, "SHA-256 hex is 64 chars");
         assert!(
             event.record_hash.chars().all(|c| c.is_ascii_hexdigit()),
             "Hash must be valid hex"
@@ -276,10 +276,10 @@ mod tests {
             .with_tag("bookmarked")
             .with_metadata("usn_reason", serde_json::json!("FILE_CREATE"));
 
-        asseissen_eq!(event.user.as_deref(), Some("S-1-5-21-123456-1001"));
-        asseissen_eq!(event.hostname.as_deref(), Some("WORKSTATION01"));
-        asseissen_eq!(event.tags, vec!["suspicious", "bookmarked"]);
-        asseissen_eq!(
+        assert_eq!(event.user.as_deref(), Some("S-1-5-21-123456-1001"));
+        assert_eq!(event.hostname.as_deref(), Some("WORKSTATION01"));
+        assert_eq!(event.tags, vec!["suspicious", "bookmarked"]);
+        assert_eq!(
             event.metadata.get("usn_reason"),
             Some(&serde_json::json!("FILE_CREATE"))
         );
@@ -294,19 +294,19 @@ mod tests {
         let json = serde_json::to_string(&event).expect("serialize");
         let deserialized: TimelineEvent = serde_json::from_str(&json).expect("deserialize");
 
-        asseissen_eq!(event.timestamp_ns, deserialized.timestamp_ns);
-        asseissen_eq!(event.event_type, deserialized.event_type);
-        asseissen_eq!(event.source, deserialized.source);
-        asseissen_eq!(event.artifact_path, deserialized.artifact_path);
-        asseissen_eq!(event.record_hash, deserialized.record_hash);
-        asseissen_eq!(event.user, deserialized.user);
-        asseissen_eq!(event.metadata, deserialized.metadata);
+        assert_eq!(event.timestamp_ns, deserialized.timestamp_ns);
+        assert_eq!(event.event_type, deserialized.event_type);
+        assert_eq!(event.source, deserialized.source);
+        assert_eq!(event.artifact_path, deserialized.artifact_path);
+        assert_eq!(event.record_hash, deserialized.record_hash);
+        assert_eq!(event.user, deserialized.user);
+        assert_eq!(event.metadata, deserialized.metadata);
     }
 
     #[test]
     fn test_event_type_display() {
-        asseissen_eq!(format!("{}", EventType::FileCreate), "FileCreate");
-        asseissen_eq!(
+        assert_eq!(format!("{}", EventType::FileCreate), "FileCreate");
+        assert_eq!(
             format!("{}", EventType::Other("CustomEvent".to_string())),
             "Other(CustomEvent)"
         );
@@ -314,16 +314,16 @@ mod tests {
 
     #[test]
     fn test_artifact_type_display() {
-        asseissen_eq!(format!("{}", ArtifactType::UsnJournal), "USN Journal");
-        asseissen_eq!(format!("{}", ArtifactType::Mft), "MFT");
-        asseissen_eq!(format!("{}", ArtifactType::EventLog), "Event Log");
+        assert_eq!(format!("{}", ArtifactType::UsnJournal), "USN Journal");
+        assert_eq!(format!("{}", ArtifactType::Mft), "MFT");
+        assert_eq!(format!("{}", ArtifactType::EventLog), "Event Log");
     }
 
     #[test]
     fn test_metadata_does_not_affect_hash() {
         let event1 = sample_event();
         let event2 = sample_event().with_metadata("extra", serde_json::json!("data"));
-        asseissen_eq!(
+        assert_eq!(
             event1.record_hash, event2.record_hash,
             "Metadata is not part of the hash (only content-addressed fields)"
         );
@@ -333,7 +333,7 @@ mod tests {
     fn test_tags_do_not_affect_hash() {
         let event1 = sample_event();
         let event2 = sample_event().with_tag("bookmarked");
-        asseissen_eq!(
+        assert_eq!(
             event1.record_hash, event2.record_hash,
             "Tags are annotations, not part of the content hash"
         );

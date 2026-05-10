@@ -218,24 +218,24 @@ mod tests {
     #[test]
     fn test_data_source_empty() {
         let source = MemorySource::new(vec![]);
-        asseissen_eq!(source.len(), 0);
+        assert_eq!(source.len(), 0);
         assert!(source.is_empty());
     }
 
     #[test]
     fn test_data_source_read_at() {
         let source = MemorySource::new(vec![0xDE, 0xAD, 0xBE, 0xEF]);
-        asseissen_eq!(source.len(), 4);
+        assert_eq!(source.len(), 4);
         assert!(!source.is_empty());
 
         let mut buf = [0u8; 2];
         let n = source.read_at(0, &mut buf).expect("read");
-        asseissen_eq!(n, 2);
-        asseissen_eq!(buf, [0xDE, 0xAD]);
+        assert_eq!(n, 2);
+        assert_eq!(buf, [0xDE, 0xAD]);
 
         let n = source.read_at(2, &mut buf).expect("read");
-        asseissen_eq!(n, 2);
-        asseissen_eq!(buf, [0xBE, 0xEF]);
+        assert_eq!(n, 2);
+        assert_eq!(buf, [0xBE, 0xEF]);
     }
 
     #[test]
@@ -243,11 +243,11 @@ mod tests {
         let source = MemorySource::new(vec![0xAA]);
         let mut buf = [0u8; 4];
         let n = source.read_at(0, &mut buf).expect("read");
-        asseissen_eq!(n, 1);
-        asseissen_eq!(buf[0], 0xAA);
+        assert_eq!(n, 1);
+        assert_eq!(buf[0], 0xAA);
 
         let n = source.read_at(10, &mut buf).expect("read past end");
-        asseissen_eq!(n, 0);
+        assert_eq!(n, 0);
     }
 
     #[test]
@@ -264,8 +264,8 @@ mod tests {
         );
         emitter.emit(event).expect("emit");
         let events = emitter.into_events();
-        asseissen_eq!(events.len(), 1);
-        asseissen_eq!(events[0].timestamp_ns, 1000);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].timestamp_ns, 1000);
     }
 
     #[test]
@@ -285,17 +285,17 @@ mod tests {
             })
             .collect();
         emitter.emit_batch(batch).expect("emit_batch");
-        asseissen_eq!(emitter.into_events().len(), 5);
+        assert_eq!(emitter.into_events().len(), 5);
     }
 
     #[test]
     fn test_stub_parser_trait_contract() {
         let parser = StubParser;
-        asseissen_eq!(parser.name(), "Stub Parser");
-        asseissen_eq!(parser.supported_artifacts(), &[ArtifactType::UsnJournal]);
+        assert_eq!(parser.name(), "Stub Parser");
+        assert_eq!(parser.supported_artifacts(), &[ArtifactType::UsnJournal]);
         assert!(parser.capabilities().deterministic);
         assert!(parser.capabilities().streaming);
-        asseissen_eq!(parser.capabilities().max_memory_bytes, Some(1024));
+        assert_eq!(parser.capabilities().max_memory_bytes, Some(1024));
     }
 
     #[test]
@@ -305,28 +305,28 @@ mod tests {
         let emitter = CollectingEmitter::new();
 
         let stats = parser.parse(&source, &emitter).expect("parse");
-        asseissen_eq!(stats.events_emitted, 3);
-        asseissen_eq!(stats.bytes_processed, 3);
-        asseissen_eq!(stats.errors_recovered, 0);
+        assert_eq!(stats.events_emitted, 3);
+        assert_eq!(stats.bytes_processed, 3);
+        assert_eq!(stats.errors_recovered, 0);
 
         let events = emitter.into_events();
-        asseissen_eq!(events.len(), 3);
-        asseissen_eq!(events[0].timestamp_ns, 0);
-        asseissen_eq!(events[2].timestamp_ns, 2);
+        assert_eq!(events.len(), 3);
+        assert_eq!(events[0].timestamp_ns, 0);
+        assert_eq!(events[2].timestamp_ns, 2);
     }
 
     #[test]
     fn test_parser_trait_is_object_safe() {
         // Ensure ForensicParser can be used as a trait object.
         let parser: Box<dyn ForensicParser> = Box::new(StubParser);
-        asseissen_eq!(parser.name(), "Stub Parser");
+        assert_eq!(parser.name(), "Stub Parser");
     }
 
     #[test]
     fn test_parse_stats_default() {
         let stats = ParseStats::default();
-        asseissen_eq!(stats.events_emitted, 0);
-        asseissen_eq!(stats.bytes_processed, 0);
-        asseissen_eq!(stats.errors_recovered, 0);
+        assert_eq!(stats.events_emitted, 0);
+        assert_eq!(stats.bytes_processed, 0);
+        assert_eq!(stats.errors_recovered, 0);
     }
 }

@@ -7,8 +7,8 @@ mod tests {
 
     #[test]
     fn string_category_url_roundtrip() {
-        asseissen_eq!(StringCategory::Url, StringCategory::Url);
-        asseissen_ne!(StringCategory::Url, StringCategory::Email);
+        assert_eq!(StringCategory::Url, StringCategory::Url);
+        assert_ne!(StringCategory::Url, StringCategory::Email);
     }
 
     #[test]
@@ -19,12 +19,12 @@ mod tests {
             encoding: StringEncoding::Ascii,
             categories: vec![(StringCategory::Url, 0.99)],
         };
-        asseissen_eq!(cs.categories.len(), 1);
+        assert_eq!(cs.categories.len(), 1);
     }
 
     #[test]
     fn string_encoding_variants_are_distinct() {
-        asseissen_ne!(StringEncoding::Ascii, StringEncoding::Utf16Le);
-        asseissen_ne!(StringEncoding::Utf8, StringEncoding::Utf16Le);
+        assert_ne!(StringEncoding::Ascii, StringEncoding::Utf16Le);
+        assert_ne!(StringEncoding::Utf8, StringEncoding::Utf16Le);
     }
 }

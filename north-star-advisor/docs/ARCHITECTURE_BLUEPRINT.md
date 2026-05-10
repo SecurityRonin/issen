@@ -1,4 +1,4 @@
-# RapidTriage: Architecture Blueprint
+# Issen: Architecture Blueprint
 
 > **Tier**: 2 -- Technical Blueprint
 > **Created**: 2026-03-20
@@ -33,7 +33,7 @@ Detailed implementation specifications are in `north-star-advisor/docs/architect
 
 ## Executive Summary
 
-RapidTriage is a forensic triage platform built in Rust that transforms digital forensic artifacts into attorney-ready reports. The architecture follows a **hexagonal (ports and adapters) pattern** inspired by Crux, where a side-effect-free core (`rt-core`) contains all analysis logic and multiple frontends (CLI, TUI, Desktop GUI via Tauri, Web UI via axum) share identical processing through well-defined ports.
+Issen is a forensic triage platform built in Rust that transforms digital forensic artifacts into attorney-ready reports. The architecture follows a **hexagonal (ports and adapters) pattern** inspired by Crux, where a side-effect-free core (`issen-core`) contains all analysis logic and multiple frontends (CLI, TUI, Desktop GUI via Tauri, Web UI via axum) share identical processing through well-defined ports.
 
 The system uses a **multi-layer data pipeline** that progressively transforms raw evidence (E01 images, KAPE collections, Velociraptor output) through storage I/O, image format parsing, volume/partition detection, filesystem traversal, and artifact-specific parsing into a **unified DuckDB columnar timeline** with nanosecond precision. An **SQLite export** path provides portable case sharing and chain-of-custody snapshots.
 
@@ -65,7 +65,7 @@ The **open-core business model** enforces crate-level separation: open-source cr
 │                              FRONTENDS (Adapters)                          │
 │                                                                             │
 │  ┌──────────┐  ┌──────────┐  ┌───────────────┐  ┌──────────────────────┐  │
-│  │  rt-cli  │  │  rt-tui  │  │   rt-gui      │  │      rt-web          │  │
+│  │  issen-cli  │  │  issen-tui  │  │   issen-gui      │  │      issen-web          │  │
 │  │  (clap)  │  │(ratatui) │  │  (Tauri v2)   │  │  (axum + Leptos)     │  │
 │  │          │  │          │  │  webview       │  │  server-rendered     │  │
 │  └────┬─────┘  └────┬─────┘  └──────┬────────┘  └──────────┬───────────┘  │
@@ -80,7 +80,7 @@ The **open-core business model** enforces crate-level separation: open-source cr
 ├──────────────────────────────┼──────────────────────────────────────────────┤
 │                              │                                              │
 │                     ┌────────▼────────┐                                     │
-│                     │    rt-core      │   PURE / SIDE-EFFECT-FREE           │
+│                     │    issen-core      │   PURE / SIDE-EFFECT-FREE           │
 │                     │                 │   - Timeline analysis               │
 │                     │  No I/O         │   - Correlation logic               │
 │                     │  No network     │   - Findings extraction             │
@@ -96,77 +96,77 @@ The **open-core business model** enforces crate-level separation: open-source cr
 │                     └────────┬────────┘                                     │
 │                              │                                              │
 │  ┌────────────┐  ┌──────────┴──────────┐  ┌────────────┐  ┌────────────┐  │
-│  │ rt-pipeline│  │    rt-timeline      │  │ rt-report  │  │ rt-intel   │  │
+│  │ issen-pipeline│  │    issen-timeline      │  │ issen-report  │  │ issen-intel   │  │
 │  │ (ingest)   │  │  (DuckDB store)     │  │ (HTML/DOCX)│  │ (Ollama)   │  │
 │  └────────────┘  └─────────────────────┘  └────────────┘  └────────────┘  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Design principle**: `rt-core` contains zero side effects. All I/O, database access, network calls, and filesystem operations live in adapters. This means every frontend (CLI, TUI, Tauri GUI, axum Web) calls the same pure analysis functions. When Sarah Chen runs `rt timeline` in her terminal, she gets identical results to an attorney viewing the same case in a browser.
+**Design principle**: `issen-core` contains zero side effects. All I/O, database access, network calls, and filesystem operations live in adapters. This means every frontend (CLI, TUI, Tauri GUI, axum Web) calls the same pure analysis functions. When Sarah Chen runs `rt timeline` in her terminal, she gets identical results to an attorney viewing the same case in a browser.
 
 ### 1.2 Component Specifications
 
 | Component | Crate | License | Responsibility | Dependencies |
 |-----------|-------|---------|----------------|--------------|
-| **Core Types** | `rt-core` | Apache 2.0 | Timeline schema, event types, plugin traits, analysis logic | None (pure) |
-| **Data Pipeline** | `rt-pipeline` | Apache 2.0 | Multi-layer evidence ingestion, parser orchestration | `rt-core` |
-| **Plugin SDK** | `rt-plugin-sdk` | Apache 2.0 | Plugin development kit, trait re-exports, test harness | `rt-core` |
-| **Timeline Store** | `rt-timeline` | Apache 2.0 | DuckDB storage, query engine, SQLite export | `rt-core`, `duckdb-rs` |
-| **EWF Reader** | `rt-ewf` | MIT | E01/EWF forensic image parsing, multi-segment | None |
-| **CLI Frontend** | `rt-cli` | Apache 2.0 | Command-line interface, batch processing | `rt-core`, `rt-pipeline`, `rt-timeline` |
-| **TUI Frontend** | `rt-tui` | Proprietary | Interactive terminal UI, timeline exploration | `rt-core`, `rt-timeline`, `ratatui` |
-| **Report Engine** | `rt-report` | Proprietary | HTML generation, PDF rendering, DOCX assembly | `rt-core`, `rt-timeline` |
-| **Correlation Engine** | `rt-correlation` | Proprietary | Cross-artifact correlation, attack pattern detection | `rt-core`, `rt-timeline` |
-| **Intelligence Layer** | `rt-intel` | Proprietary | ForensicLLM, RAG, YARA-X, Sigma, TI integration | `rt-core`, `rt-timeline` |
-| **Desktop GUI** | `rt-gui` | Proprietary | Tauri v2 desktop application | `rt-core`, `rt-timeline`, `rt-report` |
-| **Web UI** | `rt-web` | Proprietary | axum server + Leptos frontend | `rt-core`, `rt-timeline`, `rt-report` |
-| **Enterprise** | `rt-enterprise` | Proprietary | SSO, teams, audit, license management | `rt-core` |
+| **Core Types** | `issen-core` | Apache 2.0 | Timeline schema, event types, plugin traits, analysis logic | None (pure) |
+| **Data Pipeline** | `issen-pipeline` | Apache 2.0 | Multi-layer evidence ingestion, parser orchestration | `issen-core` |
+| **Plugin SDK** | `issen-plugin-sdk` | Apache 2.0 | Plugin development kit, trait re-exports, test harness | `issen-core` |
+| **Timeline Store** | `issen-timeline` | Apache 2.0 | DuckDB storage, query engine, SQLite export | `issen-core`, `duckdb-rs` |
+| **EWF Reader** | `issen-ewf` | MIT | E01/EWF forensic image parsing, multi-segment | None |
+| **CLI Frontend** | `issen-cli` | Apache 2.0 | Command-line interface, batch processing | `issen-core`, `issen-pipeline`, `issen-timeline` |
+| **TUI Frontend** | `issen-tui` | Proprietary | Interactive terminal UI, timeline exploration | `issen-core`, `issen-timeline`, `ratatui` |
+| **Report Engine** | `issen-report` | Proprietary | HTML generation, PDF rendering, DOCX assembly | `issen-core`, `issen-timeline` |
+| **Correlation Engine** | `issen-correlation` | Proprietary | Cross-artifact correlation, attack pattern detection | `issen-core`, `issen-timeline` |
+| **Intelligence Layer** | `issen-intel` | Proprietary | ForensicLLM, RAG, YARA-X, Sigma, TI integration | `issen-core`, `issen-timeline` |
+| **Desktop GUI** | `issen-gui` | Proprietary | Tauri v2 desktop application | `issen-core`, `issen-timeline`, `issen-report` |
+| **Web UI** | `issen-web` | Proprietary | axum server + Leptos frontend | `issen-core`, `issen-timeline`, `issen-report` |
+| **Enterprise** | `issen-enterprise` | Proprietary | SSO, teams, audit, license management | `issen-core` |
 
 ### 1.3 Component Roles
 
-#### rt-core (Pure Analysis Engine)
+#### issen-core (Pure Analysis Engine)
 
 - **Job**: Provide all forensic analysis logic as pure functions with no side effects. Define the canonical `TimelineEvent` schema, plugin traits, and analysis primitives.
 - **Outputs**: `{ TimelineEvent, AnalysisResult, Finding, Narrative, FilterSpec, AggregationResult }`
 - **Special considerations**: Must never import I/O crates. All data arrives via function parameters. This enables deterministic testing and multi-frontend sharing.
 - **Tools required**: None (pure computation)
 
-#### rt-pipeline (Evidence Ingestion Pipeline)
+#### issen-pipeline (Evidence Ingestion Pipeline)
 
 - **Job**: Orchestrate multi-layer evidence processing from raw storage through artifact parsing. Manage parser registration, parallel execution, and incremental processing.
 - **Outputs**: `{ IngestResult, ParseProgress, TimelineEvent[], SourceFingerprint }`
 - **Special considerations**: Must handle corrupted evidence gracefully. Streaming architecture -- never load entire evidence into memory. Parallel parsing via rayon.
 - **Tools required**: Filesystem I/O, EWF reader, parser plugins
 
-#### rt-timeline (DuckDB Timeline Store)
+#### issen-timeline (DuckDB Timeline Store)
 
 - **Job**: Store, index, and query the unified forensic timeline. Manage DuckDB lifecycle, schema migrations, and SQLite export.
 - **Outputs**: `{ QueryResult, TimelineSlice, ExportResult, TimelineStats }`
 - **Special considerations**: DuckDB TIMESTAMP_NS for nanosecond precision. Zone maps enable fast time-range queries without full scans. Incremental append via source fingerprinting (skip already-ingested sources).
 - **Tools required**: DuckDB (in-process), SQLite (export)
 
-#### rt-report (Attorney-Ready Report Engine)
+#### issen-report (Attorney-Ready Report Engine)
 
 - **Job**: Transform analysis findings into dual-format attorney-ready deliverables: interactive HTML for exploration and polished Word/PDF for court filing.
 - **Outputs**: `{ HtmlReport, DocxReport, PdfReport, ReportManifest }`
 - **Special considerations**: HTML reports are self-contained (no external dependencies, no CDN). DOCX generation via docx-rs with python-docx fallback for complex formatting. PDF via headless Chromium rendering of HTML. Reports include chain-of-custody metadata and hash verification.
 - **Tools required**: Template engine (Askama), headless Chromium, docx-rs
-- **Full prompt**: See [AGENT_PROMPTS.md](architecture/AGENT_PROMPTS.md#rt-report)
+- **Full prompt**: See [AGENT_PROMPTS.md](architecture/AGENT_PROMPTS.md#issen-report)
 
-#### rt-intel (Intelligence Layer)
+#### issen-intel (Intelligence Layer)
 
 - **Job**: Provide AI-assisted analysis, detection rules, and threat intelligence integration. All AI features are optional -- the platform must function fully without them.
 - **Outputs**: `{ NarrativeDraft, DetectionResult[], ThreatIntelEnrichment, SimilarCaseMatch[] }`
 - **Special considerations**: Local-first via Ollama. Grounded generation only -- every AI-generated claim must cite specific timeline events. Dual RAG: case-specific (current evidence) and cross-case (historical knowledge base). YARA-X for file-based detection. Sigma rules for event-based detection.
 - **Tools required**: Ollama (local LLM), YARA-X, Sigma engine, vector store
-- **Full prompt**: See [AGENT_PROMPTS.md](architecture/AGENT_PROMPTS.md#rt-intel)
+- **Full prompt**: See [AGENT_PROMPTS.md](architecture/AGENT_PROMPTS.md#issen-intel)
 
 ### 1.4 Cross-Component Data Flows
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Evidence    │     │  rt-pipeline │     │  rt-timeline │     │  rt-report   │
+│  Evidence    │     │  issen-pipeline │     │  issen-timeline │     │  issen-report   │
 │  (E01/KAPE/ │────►│  (ingest +   │────►│  (DuckDB     │────►│  (HTML/DOCX  │
 │  Veloci)     │     │   parse)     │     │   store)     │     │   output)    │
 └─────────────┘     └──────┬───────┘     └──────┬───────┘     └──────────────┘
@@ -174,19 +174,19 @@ The **open-core business model** enforces crate-level separation: open-source cr
                            │ TimelineEvent[]     │ Query API
                            │                     │
                     ┌──────▼───────┐     ┌──────▼───────┐
-                    │  rt-core     │     │  rt-intel    │
+                    │  issen-core     │     │  issen-intel    │
                     │  (analysis)  │     │  (AI/detect) │
                     └──────────────┘     └──────────────┘
 ```
 
 **Data flow for core TARR journey (Sarah Chen):**
 
-1. **Ingest** (2 min): `rt ingest ./evidence/` --> `rt-pipeline` detects evidence format (E01, KAPE, raw), routes through appropriate Layer 1-3 handlers
-2. **Parse** (8 min): `rt-pipeline` discovers artifacts via filesystem traversal, dispatches to registered Tier 1 parsers in parallel via rayon. Each parser emits `TimelineEvent[]`
-3. **Store** (concurrent): `rt-timeline` appends events to DuckDB with source fingerprinting. Deduplicates on re-ingest
-4. **Review** (90 min): Frontend queries `rt-timeline` via `rt-core` filter/aggregate functions. Sarah bookmarks findings, adds annotations
-5. **Report** (30 min): `rt-report` pulls bookmarked findings + timeline context, generates interactive HTML + polished DOCX. `rt-intel` (optional) drafts narrative sections with citations
-6. **Export**: `rt-timeline` exports case to SQLite for archival/sharing. Chain-of-custody hash written
+1. **Ingest** (2 min): `rt ingest ./evidence/` --> `issen-pipeline` detects evidence format (E01, KAPE, raw), routes through appropriate Layer 1-3 handlers
+2. **Parse** (8 min): `issen-pipeline` discovers artifacts via filesystem traversal, dispatches to registered Tier 1 parsers in parallel via rayon. Each parser emits `TimelineEvent[]`
+3. **Store** (concurrent): `issen-timeline` appends events to DuckDB with source fingerprinting. Deduplicates on re-ingest
+4. **Review** (90 min): Frontend queries `issen-timeline` via `issen-core` filter/aggregate functions. Sarah bookmarks findings, adds annotations
+5. **Report** (30 min): `issen-report` pulls bookmarked findings + timeline context, generates interactive HTML + polished DOCX. `issen-intel` (optional) drafts narrative sections with citations
+6. **Export**: `issen-timeline` exports case to SQLite for archival/sharing. Chain-of-custody hash written
 
 ### 1.5 Model Strategy & RAG Assessment
 
@@ -232,7 +232,7 @@ The **open-core business model** enforces crate-level separation: open-source cr
 
 ## 2. Multi-Layer Data Pipeline
 
-The data pipeline is RapidTriage's core value chain. Evidence flows through five layers, each abstracting the layer below.
+The data pipeline is Issen's core value chain. Evidence flows through five layers, each abstracting the layer below.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -250,7 +250,7 @@ The data pipeline is RapidTriage's core value chain. Evidence flows through five
 │  (Partition discovery, offset calculation, volume mounting)         │
 ├─────────────────────────────────────────────────────────────────────┤
 │                    Layer 1: Image Format                            │
-│  E01/EWF (rt-ewf) | Raw/dd | VMDK | VHD/VHDX | AFF4              │
+│  E01/EWF (issen-ewf) | Raw/dd | VMDK | VHD/VHDX | AFF4              │
 │  (Block-level read abstraction, decompression, verification)       │
 ├─────────────────────────────────────────────────────────────────────┤
 │                    Layer 0: Storage I/O                             │
@@ -340,9 +340,9 @@ CREATE INDEX idx_timeline_user ON timeline(user_account);
 CREATE INDEX idx_timeline_tags ON timeline USING GIN(tags);
 ```
 
-**Incremental processing**: Each evidence source is fingerprinted (SHA-256 of header + size + modification time). On re-ingest, `rt-pipeline` checks fingerprints against `evidence_sources` metadata table and skips already-processed sources. This enables the "add more evidence to an existing case" workflow without reprocessing.
+**Incremental processing**: Each evidence source is fingerprinted (SHA-256 of header + size + modification time). On re-ingest, `issen-pipeline` checks fingerprints against `evidence_sources` metadata table and skips already-processed sources. This enables the "add more evidence to an existing case" workflow without reprocessing.
 
-**SQLite export**: `rt-timeline` exports the DuckDB timeline to SQLite on demand (`rt case export --format sqlite`). The SQLite file includes the full timeline, examiner annotations, chain-of-custody log, and report metadata. This is the portable exchange format for case sharing, legal hold, and long-term archival.
+**SQLite export**: `issen-timeline` exports the DuckDB timeline to SQLite on demand (`rt case export --format sqlite`). The SQLite file includes the full timeline, examiner annotations, chain-of-custody log, and report metadata. This is the portable exchange format for case sharing, legal hold, and long-term archival.
 
 ---
 
@@ -392,17 +392,17 @@ inventory::submit! {
 
 | Parser | Artifact | Existing Crate | Status |
 |--------|----------|----------------|--------|
-| `rt-parser-usnjrnl` | NTFS USN Journal | usnjrnl-forensic v0.6 | Field-tested, needs trait adaptation |
-| `rt-parser-mft` | NTFS Master File Table | (new) | Port from tl v0.1 |
-| `rt-parser-evtx` | Windows Event Logs | (new, wraps evtx crate) | Port from tl v0.1 |
-| `rt-parser-prefetch` | Windows Prefetch | (new) | Port from tl v0.1 |
-| `rt-parser-registry` | Windows Registry | (new, wraps nt-hive2) | Port from tl v0.1 |
-| `rt-parser-lnk` | Shortcut files | (new, wraps lnk crate) | Port from tl v0.1 |
-| `rt-parser-amcache` | Application cache | (new) | Port from tl v0.1 |
-| `rt-parser-bam` | Background Activity Monitor | (new) | Port from tl v0.1 |
-| `rt-parser-browser` | Browser history (SQLite) | (new) | Port from tl v0.1 |
-| `rt-parser-jumplists` | Windows Jump Lists | (new) | Port from tl v0.1 |
-| `rt-parser-srum` | System Resource Usage | (new) | Port from tl v0.1 |
+| `issen-parser-usnjrnl` | NTFS USN Journal | usnjrnl-forensic v0.6 | Field-tested, needs trait adaptation |
+| `issen-parser-mft` | NTFS Master File Table | (new) | Port from tl v0.1 |
+| `issen-parser-evtx` | Windows Event Logs | (new, wraps evtx crate) | Port from tl v0.1 |
+| `issen-parser-prefetch` | Windows Prefetch | (new) | Port from tl v0.1 |
+| `issen-parser-registry` | Windows Registry | (new, wraps nt-hive2) | Port from tl v0.1 |
+| `issen-parser-lnk` | Shortcut files | (new, wraps lnk crate) | Port from tl v0.1 |
+| `issen-parser-amcache` | Application cache | (new) | Port from tl v0.1 |
+| `issen-parser-bam` | Background Activity Monitor | (new) | Port from tl v0.1 |
+| `issen-parser-browser` | Browser history (SQLite) | (new) | Port from tl v0.1 |
+| `issen-parser-jumplists` | Windows Jump Lists | (new) | Port from tl v0.1 |
+| `issen-parser-srum` | System Resource Usage | (new) | Port from tl v0.1 |
 
 ### Tier 2: WASM Sandboxed Plugins (v0.3+, deferred)
 
@@ -410,7 +410,7 @@ Community-contributed parsers run in Wasmtime with WIT (WebAssembly Interface Ty
 
 ```wit
 // forensic-parser.wit -- WIT interface definition
-package rapidtriage:parser@0.1.0;
+package issen:parser@0.1.0;
 
 interface parser {
     record timeline-event {
@@ -442,7 +442,7 @@ interface parser {
 Enterprise integrations (VirusTotal, MISP, OpenCTI, commercial SIEM connectors) run as separate processes communicating via gRPC (tonic). Supports any language. Process-level isolation.
 
 ```protobuf
-// rapidtriage/plugin/v1/plugin.proto
+// issen/plugin/v1/plugin.proto
 service EnterprisePlugin {
     rpc Enrich(EnrichRequest) returns (EnrichResponse);
     rpc Query(QueryRequest) returns (stream QueryResponse);
@@ -463,29 +463,29 @@ message EnrichRequest {
 ### 4.1 Public Monorepo (Apache 2.0 / MIT)
 
 ```
-github.com/h4x0r/rapidtriage
+github.com/h4x0r/issen
 ├── Cargo.toml                      # Virtual workspace manifest
 ├── LICENSING.md                    # Per-crate license declarations
 ├── crates/
-│   ├── rt-core/                    # Core types, timeline schema, plugin traits (Apache 2.0)
-│   ├── rt-pipeline/                # Data pipeline abstractions (Apache 2.0)
-│   ├── rt-plugin-sdk/              # Plugin development SDK (Apache 2.0)
-│   ├── rt-timeline/                # Timeline storage & query engine (Apache 2.0)
+│   ├── issen-core/                    # Core types, timeline schema, plugin traits (Apache 2.0)
+│   ├── issen-pipeline/                # Data pipeline abstractions (Apache 2.0)
+│   ├── issen-plugin-sdk/              # Plugin development SDK (Apache 2.0)
+│   ├── issen-timeline/                # Timeline storage & query engine (Apache 2.0)
 │   ├── parsers/
-│   │   ├── rt-parser-usnjrnl/      # USN Journal parser (Apache 2.0)
-│   │   ├── rt-parser-mft/          # MFT parser (Apache 2.0)
-│   │   ├── rt-parser-evtx/         # Windows Event Logs (Apache 2.0)
-│   │   ├── rt-parser-prefetch/     # Prefetch files (Apache 2.0)
-│   │   ├── rt-parser-registry/     # Windows Registry (Apache 2.0)
-│   │   ├── rt-parser-lnk/          # Shortcut files (Apache 2.0)
-│   │   ├── rt-parser-amcache/      # Application cache (Apache 2.0)
-│   │   ├── rt-parser-bam/          # Background Activity Monitor (Apache 2.0)
-│   │   ├── rt-parser-browser/      # Browser history (Apache 2.0)
-│   │   ├── rt-parser-jumplists/    # Jump Lists (Apache 2.0)
-│   │   └── rt-parser-srum/         # System Resource Usage (Apache 2.0)
-│   ├── rt-ewf/                     # E01/EWF reader (MIT)
-│   ├── rt-shrinkpath/              # Path utility (MIT)
-│   └── rt-cli/                     # CLI frontend (Apache 2.0)
+│   │   ├── issen-parser-usnjrnl/      # USN Journal parser (Apache 2.0)
+│   │   ├── issen-parser-mft/          # MFT parser (Apache 2.0)
+│   │   ├── issen-parser-evtx/         # Windows Event Logs (Apache 2.0)
+│   │   ├── issen-parser-prefetch/     # Prefetch files (Apache 2.0)
+│   │   ├── issen-parser-registry/     # Windows Registry (Apache 2.0)
+│   │   ├── issen-parser-lnk/          # Shortcut files (Apache 2.0)
+│   │   ├── issen-parser-amcache/      # Application cache (Apache 2.0)
+│   │   ├── issen-parser-bam/          # Background Activity Monitor (Apache 2.0)
+│   │   ├── issen-parser-browser/      # Browser history (Apache 2.0)
+│   │   ├── issen-parser-jumplists/    # Jump Lists (Apache 2.0)
+│   │   └── issen-parser-srum/         # System Resource Usage (Apache 2.0)
+│   ├── issen-ewf/                     # E01/EWF reader (MIT)
+│   ├── issen-shrinkpath/              # Path utility (MIT)
+│   └── issen-cli/                     # CLI frontend (Apache 2.0)
 ├── tests/                          # Integration tests, golden files
 ├── benches/                        # Criterion benchmarks
 └── docs/                           # Public documentation
@@ -494,17 +494,17 @@ github.com/h4x0r/rapidtriage
 ### 4.2 Private Repository (Proprietary)
 
 ```
-private/rapidtriage-pro
+private/issen-pro
 ├── Cargo.toml                      # Workspace, depends on public crates via git/path
 ├── crates/
-│   ├── rt-report/                  # Report engine (HTML, DOCX, PDF)
-│   ├── rt-correlation/             # Cross-artifact correlation engine
-│   ├── rt-intel/                   # Intelligence layer (ForensicLLM, RAG, YARA-X)
-│   ├── rt-tui/                     # Interactive TUI (ratatui)
-│   ├── rt-gui/                     # Tauri v2 desktop GUI
-│   ├── rt-web/                     # axum + Leptos web UI
-│   ├── rt-enterprise/              # SSO, teams, audit, license management
-│   └── rt-license/                 # License validation, feature gating
+│   ├── issen-report/                  # Report engine (HTML, DOCX, PDF)
+│   ├── issen-correlation/             # Cross-artifact correlation engine
+│   ├── issen-intel/                   # Intelligence layer (ForensicLLM, RAG, YARA-X)
+│   ├── issen-tui/                     # Interactive TUI (ratatui)
+│   ├── issen-gui/                     # Tauri v2 desktop GUI
+│   ├── issen-web/                     # axum + Leptos web UI
+│   ├── issen-enterprise/              # SSO, teams, audit, license management
+│   └── issen-license/                 # License validation, feature gating
 └── assets/                         # Report templates, UI assets
 ```
 
@@ -513,34 +513,34 @@ private/rapidtriage-pro
 ```
 INVARIANT: Open-source crates NEVER depend on proprietary crates.
 
-  rt-core          (open)  -->  depends on: nothing (pure)
-  rt-pipeline      (open)  -->  depends on: rt-core
-  rt-timeline      (open)  -->  depends on: rt-core
-  rt-parser-*      (open)  -->  depends on: rt-core (via rt-plugin-sdk)
-  rt-cli           (open)  -->  depends on: rt-core, rt-pipeline, rt-timeline
+  issen-core          (open)  -->  depends on: nothing (pure)
+  issen-pipeline      (open)  -->  depends on: issen-core
+  issen-timeline      (open)  -->  depends on: issen-core
+  issen-parser-*      (open)  -->  depends on: issen-core (via issen-plugin-sdk)
+  issen-cli           (open)  -->  depends on: issen-core, issen-pipeline, issen-timeline
 
-  rt-report        (prop)  -->  depends on: rt-core, rt-timeline
-  rt-correlation   (prop)  -->  depends on: rt-core, rt-timeline
-  rt-intel         (prop)  -->  depends on: rt-core, rt-timeline
-  rt-gui           (prop)  -->  depends on: rt-core, rt-timeline, rt-report
-  rt-web           (prop)  -->  depends on: rt-core, rt-timeline, rt-report
-  rt-enterprise    (prop)  -->  depends on: rt-core
+  issen-report        (prop)  -->  depends on: issen-core, issen-timeline
+  issen-correlation   (prop)  -->  depends on: issen-core, issen-timeline
+  issen-intel         (prop)  -->  depends on: issen-core, issen-timeline
+  issen-gui           (prop)  -->  depends on: issen-core, issen-timeline, issen-report
+  issen-web           (prop)  -->  depends on: issen-core, issen-timeline, issen-report
+  issen-enterprise    (prop)  -->  depends on: issen-core
 ```
 
-**Feature flag gating**: The `rt-cli` crate uses Cargo feature flags to conditionally enable proprietary functionality when built from the private repo:
+**Feature flag gating**: The `issen-cli` crate uses Cargo feature flags to conditionally enable proprietary functionality when built from the private repo:
 
 ```toml
-# rt-cli/Cargo.toml (public repo -- features are absent)
+# issen-cli/Cargo.toml (public repo -- features are absent)
 [features]
 default = []
-pro = ["rt-report", "rt-correlation", "rt-tui"]
-enterprise = ["pro", "rt-enterprise", "rt-license"]
+pro = ["issen-report", "issen-correlation", "issen-tui"]
+enterprise = ["pro", "issen-enterprise", "issen-license"]
 
 # When built from private repo, features are activated:
 # cargo build --features enterprise
 ```
 
-**Runtime license validation**: `rt-license` validates a signed license key at startup. Features degrade gracefully -- unlicensed users get open-source CLI with timeline query capabilities. Licensed users unlock TUI, report generation, correlation, and AI features.
+**Runtime license validation**: `issen-license` validates a signed license key at startup. Features degrade gracefully -- unlicensed users get open-source CLI with timeline query capabilities. Licensed users unlock TUI, report generation, correlation, and AI features.
 
 ---
 
@@ -550,7 +550,7 @@ enterprise = ["pro", "rt-enterprise", "rt-license"]
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      Intelligence Layer (rt-intel)                   │
+│                      Intelligence Layer (issen-intel)                   │
 │                                                                     │
 │  ┌───────────────┐  ┌───────────────┐  ┌────────────────────────┐  │
 │  │  ForensicLLM  │  │  Detection    │  │  Threat Intelligence   │  │
@@ -673,7 +673,7 @@ Every report includes:
 | **Template Engine** | Askama | Compile-time HTML templates. Type-safe. Zero runtime overhead. |
 | **DOCX Generation** | docx-rs + python-docx (fallback) | Rust-native DOCX creation. python-docx via PyO3 for complex formatting edge cases. |
 | **PDF Generation** | headless-chrome (Rust) | Chromium rendering of HTML reports to PDF. Pagination, headers/footers. |
-| **Image Parsing** | rt-ewf (custom) | Pure Rust E01/EWF reader. Multi-segment, streaming, verified. |
+| **Image Parsing** | issen-ewf (custom) | Pure Rust E01/EWF reader. Multi-segment, streaming, verified. |
 | **Detection (Files)** | yara-x | YARA compiled to Rust. Fast file scanning. Memory-safe. |
 | **Detection (Events)** | Custom Sigma engine | Sigma YAML to DuckDB SQL. Ported from tl v0.1. |
 | **Vector Store** | lancedb (embedded) | Embedded vector DB. Rust-native. No server. Fits local-first model. |
@@ -716,11 +716,11 @@ Target: Enable community-contributed parsers without requiring Rust compilation 
 
 ```
 Community Parser Development Workflow:
-1. `cargo install rt-plugin-cli`
-2. `rt-plugin new my-parser --template artifact`
+1. `cargo install issen-plugin-cli`
+2. `issen-plugin new my-parser --template artifact`
 3. Implement ArtifactParser trait in Rust (compiled to WASM)
-4. `rt-plugin build` → my-parser.wasm
-5. `rt-plugin test` → runs against golden files
+4. `issen-plugin build` → my-parser.wasm
+5. `issen-plugin test` → runs against golden files
 6. `rt plugin install my-parser.wasm` → registered in user's plugin directory
 ```
 
@@ -742,7 +742,7 @@ Decision criteria: First enterprise customer with specific integration requireme
 
 ### 8.3 Multi-User Collaboration (v0.7)
 
-Target: Team-based case management with concurrent analysis, shared annotations, and review workflows. Requires `rt-enterprise` crate with SSO, RBAC, and audit logging.
+Target: Team-based case management with concurrent analysis, shared annotations, and review workflows. Requires `issen-enterprise` crate with SSO, RBAC, and audit logging.
 
 ---
 
@@ -758,7 +758,7 @@ Target: Team-based case management with concurrent analysis, shared annotations,
 | **Report Regression** | HTML/DOCX output visual diff | Playwright screenshots + diff | PR merge |
 | **TARR E2E** | Full journey timing (ingest to report) | Custom harness | Release candidate |
 
-**NIST reference datasets**: Test against NIST Computer Forensics Reference Data Sets (CFReDS) for parser correctness validation. Critical for Daubert admissibility -- RapidTriage must produce results consistent with validated tools.
+**NIST reference datasets**: Test against NIST Computer Forensics Reference Data Sets (CFReDS) for parser correctness validation. Critical for Daubert admissibility -- Issen must produce results consistent with validated tools.
 
 ---
 
@@ -767,7 +767,7 @@ Target: Team-based case management with concurrent analysis, shared annotations,
 ### Pre-Launch (v0.1 -- Open-Source CLI)
 
 - [ ] All first-party parsers pass golden file tests against NIST CFReDS
-- [ ] `rt-core` has zero I/O imports (enforced by `#![deny(clippy::disallowed_methods)]`)
+- [ ] `issen-core` has zero I/O imports (enforced by `#![deny(clippy::disallowed_methods)]`)
 - [ ] DuckDB timeline handles 10M+ events without OOM on 16GB machine
 - [ ] `rt ingest` processes 50GB E01 image in < 10 minutes
 - [ ] Chain-of-custody hash verification passes on all output formats
@@ -782,7 +782,7 @@ Target: Team-based case management with concurrent analysis, shared annotations,
 - [ ] Track download counts and `rt ingest` success/failure rates (opt-in telemetry)
 - [ ] Benchmark against AXIOM/Autopsy on identical evidence sets
 - [ ] Community contribution guide for new parsers
-- [ ] Begin rt-report development (proprietary, v0.2 target)
+- [ ] Begin issen-report development (proprietary, v0.2 target)
 
 ---
 
@@ -809,7 +809,7 @@ Target: Team-based case management with concurrent analysis, shared annotations,
 | 2026-03-20 | Three-tier plugin system | Tier 1 (traits) for performance. Tier 2 (WASM) for safety. Tier 3 (gRPC) for enterprise. Research shows over-engineering plugins early is a pitfall -- start with Tier 1 only. | WASM-only (too much overhead for first-party), dylib/FFI (unsafe), single-tier (insufficient flexibility) |
 | 2026-03-20 | Hybrid public/private repo | Grafana/GitLab precedent. Open parsers build trust. Private integration captures value. Crate-level boundary is clean in Rust. | Single private repo (no community), single public repo (cannot monetize), AGPL (deters enterprise adoption) |
 | 2026-03-20 | Local-first AI via Ollama | Forensic data sovereignty. Evidence cannot leave examiner's machine. Cost predictability. Air-gapped lab support. | Cloud-only (data sovereignty violation), hybrid-default (complexity), no AI (leaves value on table) |
-| 2026-03-20 | Dual report output (HTML + DOCX) | Attorneys need both: interactive exploration (HTML) and court-ready filing (DOCX/PDF). No competitor does both well. | HTML-only (court needs formal docs), PDF-only (no interactivity), proprietary format (vendor lock-in) |
+| 2026-03-20 | Dual report output (HTML + DOCX) | Attorneys need both: interactive exploration (HTML) and couissen-ready filing (DOCX/PDF). No competitor does both well. | HTML-only (court needs formal docs), PDF-only (no interactivity), proprietary format (vendor lock-in) |
 
 ---
 

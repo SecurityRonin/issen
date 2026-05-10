@@ -1,11 +1,11 @@
-# RapidTriage: Pipeline Orchestration
+# Issen: Pipeline Orchestration
 
-> **Deep Architecture Document** -- Defines the orchestration model for RapidTriage's multi-layer evidence ingestion pipeline: how parsers are scheduled, how parallelism is managed, how progress is reported, how errors propagate, and how incremental processing avoids redundant work.
+> **Deep Architecture Document** -- Defines the orchestration model for Issen's multi-layer evidence ingestion pipeline: how parsers are scheduled, how parallelism is managed, how progress is reported, how errors propagate, and how incremental processing avoids redundant work.
 
 | Field | Value |
 |-------|-------|
 | **Parent** | [ARCHITECTURE_BLUEPRINT.md](../ARCHITECTURE_BLUEPRINT.md) |
-| **Component** | `rt-pipeline` |
+| **Component** | `issen-pipeline` |
 | **Version** | 0.1.0 |
 | **Last Updated** | 2026-03-20 |
 | **TARR Budget** | Parse-to-Timeline Latency < 10 minutes |
@@ -19,7 +19,7 @@
 The pipeline state tracks the progress of a single evidence ingestion session. All state is owned by the `PipelineOrchestrator` and passed immutably to each layer.
 
 ```rust
-// rt-pipeline/src/state.rs
+// issen-pipeline/src/state.rs
 
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -165,7 +165,7 @@ pub enum ParseStatus {
 ### 2.1 Orchestrator Interface
 
 ```rust
-// rt-pipeline/src/orchestrator.rs
+// issen-pipeline/src/orchestrator.rs
 
 /// Configuration for a pipeline run.
 pub struct PipelineConfig {
@@ -209,7 +209,7 @@ pub struct PipelineResult {
 The pipeline is **strictly sequential across layers** (Layer 0 must complete before Layer 1 begins) but **massively parallel within Layer 4** (artifact parsers run concurrently via rayon). This matches forensic data dependencies: you cannot parse NTFS artifacts until you have mounted the NTFS filesystem, but once mounted, all artifact parsers are independent.
 
 ```rust
-// rt-pipeline/src/orchestrator.rs
+// issen-pipeline/src/orchestrator.rs
 
 use rayon::prelude::*;
 use tokio::sync::watch;
@@ -291,7 +291,7 @@ impl PipelineOrchestrator {
 
 ### 3.1 Parallel Execution: Layer 4 Artifact Parsing
 
-Layer 4 is the most computationally expensive phase. RapidTriage uses **rayon's work-stealing thread pool** for data parallelism across parsers.
+Layer 4 is the most computationally expensive phase. Issen uses **rayon's work-stealing thread pool** for data parallelism across parsers.
 
 ```rust
 impl PipelineOrchestrator {
@@ -498,7 +498,7 @@ let (disk_images, collections, cloud_logs) = partition_by_entry_layer(&sources);
 
 ### 4.1 Forensic Integrity Gate
 
-Unlike typical software pipelines where retry-on-failure is appropriate, forensic pipelines must be **deterministic**. Retrying a parser on the same corrupted data will produce the same result. Instead, RapidTriage uses a **degradation-with-audit** pattern.
+Unlike typical software pipelines where retry-on-failure is appropriate, forensic pipelines must be **deterministic**. Retrying a parser on the same corrupted data will produce the same result. Instead, Issen uses a **degradation-with-audit** pattern.
 
 ```rust
 /// Quality gate that validates parser output without retry.
@@ -629,7 +629,7 @@ impl Default for PipelineConfig {
 
 ### 5.2 Memory-Mapped I/O and Streaming
 
-RapidTriage **never loads entire evidence into memory**. This is non-negotiable for terabyte-scale evidence.
+Issen **never loads entire evidence into memory**. This is non-negotiable for terabyte-scale evidence.
 
 ```rust
 /// StorageProvider uses memory-mapped I/O for local files.
@@ -692,7 +692,7 @@ The pipeline uses a **dedicated rayon thread pool** separate from the global poo
 pub fn build_parser_pool(config: &PipelineConfig) -> rayon::ThreadPool {
     rayon::ThreadPoolBuilder::new()
         .num_threads(config.max_parser_parallelism)
-        .thread_name(|idx| format!("rt-parser-{idx}"))
+        .thread_name(|idx| format!("issen-parser-{idx}"))
         .stack_size(4 * 1024 * 1024) // 4 MiB stack for deep parser recursion
         .build()
         .expect("Failed to build parser thread pool")
@@ -991,12 +991,12 @@ async fn main() -> Result<()> {
 
 | Reference | Source | Value |
 |-----------|--------|-------|
-| Product Name | Brand Guidelines | RapidTriage |
+| Product Name | Brand Guidelines | Issen |
 | North Star Metric | NORTHSTAR.md | Time-to-Attorney-Ready Report (TARR) |
 | TARR Target | NORTHSTAR.md | < 4 hours |
 | Parse-to-Timeline Budget | NORTHSTAR.md | < 10 minutes |
 | Architecture Pattern | ARCHITECTURE_BLUEPRINT.md | Hexagonal (Crux-inspired) |
-| Pipeline Component | ARCHITECTURE_BLUEPRINT.md | rt-pipeline |
+| Pipeline Component | ARCHITECTURE_BLUEPRINT.md | issen-pipeline |
 | Timeline Store | ARCHITECTURE_BLUEPRINT.md | DuckDB (TIMESTAMP_NS) |
 | Parallelism | ARCHITECTURE_BLUEPRINT.md | rayon (work-stealing) |
 | Plugin Tiers | ARCHITECTURE_BLUEPRINT.md | Tier 1 (compile) / Tier 2 (WASM) / Tier 3 (gRPC) |

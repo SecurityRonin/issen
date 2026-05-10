@@ -21,7 +21,7 @@ tarr_budget_minutes:
 
 monitoring:
   dashboard_type: "TUI-based (ratatui)"
-  storage: "Per-case DuckDB + ~/.rapidtriage/metrics.duckdb"
+  storage: "Per-case DuckDB + ~/.issen/metrics.duckdb"
   telemetry_policy: "Local-only by default; explicit opt-in for any external submission"
   weekly_digest: "Auto-generated on Monday first launch"
   panels:

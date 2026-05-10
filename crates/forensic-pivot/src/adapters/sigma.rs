@@ -104,7 +104,7 @@ mod tests {
     }"#;
 
     #[test]
-    fn test_sigma_alert_parses_valid_json() {
+    fn test_sigma_aleissen_parses_valid_json() {
         let alert = SigmaAlert::from_json(VALID_JSON).expect("should parse");
         assert_eq!(alert.rule_id, "proc_creation_win_xmrig");
         assert_eq!(alert.title, "XMRig Miner");
@@ -115,7 +115,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sigma_alert_converts_to_evidence_with_correct_source() {
+    fn test_sigma_aleissen_converts_to_evidence_with_correct_source() {
         use crate::evidence::{Evidence, EvidenceSource};
         let alert = SigmaAlert::from_json(VALID_JSON).expect("should parse");
         let ev: Evidence = alert.into();
@@ -124,7 +124,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sigma_alert_sets_process_kind_for_process_creation() {
+    fn test_sigma_aleissen_sets_process_kind_for_process_creation() {
         use crate::evidence::{Evidence, EvidenceKind};
         let alert = SigmaAlert::from_json(VALID_JSON).expect("should parse");
         let ev: Evidence = alert.into();
@@ -132,7 +132,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sigma_alert_handles_missing_optional_fields() {
+    fn test_sigma_aleissen_handles_missing_optional_fields() {
         use crate::evidence::{Evidence, EvidenceKind};
         let json = r#"{"rule_id": "generic_alert", "title": "Generic", "level": "medium"}"#;
         let alert = SigmaAlert::from_json(json).expect("should parse");

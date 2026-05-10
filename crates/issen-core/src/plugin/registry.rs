@@ -72,7 +72,7 @@ mod tests {
             create: || Box::new(TestParser),
         };
         let parser = (reg.create)();
-        asseissen_eq!(parser.name(), "Test Parser");
-        asseissen_eq!(parser.supported_artifacts(), &[ArtifactType::Mft]);
+        assert_eq!(parser.name(), "Test Parser");
+        assert_eq!(parser.supported_artifacts(), &[ArtifactType::Mft]);
     }
 }

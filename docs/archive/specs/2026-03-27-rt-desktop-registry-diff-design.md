@@ -1,15 +1,15 @@
-# RapidTriage Desktop + Registry Temporal Diff Design
+# Issen Desktop + Registry Temporal Diff Design
 
 ## Overview
 
-**Goal:** Build a Tauri v2 desktop application (`rt-desktop`) with a static plugin architecture that hosts forensic analysis tools — starting with an MFT navigator and a registry temporal diff viewer. Both plugins share a common Svelte component library (`@rapidtriage/ui`). The registry diff engine enables investigators to compare any two registry hive states and zoom in on changes across time.
+**Goal:** Build a Tauri v2 desktop application (`rt-desktop`) with a static plugin architecture that hosts forensic analysis tools — starting with an MFT navigator and a registry temporal diff viewer. Both plugins share a common Svelte component library (`@issen/ui`). The registry diff engine enables investigators to compare any two registry hive states and zoom in on changes across time.
 
-**Architecture:** Single Tauri v2 app with compile-time plugin registration. Each plugin provides a Rust backend (Tauri IPC commands) and Svelte frontend (views + routes). A shared `@rapidtriage/ui` Svelte package provides reusable forensic UI components (tree views, detail panels, search, diff highlighting). Two new Rust crates — `winreg-diff` (diff engine) and `winreg-discover` (hive source discovery) — power the registry comparison features.
+**Architecture:** Single Tauri v2 app with compile-time plugin registration. Each plugin provides a Rust backend (Tauri IPC commands) and Svelte frontend (views + routes). A shared `@issen/ui` Svelte package provides reusable forensic UI components (tree views, detail panels, search, diff highlighting). Two new Rust crates — `winreg-diff` (diff engine) and `winreg-discover` (hive source discovery) — power the registry comparison features.
 
 **Tech Stack:**
 - **Desktop shell:** Tauri v2 (Rust backend + webview frontend)
 - **Frontend:** Svelte 5, TypeScript, Vite
-- **Shared components:** `@rapidtriage/ui` (Svelte component library)
+- **Shared components:** `@issen/ui` (Svelte component library)
 - **Build:** pnpm workspace (JS), Cargo workspace (Rust)
 - **Rust crates:** winreg-format, winreg-core, winreg-diff (new), winreg-discover (new), rt-mft-tree
 - **CLI:** rt-reg (extended with `diff` subcommand)
@@ -358,7 +358,7 @@ fn hive_info(path: String) -> Result<HiveInfo, String>;
 
 ---
 
-## 5. Shared Components (`@rapidtriage/ui`)
+## 5. Shared Components (`@issen/ui`)
 
 ### 5.1 ForensicTree
 
@@ -432,7 +432,7 @@ Horizontal timeline with clickable markers for temporal navigation.
 ## 6. Workspace Structure
 
 ```
-rapidtriage/
+issen/
 ├── apps/
 │   └── rt-desktop/                     # Tauri v2 desktop application
 │       ├── src-tauri/
@@ -462,7 +462,7 @@ rapidtriage/
 │       ├── vite.config.ts
 │       └── svelte.config.js
 ├── packages/
-│   └── ui/                             # @rapidtriage/ui shared components
+│   └── ui/                             # @issen/ui shared components
 │       ├── package.json
 │       └── src/
 │           ├── index.ts                # barrel export
@@ -511,7 +511,7 @@ The `rt-reg` CLI gets `diff` and `discover` subcommands for scripting. The rt-de
 
 ### 8.2 Svelte Components
 
-- **@rapidtriage/ui:** Component tests with Svelte Testing Library. Test ForensicTree expand/collapse, SearchBar debounce, DiffHighlight rendering.
+- **@issen/ui:** Component tests with Svelte Testing Library. Test ForensicTree expand/collapse, SearchBar debounce, DiffHighlight rendering.
 - **Plugin views:** Integration tests verifying Tauri IPC mocking + view rendering.
 
 ### 8.3 Tauri App
@@ -554,7 +554,7 @@ All other Rust dependencies (binrw, bitflags, memmap2, miette, thiserror, chrono
 - `winreg-discover` crate with `discover_hives()` API
 - `rt-reg diff` and `rt-reg discover` CLI subcommands
 - `rt-desktop` Tauri app with plugin architecture
-- `@rapidtriage/ui` shared Svelte component library
+- `@issen/ui` shared Svelte component library
 - Registry Diff plugin (DiffView, SideBySide, TimelinePicker)
 - MFT Navigator plugin (port of rt-navigator core features)
 

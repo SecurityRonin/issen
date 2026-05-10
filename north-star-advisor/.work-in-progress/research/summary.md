@@ -4,7 +4,7 @@
 2026-03-20T03:15:00Z
 
 ## Project Context
-- **Name:** RapidTriage
+- **Name:** Issen
 - **Type:** Integrated forensic triage platform
 - **Users:** IR practitioners, forensic examiners, litigation support teams
 - **Preferred Stack:** Rust (usnjrnl-forensic v0.6, tl v0.1, ewf v0.1, shrinkpath v0.1)
@@ -43,7 +43,7 @@
 
 ### Best Practices
 - Use `resolver = "2"` in Cargo workspace to prevent feature unification
-- Static linking (musl/crt-static) for IR field deployment
+- Static linking (musl/cissen-static) for IR field deployment
 - `#[cfg(target_os)]` for OS-specific artifact parsers
 - Feature flags for tier gating (community/professional/enterprise)
 - Memory-mapped I/O for forensic images, streaming iterators with `par_bridge()` for multi-GB evidence
@@ -117,7 +117,7 @@ Key innovation: **VirtualFilesystem** that fuses multiple acquisition types into
 | Enterprise | Organizations / firms | Proprietary (paid) | Web UI, RBAC, audit logs, case management |
 
 ### Scalability Progression
-CLI (clap) → TUI (ratatui) → Desktop GUI (Tauri 2) → Web UI (axum + React/Leptos) → Enterprise multi-user. Single `rt-core` crate with ports/adapters pattern (Crux-inspired, side-effect-free core) ensures all frontends share identical analysis logic.
+CLI (clap) → TUI (ratatui) → Desktop GUI (Tauri 2) → Web UI (axum + React/Leptos) → Enterprise multi-user. Single `issen-core` crate with ports/adapters pattern (Crux-inspired, side-effect-free core) ensures all frontends share identical analysis logic.
 
 ---
 
@@ -143,7 +143,7 @@ CLI (clap) → TUI (ratatui) → Desktop GUI (Tauri 2) → Web UI (axum + React/
 
 ### Business Model Pitfalls
 - **Subscription fatigue is real**: Investigators report 10x cost increases. Offer perpetual + subscription options.
-- **Autopsy failed commercially**: Despite being free — incomplete filesystem support, poor performance, courtroom credibility gaps. Validates RapidTriage's attorney-ready output focus.
+- **Autopsy failed commercially**: Despite being free — incomplete filesystem support, poor performance, courtroom credibility gaps. Validates Issen's attorney-ready output focus.
 - **plaso failed on usability**: Dependency hell, no good UI, noisy results. Validates Rust's zero-dependency deployment and UX focus.
 
 ---
@@ -186,7 +186,7 @@ Dual RAG system: (1) Case-specific RAG per investigation for natural language ev
 
 These findings should inform:
 - **Phase 1 (BRAND_GUIDELINES):** "By IR practitioners, for IR practitioners" — brand built on practitioner credibility, courtroom-ready output, Rust performance
-- **Phase 2 (NORTHSTAR):** North Star metric = time from evidence receipt to attorney-ready report delivery. Success = 50%+ reduction in report-to-delivery cycle
+- **Phase 2 (NORTHSTAR):** North Star metric = time from evidence receipt to attorney-ready report delivery. Success = 50%+ reduction in repoissen-to-delivery cycle
 - **Phase 3 (COMPETITIVE_LANDSCAPE):** Magnet AXIOM ($$$, slow parsing), Autopsy (free but poor reports/UX), X-Ways (fast but dated/no reports), Cellebrite (mobile-focused), Belkasoft (emerging with BelkaGPT), Velociraptor (collection not analysis), Eric Zimmerman tools (free CLI, no integration), plaso (powerful but unusable)
 - **Phase 6 (ARCHITECTURE_BLUEPRINT):** Hexagonal architecture with three-tier plugin system, DuckDB timeline store, multi-layer data pipeline with VirtualFilesystem fusion, Crux-inspired side-effect-free core. Intelligence layer: local-first AI with grounded generation, ForensicLLM for report drafting, dual RAG, model routing for cost optimization
 - **Phase 7 (AGENT_PROMPTS):** Pipeline orchestrator, parser coordinator, timeline analyst, report generator, evidence integrity validator, intelligence enricher

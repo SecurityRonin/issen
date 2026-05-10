@@ -5,7 +5,7 @@
 > deleted key recovery, hive carving, 200+ artifact decoders, timeline generation,
 > FUSE mount, and Python bindings.
 
-**Repository:** `~/src/winreg-forensic` (standalone, NOT inside RapidTriage monorepo)
+**Repository:** `~/src/winreg-forensic` (standalone, NOT inside Issen monorepo)
 **License:** Apache-2.0
 **CLI binary:** `rt-reg`
 **Rust edition:** 2021
@@ -40,11 +40,11 @@ contributions (fuzz testing, structured errors, parallel recovery, anti-forensic
 5. **Parallel where embarrassingly so** — deleted recovery, hbin scanning via rayon
 6. **Python-first bindings** — forensic community lives in Python, we meet them there
 
-### 1.3 Integration with RapidTriage
+### 1.3 Integration with Issen
 
-winreg-forensic is open-source and standalone. RapidTriage consumes it via a thin
+winreg-forensic is open-source and standalone. Issen consumes it via a thin
 `rt-parser-registry` crate that bridges `Finding` → `ParsedArtifact`. The proprietary
-value in RapidTriage is the correlation engine (cross-referencing registry with MFT,
+value in Issen is the correlation engine (cross-referencing registry with MFT,
 USN, evtx, prefetch) and attorney-focused reporting — not the parsing itself.
 
 ---
@@ -838,12 +838,12 @@ that parses must re-serialize to identical bytes.
 
 ---
 
-## 11. RapidTriage Integration
+## 11. Issen Integration
 
 ### 11.1 Integration Crate
 
 ```
-RapidTriage/crates/rt-parser-registry/
+Issen/crates/rt-parser-registry/
 ├── src/
 │   ├── lib.rs          # ForensicParser trait implementation
 │   ├── source.rs       # Hive discovery from ArtifactSources
@@ -854,7 +854,7 @@ RapidTriage/crates/rt-parser-registry/
 ### 11.2 Dependency Direction
 
 ```
-winreg-forensic (standalone)          RapidTriage (monorepo)
+winreg-forensic (standalone)          Issen (monorepo)
 ─────────────────────────            ──────────────────────
 winreg-format                         rt-core
     ↑                                    ↑
@@ -867,7 +867,7 @@ winreg-recover
 winreg-carve
 ```
 
-winreg-forensic has zero dependency on RapidTriage. RapidTriage depends on
+winreg-forensic has zero dependency on Issen. Issen depends on
 winreg-forensic via git dependency or path dependency during development.
 
 ---

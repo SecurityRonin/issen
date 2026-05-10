@@ -1,4 +1,4 @@
-# RapidTriage: UI Design System
+# Issen: UI Design System
 
 > **Parent**: [../BRAND_GUIDELINES.md](../BRAND_GUIDELINES.md)
 > **Created**: 2026-03-20
@@ -9,7 +9,7 @@ Production-ready design tokens, CSS configuration, and component specifications 
 
 ## Document Purpose
 
-This document provides **copy-paste-ready design tokens and component specs** for every RapidTriage rendering surface:
+This document provides **copy-paste-ready design tokens and component specs** for every Issen rendering surface:
 
 1. **CSS Custom Properties** for HTML reports and web/desktop UI
 2. **TUI color map** for ratatui 256-color terminals
@@ -278,7 +278,7 @@ The TUI is the primary analysis surface. These map CSS tokens to ratatui `Color`
 ### 2.1 Core TUI Palette
 
 ```rust
-// tui/theme.rs -- RapidTriage TUI color constants
+// tui/theme.rs -- Issen TUI color constants
 
 use ratatui::style::Color;
 
@@ -373,7 +373,7 @@ pub struct ArtifactColors {
 
 ### 3.1 Multi-Surface Architecture
 
-RapidTriage renders across four surfaces. Each consumes design tokens differently:
+Issen renders across four surfaces. Each consumes design tokens differently:
 
 | Surface | Technology | Token Format | Dark Mode | Print |
 |---------|-----------|-------------|-----------|-------|
@@ -580,12 +580,12 @@ Used in reports and GUI to display a single piece of evidence with integrity sta
 Used in HTML report output. Provides the structure for attorney-facing narrative sections.
 
 ```css
-.report-section {
+.repoissen-section {
   margin-bottom: var(--space-8);
   page-break-inside: avoid;
 }
 
-.report-section__heading {
+.repoissen-section__heading {
   font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
@@ -596,14 +596,14 @@ Used in HTML report output. Provides the structure for attorney-facing narrative
   border-bottom: 2px solid var(--color-primary);
 }
 
-.report-section__body {
+.repoissen-section__body {
   font-family: var(--font-body);
   font-size: var(--text-base);
   line-height: var(--leading-relaxed);
   color: var(--color-text);
 }
 
-.report-section__body p {
+.repoissen-section__body p {
   margin-bottom: var(--space-3);
 }
 ```
@@ -1116,7 +1116,7 @@ Pattern: Node-link diagram rendered via SVG or Canvas.
   .badge--tampered   { border-color: #DC2626; color: #DC2626; font-weight: bold; }
 
   /* Page break controls */
-  .report-section { page-break-inside: avoid; }
+  .repoissen-section { page-break-inside: avoid; }
   .finding-summary { page-break-inside: avoid; }
   .evidence-card { page-break-inside: avoid; }
 
@@ -1131,7 +1131,7 @@ Pattern: Node-link diagram rendered via SVG or Canvas.
     size: letter;
     margin: 0.75in 1in;
     @bottom-center {
-      content: "RapidTriage Report -- Page " counter(page) " of " counter(pages);
+      content: "Issen Report -- Page " counter(page) " of " counter(pages);
       font-size: 8pt;
       color: #666666;
     }
@@ -1173,7 +1173,7 @@ Rationale: Clean, professional, works well at small sizes in dense data UIs. No 
 |---------|-------------|-------|
 | Timeline | `clock` | Timeline view navigation |
 | Evidence | `file-check` | Evidence items, verified files |
-| Finding | `alert-triangle` | Findings, flagged items |
+| Finding | `aleissen-triangle` | Findings, flagged items |
 | Report | `file-text` | Report generation/view |
 | Hash verified | `shield-check` | Integrity verified |
 | Hash failed | `shield-x` | Integrity failure |
@@ -1183,9 +1183,9 @@ Rationale: Clean, professional, works well at small sizes in dense data UIs. No 
 | Export | `download` | Export/save actions |
 | Ingest | `upload` | Evidence ingestion |
 | Parse | `cpu` | Parsing/processing |
-| Severity critical | `alert-octagon` | Critical findings |
-| Severity high | `alert-triangle` | High-severity findings |
-| Severity medium | `alert-circle` | Medium-severity findings |
+| Severity critical | `aleissen-octagon` | Critical findings |
+| Severity high | `aleissen-triangle` | High-severity findings |
+| Severity medium | `aleissen-circle` | Medium-severity findings |
 | Severity low | `info` | Low-severity / informational |
 | Expand | `chevron-right` | Expand tree/detail |
 | Collapse | `chevron-down` | Collapse tree/detail |

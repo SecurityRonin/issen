@@ -71,10 +71,10 @@ mod tests {
     #[test]
     fn test_progress_reporter_initial_state() {
         let progress = ProgressReporter::new();
-        asseissen_eq!(progress.events_emitted(), 0);
-        asseissen_eq!(progress.bytes_processed(), 0);
-        asseissen_eq!(progress.artifacts_completed(), 0);
-        asseissen_eq!(progress.errors_encountered(), 0);
+        assert_eq!(progress.events_emitted(), 0);
+        assert_eq!(progress.bytes_processed(), 0);
+        assert_eq!(progress.artifacts_completed(), 0);
+        assert_eq!(progress.errors_encountered(), 0);
     }
 
     #[test]
@@ -87,10 +87,10 @@ mod tests {
         progress.complete_artifact();
         progress.record_error();
 
-        asseissen_eq!(progress.events_emitted(), 150);
-        asseissen_eq!(progress.bytes_processed(), 1024);
-        asseissen_eq!(progress.artifacts_completed(), 2);
-        asseissen_eq!(progress.errors_encountered(), 1);
+        assert_eq!(progress.events_emitted(), 150);
+        assert_eq!(progress.bytes_processed(), 1024);
+        assert_eq!(progress.artifacts_completed(), 2);
+        assert_eq!(progress.errors_encountered(), 1);
     }
 
     #[test]
@@ -99,9 +99,9 @@ mod tests {
         let progress2 = progress1.clone();
 
         progress1.add_events(10);
-        asseissen_eq!(progress2.events_emitted(), 10, "Clone shares Arc state");
+        assert_eq!(progress2.events_emitted(), 10, "Clone shares Arc state");
 
         progress2.add_events(5);
-        asseissen_eq!(progress1.events_emitted(), 15);
+        assert_eq!(progress1.events_emitted(), 15);
     }
 }

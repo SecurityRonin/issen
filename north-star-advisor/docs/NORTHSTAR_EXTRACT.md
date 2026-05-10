@@ -1,11 +1,11 @@
-# RapidTriage: North Star Extract
+# Issen: North Star Extract
 
 <!-- GENERATION: Step 4 of 13. Derived from BRAND_GUIDELINES, NORTHSTAR, and COMPETITIVE_LANDSCAPE. -->
 
 > Your project's design DNA — the decisions that should NOT be re-litigated.
 > **Generation Step**: 4 of 13
 
-**Project:** RapidTriage
+**Project:** Issen
 **Created:** 2026-03-20
 **Last Updated:** 2026-03-20
 
@@ -13,7 +13,7 @@
 
 ## How to Use This Document
 
-This is the **decision filter** for RapidTriage. When you face a design choice, feature request, or architecture question, check this document first.
+This is the **decision filter** for Issen. When you face a design choice, feature request, or architecture question, check this document first.
 
 - **Before adding a feature**: Does it reduce TARR? If not, why are we building it?
 - **Before choosing between two approaches**: Which axiom applies? Follow it.

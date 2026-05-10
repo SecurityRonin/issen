@@ -1,4 +1,4 @@
-# RapidTriage: Strategic Recommendation
+# Issen: Strategic Recommendation
 
 > **Tier**: 1 --- Strategic Authority
 > **Created**: 2026-03-20
@@ -17,7 +17,7 @@ No existing forensic tool treats the report as the product. Every tool on the ma
 
 ### 1.2 The Opportunity
 
-RapidTriage is positioned to occupy a genuinely unoccupied market position: the intersection of **Full Workflow** and **Practitioner-Friendly** in the DFIR tooling landscape. This position is unoccupied because:
+Issen is positioned to occupy a genuinely unoccupied market position: the intersection of **Full Workflow** and **Practitioner-Friendly** in the DFIR tooling landscape. This position is unoccupied because:
 
 - **Magnet AXIOM** is Full Workflow but Enterprise-Optimized (and increasingly price-hostile under PE ownership).
 - **Autopsy/TSK** is Practitioner-Friendly but analysis-only (no meaningful report pipeline).
@@ -80,7 +80,7 @@ Every strategic decision in this document is evaluated against its impact on TAR
 
 **Weaknesses:**
 
-- **Zero TARR improvement for 9+ months.** Parsers without report generation produce faster analysis but the manual report-writing bottleneck remains unchanged.
+- **Zero TARR improvement for 9+ months.** Parsers without report generation produce faster analysis but the manual repoissen-writing bottleneck remains unchanged.
 - **No revenue path until Q1 2027.** Open-source parsers are the free tier; the paid product (reports) doesn't exist yet.
 - **Competitor window exposure.** 9 months is long enough for Magnet to add AI-assisted reporting or for Belkasoft to improve BelkaGPT's output quality.
 - **Community without conversion funnel.** Users adopt parsers, build workflows around raw output, and never need the proprietary layer.
@@ -122,12 +122,12 @@ Every strategic decision in this document is evaluated against its impact on TAR
 
 **Weaknesses:**
 
-- **Limited artifact coverage in v0.1.** Cases requiring Registry, Prefetch, or browser artifacts will feel incomplete. Practitioners may perceive RapidTriage as "not ready" for their workflow.
+- **Limited artifact coverage in v0.1.** Cases requiring Registry, Prefetch, or browser artifacts will feel incomplete. Practitioners may perceive Issen as "not ready" for their workflow.
 - **Report quality depends on AI maturity.** Local LLM narrative generation may not meet attorney expectations without significant prompt engineering and validation.
 - **Smaller open-source footprint.** Fewer parsers means less GitHub gravity in the early months.
 - **Risk of over-engineering reports before understanding all artifact types.** Report templates designed for 3 artifacts may need restructuring when artifact count grows.
 
-**TARR Impact:** Direct. Attacks the 80% bottleneck. Estimated TARR with 3 parsers and full report pipeline: < 4 hours for cases within artifact coverage. Cases outside coverage: hybrid (RapidTriage for supported artifacts + manual for gaps), estimated ~6--8 hours.
+**TARR Impact:** Direct. Attacks the 80% bottleneck. Estimated TARR with 3 parsers and full report pipeline: < 4 hours for cases within artifact coverage. Cases outside coverage: hybrid (Issen for supported artifacts + manual for gaps), estimated ~6--8 hours.
 
 **Risk Assessment:**
 
@@ -160,7 +160,7 @@ Every strategic decision in this document is evaluated against its impact on TAR
 
 **Weaknesses:**
 
-- **Neither dimension reaches compelling threshold quickly.** At any given point, RapidTriage has fewer parsers than Path A and worse reports than Path B. The product is perpetually "almost there."
+- **Neither dimension reaches compelling threshold quickly.** At any given point, Issen has fewer parsers than Path A and worse reports than Path B. The product is perpetually "almost there."
 - **No clear differentiator early.** With basic reports and moderate artifact coverage, what is the elevator pitch? "We do a bit of everything, but nothing exceptionally well yet" does not attract early adopters.
 - **Context-switching overhead.** Alternating between parser development (low-level binary parsing, correctness testing) and report development (template engines, AI integration, formatting) creates cognitive overhead for a solo founder.
 - **Delayed TARR improvement.** Basic HTML reports without narrative generation don't dramatically improve TARR. The full pipeline isn't complete until Q1 2027.
@@ -228,7 +228,7 @@ Path B is the only path that aligns with all five axioms. Path A directly violat
 
 ### 4.1 Recommended Path: B --- Report Engine First
 
-**Path B is the recommended strategic path for RapidTriage.** Build the minimum viable parser set (USN Journal + MFT + EventLog) paired with a full attorney-ready report pipeline, and ship the core differentiator from day one.
+**Path B is the recommended strategic path for Issen.** Build the minimum viable parser set (USN Journal + MFT + EventLog) paired with a full attorney-ready report pipeline, and ship the core differentiator from day one.
 
 ### 4.2 Reasoning
 
@@ -238,7 +238,7 @@ The North Star metric --- Time-to-Attorney-Ready Report --- is defined by the de
 
 **2. No competitor has attorney-ready output. This is the only genuine gap in the market.**
 
-Magnet AXIOM has AI triage. Autopsy has free analysis. X-Ways has the fastest parsing. Every competitor has some version of "analysis." Zero competitors produce a deliverable that an attorney can use without hours of manual reformatting. Path B demonstrates this gap from day one. Path A demonstrates that RapidTriage can parse files --- which is what every other tool already does.
+Magnet AXIOM has AI triage. Autopsy has free analysis. X-Ways has the fastest parsing. Every competitor has some version of "analysis." Zero competitors produce a deliverable that an attorney can use without hours of manual reformatting. Path B demonstrates this gap from day one. Path A demonstrates that Issen can parse files --- which is what every other tool already does.
 
 **3. Three parsers cover 60--70% of typical IR triage cases.**
 
@@ -260,7 +260,7 @@ Under the open-core model, parsers are Apache 2.0 and free. The report engine, c
 
 **6. The 12--18 month first-mover window is real and time-limited.**
 
-Magnet has the resources, data, and user base to add AI-assisted reporting. They have not done so yet because PE ownership prioritizes margin extraction over innovation, and their architecture was not designed for it. But this window will close. If RapidTriage ships attorney-ready reports in Q2--Q3 2026, it has 6--12 months of market exclusivity for the core differentiator. If RapidTriage spends Q2--Q4 2026 building parsers (Path A), the window may close before the differentiator ships.
+Magnet has the resources, data, and user base to add AI-assisted reporting. They have not done so yet because PE ownership prioritizes margin extraction over innovation, and their architecture was not designed for it. But this window will close. If Issen ships attorney-ready reports in Q2--Q3 2026, it has 6--12 months of market exclusivity for the core differentiator. If Issen spends Q2--Q4 2026 building parsers (Path A), the window may close before the differentiator ships.
 
 ### 4.3 Focus Areas (Traced to TARR)
 
@@ -289,8 +289,8 @@ These items are explicitly out of scope for the recommended path. They align wit
 | **Memory forensics** | Specialized discipline. Volatility and Rekall are excellent. Separate skill set entirely. |
 | **Malware analysis / sandboxing** | Separate discipline with dedicated tools (IDA, Ghidra, Cuckoo). |
 | **Cloud forensics** | Platform-specific, rapidly evolving APIs. Phase 3+ consideration at earliest. |
-| **Real-time collection** | Collection is solved (KAPE, Velociraptor). RapidTriage ingests their output. |
-| **eDiscovery workflows** | Different problem, different users, different regulatory requirements. RapidTriage exports to Relativity/Nuix. |
+| **Real-time collection** | Collection is solved (KAPE, Velociraptor). Issen ingests their output. |
+| **eDiscovery workflows** | Different problem, different users, different regulatory requirements. Issen exports to Relativity/Nuix. |
 | **SIEM / detection engineering** | Post-incident analysis, not real-time monitoring. Different domain entirely. |
 | **Enterprise-first features** | SSO, RBAC, audit logs are Phase 3. Optimize for Sarah Chen (solo practitioner) first. |
 | **GUI-first architecture** | CLI and TUI first. Desktop GUI (Tauri) is Phase 2. |
@@ -331,8 +331,8 @@ These items are explicitly out of scope for the recommended path. They align wit
 | **Problem Understanding** | **High** | Practitioner founder with direct consulting experience. The pain is lived, not theoretical. Validated through hundreds of engagements where 80% of time is report writing. The forensic-to-legal translation gap is not a hypothesis --- it is a daily reality. |
 | **Solution Fit** | **High** | Attorney-ready report generation is validated as genuine market whitespace. No competitor occupies this position. The "Full Workflow + Practitioner-Friendly" quadrant is empty. Consulting clients have confirmed they would pay for this capability. |
 | **Execution Feasibility** | **Medium** | Solo founder is both the strength (no coordination overhead, practitioner expertise) and the constraint (limited bandwidth, no redundancy). Rust expertise maximizes velocity, and existing crates provide a head start. However, the scope is large: 3 parsers + report engine + AI narrative + dual-format output in 12 weeks is aggressive. The architecture (hexagonal, port/adapter) is well-suited but unproven at this scale for this domain. |
-| **Market Timing** | **High** | Three converging windows: (1) Post-PE pricing frustration driving AXIOM practitioners to seek alternatives, (2) AI reporting feasibility reaching the threshold where local LLMs can generate useful narrative, (3) KAPE/Velociraptor standardization creating a stable ingestion layer that RapidTriage can build on. All three windows are open now and estimated to narrow within 12--18 months. |
-| **Team Capability** | **Medium** | Solo founder with deep Rust expertise and forensic domain knowledge --- an unusual and valuable combination. However, the solo founder ceiling is real: no UI/UX specialist, no sales/marketing capacity, no redundancy for illness or burnout. Consulting income provides runway but also competes for time. Phase 2+ will require at least one additional contributor (likely a community member or part-time hire). |
+| **Market Timing** | **High** | Three converging windows: (1) Post-PE pricing frustration driving AXIOM practitioners to seek alternatives, (2) AI reporting feasibility reaching the threshold where local LLMs can generate useful narrative, (3) KAPE/Velociraptor standardization creating a stable ingestion layer that Issen can build on. All three windows are open now and estimated to narrow within 12--18 months. |
+| **Team Capability** | **Medium** | Solo founder with deep Rust expertise and forensic domain knowledge --- an unusual and valuable combination. However, the solo founder ceiling is real: no UI/UX specialist, no sales/marketing capacity, no redundancy for illness or burnout. Consulting income provides runway but also competes for time. Phase 2+ will require at least one additional contributor (likely a community member or paissen-time hire). |
 
 ### 5.2 What Could Prove Us Wrong
 
@@ -344,7 +344,7 @@ These are the specific scenarios that would invalidate the recommendation. Each 
 | **Practitioners don't pay for reports** | Low | Alpha users complete the pipeline but revert to manual workflows. Conversion from free tier to paid report features < 5% after 3 months. | Investigate whether the free HTML export is "good enough." Consider alternative monetization (training, templates, consulting integration). |
 | **Local LLM narrative quality is insufficient** | Medium | Attorney feedback consistently rejects AI-generated narratives. > 50% of narrative sections require manual rewriting. | Fall back to structured template-based reports (fill-in-the-blank) without AI narrative. Still faster than manual, just less polished. AI narrative becomes Phase 2 feature when models improve. |
 | **3-parser coverage is too narrow** | Medium | > 40% of real engagements require artifacts outside USN/MFT/EVTX. Users consistently report "I can't use this for my cases." | Accelerate Registry and Prefetch parsers. Re-evaluate whether Path C (balanced) would have been more appropriate. |
-| **Solo founder burnout / bandwidth collapse** | Medium | Development velocity drops below 1 meaningful feature per 2 weeks for 4+ consecutive weeks. Consulting revenue commitments consume > 70% of working time. | Reduce scope to absolute minimum viable report (HTML only, no AI narrative). Seek community contributor for parser development. Consider part-time contractor for report template work. |
+| **Solo founder burnout / bandwidth collapse** | Medium | Development velocity drops below 1 meaningful feature per 2 weeks for 4+ consecutive weeks. Consulting revenue commitments consume > 70% of working time. | Reduce scope to absolute minimum viable report (HTML only, no AI narrative). Seek community contributor for parser development. Consider paissen-time contractor for report template work. |
 
 ### 5.3 Review Triggers
 

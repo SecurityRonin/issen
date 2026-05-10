@@ -1,7 +1,7 @@
 # Windows Forensic Artifact Parser Libraries — Deep Research
 
 **Date**: 2026-03-23
-**Purpose**: Evaluate available libraries for parsing Windows forensic artifacts in RapidTriage
+**Purpose**: Evaluate available libraries for parsing Windows forensic artifacts in Issen
 
 ---
 
@@ -22,7 +22,7 @@
 13. [LOLRMM.io](#lolrmmio)
 14. [Format Documentation Master List](#format-documentation-master-list)
 15. [License Compatibility](#license-compatibility-summary)
-16. [Strategic Recommendations](#strategic-recommendations-for-rapidtriage)
+16. [Strategic Recommendations](#strategic-recommendations-for-issen)
 
 ---
 
@@ -430,7 +430,7 @@ No standalone crate. **Artemis** includes Windows Tasks parsing (MIT).
 | Last pushed | **2026-03-23** (today) |
 | Forks | 13 |
 
-**Windows artifact coverage** (all relevant to RapidTriage):
+**Windows artifact coverage** (all relevant to Issen):
 Prefetch, EventLogs, Registry, UserAssist, ShimCache, ShellBags, Amcache, Shortcuts (LNK), UsnJrnl, BITS, SRUM, Windows Search, Tasks, Services, Jumplists, RecycleBin, WMI Persist, Outlook, MFT
 
 **Key features**:
@@ -439,7 +439,7 @@ Prefetch, EventLogs, Registry, UserAssist, ShimCache, ShellBags, Amcache, Shortc
 - Cross-platform (Windows, macOS, Linux, FreeBSD)
 - Architecture: `artifacts/` directory grouped by OS, each artifact in own module
 
-**Value for RapidTriage**: MIT licensed, comprehensive coverage, actively maintained. Individual parser modules could be extracted or used as reference implementations, especially for artifacts lacking standalone crates (ShimCache, BAM/DAM, UserAssist, SRUM, Tasks, Services).
+**Value for Issen**: MIT licensed, comprehensive coverage, actively maintained. Individual parser modules could be extracted or used as reference implementations, especially for artifacts lacking standalone crates (ShimCache, BAM/DAM, UserAssist, SRUM, Tasks, Services).
 
 ### Chainsaw — WithSecureLabs/chainsaw
 
@@ -557,7 +557,7 @@ References:
 
 ## License Compatibility Summary
 
-Target: **Apache-2.0 or MIT** for RapidTriage
+Target: **Apache-2.0 or MIT** for Issen
 
 | Crate/Tool | License | Compatible? |
 |------------|---------|-------------|
@@ -576,7 +576,7 @@ Target: **Apache-2.0 or MIT** for RapidTriage
 
 ---
 
-## Strategic Recommendations for RapidTriage
+## Strategic Recommendations for Issen
 
 ### Tier 1 — Direct Crate Dependencies (MIT/Apache-2.0, ready to use)
 
@@ -606,4 +606,4 @@ Target: **Apache-2.0 or MIT** for RapidTriage
 
 ### Key Reference Repository
 
-**Artemis** (`puffyCid/artemis`) — MIT licensed, pushed today, covers ALL 11 artifact types listed above. Can extract individual parser modules as starting points, especially for Tier 2 and Tier 3 artifacts. This is the single most valuable reference codebase for RapidTriage's parser development.
+**Artemis** (`puffyCid/artemis`) — MIT licensed, pushed today, covers ALL 11 artifact types listed above. Can extract individual parser modules as starting points, especially for Tier 2 and Tier 3 artifacts. This is the single most valuable reference codebase for Issen's parser development.

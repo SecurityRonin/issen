@@ -48,7 +48,7 @@ impl EveAlert {
         if raw.event_type != "alert" {
             return Ok(None);
         }
-        let alert_inner = raw.alert.unwrap_or(RawEveAlertInner {
+        let aleissen_inner = raw.alert.unwrap_or(RawEveAlertInner {
             action: None,
             signature_id: None,
             signature: None,
@@ -59,9 +59,9 @@ impl EveAlert {
             src_port: raw.src_port.unwrap_or(0),
             dest_ip: raw.dest_ip.unwrap_or_default(),
             dest_port: raw.dest_port.unwrap_or(0),
-            signature: alert_inner.signature.unwrap_or_default(),
-            signature_id: alert_inner.signature_id.unwrap_or(0),
-            action: alert_inner.action.unwrap_or_default(),
+            signature: aleissen_inner.signature.unwrap_or_default(),
+            signature_id: aleissen_inner.signature_id.unwrap_or(0),
+            action: aleissen_inner.action.unwrap_or_default(),
         }))
     }
 }
@@ -113,7 +113,7 @@ mod tests {
     }"#;
 
     #[test]
-    fn test_eve_alert_parses_valid_json() {
+    fn test_eve_aleissen_parses_valid_json() {
         let result = EveAlert::from_json_line(VALID_EVE).expect("should parse");
         let alert = result.expect("should be Some for alert event");
         assert_eq!(alert.src_ip, "192.168.1.100");
@@ -126,7 +126,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eve_alert_converts_to_evidence_with_suricata_source() {
+    fn test_eve_aleissen_converts_to_evidence_with_suricata_source() {
         use crate::evidence::{Evidence, EvidenceSource};
         let alert = EveAlert::from_json_line(VALID_EVE)
             .expect("parse ok")
@@ -136,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eve_alert_sets_network_kind() {
+    fn test_eve_aleissen_sets_network_kind() {
         use crate::evidence::{Evidence, EvidenceKind};
         let alert = EveAlert::from_json_line(VALID_EVE)
             .expect("parse ok")
@@ -146,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eve_alert_captures_src_and_dest_ip_in_attrs() {
+    fn test_eve_aleissen_captures_src_and_dest_ip_in_attrs() {
         use crate::evidence::Evidence;
         let alert = EveAlert::from_json_line(VALID_EVE)
             .expect("parse ok")
@@ -159,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eve_non_alert_event_returns_none() {
+    fn test_eve_non_aleissen_event_returns_none() {
         let dns_event = r#"{"event_type": "dns", "timestamp": "2026-01-01T00:00:00Z"}"#;
         let result = EveAlert::from_json_line(dns_event).expect("should parse");
         assert!(result.is_none(), "non-alert events should return None");

@@ -45,7 +45,7 @@ fn sync_manifest_serializes_and_deserializes() {
 /// 3. cache_path_for_feed returns <cache_dir>/<name>/ deterministically.
 #[test]
 fn cache_path_derived_from_feed_name() {
-    let cache_dir = Path::new("/var/cache/rapidtriage");
+    let cache_dir = Path::new("/var/cache/issen");
     let path = cache_path_for_feed("sigma", cache_dir);
     assert_eq!(path, cache_dir.join("sigma"));
 }

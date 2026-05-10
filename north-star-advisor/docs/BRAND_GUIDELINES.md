@@ -1,4 +1,4 @@
-# RapidTriage™: Brand Guidelines
+# Issen™: Brand Guidelines
 
 <!-- GENERATION: This is Step 1 of 13 in the generation order. See GENERATION_MANIFEST.md -->
 
@@ -7,19 +7,19 @@
 > **Status**: Active
 > **Generation Step**: 1 of 13 — Generate this FIRST before all other templates
 
-Identity, positioning, and principles for the RapidTriage brand.
+Identity, positioning, and principles for the Issen brand.
 
 ---
 
 ## Brand Essence
 
-**RapidTriage** — from two forensic fundamentals: *rapid* (speed under pressure) and *triage* (prioritized analysis when you can't examine everything). The name is the methodology.
+**Issen** — from two forensic fundamentals: *rapid* (speed under pressure) and *triage* (prioritized analysis when you can't examine everything). The name is the methodology.
 
 An integrated forensic triage platform that bridges the forensic-to-legal translation gap, turning raw artifacts into attorney-ready deliverables.
 
 ### Positioning Statement
 
-> **RapidTriage is a forensic triage platform** that transforms digital forensic artifacts into attorney-ready reports and interactive explorations for IR practitioners, forensic examiners, and litigation support teams. Unlike EnCase, Autopsy, and other forensic tools that produce engineer-oriented output requiring hours of manual translation, RapidTriage produces deliverables that attorneys can actually use — without calling the examiner back.
+> **Issen is a forensic triage platform** that transforms digital forensic artifacts into attorney-ready reports and interactive explorations for IR practitioners, forensic examiners, and litigation support teams. Unlike EnCase, Autopsy, and other forensic tools that produce engineer-oriented output requiring hours of manual translation, Issen produces deliverables that attorneys can actually use — without calling the examiner back.
 
 ### Core Tagline
 
@@ -31,7 +31,7 @@ An integrated forensic triage platform that bridges the forensic-to-legal transl
 
 ### The Name
 
-**RapidTriage** is one word, capital R, capital T. Never "Rapid Triage" (two words), never "rapidtriage" (all lowercase), never "RAPIDTRIAGE" (all caps except in headings that are stylistically all-caps).
+**Issen** is one word, capital R, capital T. Never "Rapid Triage" (two words), never "issen" (all lowercase), never "RAPIDTRIAGE" (all caps except in headings that are stylistically all-caps).
 
 The name works because every DFIR practitioner already thinks in these terms. You land on-site, you have limited time, you triage. The name is not marketing — it is the job.
 
@@ -106,7 +106,7 @@ We chose slate blue over alternatives for strategic reasons:
 - Use marketing superlatives: "revolutionary," "game-changing," "next-generation," "AI-powered"
 - Dumb down forensic concepts for the sake of broader appeal — our users know what a USN Journal is
 - Promise capabilities that are not shipped: if it is on the roadmap, say "planned" not "supports"
-- Use passive voice to hide limitations: say "RapidTriage does not yet parse APFS" not "APFS parsing may be available in future releases"
+- Use passive voice to hide limitations: say "Issen does not yet parse APFS" not "APFS parsing may be available in future releases"
 
 ### Language Examples
 
@@ -125,7 +125,7 @@ These beliefs shape every brand decision:
 
 ### Evidence Tells a Story
 
-Raw forensic data is noise. Thousands of MFT entries, tens of thousands of USN Journal records, scattered prefetch files — none of that is useful until an examiner identifies the signal and constructs a narrative. RapidTriage exists to help examiners build that narrative faster. Every feature decision is filtered through: "Does this help the examiner tell the story of what happened on this system?" If the answer is no, it does not ship.
+Raw forensic data is noise. Thousands of MFT entries, tens of thousands of USN Journal records, scattered prefetch files — none of that is useful until an examiner identifies the signal and constructs a narrative. Issen exists to help examiners build that narrative faster. Every feature decision is filtered through: "Does this help the examiner tell the story of what happened on this system?" If the answer is no, it does not ship.
 
 ### The Last 80% Is the Real Problem
 
@@ -133,7 +133,7 @@ Forensic analysis is roughly 20% of an engagement's cost. The other 80% is repor
 
 ### By Practitioners, For Practitioners
 
-RapidTriage is built by someone who has been on-site at 2 AM imaging drives and spent the next three weeks writing the report. The tool reflects real workflow, not theoretical workflow. This means: ingest what KAPE and Velociraptor actually produce (not some idealized input format), output what attorneys actually need (not what looks good in a demo), and never require the examiner to fight the tool to get work done. If a feature does not map to something an examiner actually does during an investigation, it is scope creep.
+Issen is built by someone who has been on-site at 2 AM imaging drives and spent the next three weeks writing the report. The tool reflects real workflow, not theoretical workflow. This means: ingest what KAPE and Velociraptor actually produce (not some idealized input format), output what attorneys actually need (not what looks good in a demo), and never require the examiner to fight the tool to get work done. If a feature does not map to something an examiner actually does during an investigation, it is scope creep.
 
 ### Open Parsers, Integrated Platform
 
@@ -141,7 +141,7 @@ Individual artifact parsers should be open source. The forensic community benefi
 
 ### Correctness Over Speed (But Aim for Both)
 
-In forensics, a wrong result is worse than no result. If a parser produces inaccurate timestamps or misattributes file activity, that error ends up in a court filing. RapidTriage will never sacrifice correctness for performance. That said, "correct and slow" is not acceptable either — Rust was chosen specifically because it does not force that tradeoff. The goal is correct results at speeds that make triage practical on multi-terabyte evidence stores.
+In forensics, a wrong result is worse than no result. If a parser produces inaccurate timestamps or misattributes file activity, that error ends up in a court filing. Issen will never sacrifice correctness for performance. That said, "correct and slow" is not acceptable either — Rust was chosen specifically because it does not force that tradeoff. The goal is correct results at speeds that make triage practical on multi-terabyte evidence stores.
 
 ---
 
@@ -149,11 +149,11 @@ In forensics, a wrong result is worse than no result. If a parser produces inacc
 
 | We Are Not | Why This Matters |
 |------------|------------------|
-| **Not a collection tool** | RapidTriage ingests output from KAPE, Velociraptor, Magnet ACQUIRE, and other collectors. It does not touch endpoints. Collection is a solved problem with excellent existing tools — we start where they finish. |
+| **Not a collection tool** | Issen ingests output from KAPE, Velociraptor, Magnet ACQUIRE, and other collectors. It does not touch endpoints. Collection is a solved problem with excellent existing tools — we start where they finish. |
 | **Not an eDiscovery platform** | We produce evidence packages that feed into Relativity, Nuix, and similar platforms. We do not replace document review, predictive coding, or legal hold workflows. Different problem, different users. |
-| **Not a SIEM or SOC tool** | RapidTriage is post-incident forensic analysis, not real-time detection or monitoring. By the time RapidTriage is involved, the incident has already happened and someone needs to figure out what occurred. |
+| **Not a SIEM or SOC tool** | Issen is post-incident forensic analysis, not real-time detection or monitoring. By the time Issen is involved, the incident has already happened and someone needs to figure out what occurred. |
 | **Not an "enterprise platform" first** | We are building for the solo examiner and the small IR team first. Enterprise features (SSO, team collaboration, audit trails) come later. The tool must be excellent for one person before it scales to fifty. |
-| **Not a competitor to the examiner** | RapidTriage does not replace forensic expertise. It eliminates the tedious translation work so the examiner can focus on analysis and expert opinion — the parts that actually require a human. |
+| **Not a competitor to the examiner** | Issen does not replace forensic expertise. It eliminates the tedious translation work so the examiner can focus on analysis and expert opinion — the parts that actually require a human. |
 
 ---
 
@@ -174,10 +174,10 @@ In forensics, a wrong result is worse than no result. If a parser produces inacc
 Forensic examiners are trained to scan large datasets. Hiding data behind clicks and expandable sections slows them down. The aesthetic reference is a well-organized forensic report or an analyst's spreadsheet — not a consumer dashboard.
 
 **Courtroom-credible visual design:**
-RapidTriage output may be projected in a courtroom, printed as an exhibit, or attached to a declaration. Every visual choice must survive the question: "Would this look professional and credible to a judge?" Flashy gradients, dark themes with neon accents, and playful illustrations fail this test.
+Issen output may be projected in a courtroom, printed as an exhibit, or attached to a declaration. Every visual choice must survive the question: "Would this look professional and credible to a judge?" Flashy gradients, dark themes with neon accents, and playful illustrations fail this test.
 
 **Rust-native CLI aesthetic:**
-The brand reflects its technical foundation. Clean terminal output, structured logging, and composable CLI tools are the interface philosophy. A GUI may come later, but the soul of the tool is `rapidtriage parse --source /evidence/kape-output --report expert-witness.docx`.
+The brand reflects its technical foundation. Clean terminal output, structured logging, and composable CLI tools are the interface philosophy. A GUI may come later, but the soul of the tool is `issen parse --source /evidence/kape-output --report expeissen-witness.docx`.
 
 ---
 
@@ -198,7 +198,7 @@ What we explicitly avoid in brand expression:
 
 ## Social Positioning
 
-How users describe RapidTriage to others matters. We design for the moment when someone asks "What's RapidTriage?"
+How users describe Issen to others matters. We design for the moment when someone asks "What's Issen?"
 
 ### What Users Tell Others
 
@@ -218,13 +218,13 @@ Users may encounter skepticism about a new forensic tool. Provide language that 
 
 | Skepticism | Reframe |
 |------------|---------|
-| "Why not just use EnCase/FTK/Autopsy?" | "Those tools are great at analysis. RapidTriage is great at everything that happens after analysis — the report writing, the attorney back-and-forth, the exhibit preparation. Use both." |
+| "Why not just use EnCase/FTK/Autopsy?" | "Those tools are great at analysis. Issen is great at everything that happens after analysis — the report writing, the attorney back-and-forth, the exhibit preparation. Use both." |
 | "How can a solo-founded tool be reliable enough for court?" | "The open-source parsers are community-reviewed and field-tested. usnjrnl-forensic has been used in real investigations since v0.3. Reliability comes from Rust's safety guarantees and forensic validation suites, not team size." |
 | "Another forensic tool nobody asked for?" | "Practitioners asked for it every time they spent three weeks writing a report for a two-day analysis. The analysis tools exist. The reporting gap does not have a solution." |
 
 ### Brand Voice in Social Context
 
-When users share or discuss RapidTriage publicly:
+When users share or discuss Issen publicly:
 
 **Do:**
 - Share specific outcomes: "Reduced report writing from 3 weeks to 3 days on a 4TB evidence set"
@@ -284,7 +284,7 @@ The integration layer — the unified pipeline, correlation engine, and report g
 
 ### Trademark
 
-**RapidTriage™** is a trademark of its creator.
+**Issen™** is a trademark of its creator.
 
 The ™ symbol should be used consistently across:
 - Website header and footer
@@ -294,7 +294,7 @@ The ™ symbol should be used consistently across:
 
 ### Questions?
 
-Brand-related questions, logo requests, and partnership inquiries: open an issue on the RapidTriage GitHub repository or contact the maintainer directly through GitHub (@h4x0r).
+Brand-related questions, logo requests, and partnership inquiries: open an issue on the Issen GitHub repository or contact the maintainer directly through GitHub (@h4x0r).
 
 ---
 

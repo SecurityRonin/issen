@@ -6,7 +6,7 @@
 ## Exploration Summary
 
 ### What
-RapidTriage is an integrated forensic triage platform with a plugin-based extensible architecture. It combines modular data source readers (E01, Velociraptor, mobile formats), modular artifact parsers (USN Journal, MFT, Prefetch, LNK, Amcache, etc.), a unified timeline, correlation engine, and attorney-ready report generation.
+Issen is an integrated forensic triage platform with a plugin-based extensible architecture. It combines modular data source readers (E01, Velociraptor, mobile formats), modular artifact parsers (USN Journal, MFT, Prefetch, LNK, Amcache, etc.), a unified timeline, correlation engine, and attorney-ready report generation.
 
 The platform ingests forensic collections from any source through a unified pipeline, processes them through pluggable artifact parsers exposing a common interface, correlates findings across sources and artifact types, and produces output that attorneys can actually use — interactive HTML reports for exploration and polished Word/PDF reports for the record.
 
@@ -23,7 +23,7 @@ Every forensic tool on the market produces engineer-oriented output: CSVs, hex v
 These users work across engagement types: incident response (breach, ransomware, insider threat), litigation support/eDiscovery (civil litigation, employment disputes, IP theft), and regulatory/compliance (GDPR, SEC, HIPAA).
 
 ### Differentiator
-Attorney-ready output. Every competitor (Magnet AXIOM, Autopsy, X-Ways, Cellebrite, EnCase, FTK, Belkasoft, plaso) produces technical output for technical users. RapidTriage produces:
+Attorney-ready output. Every competitor (Magnet AXIOM, Autopsy, X-Ways, Cellebrite, EnCase, FTK, Belkasoft, plaso) produces technical output for technical users. Issen produces:
 1. **Interactive HTML reports** — clickable timelines, drill-down evidence, hyperlinked exhibits. Attorneys can explore findings themselves.
 2. **Polished Word/PDF reports** — traditional expert witness format with narrative, exhibits, appendices, methodology section. Ready to file.
 
@@ -46,7 +46,7 @@ After initially considering AGPL + Commercial dual licensing, decided on **Apach
 - AGPL scares away corporate contributors and users (Google bans it)
 - The moat is integration + report generation, not individual parsers
 - A competitor can take an Apache 2.0 USN Journal parser but still needs to build everything around it
-- Every user of an open-source parser is a potential RapidTriage customer
+- Every user of an open-source parser is a potential Issen customer
 
 ### Business Model Tiers
 | Tier | License | Components |

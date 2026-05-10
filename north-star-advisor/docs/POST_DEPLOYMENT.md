@@ -1,4 +1,4 @@
-# RapidTriage: Post-Deployment Operations
+# Issen: Post-Deployment Operations
 
 > **Tier**: 2 --- Operational Authority
 > **Created**: 2026-03-20
@@ -10,7 +10,7 @@
 
 ## Document Purpose
 
-This document defines the post-deployment operations framework for RapidTriage --- a desktop forensic triage platform, not a cloud SaaS. Every operational practice is filtered through a single question: **Does this reduce TARR for our practitioners?**
+This document defines the post-deployment operations framework for Issen --- a desktop forensic triage platform, not a cloud SaaS. Every operational practice is filtered through a single question: **Does this reduce TARR for our practitioners?**
 
 Operations are designed for a solo founder running a bootstrapped, open-core desktop application. There are no servers to monitor, no on-call rotations, and no auto-scaling policies. Instead, this document covers: local metrics instrumentation, community feedback loops, model maintenance for local LLM infrastructure, incident response for software bugs and data integrity issues, forensic compliance validation, cost tracking for hardware and optional cloud resources, and iteration planning tied to the North Star.
 
@@ -29,13 +29,13 @@ Operations are designed for a solo founder running a bootstrapped, open-core des
 
 ### 1.1 TARR Tracking Per Case
 
-Every case processed by RapidTriage records end-to-end TARR timing. The TUI dashboard displays a persistent top-center progress bar:
+Every case processed by Issen records end-to-end TARR timing. The TUI dashboard displays a persistent top-center progress bar:
 
 ```
 +---------------------------------------------------------------------+
 |  TARR: Case #2026-0142                                              |
 |  Elapsed: ██████████░░░░░░░░░░ 2h 47m   Budget: <4hr   Status: OK  |
-|  Stage: Findings-to-Narrative (rt-intel)                            |
+|  Stage: Findings-to-Narrative (issen-intel)                            |
 +---------------------------------------------------------------------+
 ```
 
@@ -43,14 +43,14 @@ Every case processed by RapidTriage records end-to-end TARR timing. The TUI dash
 
 | Phase | Crate | Metric | Target | Instrumentation |
 |-------|-------|--------|--------|-----------------|
-| Evidence Ingestion | rt-pipeline | Ingest wall-clock time | < 2 min | `tracing` span: `pipeline.ingest` |
-| Parsing (Layer 0-4) | rt-pipeline | Parse-to-Timeline Latency | < 10 min | `tracing` span per layer: `pipeline.layer.{0-4}` |
-| Timeline Construction | rt-timeline | Merge + index time | < 60s for 10M events | `tracing` span: `timeline.merge` |
-| Correlation | rt-correlation | Pattern detection wall-clock | < 5 min | `tracing` span: `correlation.detect` |
-| Narrative Generation | rt-intel | Findings-to-Narrative Time | < 2 hr | `tracing` span: `intel.narrative` |
-| Report Rendering | rt-report | Format generation time | < 30s per format | `tracing` span: `report.render.{html,docx,pdf}` |
+| Evidence Ingestion | issen-pipeline | Ingest wall-clock time | < 2 min | `tracing` span: `pipeline.ingest` |
+| Parsing (Layer 0-4) | issen-pipeline | Parse-to-Timeline Latency | < 10 min | `tracing` span per layer: `pipeline.layer.{0-4}` |
+| Timeline Construction | issen-timeline | Merge + index time | < 60s for 10M events | `tracing` span: `timeline.merge` |
+| Correlation | issen-correlation | Pattern detection wall-clock | < 5 min | `tracing` span: `correlation.detect` |
+| Narrative Generation | issen-intel | Findings-to-Narrative Time | < 2 hr | `tracing` span: `intel.narrative` |
+| Report Rendering | issen-report | Format generation time | < 30s per format | `tracing` span: `report.render.{html,docx,pdf}` |
 
-**Storage**: Each case writes timing metrics to its DuckDB case database in a `_rt_metrics` table. Historical TARR data accumulates across cases in `~/.rapidtriage/metrics.duckdb` for trend analysis.
+**Storage**: Each case writes timing metrics to its DuckDB case database in a `_rt_metrics` table. Historical TARR data accumulates across cases in `~/.issen/metrics.duckdb` for trend analysis.
 
 ### 1.2 Pipeline Stage Timing
 
@@ -58,16 +58,16 @@ The TUI pipeline monitor panel shows real-time throughput for each active stage:
 
 | Metric | Crate | Unit | Display |
 |--------|-------|------|---------|
-| Parse throughput | rt-pipeline | events/sec | Sparkline chart |
-| Parser success rate | rt-pipeline | % per parser | Color-coded bar (green > 99%, yellow > 95%, red < 95%) |
-| Layer 0-4 individual timing | rt-pipeline | seconds | Stacked bar per layer |
-| DuckDB query latency | rt-timeline | ms P50/P95 | Numeric with trend arrow |
-| Event count | rt-timeline | total events ingested | Counter |
-| LLM response time | rt-intel | seconds per request | Rolling average |
-| Grounding accuracy | rt-intel | % grounded vs hallucinated | Percentage bar |
-| RAG retrieval quality | rt-intel | relevance score (0-1) | Numeric |
-| Pattern detection rate | rt-correlation | patterns/case | Counter |
-| Cross-artifact match count | rt-correlation | matches found | Counter |
+| Parse throughput | issen-pipeline | events/sec | Sparkline chart |
+| Parser success rate | issen-pipeline | % per parser | Color-coded bar (green > 99%, yellow > 95%, red < 95%) |
+| Layer 0-4 individual timing | issen-pipeline | seconds | Stacked bar per layer |
+| DuckDB query latency | issen-timeline | ms P50/P95 | Numeric with trend arrow |
+| Event count | issen-timeline | total events ingested | Counter |
+| LLM response time | issen-intel | seconds per request | Rolling average |
+| Grounding accuracy | issen-intel | % grounded vs hallucinated | Percentage bar |
+| RAG retrieval quality | issen-intel | relevance score (0-1) | Numeric |
+| Pattern detection rate | issen-correlation | patterns/case | Counter |
+| Cross-artifact match count | issen-correlation | matches found | Counter |
 
 ### 1.3 Resource Monitoring
 
@@ -81,7 +81,7 @@ The TUI pipeline monitor panel shows real-time throughput for each active stage:
 
 ### 1.4 Weekly Self-Review Protocol
 
-As a solo founder, there is no team to review dashboards. Instead, RapidTriage generates a weekly metrics digest automatically:
+As a solo founder, there is no team to review dashboards. Instead, Issen generates a weekly metrics digest automatically:
 
 **Every Monday at first launch**:
 1. Aggregate TARR across all cases processed in the past 7 days
@@ -89,7 +89,7 @@ As a solo founder, there is no team to review dashboards. Instead, RapidTriage g
 3. Highlight any pipeline stage that consumed > 40% of total TARR
 4. Flag any parser with success rate < 99%
 5. Display in TUI as a dismissible summary panel
-6. Write to `~/.rapidtriage/weekly-digest/{date}.json` for longitudinal tracking
+6. Write to `~/.issen/weekly-digest/{date}.json` for longitudinal tracking
 
 **Monthly**: Export digest to markdown for inclusion in development log and ADR reviews.
 
@@ -154,7 +154,7 @@ Triage: Does this affect TARR?
 
 ### 3.1 Ollama Model Updates
 
-RapidTriage uses a multi-model local-first routing strategy: 80% of LLM calls go to small models (7B-13B) for classification and extraction, 20% go to large models (70B+) for narrative drafting.
+Issen uses a multi-model local-first routing strategy: 80% of LLM calls go to small models (7B-13B) for classification and extraction, 20% go to large models (70B+) for narrative drafting.
 
 | Model Role | Current Default | Update Cadence | Evaluation Before Update |
 |------------|----------------|----------------|--------------------------|
@@ -167,10 +167,10 @@ RapidTriage uses a multi-model local-first routing strategy: 80% of LLM calls go
 1. `ollama pull {model}:latest` on development machine
 2. Run ForensicLLM evaluation suite (Section 3.2)
 3. Compare metrics against current baseline
-4. If improvement confirmed: update `rt-intel` default config, document in ADR
+4. If improvement confirmed: update `issen-intel` default config, document in ADR
 5. If regression: pin to current version, file issue for investigation
 
-**AI-free mode**: RapidTriage must function without any LLM. All model-dependent features degrade gracefully: narrative generation falls back to template-based summaries, classification falls back to rule-based heuristics. AI-free mode is tested in CI on every commit.
+**AI-free mode**: Issen must function without any LLM. All model-dependent features degrade gracefully: narrative generation falls back to template-based summaries, classification falls back to rule-based heuristics. AI-free mode is tested in CI on every commit.
 
 ### 3.2 ForensicLLM Evaluation Suite
 
@@ -228,25 +228,25 @@ The RAG pipeline uses `nomic-embed-text` via lancedb for forensic knowledge retr
 
 ### 4.2 Crash Dump Analysis
 
-When RapidTriage crashes, the `human-panic` handler captures:
+When Issen crashes, the `human-panic` handler captures:
 
 | Data | Purpose | PII Handling |
 |------|---------|-------------|
 | Stack trace | Identify crash location | No PII (code paths only) |
 | Panic message | Understand failure reason | Scrubbed of file paths and evidence content |
 | OS + hardware info | Reproduce environment | Non-identifying |
-| RapidTriage version + config | Reproduce configuration | Non-identifying |
+| Issen version + config | Reproduce configuration | Non-identifying |
 | Active parser + evidence type | Narrow root cause | Artifact type only, no content |
 
 **Analysis workflow**:
-1. User opts in to send crash report (or copies from `~/.rapidtriage/crash-reports/`)
+1. User opts in to send crash report (or copies from `~/.issen/crash-reports/`)
 2. Crash report lands in GitHub issue (auto-filed or manually)
 3. Reproduce with golden dataset matching artifact type
 4. Fix, add regression test, release via appropriate channel
 
 ### 4.3 Evidence Corruption Detection
 
-RapidTriage must never modify evidence. Detection mechanisms:
+Issen must never modify evidence. Detection mechanisms:
 
 | Check | When | Action on Failure |
 |-------|------|-------------------|
@@ -266,14 +266,14 @@ When an examiner reports that a generated report contains inaccurate information
 
 ### 4.5 CSAM Legal Workflow
 
-> **Legal obligation**: Under 18 U.S.C. Section 2258A (Adam Walsh Act), tools must not create unnecessary copies of CSAM. RapidTriage is a forensic analysis tool, not an ESP, but practitioners using it may encounter CSAM.
+> **Legal obligation**: Under 18 U.S.C. Section 2258A (Adam Walsh Act), tools must not create unnecessary copies of CSAM. Issen is a forensic analysis tool, not an ESP, but practitioners using it may encounter CSAM.
 
 **Workflow when CSAM indicators are detected**:
 1. **Detection**: PhotoDNA/NCMEC hash list match during evidence processing
 2. **Immediate action**: Flag in TUI with unmissable alert; halt further processing of flagged files
 3. **No duplication**: Flagged content is never copied, cached, thumbnailed, or included in reports
 4. **Audit entry**: Record detection event (hash only, no content) in hash-chained audit log
-5. **Examiner responsibility**: RapidTriage surfaces the detection; the examiner follows their jurisdiction's reporting obligations and organizational CSAM policy
+5. **Examiner responsibility**: Issen surfaces the detection; the examiner follows their jurisdiction's reporting obligations and organizational CSAM policy
 6. **Report handling**: Flagged items appear in report as "[CSAM Flagged --- See Separate Handling Procedures]" with hash and file path only
 
 ---
@@ -284,14 +284,14 @@ When an examiner reports that a generated report contains inaccurate information
 
 ### 5.1 Daubert Compliance Validation
 
-For RapidTriage output to be admissible as evidence supporting expert testimony, it must satisfy Daubert factors:
+For Issen output to be admissible as evidence supporting expert testimony, it must satisfy Daubert factors:
 
-| Daubert Factor | RapidTriage Compliance | Validation Method | Cadence |
+| Daubert Factor | Issen Compliance | Validation Method | Cadence |
 |----------------|----------------------|-------------------|---------|
 | **Testable methodology** | Open-source parsers with published test suites; methodology section auto-generated in every report | Verify methodology section accurately describes actual processing steps | Every release |
 | **Peer review** | Open-source parser code on GitHub; community review; conference presentations | Track GitHub PRs with external review; maintain presentation log | Continuous |
 | **Known error rate** | FP < 1%, FN < 0.5% per parser against NIST CFTT reference data | Nightly CFTT validation runs in CI | Nightly |
-| **Standards adherence** | NIST SP 800-86 (forensic process), NIST CFTT (tool testing) | Annual mapping review: NIST requirements vs RapidTriage capabilities | Annually |
+| **Standards adherence** | NIST SP 800-86 (forensic process), NIST CFTT (tool testing) | Annual mapping review: NIST requirements vs Issen capabilities | Annually |
 | **General acceptance** | Track adoption metrics, conference citations, peer tool comparisons | GitHub stars, download counts, citation tracking | Quarterly |
 
 ### 5.2 NIST CFTT Validation
@@ -325,7 +325,7 @@ The Computer Forensic Tool Testing (CFTT) program provides reference datasets an
 
 ### 5.4 Chain-of-Custody Verification
 
-RapidTriage maintains a hash-chained JSONL audit log for every case:
+Issen maintains a hash-chained JSONL audit log for every case:
 
 ```json
 {"seq": 1, "ts": "2026-03-20T14:22:01Z", "event": "evidence_ingested", "hash": "sha256:abc...", "prev_hash": "sha256:000..."}
@@ -337,7 +337,7 @@ RapidTriage maintains a hash-chained JSONL audit log for every case:
 - Every report includes a chain-of-custody appendix with full audit trail
 - Any break in the hash chain triggers a P0 incident
 - Audit logs are write-once: append-only file with OS-level permissions
-- Verification command: `rapidtriage verify-chain --case {case_id}`
+- Verification command: `issen verify-chain --case {case_id}`
 
 ### 5.5 Parser Fuzz Testing Schedule
 
@@ -366,7 +366,7 @@ Fuzz testing uses `cargo-fuzz` with `libFuzzer`. Coverage-guided fuzzing ensures
 | Storage | 256 GB SSD | 1 TB NVMe | Evidence images, Ollama models (~5-40 GB each), case databases |
 | GPU | None (CPU inference) | NVIDIA with 8+ GB VRAM | Dramatically faster Ollama inference; not required |
 
-**Examiner cost**: RapidTriage itself is free (open-source CLI) or licensed (professional/enterprise). The primary cost is the hardware the examiner already owns for forensic work.
+**Examiner cost**: Issen itself is free (open-source CLI) or licensed (professional/enterprise). The primary cost is the hardware the examiner already owns for forensic work.
 
 ### 6.2 Ollama Model Storage
 
@@ -377,7 +377,7 @@ Fuzz testing uses `cargo-fuzz` with `libFuzzer`. Coverage-guided fuzzing ensures
 | `nomic-embed-text` | ~275 MB | ~300 MB | Every case (RAG embedding) |
 | **Total baseline** | **~30 GB** | **~33 GB** | |
 
-**Storage management**: `rapidtriage models list` shows installed models and disk usage. `rapidtriage models prune` removes models not referenced in any active configuration.
+**Storage management**: `issen models list` shows installed models and disk usage. `issen models prune` removes models not referenced in any active configuration.
 
 ### 6.3 Optional Cloud LLM Costs
 
@@ -389,9 +389,9 @@ For practitioners who opt into cloud LLM for higher-quality narratives:
 | OpenAI | GPT-4o | ~$0.30-$1.50 | $6-$30 | Alternative to Anthropic |
 | Local only | Ollama | $0 | $0 | Default; no cost; slightly lower narrative quality |
 
-**Monthly budget cap**: Configurable in `~/.rapidtriage/config.toml`. Default: $0 (local only). Maximum recommended: $150/month for heavy users.
+**Monthly budget cap**: Configurable in `~/.issen/config.toml`. Default: $0 (local only). Maximum recommended: $150/month for heavy users.
 
-**Cost tracking**: `rapidtriage costs show --month` displays cloud API spending with per-case breakdown. Alerts when approaching budget cap at 80%.
+**Cost tracking**: `issen costs show --month` displays cloud API spending with per-case breakdown. Alerts when approaching budget cap at 80%.
 
 ### 6.4 Development Time Allocation
 
@@ -468,7 +468,7 @@ Every non-trivial technical decision gets an ADR in `docs/adrs/`:
 | New parser added | Yes | "ADR-015: Add Prefetch parser using X approach" |
 | Model changed | Yes | "ADR-016: Switch narrative model from Mixtral to Llama3 70B" |
 | Dependency added | Yes | "ADR-017: Add lancedb for vector storage" |
-| Architecture change | Yes | "ADR-018: Split rt-intel into rt-llm and rt-rag" |
+| Architecture change | Yes | "ADR-018: Split issen-intel into issen-llm and issen-rag" |
 | Kill list item reconsidered | Yes | "ADR-019: Reassess mobile forensics --- decision: still kill" |
 | Bug fix | No (unless architectural) | |
 
@@ -573,7 +573,7 @@ Every non-trivial technical decision gets an ADR in `docs/adrs/`:
     [ ] Identify upcoming DFIR conferences for demo/talk submissions
     [ ] Prepare demo materials using latest stable release
 [ ] Annual NIST mapping review (if Q1):
-    [ ] Map NIST SP 800-86 requirements to RapidTriage capabilities
+    [ ] Map NIST SP 800-86 requirements to Issen capabilities
     [ ] Document gaps and remediation plan
 ```
 
@@ -585,29 +585,29 @@ Every non-trivial technical decision gets an ADR in `docs/adrs/`:
 
 | Crate | Metric | Type | Unit | TARR Component |
 |-------|--------|------|------|----------------|
-| rt-pipeline | `pipeline.ingest.duration` | Timer | seconds | Evidence Ingestion |
-| rt-pipeline | `pipeline.layer.{0-4}.duration` | Timer | seconds | Parse-to-Timeline |
-| rt-pipeline | `pipeline.parser.{name}.throughput` | Gauge | events/sec | Parse-to-Timeline |
-| rt-pipeline | `pipeline.parser.{name}.success_rate` | Gauge | percentage | Parse-to-Timeline |
-| rt-pipeline | `pipeline.parser.{name}.error_count` | Counter | count | Parse-to-Timeline |
-| rt-timeline | `timeline.merge.duration` | Timer | seconds | Timeline Construction |
-| rt-timeline | `timeline.query.latency` | Histogram | ms | Query Performance |
-| rt-timeline | `timeline.event_count` | Gauge | count | Case Complexity |
-| rt-timeline | `timeline.duckdb.memory_usage` | Gauge | bytes | Resource Health |
-| rt-report | `report.render.{format}.duration` | Timer | seconds | Report Generation |
-| rt-report | `report.render.{format}.success` | Counter | count | Report Reliability |
-| rt-report | `report.word_count` | Gauge | count | Report Completeness |
-| rt-intel | `intel.llm.response_time` | Histogram | seconds | Findings-to-Narrative |
-| rt-intel | `intel.llm.grounding_accuracy` | Gauge | percentage | Narrative Quality |
-| rt-intel | `intel.llm.hallucination_rate` | Gauge | percentage | Narrative Quality |
-| rt-intel | `intel.rag.retrieval_quality` | Gauge | score (0-1) | RAG Effectiveness |
-| rt-intel | `intel.rag.query_latency` | Histogram | ms | RAG Performance |
-| rt-correlation | `correlation.pattern_count` | Counter | count | Detection Effectiveness |
-| rt-correlation | `correlation.cross_artifact_matches` | Counter | count | Correlation Depth |
-| rt-correlation | `correlation.duration` | Timer | seconds | Correlation Phase |
-| rt-cli | `cli.command.{name}.duration` | Timer | seconds | UX Responsiveness |
-| rt-tui | `tui.session.duration` | Timer | seconds | User Engagement |
-| rt-tui | `tui.render.fps` | Gauge | frames/sec | TUI Performance |
+| issen-pipeline | `pipeline.ingest.duration` | Timer | seconds | Evidence Ingestion |
+| issen-pipeline | `pipeline.layer.{0-4}.duration` | Timer | seconds | Parse-to-Timeline |
+| issen-pipeline | `pipeline.parser.{name}.throughput` | Gauge | events/sec | Parse-to-Timeline |
+| issen-pipeline | `pipeline.parser.{name}.success_rate` | Gauge | percentage | Parse-to-Timeline |
+| issen-pipeline | `pipeline.parser.{name}.error_count` | Counter | count | Parse-to-Timeline |
+| issen-timeline | `timeline.merge.duration` | Timer | seconds | Timeline Construction |
+| issen-timeline | `timeline.query.latency` | Histogram | ms | Query Performance |
+| issen-timeline | `timeline.event_count` | Gauge | count | Case Complexity |
+| issen-timeline | `timeline.duckdb.memory_usage` | Gauge | bytes | Resource Health |
+| issen-report | `report.render.{format}.duration` | Timer | seconds | Report Generation |
+| issen-report | `report.render.{format}.success` | Counter | count | Report Reliability |
+| issen-report | `report.word_count` | Gauge | count | Report Completeness |
+| issen-intel | `intel.llm.response_time` | Histogram | seconds | Findings-to-Narrative |
+| issen-intel | `intel.llm.grounding_accuracy` | Gauge | percentage | Narrative Quality |
+| issen-intel | `intel.llm.hallucination_rate` | Gauge | percentage | Narrative Quality |
+| issen-intel | `intel.rag.retrieval_quality` | Gauge | score (0-1) | RAG Effectiveness |
+| issen-intel | `intel.rag.query_latency` | Histogram | ms | RAG Performance |
+| issen-correlation | `correlation.pattern_count` | Counter | count | Detection Effectiveness |
+| issen-correlation | `correlation.cross_artifact_matches` | Counter | count | Correlation Depth |
+| issen-correlation | `correlation.duration` | Timer | seconds | Correlation Phase |
+| issen-cli | `cli.command.{name}.duration` | Timer | seconds | UX Responsiveness |
+| issen-tui | `tui.session.duration` | Timer | seconds | User Engagement |
+| issen-tui | `tui.render.fps` | Gauge | frames/sec | TUI Performance |
 
 ### TARR Budget Allocation
 
@@ -632,13 +632,13 @@ Total TARR Budget: < 4 hours (240 minutes)
 
 | Command | Purpose | When |
 |---------|---------|------|
-| `rapidtriage metrics show` | Display TARR and input metrics for current/recent cases | Weekly review |
-| `rapidtriage metrics export --format json` | Export metrics for external analysis | Monthly |
-| `rapidtriage verify-chain --case {id}` | Verify chain-of-custody integrity | Before court submission |
-| `rapidtriage models list` | Show installed Ollama models and disk usage | Monthly |
-| `rapidtriage models prune` | Remove unused Ollama models | As needed |
-| `rapidtriage costs show --month` | Display cloud LLM spending | Monthly |
-| `rapidtriage health check` | Run self-diagnostic (parsers, models, storage) | Weekly or after update |
+| `issen metrics show` | Display TARR and input metrics for current/recent cases | Weekly review |
+| `issen metrics export --format json` | Export metrics for external analysis | Monthly |
+| `issen verify-chain --case {id}` | Verify chain-of-custody integrity | Before court submission |
+| `issen models list` | Show installed Ollama models and disk usage | Monthly |
+| `issen models prune` | Remove unused Ollama models | As needed |
+| `issen costs show --month` | Display cloud LLM spending | Monthly |
+| `issen health check` | Run self-diagnostic (parsers, models, storage) | Weekly or after update |
 | `cargo audit` | Check dependency vulnerabilities | Daily (CI) |
 | `cargo deny check` | License and advisory compliance | Every PR |
 | `cargo vet` | Supply chain trust verification | Every PR |

@@ -177,12 +177,12 @@ mod tests {
         // Create a test-friendly snapshot directory.
         fs::create_dir(dir.path().join("snapshot_001")).expect("create snapshot_001");
         let volumes = list_vss_volumes(dir.path());
-        asseissen_eq!(
+        assert_eq!(
             volumes.len(),
             1,
             "expected exactly one volume for snapshot_001, got {volumes:?}"
         );
-        asseissen_eq!(volumes[0].shadow_id, "snapshot_001");
+        assert_eq!(volumes[0].shadow_id, "snapshot_001");
     }
 
     // ------------------------------------------------------------------

@@ -1,4 +1,4 @@
-# RapidTriage: Handoff Protocol
+# Issen: Handoff Protocol
 
 > Defines context-passing contracts between development agents (AI coding agents working on different crates), between runtime pipeline stages (Layer 0-4), across the open-source/proprietary boundary, and for community contributor workflows.
 
@@ -6,7 +6,7 @@
 
 ## 1. Handoff Protocol Overview
 
-RapidTriage operates at two distinct handoff levels:
+Issen operates at two distinct handoff levels:
 
 1. **Development-time handoffs** -- how AI coding agents (and human contributors) pass context when transitioning work between crates (e.g., pipeline-agent finishing Layer 0-2 work and handing off to timeline-agent for DuckDB ingestion).
 2. **Runtime handoffs** -- how data flows through the five-layer evidence pipeline, how events are emitted between crates, and how errors propagate across the open-source/proprietary boundary.
@@ -17,7 +17,7 @@ Both levels share a common principle: **every handoff carries a typed contract, 
                      DEVELOPMENT-TIME HANDOFF FLOW
  ┌──────────────┐    HandoffRequest     ┌───────────────┐
  │ pipeline-agent├─────────────────────►│ timeline-agent │
- │  (rt-pipeline)│                      │  (rt-timeline) │
+ │  (issen-pipeline)│                      │  (issen-timeline) │
  └──────┬───────┘  ◄─────────────────  └───────┬────────┘
         │           HandoffResponse             │
         │                                       │
@@ -33,8 +33,8 @@ Both levels share a common principle: **every handoff carries a typed contract, 
  │ Provider │   │ Format   │   │ Accessor │   │ Parser    │   │ Analysis  │
  └─────────┘   └─────────┘   └─────────┘   └──────────┘   └──────────┘
      StorageProvider   ImageFormat   VolumeSystem    Parser trait   AnalysisEngine
-      trait             trait     FilesystemAccessor   (rt-core)     (rt-intel)
-     (rt-core)        (rt-core)     trait (rt-core)                  proprietary
+      trait             trait     FilesystemAccessor   (issen-core)     (issen-intel)
+     (issen-core)        (issen-core)     trait (issen-core)                  proprietary
 ```
 
 ---
@@ -60,10 +60,10 @@ DevHandoffRequest:
     - timeline-agent
     - analysis-agent
     - intel-agent
-    - report-agent
+    - repoissen-agent
     - frontend-agent
     - infra-agent
-  sourceCrate: string          # e.g., "rt-pipeline"
+  sourceCrate: string          # e.g., "issen-pipeline"
 
   sourceContext:
     branch: string             # git branch name
@@ -92,7 +92,7 @@ DevHandoffRequest:
       updated: string[]
     newTraits: string[]        # new traits/types the target crate must implement
     newEvents: string[]        # new event types the target must handle
-    migrationRequired: boolean # does rt-timeline need a schema migration?
+    migrationRequired: boolean # does issen-timeline need a schema migration?
     testCommands: string[]     # commands to verify the handoff is clean
     relevantDocs: string[]     # paths to updated docs/ADRs
 
@@ -101,7 +101,7 @@ DevHandoffRequest:
     testsPass: string[]        # specific test suites that must be green
     docsUpdated: string[]      # docs that must be current
     changelogEntry: boolean    # CHANGELOG.md entry required
-    rfcRequired: boolean       # RFC needed for rt-core changes
+    rfcRequired: boolean       # RFC needed for issen-core changes
 
   priority: enum [low, medium, high, critical]
   timeoutMs: number            # optional; 0 = no timeout
@@ -203,11 +203,11 @@ These are the sanctioned transitions between development agents. Each has a spec
 
 | # | Source Agent | Target Agent | Trigger | Contract |
 |---|-------------|-------------|---------|----------|
-| 1 | pipeline-agent | timeline-agent | New event types defined in rt-core | Target implements DuckDB column mappings for new types; migration SQL provided |
-| 2 | pipeline-agent | analysis-agent | New parser emits events that need correlation rules | Target adds correlation patterns in rt-correlation for the new artifact type |
-| 3 | timeline-agent | report-agent | New query/view added to timeline | Target updates report templates to include new timeline view |
+| 1 | pipeline-agent | timeline-agent | New event types defined in issen-core | Target implements DuckDB column mappings for new types; migration SQL provided |
+| 2 | pipeline-agent | analysis-agent | New parser emits events that need correlation rules | Target adds correlation patterns in issen-correlation for the new artifact type |
+| 3 | timeline-agent | repoissen-agent | New query/view added to timeline | Target updates report templates to include new timeline view |
 | 4 | analysis-agent | intel-agent | New finding type needs RAG context or LLM narrative | Target adds prompt template and retrieval strategy for finding type |
-| 5 | intel-agent | report-agent | New narrative section generated | Target integrates narrative into report layout with proper citation format |
+| 5 | intel-agent | repoissen-agent | New narrative section generated | Target integrates narrative into report layout with proper citation format |
 | 6 | Any agent | infra-agent | CI/CD change needed (new benchmark, dependency update) | Target updates GitHub Actions, Cargo workspace config, or Nix flake |
 | 7 | Any agent | frontend-agent | New CLI command or TUI/GUI view needed | Target implements UI for new pipeline capability |
 | 8 | community-contributor | community-reviewer | Plugin PR submitted | Reviewer runs plugin test harness, checks WIT conformance, reviews security |
@@ -230,7 +230,7 @@ Data flows strictly downward through pipeline layers. Feedback flows upward only
 
 | Invalid Path | Why Prohibited |
 |--------------|----------------|
-| report-agent -> pipeline-agent | Reports never trigger re-ingestion; examiner re-runs pipeline manually |
+| repoissen-agent -> pipeline-agent | Reports never trigger re-ingestion; examiner re-runs pipeline manually |
 | intel-agent -> pipeline-agent | Intelligence layer never modifies raw evidence processing |
 | timeline-agent -> pipeline-agent (runtime) | Timeline queries never cause re-parsing; immutable append-only events |
 | Any proprietary -> Any open-source (runtime dependency) | Open-source crates NEVER depend on proprietary crates at compile time |
@@ -254,10 +254,10 @@ Data flows strictly downward through pipeline layers. Feedback flows upward only
 
 ### 4.1 HandoffManager
 
-The HandoffManager is the central coordinator for all handoff operations. In development context, it is a conceptual protocol enforced by CI gates and agent prompts. At runtime, it is a Rust struct in `rt-pipeline`.
+The HandoffManager is the central coordinator for all handoff operations. In development context, it is a conceptual protocol enforced by CI gates and agent prompts. At runtime, it is a Rust struct in `issen-pipeline`.
 
 ```rust
-// rt-pipeline/src/handoff/manager.rs
+// issen-pipeline/src/handoff/manager.rs
 
 use std::collections::HashSet;
 use uuid::Uuid;
@@ -375,7 +375,7 @@ Before initiating handoff, the source agent MUST:
    [ ] CHANGELOG.md entry added (unreleased section)
    [ ] If public API changed: update rustdoc on affected items
    [ ] If new trait added: add trait documentation with examples
-   [ ] If rt-core changed: RFC document in docs/rfcs/
+   [ ] If issen-core changed: RFC document in docs/rfcs/
 
 3. WRITE CROSS-CRATE TESTS
    [ ] Integration test demonstrating the handoff interface
@@ -402,8 +402,8 @@ The boundary between open-source and proprietary crates requires special handlin
 
     ┌─────────────────────────────────────────────────┐
     │               PROPRIETARY CRATES                 │
-    │  rt-report  rt-intel  rt-correlation  rt-tui     │
-    │  rt-gui     rt-web                               │
+    │  issen-report  issen-intel  issen-correlation  issen-tui     │
+    │  issen-gui     issen-web                               │
     │                                                  │
     │  Can depend on any open-source crate             │
     │  Can depend on other proprietary crates          │
@@ -412,19 +412,19 @@ The boundary between open-source and proprietary crates requires special handlin
                            ▼
     ┌─────────────────────────────────────────────────┐
     │               OPEN-SOURCE CRATES                 │
-    │  rt-core  rt-pipeline  rt-timeline  rt-cli       │
-    │  rt-plugin-sdk  rt-ewf                           │
+    │  issen-core  issen-pipeline  issen-timeline  issen-cli       │
+    │  issen-plugin-sdk  issen-ewf                           │
     │                                                  │
     │  NEVER depend on proprietary crates              │
-    │  Communicate via traits defined in rt-core       │
+    │  Communicate via traits defined in issen-core       │
     └─────────────────────────────────────────────────┘
 
 BOUNDARY HANDOFF RULES:
 
-1. Data crosses the boundary ONLY through rt-core trait objects
-   - TimelineEvent (rt-core) is the universal exchange type
-   - AnalysisPort trait (rt-core) defines the analysis interface
-   - ReportPort trait (rt-core) defines the report interface
+1. Data crosses the boundary ONLY through issen-core trait objects
+   - TimelineEvent (issen-core) is the universal exchange type
+   - AnalysisPort trait (issen-core) defines the analysis interface
+   - ReportPort trait (issen-core) defines the report interface
 
 2. Open-source crates expose trait implementations, never concrete types
    from proprietary crates
@@ -434,9 +434,9 @@ BOUNDARY HANDOFF RULES:
    - `cargo build --features pro` = includes proprietary crates
    - CI tests BOTH configurations
 
-4. Plugin SDK (rt-plugin-sdk) re-exports ONLY from rt-core
+4. Plugin SDK (issen-plugin-sdk) re-exports ONLY from issen-core
    - Community plugin developers never see proprietary types
-   - Plugin trait: Parser, Analyzer, Reporter (all in rt-core)
+   - Plugin trait: Parser, Analyzer, Reporter (all in issen-core)
 ```
 
 ### 4.4 Community Plugin Handoff Protocol
@@ -447,10 +447,10 @@ For community contributors developing plugins (Tier 2 WASM plugins, v0.3+):
 COMMUNITY PLUGIN SUBMISSION WORKFLOW
 
 1. CONTRIBUTOR develops plugin
-   ├── Uses rt-plugin-sdk (Apache 2.0)
+   ├── Uses issen-plugin-sdk (Apache 2.0)
    ├── Implements Parser trait via WIT interface
    ├── Includes test fixtures and golden output
-   └── Submits PR to github.com/h4x0r/rapidtriage
+   └── Submits PR to github.com/h4x0r/issen
 
 2. AUTOMATED CHECKS (CI gate)
    ├── WIT interface conformance check
@@ -487,8 +487,8 @@ All handoffs -- both development and runtime -- are instrumented with structured
 handoff_span_attributes:
   'handoff.trace_id': uuid
   'handoff.span_id': uuid
-  'handoff.source_crate': 'rt-pipeline'
-  'handoff.target_crate': 'rt-timeline'
+  'handoff.source_crate': 'issen-pipeline'
+  'handoff.target_crate': 'issen-timeline'
   'handoff.source_layer': 3
   'handoff.target_layer': 4
   'handoff.payload_type': 'TimelineEventBatch'
@@ -505,7 +505,7 @@ dev_handoff_attributes:
   'handoff.source_agent': 'pipeline-agent'
   'handoff.target_agent': 'timeline-agent'
   'handoff.reason': 'crate_boundary_crossed'
-  'handoff.branch': 'pipeline-agent/rt-pipeline/add-evtx-parser'
+  'handoff.branch': 'pipeline-agent/issen-pipeline/add-evtx-parser'
   'handoff.commit_sha': string
   'handoff.ci_status': 'passing'
   'handoff.breaking_changes': boolean
@@ -576,7 +576,7 @@ handoff_buffer_utilization:
 ### 6.1 Runtime Handoff Failure Handling
 
 ```rust
-// rt-pipeline/src/handoff/recovery.rs
+// issen-pipeline/src/handoff/recovery.rs
 
 pub enum RecoveryAction {
     RetryDifferentTarget { new_target: String, reason: String },
@@ -653,10 +653,10 @@ pub fn handle_handoff_failure(
 /// Determine fallback targets in order of preference.
 fn next_fallback_target(request: &RuntimeHandoffRequest, attempt: usize) -> String {
     let fallbacks = match request.target_layer {
-        1 => vec!["rt-pipeline-fallback", "raw-byte-passthrough"],
-        2 => vec!["rt-pipeline-flat-fs", "skip-filesystem"],
-        3 => vec!["rt-core-generic-parser", "skip-artifact"],
-        4 => vec!["rt-core-basic-analysis", "skip-analysis"],
+        1 => vec!["issen-pipeline-fallback", "raw-byte-passthrough"],
+        2 => vec!["issen-pipeline-flat-fs", "skip-filesystem"],
+        3 => vec!["issen-core-generic-parser", "skip-artifact"],
+        4 => vec!["issen-core-basic-analysis", "skip-analysis"],
         _ => vec!["skip"],
     };
     fallbacks.get(attempt.saturating_sub(1))
@@ -674,7 +674,7 @@ fn next_fallback_target(request: &RuntimeHandoffRequest, attempt: usize) -> Stri
 | Cross-crate test regression | Integration test suite | Both agents coordinate via shared branch; bisect to find breaking change |
 | License boundary violation | `cargo deny check` in CI | Block merge; source agent moves code to correct crate |
 | Plugin WIT conformance failure | Automated WIT validator | Community reviewer provides specific fix guidance |
-| Merge conflict on shared types (rt-core) | Git merge conflict | RFC process; both agents rebase on main after rt-core merge |
+| Merge conflict on shared types (issen-core) | Git merge conflict | RFC process; both agents rebase on main after issen-core merge |
 
 ### 6.3 Recovery Strategies Summary
 
@@ -724,10 +724,10 @@ NEW CONTRIBUTOR ONBOARDING CHECKLIST
 ```
 PLUGIN DEVELOPER FAST PATH
 
-1. Install SDK:    cargo add rt-plugin-sdk
-2. Scaffold:       cargo rt-plugin new my-parser
+1. Install SDK:    cargo add issen-plugin-sdk
+2. Scaffold:       cargo issen-plugin new my-parser
 3. Implement:      Parser trait (3 required methods)
-4. Test locally:   cargo rt-plugin test --fixtures ./test-data/
+4. Test locally:   cargo issen-plugin test --fixtures ./test-data/
 5. Submit PR:      gh pr create --label "community-plugin"
 
 HANDOFF TO REVIEWER:

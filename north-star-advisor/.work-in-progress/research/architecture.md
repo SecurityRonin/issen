@@ -1,4 +1,4 @@
-# RapidTriage Architecture Research: Plugin-Based Extensible Forensic Platform
+# Issen Architecture Research: Plugin-Based Extensible Forensic Platform
 
 > Research date: 2026-03-20
 > Context: Solo founder, bootstrapped. Community adoption first, then paying customers.
@@ -18,35 +18,35 @@
 | **Elastic** | Returned to AGPL for core (Elasticsearch, Kibana). Proprietary plugins under separate Elastic License. ([Source](https://www.elastic.co/about/open-source)) |
 | **GitLab** | CE (MIT) and EE (proprietary) as separate editions from same codebase. ([Source](https://en.wikipedia.org/wiki/Open-core_model)) |
 
-**RapidTriage recommended structure:**
+**Issen recommended structure:**
 
 ```
-github.com/h4x0r/rapidtriage          # Public monorepo (Apache 2.0 / MIT)
+github.com/h4x0r/issen          # Public monorepo (Apache 2.0 / MIT)
 ├── Cargo.toml                          # Virtual workspace manifest
 ├── LICENSING.md                        # Per-crate license declarations
 ├── crates/
-│   ├── rt-core/                        # Core types, timeline schema, plugin traits (Apache 2.0)
-│   ├── rt-pipeline/                    # Data pipeline abstractions (Apache 2.0)
-│   ├── rt-plugin-sdk/                  # Plugin development SDK (Apache 2.0)
-│   ├── rt-timeline/                    # Timeline storage & query engine (Apache 2.0)
+│   ├── issen-core/                        # Core types, timeline schema, plugin traits (Apache 2.0)
+│   ├── issen-pipeline/                    # Data pipeline abstractions (Apache 2.0)
+│   ├── issen-plugin-sdk/                  # Plugin development SDK (Apache 2.0)
+│   ├── issen-timeline/                    # Timeline storage & query engine (Apache 2.0)
 │   ├── parsers/
-│   │   ├── rt-parser-usnjrnl/          # USN Journal parser (Apache 2.0)
-│   │   ├── rt-parser-mft/             # MFT parser (Apache 2.0)
-│   │   ├── rt-parser-evtx/           # Windows Event Log (Apache 2.0)
+│   │   ├── issen-parser-usnjrnl/          # USN Journal parser (Apache 2.0)
+│   │   ├── issen-parser-mft/             # MFT parser (Apache 2.0)
+│   │   ├── issen-parser-evtx/           # Windows Event Log (Apache 2.0)
 │   │   └── ...                        # Community parsers
-│   ├── rt-ewf/                        # E01/EWF reader (Apache 2.0)
-│   ├── rt-shrinkpath/                 # Path utility (MIT)
-│   └── rt-cli/                        # CLI frontend (Apache 2.0)
+│   ├── issen-ewf/                        # E01/EWF reader (Apache 2.0)
+│   ├── issen-shrinkpath/                 # Path utility (MIT)
+│   └── issen-cli/                        # CLI frontend (Apache 2.0)
 │
-private-repo/rapidtriage-enterprise     # Private repo (Proprietary)
+private-repo/issen-enterprise     # Private repo (Proprietary)
 ├── Cargo.toml                          # Workspace, depends on public crates via git deps
 ├── crates/
-│   ├── rt-report-engine/              # Attorney-ready report generation
-│   ├── rt-correlation/                # Cross-artifact correlation engine
-│   ├── rt-gui/                        # Desktop GUI (Tauri/Dioxus)
-│   ├── rt-web/                        # Web UI + API server
-│   ├── rt-enterprise/                 # RBAC, audit logs, team features
-│   └── rt-license/                    # License validation
+│   ├── issen-repoissen-engine/              # Attorney-ready report generation
+│   ├── issen-correlation/                # Cross-artifact correlation engine
+│   ├── issen-gui/                        # Desktop GUI (Tauri/Dioxus)
+│   ├── issen-web/                        # Web UI + API server
+│   ├── issen-enterprise/                 # RBAC, audit logs, team features
+│   └── issen-license/                    # License validation
 ```
 
 **Key design decisions:**
@@ -62,12 +62,12 @@ private-repo/rapidtriage-enterprise     # Private repo (Proprietary)
 
 ### Recommendation: Three-Tier Plugin System
 
-Based on research into Rust plugin patterns ([NullDeref](https://nullderef.com/blog/plugin-dynload/), [AniLog](https://blog.anirudha.dev/rust-plugin-system/), [peerdh](https://peerdh.com/blogs/programming-insights/implementing-a-rust-based-plugin-architecture-for-dynamic-feature-loading)) and industry systems (Terraform, Autopsy, VS Code), RapidTriage should implement three tiers:
+Based on research into Rust plugin patterns ([NullDeref](https://nullderef.com/blog/plugin-dynload/), [AniLog](https://blog.anirudha.dev/rust-plugin-system/), [peerdh](https://peerdh.com/blogs/programming-insights/implementing-a-rust-based-plugin-architecture-for-dynamic-feature-loading)) and industry systems (Terraform, Autopsy, VS Code), Issen should implement three tiers:
 
 #### Tier 1: Compile-Time Trait Plugins (First-Party Parsers)
 
 ```rust
-/// Core trait all parsers implement — defined in rt-plugin-sdk
+/// Core trait all parsers implement — defined in issen-plugin-sdk
 pub trait ForensicParser: Send + Sync {
     fn name(&self) -> &str;
     fn supported_artifacts(&self) -> &[ArtifactType];
@@ -108,7 +108,7 @@ let events = parser.call_parse(&mut store, artifact_data)?;
 
 ```rust
 // Terraform-style: launch plugin as subprocess, communicate via gRPC
-let plugin_process = Command::new("./rt-plugin-axiom-bridge")
+let plugin_process = Command::new("./issen-plugin-axiom-bridge")
     .stdout(Stdio::piped())
     .spawn()?;
 // Read handshake from stdout, connect via gRPC on loopback
@@ -125,8 +125,8 @@ let channel = tonic::transport::Channel::from_shared(format!("http://127.0.0.1:{
 
 ```
 1. Built-in (Tier 1) — compiled into binary, always available
-2. User plugin directory — ~/.config/rapidtriage/plugins/*.wasm (Tier 2)
-3. System plugin directory — /usr/lib/rapidtriage/plugins/ (Tier 2 or Tier 3)
+2. User plugin directory — ~/.config/issen/plugins/*.wasm (Tier 2)
+3. System plugin directory — /usr/lib/issen/plugins/ (Tier 2 or Tier 3)
 4. Case-specific plugins — specified in case config (any tier)
 ```
 
@@ -138,7 +138,7 @@ let channel = tonic::transport::Channel::from_shared(format!("http://127.0.0.1:{
 | **Terraform** | gRPC subprocess ([Source](https://developer.hashicorp.com/terraform/plugin/framework/provider-servers)) | Process | Go (primarily) |
 | **VS Code** | Node.js extension host process | Process | JS/TS |
 | **Neovim** | RPC (msgpack) to external processes | Process | Any |
-| **RapidTriage** | Trait (T1) + WASM (T2) + gRPC (T3) | Compile/Sandbox/Process | Rust (T1), Any→WASM (T2), Any (T3) |
+| **Issen** | Trait (T1) + WASM (T2) + gRPC (T3) | Compile/Sandbox/Process | Rust (T1), Any→WASM (T2), Any (T3) |
 
 ---
 
@@ -194,7 +194,7 @@ pub trait FilesystemAccessor: Send + Sync {
 
 Velociraptor's key insight: **remap accessors to impersonate a live system**, so the same artifact parsers work on both live endpoints and dead disk images without modification. ([Source](https://docs.velociraptor.app/blog/2022/2022-03-22-deaddisk/))
 
-RapidTriage should implement this via a `VirtualFilesystem` that fuses multiple sources:
+Issen should implement this via a `VirtualFilesystem` that fuses multiple sources:
 
 ```rust
 pub struct VirtualFilesystem {
@@ -226,7 +226,7 @@ For terabyte-scale evidence:
 
 ### Recommendation: DuckDB-Backed Columnar Timeline Store
 
-Based on analysis of Plaso's SQLite-based architecture ([Source](https://deepwiki.com/log2timeline/plaso/3.3-storage-system)) and DuckDB's capabilities ([Source](https://endjin.com/blog/2025/04/duckdb-in-depth-how-it-works-what-makes-it-fast)), DuckDB is the superior choice for RapidTriage's timeline backend.
+Based on analysis of Plaso's SQLite-based architecture ([Source](https://deepwiki.com/log2timeline/plaso/3.3-storage-system)) and DuckDB's capabilities ([Source](https://endjin.com/blog/2025/04/duckdb-in-depth-how-it-works-what-makes-it-fast)), DuckDB is the superior choice for Issen's timeline backend.
 
 #### Why DuckDB Over SQLite
 
@@ -304,7 +304,7 @@ impl CaseTimeline {
 | **Plaso** | SQLite + Redis ([Source](https://deepwiki.com/log2timeline/plaso/3.3-storage-system)) | Millions | No (reprocess) | Slow (row-store) |
 | **Autopsy** | SQLite + Solr ([Source](https://www.cyberforensicacademy.com/blog/autopsy-forensics-tool-complete-step-by-step-beginner-guide)) | Millions | Partial | Moderate |
 | **AXIOM** | Proprietary ([Source](https://www.magnetforensics.com/products/magnet-axiom/)) | Millions | Yes | Fast |
-| **RapidTriage** | DuckDB | Billions | Yes | Very fast (columnar) |
+| **Issen** | DuckDB | Billions | Yes | Very fast (columnar) |
 
 ---
 
@@ -329,10 +329,10 @@ Open-source crates never `use` or `depend on` proprietary crates. This is enforc
 
 **2. Cargo features for optional integration points:**
 ```toml
-# In rt-core/Cargo.toml (open source)
+# In issen-core/Cargo.toml (open source)
 [features]
 default = []
-report-hooks = []  # Enables hook points for report engine, no proprietary code included
+repoissen-hooks = []  # Enables hook points for report engine, no proprietary code included
 correlation-hooks = []  # Enables hook points for correlation engine
 ```
 
@@ -340,7 +340,7 @@ The open-source core defines trait-based extension points (ports); the proprieta
 
 **3. Runtime license validation (for distributed proprietary binaries):**
 ```rust
-// In proprietary rt-license crate
+// In proprietary issen-license crate
 pub enum Edition { Community, Professional, Enterprise }
 
 pub fn active_edition() -> Edition {
@@ -357,9 +357,9 @@ pub fn active_edition() -> Edition {
 
 **5. API boundary design for community extensions:**
 ```rust
-// Public rt-plugin-sdk defines stable interfaces
-// Community plugins depend ONLY on rt-plugin-sdk and rt-core
-// Internal APIs (rt-pipeline internals, etc.) are pub(crate) — not exposed
+// Public issen-plugin-sdk defines stable interfaces
+// Community plugins depend ONLY on issen-plugin-sdk and issen-core
+// Internal APIs (issen-pipeline internals, etc.) are pub(crate) — not exposed
 
 // Stable public API — versioned with semver
 pub trait EventEmitter: Send + Sync {
@@ -383,23 +383,23 @@ Based on research into hexagonal architecture in Rust ([Source](https://www.howt
 
 ```
 Phase 1: CLI (clap + ratatui progress bars)
-    └── rt-core, rt-pipeline, rt-timeline, parsers
+    └── issen-core, issen-pipeline, issen-timeline, parsers
 
 Phase 2: TUI (ratatui interactive dashboard)
-    └── Same core, adds rt-tui shell
+    └── Same core, adds issen-tui shell
 
 Phase 3: Desktop GUI (Tauri 2 recommended)
-    └── Same core, adds rt-gui shell
+    └── Same core, adds issen-gui shell
     └── Tauri: Rust backend + web frontend (React/Svelte)
     └── Minimal binary size (~10MB vs Electron's 100MB+)
 
 Phase 4: Web UI + API Server (axum + Leptos/React)
-    └── Same core, adds rt-web shell
+    └── Same core, adds issen-web shell
     └── REST/GraphQL API for automation
     └── WebSocket for real-time progress
 
 Phase 5: Enterprise (multi-user, team features)
-    └── Same core, adds rt-enterprise
+    └── Same core, adds issen-enterprise
     └── Case management, RBAC, audit logs
     └── Client-server: analysis workers + web frontend
 ```
@@ -418,7 +418,7 @@ Phase 5: Enterprise (multi-user, team features)
 │     └────────┴──────────┴──────────────────┘             │
 │                         │                                │
 │              ┌──────────▼──────────┐                     │
-│              │   rt-core (Ports)   │  ◄── Stable API     │
+│              │   issen-core (Ports)   │  ◄── Stable API     │
 │              │  - CaseManager      │      boundary       │
 │              │  - AnalysisEngine   │                     │
 │              │  - TimelineQuery    │                     │
@@ -428,7 +428,7 @@ Phase 5: Enterprise (multi-user, team features)
 │     ┌───────────────────┼───────────────────┐            │
 │     │                   │                   │            │
 │  ┌──▼───────┐  ┌───────▼──────┐  ┌────────▼────────┐   │
-│  │rt-pipeline│  │ rt-timeline  │  │ rt-report-engine│   │
+│  │issen-pipeline│  │ issen-timeline  │  │ issen-repoissen-engine│   │
 │  │(ingest)   │  │ (DuckDB)     │  │ (docx/html/pdf) │   │
 │  └───────────┘  └──────────────┘  └─────────────────┘   │
 │                                                          │
@@ -449,7 +449,7 @@ Phase 5: Enterprise (multi-user, team features)
 | Web | `axum` (API) + React or Leptos (UI) | axum for backend performance; React for hiring/ecosystem, or Leptos for full-Rust stack |
 | Mobile | Deferred — not in initial roadmap | If needed: Crux framework for shared core with Swift/Kotlin shells ([Source](https://redbadger.github.io/crux/)) |
 
-#### Key Principle: The `rt-core` Crate is Side-Effect-Free
+#### Key Principle: The `issen-core` Crate is Side-Effect-Free
 
 Following Crux's architecture: the core crate contains pure business logic with no I/O. All side effects (file access, network, database) are expressed as **commands** that shells execute. This makes the core trivially testable and portable across all frontend types.
 
@@ -482,7 +482,7 @@ For a solo founder maximizing velocity:
 
 1. **Start with CLI + Tier 1 plugins** — compile-time trait-based parsers, `clap` CLI, DuckDB timeline store. This is your open-source community magnet.
 
-2. **Add plugin SDK early** — define stable `ForensicParser` and `EventEmitter` traits in `rt-plugin-sdk` v0.1. Community contributors target this API.
+2. **Add plugin SDK early** — define stable `ForensicParser` and `EventEmitter` traits in `issen-plugin-sdk` v0.1. Community contributors target this API.
 
 3. **DuckDB timeline from day one** — don't start with SQLite and migrate later. DuckDB's Rust bindings are mature enough and the performance advantage compounds.
 

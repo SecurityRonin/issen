@@ -167,7 +167,7 @@ design_system:
     font_size: "10pt body"
     color_mode: "black-on-white (forced)"
     integrity_colors_preserved: true
-    page_footer: "RapidTriage Report -- Page N of M"
+    page_footer: "Issen Report -- Page N of M"
     self_contained: true
     no_external_dependencies: true
 

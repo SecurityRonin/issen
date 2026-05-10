@@ -207,8 +207,8 @@ architecture:
         chain_of_custody: "SHA-256 hashes, processing audit log, examiner identity, report content hash"
 
     open_core:
-        public_repo: "github.com/h4x0r/rapidtriage (Apache 2.0 / MIT)"
-        private_repo: "rapidtriage-pro (Proprietary)"
+        public_repo: "github.com/h4x0r/issen (Apache 2.0 / MIT)"
+        private_repo: "issen-pro (Proprietary)"
         boundary_rule: "Open-source crates NEVER depend on proprietary crates"
         gating: "Cargo feature flags (default, pro, enterprise) + runtime license validation"
         precedents: ["Grafana", "GitLab", "HashiCorp", "Elastic"]

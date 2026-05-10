@@ -23,12 +23,12 @@ market_shifts:
   - name: "Collection Format Standardization"
     description: "KAPE, Velociraptor, ACQUIRE commoditized collection. Practitioners work with standardized triage packages."
     timeline: "Already mainstream for collection"
-    implication: "RapidTriage becomes the natural downstream consumer. Collection is solved — analysis-to-report is the gap."
+    implication: "Issen becomes the natural downstream consumer. Collection is solved — analysis-to-report is the gap."
 
   - name: "Court Pressure on Deliverable Quality"
     description: "Daubert challenges increasing ~35%. Courts scrutinizing digital evidence presentation. Attorneys demand defensible, well-documented reports."
     timeline: "Already happening, accelerating"
-    implication: "Attorney-ready output with chain-of-custody and methodology documentation becomes table stakes. RapidTriage builds for where market is going."
+    implication: "Attorney-ready output with chain-of-custody and methodology documentation becomes table stakes. Issen builds for where market is going."
 
 direct_competitors:
   - name: "Magnet AXIOM"
@@ -80,11 +80,11 @@ category_adjacent:
 
   - name: "Velociraptor"
     category: "Endpoint collection and live response"
-    gap: "Collection tool, not analysis/reporting. No reports. RapidTriage ingests its output — complementary."
+    gap: "Collection tool, not analysis/reporting. No reports. Issen ingests its output — complementary."
 
   - name: "Eric Zimmerman's Tools"
     category: "Windows artifact parsing (CLI)"
-    gap: "CLI-only, no integration, no timeline unification, no reports. RapidTriage adds integration + reporting."
+    gap: "CLI-only, no integration, no timeline unification, no reports. Issen adds integration + reporting."
 
 indirect_competitors:
   - name: "Manual Excel/Word workflow"
@@ -170,7 +170,7 @@ whitespace:
 
     - name: "Academic and training programs"
       pain: "Teaching with Autopsy (limited) or begging for educational licenses"
-      opportunity: "Students learn on RapidTriage, become practitioners who buy it."
+      opportunity: "Students learn on Issen, become practitioners who buy it."
 
   unoccupied_positions:
     - "The report is the product — tool defined by output quality"

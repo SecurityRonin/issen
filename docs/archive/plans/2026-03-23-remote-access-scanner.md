@@ -294,7 +294,7 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Remote access infrastructure detection for RapidTriage"
+description = "Remote access infrastructure detection for Issen"
 repository.workspace = true
 
 [dependencies]

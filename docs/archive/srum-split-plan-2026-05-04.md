@@ -1,4 +1,4 @@
-# Split Plan: srum-forensic → RapidTriage
+# Split Plan: srum-forensic → Issen
 
 **Date:** 2026-05-04
 **Status:** PROPOSED — not yet executed
@@ -45,18 +45,18 @@ ese-btree-walk → srum-network-parsing → srum-app-parsing → srum-idmap).
 
 `ese-core` has standalone value as a general ESE reader. For now it lives in
 srum-forensic. Future consideration: extract as `ese-forensic` sibling workspace if
-`rt-parser-webcache` or Active Directory analysis is added to RapidTriage.
+`rt-parser-webcache` or Active Directory analysis is added to Issen.
 
 ### Q4 — Correlation rules gap
 
-RapidTriage has zero SRUM-specific correlation rules in `rt-correlation/rules/`.
+Issen has zero SRUM-specific correlation rules in `rt-correlation/rules/`.
 Network and process evidence from SRUM records is uniquely useful for:
 - **Exfil detection** — large outbound from short-lived or background-only processes
 - **C2 beacon fingerprinting** — regular fixed-size sends across multiple hourly intervals
 - **Background CPU miner** — high background_cycles, no foreground_cycles, process not in signed allowlist
 - **Stealth process** — AppUsageRecord entries with no corresponding EventLog 4688/Prefetch trace
 
-These CANNOT be detected from any existing RapidTriage artifact source alone.
+These CANNOT be detected from any existing Issen artifact source alone.
 SRUM is the only Windows artifact with per-process hourly bandwidth accounting.
 
 ### Q5 — Dependency graph
@@ -64,7 +64,7 @@ SRUM is the only Windows artifact with per-process hourly bandwidth accounting.
 `usnjrnl-forensic` is the reference pattern: path dep → wrapping parser crate:
 
 ```toml
-# RapidTriage/Cargo.toml [workspace.dependencies]
+# Issen/Cargo.toml [workspace.dependencies]
 usnjrnl-forensic = { path = "../usnjrnl-forensic" }
 ```
 
@@ -81,13 +81,13 @@ SRUM follows the same shape.
 ### srum-forensic stays as a standalone public library
 
 `srum-forensic` is intentionally a public, standalone library/tool (MIT, on crates.io path).
-It provides field value independently of RapidTriage — an investigator on a Linux workstation
-can run `sr network SRUDB.dat | jq ...` without installing the full RapidTriage suite.
+It provides field value independently of Issen — an investigator on a Linux workstation
+can run `sr network SRUDB.dat | jq ...` without installing the full Issen suite.
 This mirrors the `usnjrnl-forensic` / `blazehash` pattern in the SecurityRonin ecosystem.
 
-**Nothing leaves srum-forensic.** RapidTriage adds a consumption layer on top.
+**Nothing leaves srum-forensic.** Issen adds a consumption layer on top.
 
-### What goes in RapidTriage (new)
+### What goes in Issen (new)
 
 | Component | Location | Description |
 |-----------|----------|-------------|
@@ -118,10 +118,10 @@ srum-forensic/
 
 **srum-forensic publishes to crates.io once ralph loop completes.**
 
-### RapidTriage (additions only)
+### Issen (additions only)
 
 ```
-RapidTriage/
+Issen/
 ├── Cargo.toml
 │   └── [workspace.dependencies]
 │       srum-parser = { path = "../srum-forensic/crates/srum-parser" }   ← ADD
@@ -158,9 +158,9 @@ RapidTriage/
 srum-forensic is a published public library. Moving code out would break the standalone
 `sr` binary and any external consumers.
 
-### New code goes into RapidTriage
+### New code goes into Issen
 
-#### 1. Workspace dependency additions (`RapidTriage/Cargo.toml`)
+#### 1. Workspace dependency additions (`Issen/Cargo.toml`)
 
 ```toml
 [workspace.dependencies]
@@ -385,7 +385,7 @@ pub fn run(args: SrumArgs) -> anyhow::Result<()> {
 **Wait for ralph loop to complete in srum-forensic.**
 
 `srum-parser::parse_network_usage()` and `parse_app_usage()` currently return `vec![]`.
-All RapidTriage integration work depends on these returning real records.
+All Issen integration work depends on these returning real records.
 
 Track progress: `cat ~/src/srum-forensic/scripts/ralph/log.md`
 
@@ -406,9 +406,9 @@ Expected completion order:
 
 ```json
 {
-  "description": "RapidTriage ingest command accepts SRUDB.dat as Srum artifact",
+  "description": "Issen ingest command accepts SRUDB.dat as Srum artifact",
   "steps": [
-    "Add srum-parser and srum-core path deps to RapidTriage/Cargo.toml",
+    "Add srum-parser and srum-core path deps to Issen/Cargo.toml",
     "Create crates/parsers/rt-parser-srum/",
     "Implement SrumParser implementing ForensicParser",
     "Map NetworkUsageRecord → TimelineEvent (NetworkBandwidth)",
@@ -491,11 +491,11 @@ a follow-up iteration.
    `cd ~/src/srum-forensic && cargo test --workspace` must always pass.
 
 2. **`sr` binary remains usable standalone.** Users of `sr network SRUDB.dat`
-   must not need to install RapidTriage.
+   must not need to install Issen.
 
-3. **No circular deps.** srum-forensic must never import from RapidTriage.
+3. **No circular deps.** srum-forensic must never import from Issen.
 
-4. **TDD on every change.** All new code in RapidTriage follows RED-GREEN-REFACTOR.
+4. **TDD on every change.** All new code in Issen follows RED-GREEN-REFACTOR.
    Two commits per story: `test(red):` then `feat: GREEN —`.
 
 5. **`ArtifactType::Srum` stays where it is.** It's in `rt-core` and already correct.

@@ -1,4 +1,4 @@
-# RapidTriage: User Journey Maps
+# Issen: User Journey Maps
 
 > **Parent**: [../NORTHSTAR_EXTRACT.md](../NORTHSTAR_EXTRACT.md)
 > **Created**: 2026-03-20
@@ -10,9 +10,9 @@ Visual journey maps with emotional states for core user flows.
 
 ## Document Purpose
 
-This document maps the critical user journeys through RapidTriage, anchored to the North Star Metric: **Time-to-Attorney-Ready Report (TARR) < 4 hours**. Each journey traces the examiner's path from evidence intake through attorney-ready deliverable, identifying emotional states, friction points, and design opportunities that directly reduce TARR.
+This document maps the critical user journeys through Issen, anchored to the North Star Metric: **Time-to-Attorney-Ready Report (TARR) < 4 hours**. Each journey traces the examiner's path from evidence intake through attorney-ready deliverable, identifying emotional states, friction points, and design opportunities that directly reduce TARR.
 
-RapidTriage is a CLI-first forensic triage platform (with TUI via ratatui and a future Tauri GUI). These journeys reflect a terminal-native workflow, not a browser-based SaaS experience. The primary interaction model is command invocation, pipeline composition, and TUI-based review --- not point-and-click forms.
+Issen is a CLI-first forensic triage platform (with TUI via ratatui and a future Tauri GUI). These journeys reflect a terminal-native workflow, not a browser-based SaaS experience. The primary interaction model is command invocation, pipeline composition, and TUI-based review --- not point-and-click forms.
 
 **Cross-references:**
 - Personas: [NORTHSTAR.md](../NORTHSTAR.md) Section 3
@@ -283,7 +283,7 @@ CONFIDENCE
 | **Scaffold** | `rt plugin new --name browser-brave --type parser` | Empowered --- "The tooling helps me get started" | Generates plugin project skeleton: `Cargo.toml` with correct dependencies, `src/lib.rs` implementing `ForensicParser` trait with TODO markers, sample test data directory, CI config | Rust unfamiliar to some DFIR developers; dependency issues | Scaffold includes extensive code comments; `ForensicParser` trait is minimal (3 required methods); example implementations linked; `rt plugin new --lang python` for Python FFI bridge (future) |
 | **Implement** | Writes parser logic implementing `ForensicParser` trait | Focused, building --- standard development flow | Trait requires: `fn name()`, `fn can_parse(&self, path: &Path) -> bool`, `fn parse(&self, source: &dyn VirtualFile) -> Result<Vec<TimelineEntry>>`. Strong types guide implementation | Complex artifact formats; unclear output schema | `TimelineEntry` struct is well-documented; sample parsers serve as reference; `rt plugin validate-output` checks conformance |
 | **Test** | `rt plugin test --sample-data ./brave-test-data/` | Anxious, then relieved --- "Do my outputs match expectations?" | Runs parser against sample data. Validates output schema. Compares against expected results if provided. Shows: "23 timeline entries parsed. Schema valid. 0 warnings." Generates coverage report | Test data creation; edge cases; cross-platform paths | `rt plugin generate-test-data` creates minimal test fixtures from real artifacts (with PII scrubbing); property-based test framework for edge cases |
-| **Integration Test** | `rt plugin test --integration` | Validating --- "Does it work within the full pipeline?" | Ingests test data through full RapidTriage pipeline. Verifies entries appear in timeline. Generates sample report section. Shows plugin in context | Plugin works in isolation but fails in pipeline | Integration test harness runs full ingest-parse-report cycle; clear error messages when pipeline contract violated |
+| **Integration Test** | `rt plugin test --integration` | Validating --- "Does it work within the full pipeline?" | Ingests test data through full Issen pipeline. Verifies entries appear in timeline. Generates sample report section. Shows plugin in context | Plugin works in isolation but fails in pipeline | Integration test harness runs full ingest-parse-report cycle; clear error messages when pipeline contract violated |
 | **Publish** | `rt plugin publish` | Proud, contributing --- "I've added something to the community" | Submits to community registry. Includes: parser metadata, test results, sample output, coverage claim. Appears in registry after review | Review delay; rejection without explanation | Automated pre-submission checks; clear acceptance criteria; reviewer feedback within 48 hours; "draft" publish for community testing before full acceptance |
 
 ### 4.3 Plugin Developer Efficiency Curve
@@ -332,9 +332,9 @@ DEVELOPMENT SPEED
 
 | Journey | Behavior Difference | Why This Persona Differs | UX Accommodation |
 |---------|---------------------|--------------------------|-------------------|
-| **Core TARR** | Receives output from forensic examiner; reformats for court submission | Her input is someone else's output; she is the forensic-to-legal translator | Court-ready export: `rt report --format court --bates-start "EX-0001"` generates Bates-numbered exhibits, exhibit index, testimony-ready summaries |
+| **Core TARR** | Receives output from forensic examiner; reformats for court submission | Her input is someone else's output; she is the forensic-to-legal translator | Couissen-ready export: `rt report --format court --bates-start "EX-0001"` generates Bates-numbered exhibits, exhibit index, testimony-ready summaries |
 | **Multi-Source** | Needs to track chain of custody across all sources for court admissibility | Legal requirements for evidence provenance are strict; any gap is exploitable by opposing counsel | Chain of custody report section: automated source tracking, hash verification at every stage, examiner attestation fields |
-| **Attorney Follow-Up** | Most frequent follow-up: "Generate exhibit for [specific event] with Bates number [X]" | Court filings require precise formatting, numbering, and cross-referencing | Single-event exhibit generation: `rt exhibit --event [ID] --bates "EX-0047"` produces court-ready single-page exhibit with metadata, hash, and chain of custody |
+| **Attorney Follow-Up** | Most frequent follow-up: "Generate exhibit for [specific event] with Bates number [X]" | Court filings require precise formatting, numbering, and cross-referencing | Single-event exhibit generation: `rt exhibit --event [ID] --bates "EX-0047"` produces couissen-ready single-page exhibit with metadata, hash, and chain of custody |
 | **Plugin Development** | Will not develop plugins; will request legal output format plugins | Needs templates for specific court jurisdictions and filing requirements | Legal template marketplace; jurisdiction-specific formatting rules; `rt report --jurisdiction "SDNY"` applies local court formatting requirements |
 
 ---
@@ -360,7 +360,7 @@ DEVELOPMENT SPEED
 | Post-first-report | In-CLI feedback prompt (optional) | "Did this report meet your quality bar?" --- initial TARR satisfaction |
 | Post-ingest | Automatic timing metric | Ingest-to-Timeline latency logged per run; regression detection |
 | Post-error | Error recovery tracking | Time-to-resolution logged; patterns surface UX improvements |
-| 7-day follow-up | Email survey (opt-in) | Sustained value: "Has RapidTriage changed your reporting workflow?" |
+| 7-day follow-up | Email survey (opt-in) | Sustained value: "Has Issen changed your reporting workflow?" |
 | 30-day milestone | Usage analytics (opt-in) | Power user development: report count, case count, plugin usage |
 | Attorney feedback | Indirect via examiner | "Has your attorney called you back less about reports?" |
 
@@ -405,7 +405,7 @@ DEVELOPMENT SPEED
 | **Disk Full** | `Error: Insufficient disk space. Need ~8GB for timeline database, have 2GB free. Case state saved.` | Panic --- "Did I lose my work?" | Clear space requirement stated; `--output-dir` to redirect to another volume; case state preserved, resume with `rt resume` | All work saved before halting; atomic operations prevent half-written state |
 | **Timeout / Long Processing** | `Note: Large evidence set (127GB). Estimated completion: ~45 minutes. Progress: 23%. Press 'q' to background, 'Ctrl+C' to pause.` | Impatience --- "Is it stuck?" | Background processing; pause/resume; partial results available during processing | Streaming results: timeline is browsable while parsing continues; progress updates every 5 seconds |
 | **Report Template Error** | `Error: Template 'firm-standard.toml' references field 'custodian_title' not found in case metadata. Add with 'rt case set custodian_title "..."'` | Annoyance --- "I just want the report" | Specific field name and command to fix; `--skip-missing` to generate with blanks; `--interactive` to fill in on the spot | Report generation paused, not failed; template error is fixable without re-running pipeline |
-| **Plugin Compatibility** | `Warning: Plugin 'browser-brave' v0.2 targets RapidTriage 0.8. You are running 0.9. May have compatibility issues. Run 'rt plugin update browser-brave' or use '--compat-mode'.` | Uncertainty --- "Should I trust this plugin?" | Update command provided; compatibility mode available; `rt plugin test` to verify locally before use | Plugin sandboxed; failures in plugin do not affect core parsers |
+| **Plugin Compatibility** | `Warning: Plugin 'browser-brave' v0.2 targets Issen 0.8. You are running 0.9. May have compatibility issues. Run 'rt plugin update browser-brave' or use '--compat-mode'.` | Uncertainty --- "Should I trust this plugin?" | Update command provided; compatibility mode available; `rt plugin test` to verify locally before use | Plugin sandboxed; failures in plugin do not affect core parsers |
 
 ### 7.3 Error Recovery Emotional Design
 
@@ -434,7 +434,7 @@ DEVELOPMENT SPEED
 | **P1** | Firm template system | Report Engine: `--template` | Planned |
 | **P2** | Plugin scaffold and test harness | Plugin SDK: `rt plugin` | Planned |
 | **P2** | Community plugin registry | Infrastructure | Planned |
-| **P2** | Court-ready exhibit generation (Bates numbering) | Report Engine: `rt exhibit` | Planned |
+| **P2** | Couissen-ready exhibit generation (Bates numbering) | Report Engine: `rt exhibit` | Planned |
 | **P3** | Python FFI bridge for plugin development | Plugin SDK | Planned |
 | **P3** | Attorney FAQ auto-generation | Report Engine | Planned |
 

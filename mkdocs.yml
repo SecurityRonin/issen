@@ -1,7 +1,7 @@
-site_name: RapidTriage
-site_url: https://securityronin.github.io/rapidtriage/
-repo_url: https://github.com/SecurityRonin/rapidtriage
-repo_name: SecurityRonin/rapidtriage
+site_name: Issen
+site_url: https://securityronin.github.io/issen/
+repo_url: https://github.com/SecurityRonin/issen
+repo_name: SecurityRonin/issen
 edit_uri: edit/main/docs/
 
 theme:

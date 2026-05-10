@@ -66,19 +66,19 @@ mod tests {
     #[test]
     fn detect_lime_format() {
         let f = write_magic(&[0x45, 0x4D, 0x69, 0x4C, 0x00, 0x00, 0x00, 0x01]);
-        asseissen_eq!(detect_format(f.path()).unwrap(), DumpFormat::Lime);
+        assert_eq!(detect_format(f.path()).unwrap(), DumpFormat::Lime);
     }
 
     #[test]
     fn detect_avml_format() {
         let f = write_magic(&[0x61, 0x76, 0x6D, 0x6C, 0x00, 0x00, 0x00, 0x02]);
-        asseissen_eq!(detect_format(f.path()).unwrap(), DumpFormat::Avml);
+        assert_eq!(detect_format(f.path()).unwrap(), DumpFormat::Avml);
     }
 
     #[test]
     fn detect_windows_crash_dump() {
         let f = write_magic(&[0x50, 0x41, 0x47, 0x45, 0x00, 0x00, 0x00, 0x00]);
-        asseissen_eq!(
+        assert_eq!(
             detect_format(f.path()).unwrap(),
             DumpFormat::WindowsCrashDump
         );
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn detect_raw_format() {
         let f = write_magic(&[0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE]);
-        asseissen_eq!(detect_format(f.path()).unwrap(), DumpFormat::Raw);
+        assert_eq!(detect_format(f.path()).unwrap(), DumpFormat::Raw);
     }
 
     #[test]
@@ -98,9 +98,9 @@ mod tests {
 
     #[test]
     fn dump_format_display() {
-        asseissen_eq!(DumpFormat::Lime.to_string(), "LiME");
-        asseissen_eq!(DumpFormat::Avml.to_string(), "AVML");
-        asseissen_eq!(DumpFormat::WindowsCrashDump.to_string(), "WindowsCrashDump");
-        asseissen_eq!(DumpFormat::Raw.to_string(), "Raw");
+        assert_eq!(DumpFormat::Lime.to_string(), "LiME");
+        assert_eq!(DumpFormat::Avml.to_string(), "AVML");
+        assert_eq!(DumpFormat::WindowsCrashDump.to_string(), "WindowsCrashDump");
+        assert_eq!(DumpFormat::Raw.to_string(), "Raw");
     }
 }

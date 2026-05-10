@@ -21,7 +21,7 @@ intelligence:
       - name: cross_case_persistent
         purpose: "Historical patterns, anonymized reports, organizational TTP library"
         engine: lancedb
-        location: "~/.rapidtriage/knowledge/"
+        location: "~/.issen/knowledge/"
         lifecycle: persistent
         indexing_trigger: "On case close (batch)"
         chunk_strategy: "Semantic section (report paragraphs, technique descriptions)"
@@ -30,7 +30,7 @@ intelligence:
       - name: reference_static
         purpose: "ATT&CK techniques, forensic artifact docs, Windows internals, SANS guides"
         engine: lancedb
-        location: "~/.rapidtriage/reference/"
+        location: "~/.issen/reference/"
         lifecycle: "Immutable between quarterly updates"
         indexing_trigger: "Quarterly rebuild"
         chunk_strategy: "One chunk per technique/artifact type/methodology step"
@@ -233,7 +233,7 @@ intelligence:
       - "OCR (Tesseract)"
       - "Report templates"
     per_feature_granularity: true
-    config_path: "~/.rapidtriage/config.toml"
+    config_path: "~/.issen/config.toml"
 
   data_pipeline:
     freshness:

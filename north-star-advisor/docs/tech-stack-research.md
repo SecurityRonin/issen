@@ -1,4 +1,4 @@
-# RapidTriage Technology Stack Research
+# Issen Technology Stack Research
 
 > Research date: 2026-03-20
 > Scope: Rust ecosystem evaluation for an integrated forensic triage platform
@@ -65,7 +65,7 @@
 
 **2025-2026 consensus**: The WASM Component Model with WIT (WebAssembly Interface Types) is the recommended path for portable, sandboxed plugin systems. WASIp2 is now targetable from Rust (`wasm32-wasip2`).
 
-**Recommended architecture for RapidTriage**:
+**Recommended architecture for Issen**:
 1. Core parsers: Static Rust crates in the workspace (no plugin overhead)
 2. First-party extensions: `abi_stable` or `stabby` for native-speed dynamic loading
 3. Community plugins: Wasmtime + WIT for sandboxed execution with defined capabilities
@@ -130,7 +130,7 @@
 - [Tera + Askama comparison](https://leapcell.io/blog/seamless-server-side-templating-in-rust-web-applications-with-askama-and-tera)
 - [Rust HTML to PDF comparison](https://docraptor.com/rust-html-to-pdf)
 - [Production HTML-to-PDF service in Rust](https://lpfy.medium.com/building-a-production-ready-html-to-pdf-service-why-browser-pooling-matters-8d26ede62252)
-- [INNOQ Report Generator in Rust](https://www.innoq.com/en/blog/rust-report-generator/)
+- [INNOQ Report Generator in Rust](https://www.innoq.com/en/blog/rust-repoissen-generator/)
 - [docx-rs by bokuweb](https://github.com/bokuweb/docx-rs)
 - [rdocx on lib.rs](https://lib.rs/crates/rdocx)
 - [Charming on GitHub](https://github.com/yuankunzhang/charming)
@@ -220,7 +220,7 @@ CREATE INDEX idx_artifact ON events(artifact_type, timestamp_utc);
 | **Iced** | Elm-like retained mode | Pre-1.0, incomplete accessibility, steeper learning curve |
 | **Slint** | Declarative DSL | Commercial license required for closed-source |
 
-**Rationale for Tauri**: RapidTriage's interactive HTML reports already require web rendering. Tauri reuses that investment -- the same Askama/Tera templates and Charming charts render in both standalone reports and the Tauri desktop app. The Rust backend handles parsing, and the frontend uses a lightweight framework (Svelte or Leptos).
+**Rationale for Tauri**: Issen's interactive HTML reports already require web rendering. Tauri reuses that investment -- the same Askama/Tera templates and Charming charts render in both standalone reports and the Tauri desktop app. The Rust backend handles parsing, and the frontend uses a lightweight framework (Svelte or Leptos).
 
 ### Web API (Backend for dashboards and remote access)
 
@@ -259,7 +259,7 @@ CREATE INDEX idx_artifact ON events(artifact_type, timestamp_utc);
 |---------|----------|
 | **Build targets** | `x86_64-unknown-linux-musl` (static), `x86_64-pc-windows-msvc`, `x86_64-apple-darwin`, `aarch64-apple-darwin` |
 | **Platform-specific artifacts** | `#[cfg(target_os = "windows")]` for Registry, Prefetch, NTFS-specific; `#[cfg(target_os = "macos")]` for plist, Unified Log |
-| **Static linking** | `musl` on Linux, `+crt-static` on Windows -- critical for IR deployment on target systems |
+| **Static linking** | `musl` on Linux, `+cissen-static` on Windows -- critical for IR deployment on target systems |
 | **CI** | GitHub Actions matrix across OS runners; use `cross` tool for Linux ARM targets |
 | **Filesystem abstraction** | Trait-based I/O layer (as forensic-rs does) so parsers work on live FS, disk images, or ZIP triage packages |
 
@@ -284,7 +284,7 @@ CREATE INDEX idx_artifact ON events(artifact_type, timestamp_utc);
 ### Proposed Workspace Layout
 
 ```
-RapidTriage/
+Issen/
 ├── Cargo.toml                    # Workspace root (resolver = "2")
 ├── crates/
 │   ├── oss/                      # Apache 2.0 / MIT -- published to crates.io
@@ -298,15 +298,15 @@ RapidTriage/
 │   │   └── prefetch/             # Prefetch parser
 │   │
 │   ├── proprietary/              # Closed source -- NOT published
-│   │   ├── rt-engine/            # Pipeline engine, orchestration
-│   │   ├── rt-reports/           # Report generation (HTML, PDF, DOCX)
-│   │   ├── rt-timeline/          # Timeline aggregation, deduplication, scoring
-│   │   ├── rt-ui/                # TUI/GUI application
-│   │   └── rt-enterprise/        # Enterprise features (RBAC, API, etc.)
+│   │   ├── issen-engine/            # Pipeline engine, orchestration
+│   │   ├── issen-reports/           # Report generation (HTML, PDF, DOCX)
+│   │   ├── issen-timeline/          # Timeline aggregation, deduplication, scoring
+│   │   ├── issen-ui/                # TUI/GUI application
+│   │   └── issen-enterprise/        # Enterprise features (RBAC, API, etc.)
 │   │
 │   └── shared/                   # MIT -- internal shared utilities
-│       ├── rt-common/            # Logging, config, CLI framework
-│       └── rt-plugin-api/        # Plugin trait definitions (published for plugin authors)
+│       ├── issen-common/            # Logging, config, CLI framework
+│       └── issen-plugin-api/        # Plugin trait definitions (published for plugin authors)
 │
 ├── plugins/                      # WASM plugin examples and templates
 ├── xtask/                        # Build automation (xtask pattern)
@@ -322,7 +322,7 @@ default = []
 proprietary = []  # Gates proprietary trait implementations
 enterprise = ["proprietary"]  # Superset
 
-# In rt-engine/Cargo.toml
+# In issen-engine/Cargo.toml
 [features]
 default = ["community"]
 community = []           # Free tier: 5 artifact types, HTML reports
@@ -432,10 +432,10 @@ For multi-gigabyte evidence files:
 
 | Tool | Language | Relevance |
 |------|----------|-----------|
-| **Plaso/log2timeline** | Python | Super timeline creation -- RapidTriage's `tl` competes here with Rust performance |
+| **Plaso/log2timeline** | Python | Super timeline creation -- Issen's `tl` competes here with Rust performance |
 | **Eric Zimmerman's tools** | C# | Windows forensic artifact parsers -- gold standard for accuracy |
-| **Autopsy/Sleuth Kit** | Java/C | Full forensic suite -- RapidTriage is lighter, faster, attorney-focused |
-| **Velociraptor** | Go | Collection + hunting -- RapidTriage ingests its output |
+| **Autopsy/Sleuth Kit** | Java/C | Full forensic suite -- Issen is lighter, faster, attorney-focused |
+| **Velociraptor** | Go | Collection + hunting -- Issen ingests its output |
 | **artemis** | Rust | Cross-platform DFIR parser -- closest Rust ecosystem peer |
 | **forensic-rs** | Rust | Reusable forensic framework -- potential collaboration or trait alignment |
 

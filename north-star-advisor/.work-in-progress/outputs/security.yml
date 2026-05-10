@@ -140,7 +140,7 @@ auth_patterns:
   solo_mode:
     description: "No authentication required; OS-level user is the examiner"
     version_range: "v0.1 - v0.3"
-    identity_source: "~/.config/rapidtriage/examiner.toml"
+    identity_source: "~/.config/issen/examiner.toml"
   enterprise_mode:
     description: "SSO via SAML/OIDC with RBAC"
     version_range: "v0.4+"

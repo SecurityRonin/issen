@@ -1,4 +1,4 @@
-# RapidTriage: Competitive Landscape
+# Issen: Competitive Landscape
 
 > **Tier**: 1 — Strategic Authority
 > **Parent**: [NORTHSTAR.md](NORTHSTAR.md)
@@ -8,7 +8,7 @@
 
 ## Document Purpose
 
-This document maps the competitive terrain and identifies **where RapidTriage can build ahead of the market**. It answers:
+This document maps the competitive terrain and identifies **where Issen can build ahead of the market**. It answers:
 
 1. Who are we competing against (directly and indirectly)?
 2. What market shifts create opportunity?
@@ -26,7 +26,7 @@ This document maps the competitive terrain and identifies **where RapidTriage ca
 
 ### Category
 
-> **RapidTriage operates in the Digital Forensics and Incident Response (DFIR) triage and reporting market.**
+> **Issen operates in the Digital Forensics and Incident Response (DFIR) triage and reporting market.**
 
 **Market Characteristics**:
 
@@ -44,9 +44,9 @@ Markets that could expand into ours or that we could expand into:
 | Adjacent Market | Relationship | Threat/Opportunity |
 |-----------------|--------------|-------------------|
 | eDiscovery (Relativity, Nuix) | Downstream consumer of forensic output | **Opportunity** — Integration point, not competition. Producing Relativity-ready load files is a feature, not a pivot. |
-| Endpoint Detection & Response (CrowdStrike, SentinelOne) | EDR creates evidence that DFIR analyzes | **Opportunity** — EDR vendors adding "IR lite" features, but court-ready reporting is not their strength. Ingest EDR telemetry as an evidence source. |
+| Endpoint Detection & Response (CrowdStrike, SentinelOne) | EDR creates evidence that DFIR analyzes | **Opportunity** — EDR vendors adding "IR lite" features, but couissen-ready reporting is not their strength. Ingest EDR telemetry as an evidence source. |
 | SIEM/SOAR (Splunk, Palo Alto XSIAM) | Real-time detection; DFIR is post-incident | **Low threat** — Different buyer, different workflow. Kill list item: we are not real-time. |
-| Legal Tech (Everlaw, Logikcull) | Legal teams consuming forensic deliverables | **Opportunity** — Bridge the gap. No legal tech tool understands forensic artifacts; no forensic tool produces legal-ready output. RapidTriage sits in the gap. |
+| Legal Tech (Everlaw, Logikcull) | Legal teams consuming forensic deliverables | **Opportunity** — Bridge the gap. No legal tech tool understands forensic artifacts; no forensic tool produces legal-ready output. Issen sits in the gap. |
 | Managed Detection & Response (Arctic Wolf, Expel) | MDR firms staff IR practitioners who need triage tools | **Opportunity** — MDR SOCs are a distribution channel. Their examiners need TARR reduction. |
 
 ## 1.2 Market Shifts
@@ -63,7 +63,7 @@ Markets that could expand into ours or that we could expand into:
 
 **Timeline**: Mainstream adoption 2026-2028; currently early-adopter phase with trust barriers
 
-**Implication for RapidTriage**: AI-assisted narrative generation is the highest-leverage feature for TARR reduction. The report engine can use LLMs to draft findings narratives from structured artifact data while keeping the examiner in the loop for accuracy. This is where the 16-hour-to-4-hour reduction lives. Competitors are applying AI to analysis; RapidTriage should apply AI to the **reporting bottleneck** — the last 80%.
+**Implication for Issen**: AI-assisted narrative generation is the highest-leverage feature for TARR reduction. The report engine can use LLMs to draft findings narratives from structured artifact data while keeping the examiner in the loop for accuracy. This is where the 16-hour-to-4-hour reduction lives. Competitors are applying AI to analysis; Issen should apply AI to the **reporting bottleneck** — the last 80%.
 
 ### Shift 2: Consolidation and PE Acquisition Squeezing Practitioners
 
@@ -77,7 +77,7 @@ Markets that could expand into ours or that we could expand into:
 
 **Timeline**: Ongoing — accelerating through 2027
 
-**Implication for RapidTriage**: Open-source parsers with permissive licensing (Apache 2.0/MIT) directly exploit practitioner frustration with PE-inflated pricing. The dual licensing model (open parsers + proprietary integration) lets RapidTriage build community trust while capturing value at the integration layer. Solo practitioners like Sarah Chen are the most price-sensitive and most underserved.
+**Implication for Issen**: Open-source parsers with permissive licensing (Apache 2.0/MIT) directly exploit practitioner frustration with PE-inflated pricing. The dual licensing model (open parsers + proprietary integration) lets Issen build community trust while capturing value at the integration layer. Solo practitioners like Sarah Chen are the most price-sensitive and most underserved.
 
 ### Shift 3: Standardization of Collection and Evidence Formats
 
@@ -91,7 +91,7 @@ Markets that could expand into ours or that we could expand into:
 
 **Timeline**: Already mainstream for collection; analysis-side standardization lagging
 
-**Implication for RapidTriage**: RapidTriage's "ingest what collectors produce" philosophy is perfectly timed. By supporting KAPE output, Velociraptor hunts, and standard image formats natively, RapidTriage becomes the natural downstream consumer. Collection is solved — analysis-to-report is the gap.
+**Implication for Issen**: Issen's "ingest what collectors produce" philosophy is perfectly timed. By supporting KAPE output, Velociraptor hunts, and standard image formats natively, Issen becomes the natural downstream consumer. Collection is solved — analysis-to-report is the gap.
 
 ### Shift 4: Court and Compliance Pressure on Deliverable Quality
 
@@ -105,7 +105,7 @@ Markets that could expand into ours or that we could expand into:
 
 **Timeline**: Already happening — accelerating as digital evidence becomes central to more case types
 
-**Implication for RapidTriage**: This is RapidTriage's core thesis. Attorney-ready output with chain-of-custody documentation, methodology narratives, and court-formatted exhibits is not a nice-to-have — it is becoming table stakes. RapidTriage is building for where the market is going, not where it was.
+**Implication for Issen**: This is Issen's core thesis. Attorney-ready output with chain-of-custody documentation, methodology narratives, and couissen-formatted exhibits is not a nice-to-have — it is becoming table stakes. Issen is building for where the market is going, not where it was.
 
 ## 1.3 Buyer Evolution
 
@@ -117,7 +117,7 @@ Markets that could expand into ours or that we could expand into:
 | **Procurement** | IT/Security budget, annual license | Mixed — personal tools for solo, team licenses for firms, open-source for budget-constrained | Dual licensing model (free parsers + paid integration) matches actual procurement patterns |
 | **AI expectations** | Skepticism, "show me the evidence" | Cautious optimism, willing to try AI-assisted workflows if examiner stays in control | AI narrative drafting with examiner review loop matches current trust level |
 | **Vendor trust** | Brand loyalty (EnCase, FTK "industry standard") | Eroding — PE acquisitions breaking trust, open-source gaining credibility | Community-first approach with transparent development builds trust PE acquirers are destroying |
-| **Deliverable format** | PDF with screenshots, manual Word docs | Interactive HTML for exploration, polished Word/PDF for the record, Relativity load files | Exactly what RapidTriage produces — this is not a feature, it is the product |
+| **Deliverable format** | PDF with screenshots, manual Word docs | Interactive HTML for exploration, polished Word/PDF for the record, Relativity load files | Exactly what Issen produces — this is not a feature, it is the product |
 
 ---
 
@@ -133,20 +133,20 @@ Tools directly competing for the forensic triage and analysis workflow.
 |------------|-------------|-----------|------------|---------|------------------|
 | **Magnet AXIOM** | All-in-one forensic platform for computer, mobile, cloud, and vehicle forensics | Cross-source correlation, Magnet.AI for triage prioritization, extensive artifact support (800+ types), strong training ecosystem, Magnet AUTOMATE for workflow orchestration | Slow parsing on large datasets (hours for 500GB+), expensive post-PE acquisition ($3,500+/yr), bloated UI for triage-only workflows, report generator produces generic templates not attorney-ready narrative | $3,500+/year (Examine), enterprise pricing on request | **Poor** — Reports are artifact dumps with screenshots. Examiner spends 6-10 hours manually converting AXIOM output to attorney-ready deliverables. Magnet.AI helps prioritize but does not help write. |
 | **Autopsy / The Sleuth Kit** | Free, open-source forensic platform; academic and budget-friendly | Free (Apache 2.0), extensible via Java/Python modules, community plugins, Autopsy 4.x modernized UI, good for training/education | Slow processing (Java overhead on large images), limited automation, report generation is bare-bones HTML export, no narrative capability, UI feels dated | Free (open-source); Basis Technology offers commercial support | **Very Poor** — Report is a raw HTML export of bookmarked artifacts. Zero narrative. Zero attorney-readiness. Examiner starts report from scratch. |
-| **X-Ways Forensics** | Lightweight, fast, expert-oriented forensic analysis | Fastest processing in market (C++ native, minimal overhead), deep filesystem analysis, small resource footprint, highly configurable, respected by expert examiners | Extremely steep learning curve, deliberately dated UI (Windows-only), no built-in report generation at all, no timeline visualization, no collaboration features | ~$1,100 (one-time license) + ~$530/year updates | **None** — X-Ways produces no reports. Examiner exports data and builds deliverables entirely in Word/PowerPoint. Total TARR contribution is zero — it is purely an analysis tool. |
+| **X-Ways Forensics** | Lightweight, fast, expeissen-oriented forensic analysis | Fastest processing in market (C++ native, minimal overhead), deep filesystem analysis, small resource footprint, highly configurable, respected by expert examiners | Extremely steep learning curve, deliberately dated UI (Windows-only), no built-in report generation at all, no timeline visualization, no collaboration features | ~$1,100 (one-time license) + ~$530/year updates | **None** — X-Ways produces no reports. Examiner exports data and builds deliverables entirely in Word/PowerPoint. Total TARR contribution is zero — it is purely an analysis tool. |
 | **Exterro FTK (Forensic Toolkit)** | Pre-indexed forensic analysis with eDiscovery integration | Fast pre-indexed search, eDiscovery workflow integration (Exterro ecosystem), distributed processing, good for large datasets | Resource-heavy (requires significant RAM/storage), expensive, UI modernization lagging, eDiscovery focus dilutes DFIR features, enterprise-oriented pricing | $5,999/year (standalone); $11,500/year (FTK Suite) | **Poor** — Report generation exists but produces eDiscovery-style output (item lists, metadata tables), not forensic narratives. Attorney still needs examiner walkthrough. |
 | **Belkasoft X** | All-in-one forensic tool with AI assist, cross-tool import | BelkaGPT AI assistance, 1,000+ artifact types, imports from other tools (AXIOM, Cellebrite, etc.), competitive pricing vs. AXIOM, good mobile + computer coverage | Smaller market presence, AI features still maturing, less training ecosystem than Magnet, report templates are rigid | ~$2,500/year | **Mediocre** — BelkaGPT can summarize findings but reports are still template-based with artifact listings. Better than Autopsy, worse than what an attorney actually needs. |
-| **EnCase (OpenText)** | Court-accepted forensic standard, deep Windows analysis | "EnCase certified" still carries weight in court, deep Windows artifact analysis, EnScript automation, established legal precedent for admissibility | Legacy UI (feels 2008-era), slow innovation post-OpenText acquisition, expensive, declining market share, poor cloud/mobile support | ~$3,000-$4,000/year | **Poor** — Reports are rigid templates. The "court-accepted" reputation comes from the tool name on the report, not from report quality. Examiners still rewrite everything in Word. |
+| **EnCase (OpenText)** | Couissen-accepted forensic standard, deep Windows analysis | "EnCase certified" still carries weight in court, deep Windows artifact analysis, EnScript automation, established legal precedent for admissibility | Legacy UI (feels 2008-era), slow innovation post-OpenText acquisition, expensive, declining market share, poor cloud/mobile support | ~$3,000-$4,000/year | **Poor** — Reports are rigid templates. The "couissen-accepted" reputation comes from the tool name on the report, not from report quality. Examiners still rewrite everything in Word. |
 
 ### Category-Adjacent Competitors
 
 Solutions in adjacent spaces that partially overlap the forensic-to-report workflow.
 
-| Competitor | Category | What They Do | Gap vs. RapidTriage |
+| Competitor | Category | What They Do | Gap vs. Issen |
 |------------|----------|--------------|----------------------|
-| **Cellebrite** | Mobile forensics (primarily) | Industry-leading mobile extraction/bypass, Physical Analyzer for mobile artifact analysis, growing into cloud and computer forensics | Mobile-first; computer forensics is secondary. Reports are extraction-oriented, not narrative. Expensive ($5,000+/yr). Does not address the Windows/endpoint triage-to-report gap that RapidTriage targets. |
-| **Velociraptor** | Endpoint collection and live response | Free/open-source, VQL query language, CISA-endorsed, excellent for enterprise-scale collection and live response hunts | Collection and live response tool, not analysis/reporting. No report generation. No timeline visualization. RapidTriage ingests Velociraptor output — complementary, not competing. |
-| **Eric Zimmerman's Tools** | Windows artifact parsing (CLI) | Free CLI tools (MFTECmd, PECmd, RECmd, etc.), gold-standard accuracy for Windows artifacts, used by most IR practitioners as part of their toolkit | CLI-only, no integration between tools, no timeline unification, no report generation. Examiners use EZ tools then manually combine output. RapidTriage can embed EZ-compatible parsers and add the integration + reporting layer on top. |
+| **Cellebrite** | Mobile forensics (primarily) | Industry-leading mobile extraction/bypass, Physical Analyzer for mobile artifact analysis, growing into cloud and computer forensics | Mobile-first; computer forensics is secondary. Reports are extraction-oriented, not narrative. Expensive ($5,000+/yr). Does not address the Windows/endpoint triage-to-report gap that Issen targets. |
+| **Velociraptor** | Endpoint collection and live response | Free/open-source, VQL query language, CISA-endorsed, excellent for enterprise-scale collection and live response hunts | Collection and live response tool, not analysis/reporting. No report generation. No timeline visualization. Issen ingests Velociraptor output — complementary, not competing. |
+| **Eric Zimmerman's Tools** | Windows artifact parsing (CLI) | Free CLI tools (MFTECmd, PECmd, RECmd, etc.), gold-standard accuracy for Windows artifacts, used by most IR practitioners as part of their toolkit | CLI-only, no integration between tools, no timeline unification, no report generation. Examiners use EZ tools then manually combine output. Issen can embed EZ-compatible parsers and add the integration + reporting layer on top. |
 
 ### Indirect Competitors
 
@@ -156,7 +156,7 @@ Not forensic tools, but alternative approaches practitioners use to solve the sa
 |------------|----------|----------------------------|------------|
 | **Manual Excel/Word workflow** | Examiner manually copies artifacts from various tools into Excel for analysis, then writes Word report | When no single tool covers the full workflow; when attorney wants specific format; when budget is zero | 8-16 hours per report, error-prone, no reproducibility, no chain-of-custody documentation, examiner burnout |
 | **plaso/log2timeline** | Open-source supertimeline generation — ingests many artifact types into unified timeline | When examiner needs comprehensive timeline across all evidence sources and has Linux/Python expertise | Dependency hell, no UI, extremely noisy output (millions of events with no filtering), no report generation, requires post-processing in Timeline Explorer or Excel. Powerful engine with zero last-mile. |
-| **Timeline Explorer + EZ Tools combo** | Eric Zimmerman's parsing tools + Timeline Explorer (free) for visualization + manual Word report | Most common "free stack" for Windows forensics — widely taught in SANS courses | No integration (copy-paste between tools), no automated report, no narrative generation, relies entirely on examiner's Word skills. This is the baseline workflow RapidTriage aims to replace. |
+| **Timeline Explorer + EZ Tools combo** | Eric Zimmerman's parsing tools + Timeline Explorer (free) for visualization + manual Word report | Most common "free stack" for Windows forensics — widely taught in SANS courses | No integration (copy-paste between tools), no automated report, no narrative generation, relies entirely on examiner's Word skills. This is the baseline workflow Issen aims to replace. |
 | **Custom scripts (Python/PowerShell)** | In-house automation scripts chaining forensic parsers with report templates | When firm has technical staff and case types are repetitive enough to justify script development | Fragile, undocumented, single-point-of-failure (script author leaves), no standardization, each firm reinvents the wheel |
 
 ### Emerging Threats
@@ -172,13 +172,13 @@ Players not yet competing but positioned to enter.
 
 ## 2.2 Competitive Positioning Matrix
 
-**Axes**: X = Workflow Completeness (Parse-only to Full Report), Y = Accessibility (Expert-only to Practitioner-friendly)
+**Axes**: X = Workflow Completeness (Parse-only to Full Report), Y = Accessibility (Expeissen-only to Practitioner-friendly)
 
 ```
                         Full Workflow (Parse → Analyze → Report)
                                         │
                                         │
-                                        │   ★ RapidTriage (target)
+                                        │   ★ Issen (target)
                                         │
                         Magnet AXIOM ●   │
                                         │         ● Belkasoft X
@@ -196,7 +196,7 @@ Players not yet competing but positioned to enter.
                         Parse-Only (No Report Output)
 ```
 
-**Key Insight**: No competitor occupies the upper-right quadrant — full workflow completion with practitioner accessibility. AXIOM comes closest on workflow but skews enterprise/expensive. X-Ways and EZ Tools are expert-oriented with zero reporting. The "Full Workflow + Practitioner-Friendly" position is **unoccupied**.
+**Key Insight**: No competitor occupies the upper-right quadrant — full workflow completion with practitioner accessibility. AXIOM comes closest on workflow but skews enterprise/expensive. X-Ways and EZ Tools are expeissen-oriented with zero reporting. The "Full Workflow + Practitioner-Friendly" position is **unoccupied**.
 
 **Positioning by TARR Performance**:
 
@@ -210,7 +210,7 @@ Players not yet competing but positioned to enter.
 | FTK | 10+ hours | eDiscovery-style output, not attorney narrative |
 | Magnet AXIOM | 8+ hours | Best current reporting, still requires manual narrative |
 | Belkasoft X | 8+ hours | BelkaGPT assists but reports are template-bound |
-| **RapidTriage (target)** | **< 4 hours** | **Automated pipeline: parse → timeline → findings → narrative → attorney-ready report** |
+| **Issen (target)** | **< 4 hours** | **Automated pipeline: parse → timeline → findings → narrative → attorney-ready report** |
 
 ## 2.3 Feature Parity Analysis
 
@@ -218,7 +218,7 @@ Players not yet competing but positioned to enter.
 
 Features customers expect from any solution in the forensic triage category:
 
-| Feature | Why Expected | RapidTriage Implementation |
+| Feature | Why Expected | Issen Implementation |
 |---------|--------------|---------------------------|
 | Windows artifact parsing (registry, event logs, file system, prefetch, NTFS artifacts) | Core DFIR workflow — every case involves Windows artifacts | Rust-native parsers (usnjrnl-forensic, tl already shipping); plugin architecture for extensibility |
 | Evidence format support (E01, raw/dd, KAPE output, Velociraptor packages) | Practitioners work with these daily — not supporting them is disqualifying | E01 via ewf crate (shipping), raw via memory-mapped I/O, KAPE directory structure parser, Velociraptor hunt import |
@@ -228,27 +228,27 @@ Features customers expect from any solution in the forensic triage category:
 | Hash verification and chain-of-custody | Court admissibility requirement | SHA-256 verification at ingest, chain-of-custody metadata in every report |
 | Export to common formats (CSV, JSON) | Interoperability with other tools and workflows | First-class export; parsers produce structured JSON natively |
 
-### Differentiators (Where RapidTriage Wins)
+### Differentiators (Where Issen Wins)
 
-Features where RapidTriage is meaningfully ahead of competitors:
+Features where Issen is meaningfully ahead of competitors:
 
-| Feature | Competitor Gap | RapidTriage Advantage |
+| Feature | Competitor Gap | Issen Advantage |
 |---------|---------------|----------------------|
 | **Attorney-ready report generation** | Every competitor produces artifact dumps, not narratives. Examiners spend 6-16 hours rewriting tool output into deliverables. | Automated pipeline from findings to structured narrative with citations. Interactive HTML for exploration, polished Word/PDF for the record. The report is the product. |
 | **Dual-format output (HTML + Word/PDF)** | Competitors offer one format (usually HTML or PDF screenshot dump). No tool produces both interactive exploration AND formal court documents. | Interactive HTML report for attorney exploration (filterable timelines, expandable evidence nodes); polished Word/PDF expert witness report for filing. Same findings, two audiences. |
-| **Rust performance on triage workloads** | Autopsy (Java) and plaso (Python) are measurably slow on large evidence. AXIOM is C# with heavy overhead. Only X-Ways (C++) competes on speed. | Rust-native parsers — memory-safe with zero-cost abstractions. Target: < 10 minutes parse-to-timeline for 50GB. Approaches X-Ways speed without X-Ways' expert-only UX. |
+| **Rust performance on triage workloads** | Autopsy (Java) and plaso (Python) are measurably slow on large evidence. AXIOM is C# with heavy overhead. Only X-Ways (C++) competes on speed. | Rust-native parsers — memory-safe with zero-cost abstractions. Target: < 10 minutes parse-to-timeline for 50GB. Approaches X-Ways speed without X-Ways' expeissen-only UX. |
 | **Open-source parsers + proprietary integration** | AXIOM, FTK, EnCase are fully proprietary. Autopsy is fully open-source (hard to monetize). No one does the hybrid model well. | Apache 2.0 parsers build community trust and contribution. Proprietary integration layer, report engine, and UI capture value. Like Elastic's model applied to DFIR. |
 | **Plugin-based extensibility** | AXIOM has modules but they are Magnet-controlled. Autopsy has Java modules but development is cumbersome. No tool has a modern, well-documented plugin system. | Rust plugin API (WASM-based) for community-contributed parsers, report templates, and analysis modules. Lower barrier than Autopsy's Java modules. |
-| **KAPE/Velociraptor-native ingestion** | Most tools treat triage packages as second-class (require manual pointing to individual files). | First-class support: point RapidTriage at a KAPE output directory or Velociraptor hunt package, and it auto-discovers and processes all artifacts. Zero configuration. |
+| **KAPE/Velociraptor-native ingestion** | Most tools treat triage packages as second-class (require manual pointing to individual files). | First-class support: point Issen at a KAPE output directory or Velociraptor hunt package, and it auto-discovers and processes all artifacts. Zero configuration. |
 
 ### Gaps (Where Competitors Currently Win)
 
-Features where competitors are ahead and RapidTriage must close the gap over time:
+Features where competitors are ahead and Issen must close the gap over time:
 
-| Feature | Leading Competitor | Their Advantage | RapidTriage Roadmap |
+| Feature | Leading Competitor | Their Advantage | Issen Roadmap |
 |---------|-------------------|-----------------|---------------------|
 | Mobile forensics | Cellebrite, Magnet AXIOM | Physical extraction, app-level parsing, bypass capabilities; years of reverse engineering investment | Phase 3+ — Not MVP scope. Ingest Cellebrite exports as evidence source first; native mobile parsing is a future plugin. Kill list: we are not a collection/extraction tool. |
-| Cloud evidence (M365, Google Workspace) | Magnet AXIOM, Cellebrite Cloud | API integrations for cloud service evidence acquisition and analysis | Phase 2+ — Cloud artifact parsing via plugins. Collection stays out of scope (use AXIOM/Cellebrite for collection, RapidTriage for analysis + reporting). |
+| Cloud evidence (M365, Google Workspace) | Magnet AXIOM, Cellebrite Cloud | API integrations for cloud service evidence acquisition and analysis | Phase 2+ — Cloud artifact parsing via plugins. Collection stays out of scope (use AXIOM/Cellebrite for collection, Issen for analysis + reporting). |
 | Artifact type breadth (800+ types) | Magnet AXIOM, Belkasoft X | Years of accumulated parsers covering every obscure artifact | Community plugin ecosystem will close this gap. Open-source parsers invite contribution. Quality over quantity — cover the 50 artifacts that matter in 90% of cases first. |
 | Training ecosystem | Magnet (Magnet Virtual Summit, certifications), SANS (Autopsy in FOR500) | Established training relationships, certifications that practitioners list on resumes | Build educational content, SANS partnership potential, community workshops. Certification program in Phase 3. |
 | Court admissibility track record | EnCase, Magnet AXIOM | Decades of court use; "EnCase certified" has legal weight | This is earned over time, not built. Focus on methodology documentation, chain-of-custody, and producing reports that withstand Daubert scrutiny. |
@@ -257,7 +257,7 @@ Features where competitors are ahead and RapidTriage must close the gap over tim
 
 ### Research Conclusion
 
-> **RapidTriage's core innovation — automated forensic-to-attorney report generation — is validated as a genuine market gap. No existing tool adequately addresses the "last 80%" problem where examiners manually translate tool output into legal deliverables.**
+> **Issen's core innovation — automated forensic-to-attorney report generation — is validated as a genuine market gap. No existing tool adequately addresses the "last 80%" problem where examiners manually translate tool output into legal deliverables.**
 
 ### What Exists Today (Validated)
 
@@ -271,11 +271,11 @@ Features where competitors are ahead and RapidTriage must close the gap over tim
 | Interactive evidence exploration (HTML) | **No one** (some custom one-offs) | **Gap** — attorneys receive static PDFs and call the examiner for walkthroughs |
 | Dual-format deliverables (explore + formal) | **No one** | **Gap** — tools produce one format; attorneys need two |
 
-### What's Novel in RapidTriage
+### What's Novel in Issen
 
 | Innovation | Why Novel | Defensibility |
 |------------|-----------|---------------|
-| **Automated findings-to-narrative pipeline** | No tool converts structured forensic findings into written narrative with proper citations and methodology documentation | Medium — AI makes this more accessible, but domain-specific templates, forensic accuracy requirements, and court-admissibility constraints create a moat |
+| **Automated findings-to-narrative pipeline** | No tool converts structured forensic findings into written narrative with proper citations and methodology documentation | Medium — AI makes this more accessible, but domain-specific templates, forensic accuracy requirements, and couissen-admissibility constraints create a moat |
 | **Dual-format deliverables** | Interactive HTML for exploration + polished Word/PDF for the record from the same findings dataset | Low-medium technically, but high in product design — getting both formats right for both audiences requires deep domain understanding |
 | **Open parser / proprietary integration model for DFIR** | No DFIR tool successfully executes the open-core model. Autopsy is fully open (no revenue path). Everything else is fully closed. | Medium — community trust and contribution velocity compound over time. First-mover in open-core DFIR. |
 | **Rust-native forensic engine** | No major forensic tool uses Rust. Approaching X-Ways speed with memory safety and modern extensibility. | Medium — rewrite cost is high for competitors. Performance + safety combination is hard to match in C# (AXIOM) or Java (Autopsy). |
@@ -284,7 +284,7 @@ Features where competitors are ahead and RapidTriage must close the gap over tim
 
 For market/pitch purposes:
 
-> "RapidTriage is what happens when you combine X-Ways' speed with AXIOM's artifact coverage and add the one thing nobody built — a report engine that produces documents attorneys can actually use."
+> "Issen is what happens when you combine X-Ways' speed with AXIOM's artifact coverage and add the one thing nobody built — a report engine that produces documents attorneys can actually use."
 
 ### Source References
 
@@ -307,12 +307,12 @@ For market/pitch purposes:
 
 Customer segments poorly served by current solutions.
 
-| Segment | Current Pain | Why Competitors Miss It | RapidTriage Opportunity |
+| Segment | Current Pain | Why Competitors Miss It | Issen Opportunity |
 |---------|--------------|------------------------|-------------------------|
 | **Solo IR practitioners and small DFIR consultancies (1-5 person firms)** | Priced out of AXIOM/FTK ($3,500-$11,500/year). Using cobbled-together free tools (EZ Tools + Autopsy + manual Word). Spending 60%+ of case time on reporting. | Enterprise vendors optimize for 50+ seat deployments. Open-source tools have no one investing in UX or reporting. The solo practitioner is not a strategic account for PE-owned vendors. | **Primary target.** Sarah Chen persona. Free parsers + affordable integration tier. TARR reduction is highest-impact for solo practitioners who cannot absorb inefficiency. |
 | **Litigation support teams and paralegals** | Receive forensic reports they cannot understand. Spend hours on the phone with examiners getting clarification. Cannot explore evidence independently. | Forensic tools are built for examiners, not for the people who consume their output. No vendor considers the downstream reader as a user. | **Secondary target.** Diana Reyes persona. Interactive HTML reports let litigation support explore evidence without calling the examiner back. Word/PDF reports formatted for court filing without reformatting. |
 | **Emerging market / developing economy DFIR** | Law enforcement and incident responders in countries where $3,500/year is an entire annual technology budget. Reliant on Autopsy and manual methods. | Enterprise pricing excludes them entirely. Vendors focus on US/EU/UK markets. No localization effort. | **Long-term community.** Free open-source parsers serve this segment immediately. Builds global community and contribution base. Paid tier affordable relative to local economics. |
-| **Academic and training programs** | Teaching DFIR with Autopsy (free but limited) or begging vendors for educational licenses. Students graduate without experiencing modern workflows. | Vendors offer educational licenses grudgingly. No vendor builds for the teaching use case. | **Community funnel.** Students who learn on RapidTriage become practitioners who buy RapidTriage. Free tier covers academic use. |
+| **Academic and training programs** | Teaching DFIR with Autopsy (free but limited) or begging vendors for educational licenses. Students graduate without experiencing modern workflows. | Vendors offer educational licenses grudgingly. No vendor builds for the teaching use case. | **Community funnel.** Students who learn on Issen become practitioners who buy Issen. Free tier covers academic use. |
 
 ## 3.2 Unoccupied Positioning
 
@@ -345,11 +345,11 @@ Features to capture immediate whitespace opportunities.
 
 | Opportunity | Whitespace/Shift Leveraged | Strategic Value | Technical Feasibility |
 |-------------|---------------------------|-----------------|----------------------|
-| **KAPE output auto-discovery and parsing** | §3.3 KAPE standardization window; §3.1 solo practitioners using KAPE as primary collection | Table stakes for target persona. Sarah Chen uses KAPE on every case. If RapidTriage cannot ingest KAPE output seamlessly, she will not switch. | **High** — KAPE output is a known directory structure. Parsers map to specific artifact files. |
+| **KAPE output auto-discovery and parsing** | §3.3 KAPE standardization window; §3.1 solo practitioners using KAPE as primary collection | Table stakes for target persona. Sarah Chen uses KAPE on every case. If Issen cannot ingest KAPE output seamlessly, she will not switch. | **High** — KAPE output is a known directory structure. Parsers map to specific artifact files. |
 | **Interactive HTML report with filterable timeline** | §3.2 "Report is the product" positioning; §3.1 litigation support teams | Core differentiator. No competitor produces this. First delivery of the attorney-ready promise. | **High** — HTML/JS generation from structured data is well-understood. Design is the challenge, not technology. |
-| **Word/PDF expert witness report generation** | §3.2 "Report is the product"; §1.2 Shift 4 (court pressure on deliverable quality) | Second half of the dual-format differentiator. Enables the attorney persona to receive court-ready documents. | **Medium** — Word generation via python-docx or Rust equivalent. Template system needed. Polishing to court-quality is design-intensive. |
+| **Word/PDF expert witness report generation** | §3.2 "Report is the product"; §1.2 Shift 4 (court pressure on deliverable quality) | Second half of the dual-format differentiator. Enables the attorney persona to receive couissen-ready documents. | **Medium** — Word generation via python-docx or Rust equivalent. Template system needed. Polishing to couissen-quality is design-intensive. |
 | **Plugin API for community parsers** | §3.2 open-core DFIR positioning; §3.3 Rust ecosystem window | Enables community contribution to parser coverage. Multiplies development velocity beyond solo founder capacity. | **Medium** — WASM-based plugin interface. API design is critical — must be simple enough for community adoption. |
-| **Velociraptor hunt package ingestion** | §3.3 collection standardization; §3.1 emerging market/enterprise crossover | CISA endorsement drives Velociraptor adoption. Being the "after Velociraptor" tool captures growing segment. | **High** — Velociraptor output is structured JSON. Mapping to RapidTriage's internal model is straightforward. |
+| **Velociraptor hunt package ingestion** | §3.3 collection standardization; §3.1 emerging market/enterprise crossover | CISA endorsement drives Velociraptor adoption. Being the "after Velociraptor" tool captures growing segment. | **High** — Velociraptor output is structured JSON. Mapping to Issen's internal model is straightforward. |
 
 ## 4.2 Twelve to Eighteen Month Horizon (Plan Now)
 
@@ -372,10 +372,10 @@ Actions to capture opportunity and gain ground.
 
 | Move | Target | Expected Outcome | Dependencies |
 |------|--------|------------------|--------------|
-| **Open-source parser blitz** — Release 10+ Rust forensic parsers under Apache 2.0 in first 6 months | Capture mindshare in DFIR open-source community; establish RapidTriage as the "Rust forensics" project | GitHub stars, community contributions, practitioner awareness. Create a gravity well that pulls users toward the paid integration layer. | Existing Rust crates (usnjrnl-forensic, tl, ewf) provide foundation. Need parsers for: registry, prefetch, amcache, shimcache, event logs, LNK, jump lists, SRUM, shellbags. |
+| **Open-source parser blitz** — Release 10+ Rust forensic parsers under Apache 2.0 in first 6 months | Capture mindshare in DFIR open-source community; establish Issen as the "Rust forensics" project | GitHub stars, community contributions, practitioner awareness. Create a gravity well that pulls users toward the paid integration layer. | Existing Rust crates (usnjrnl-forensic, tl, ewf) provide foundation. Need parsers for: registry, prefetch, amcache, shimcache, event logs, LNK, jump lists, SRUM, shellbags. |
 | **"AXIOM refugee" campaign** — Target practitioners frustrated with post-PE pricing increases | Convert AXIOM users who are paying $3,500+/year and getting reports they still rewrite manually | 100+ active users in first year from AXIOM switchers. These are experienced practitioners who validate the tool and provide feedback. | Must demonstrate artifact parity for top-20 Windows artifacts. Report quality must be visibly better than AXIOM's built-in reports on Day 1. |
-| **SANS/conference presence** — Submit talks to SANS DFIR Summit, OSDFCon, DFRWS, BSides | Establish credibility in practitioner community. DFIR is a trust-based market — conference presence is essential. | Speaking slots, hallway conversations, demo opportunities. One good SANS DFIR Summit talk can reach the entire target market. | Working demo with real-world case data. Compelling TARR comparison (before/after with RapidTriage). |
-| **EZ Tools integration story** — Position as "the integration layer for your existing free toolkit" | Practitioners who love EZ Tools but hate the manual integration step. RapidTriage consumes EZ Tools output and adds the missing reporting layer. | Adoption from the largest segment of the market — practitioners already using free tools. Low switching cost (add to workflow, don't replace). | EZ Tools CSV/JSON output parsers. Timeline integration from Timeline Explorer compatible format. Messaging: "Keep your tools. Add reporting." |
+| **SANS/conference presence** — Submit talks to SANS DFIR Summit, OSDFCon, DFRWS, BSides | Establish credibility in practitioner community. DFIR is a trust-based market — conference presence is essential. | Speaking slots, hallway conversations, demo opportunities. One good SANS DFIR Summit talk can reach the entire target market. | Working demo with real-world case data. Compelling TARR comparison (before/after with Issen). |
+| **EZ Tools integration story** — Position as "the integration layer for your existing free toolkit" | Practitioners who love EZ Tools but hate the manual integration step. Issen consumes EZ Tools output and adds the missing reporting layer. | Adoption from the largest segment of the market — practitioners already using free tools. Low switching cost (add to workflow, don't replace). | EZ Tools CSV/JSON output parsers. Timeline integration from Timeline Explorer compatible format. Messaging: "Keep your tools. Add reporting." |
 
 ## 5.2 Defensive Moves
 
@@ -383,10 +383,10 @@ Actions to protect our position and block threats.
 
 | Move | Threat Addressed | Expected Outcome | Dependencies |
 |------|------------------|------------------|--------------|
-| **Ship AI narrative before Magnet does** | §3.3 timing window — Magnet adding AI report writing to AXIOM would neutralize core differentiator | First-mover advantage in AI-assisted forensic reporting. Once practitioners experience it in RapidTriage, switching cost increases. | AI narrative pipeline architecture. Structured findings schema. LLM integration with examiner review loop. 12-month window. |
+| **Ship AI narrative before Magnet does** | §3.3 timing window — Magnet adding AI report writing to AXIOM would neutralize core differentiator | First-mover advantage in AI-assisted forensic reporting. Once practitioners experience it in Issen, switching cost increases. | AI narrative pipeline architecture. Structured findings schema. LLM integration with examiner review loop. 12-month window. |
 | **Community lock-in through plugin ecosystem** | Competitors copying the open-core model | Community-contributed parsers and templates create an ecosystem that is expensive to replicate. Contributors become advocates. | Well-documented plugin API. Community governance. Responsive to contributions (fast PR review, clear contribution guidelines). |
-| **Patent/trade secret protection on report engine** | Direct cloning of the attorney-ready report pipeline | Proprietary report engine is closed-source. Key innovations in narrative generation, dual-format rendering, and court-formatting are protected. | Legal review of IP protection strategy. Clear delineation in codebase between open (Apache 2.0) and proprietary components. |
-| **Build relationships with collection tool maintainers** | Collection tools adding analysis/reporting (Velociraptor, KAPE) | Partnership rather than competition. KAPE and Velociraptor maintainers recommend RapidTriage as the downstream analysis/reporting tool. | Direct outreach to Eric Zimmerman (KAPE), Mike Cohen (Velociraptor). Contribute to their ecosystems. Cross-promotion. |
+| **Patent/trade secret protection on report engine** | Direct cloning of the attorney-ready report pipeline | Proprietary report engine is closed-source. Key innovations in narrative generation, dual-format rendering, and couissen-formatting are protected. | Legal review of IP protection strategy. Clear delineation in codebase between open (Apache 2.0) and proprietary components. |
+| **Build relationships with collection tool maintainers** | Collection tools adding analysis/reporting (Velociraptor, KAPE) | Partnership rather than competition. KAPE and Velociraptor maintainers recommend Issen as the downstream analysis/reporting tool. | Direct outreach to Eric Zimmerman (KAPE), Mike Cohen (Velociraptor). Contribute to their ecosystems. Cross-promotion. |
 
 ## 5.3 Moves We Reject
 
@@ -412,8 +412,8 @@ What to watch for that would trigger strategic reassessment.
 | Signal | Source | Threshold | Response |
 |--------|--------|-----------|----------|
 | Magnet AXIOM adds AI-generated narrative reports | Magnet product releases, AXIOM changelog, user forums | Any AI report feature beyond current template-based generation | Accelerate AI narrative pipeline. Differentiate on report quality, dual-format, and open-source community. |
-| Cellebrite or Magnet acquires a report-generation company | M&A news, SEC filings | Any acquisition targeting forensic reporting specifically | Assess whether acquisition validates or threatens our positioning. Likely validates — accelerate. |
-| Velociraptor adds built-in reporting | Velociraptor GitHub releases, Rapid7 product announcements | Report generation feature beyond basic CSV/JSON export | Evaluate report quality. If basic, position as complementary ("Velociraptor collects, RapidTriage reports"). If sophisticated, reassess partnership strategy. |
+| Cellebrite or Magnet acquires a repoissen-generation company | M&A news, SEC filings | Any acquisition targeting forensic reporting specifically | Assess whether acquisition validates or threatens our positioning. Likely validates — accelerate. |
+| Velociraptor adds built-in reporting | Velociraptor GitHub releases, Rapid7 product announcements | Report generation feature beyond basic CSV/JSON export | Evaluate report quality. If basic, position as complementary ("Velociraptor collects, Issen reports"). If sophisticated, reassess partnership strategy. |
 | New AI-native forensic startup raises significant funding | Crunchbase, TechCrunch, forensic community buzz | >$5M raise with forensic reporting in value proposition | Monitor closely. Assess their approach to accuracy and court admissibility. AI-native without forensic domain expertise will struggle with trust. |
 | X-Ways adds modern UI and reporting | X-Ways changelog | Any modernization of UI or addition of report features | Low probability (deliberately minimalist philosophy). If it happens, closes one of our positioning advantages against the expert segment. |
 | EnCase/OpenText major modernization | OpenText product announcements | Significant UI overhaul or AI feature integration | Monitor. PE-owned vendors rarely invest in major rewrites. More likely to acquire than build. |
@@ -425,7 +425,7 @@ Broader market changes to track.
 | Signal | Source | Threshold | Response |
 |--------|--------|-----------|----------|
 | Daubert challenge rate for digital evidence | Legal databases, forensic expert testimony records | >50% increase in challenges year-over-year | Double down on methodology documentation and chain-of-custody features in reports. Market is coming to us. |
-| SANS course curriculum changes | SANS course descriptions, instructor social media | SANS adopts a new forensic tool as primary teaching platform | Priority to get RapidTriage into SANS curriculum. If they adopt a competitor, assess what drove the choice. |
+| SANS course curriculum changes | SANS course descriptions, instructor social media | SANS adopts a new forensic tool as primary teaching platform | Priority to get Issen into SANS curriculum. If they adopt a competitor, assess what drove the choice. |
 | PE acquisition of another DFIR tool | M&A news | Any PE acquisition in forensic tooling space | Messaging opportunity — reinforce open-source, practitioner-first positioning against PE consolidation narrative. |
 | Government mandate on forensic reporting standards | NIST, DOJ, EU cybersecurity regulations | Any mandatory standard for forensic report format or methodology documentation | Implement standard immediately. First-mover advantage on compliance. |
 | Open-source forensic tool gaining momentum | GitHub trending, DFIR community forums | Any new DFIR project reaching 1,000+ stars within 6 months | Evaluate for partnership, integration, or competitive response. If it is a parser, integrate. If it is a platform, assess threat level. |
@@ -480,4 +480,4 @@ validation_gate:
 
 | Date | Author | Changes |
 |------|--------|---------|
-| 2026-03-20 | RapidTriage / North Star Advisor | Initial generation — 10 competitors analyzed, 4 market shifts, novelty validated |
+| 2026-03-20 | Issen / North Star Advisor | Initial generation — 10 competitors analyzed, 4 market shifts, novelty validated |

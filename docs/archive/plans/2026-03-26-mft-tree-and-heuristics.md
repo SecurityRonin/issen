@@ -201,7 +201,7 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license = "Apache-2.0"
-description = "Shared MFT file tree for RapidTriage"
+description = "Shared MFT file tree for Issen"
 repository.workspace = true
 
 [dependencies]

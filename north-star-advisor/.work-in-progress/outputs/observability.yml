@@ -16,7 +16,7 @@ observability:
     handlers:
         - name: "JsonLogLayer"
           role: "Structured JSON logging to rotating files"
-          storage: "cases/{case_id}/logs/rapidtriage.log"
+          storage: "cases/{case_id}/logs/issen.log"
 
         - name: "MetricsLayer"
           role: "Pipeline and parser metrics aggregation"

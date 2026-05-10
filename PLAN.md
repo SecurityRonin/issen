@@ -1,8 +1,8 @@
-# RapidTriage Consolidated Grand Implementation Plan
+# Issen Consolidated Grand Implementation Plan
 
 **Date**: 2026-05-04
 **Status**: ACTIVE
-**Authority**: This plan consolidates and supersedes all sub-repo plans. It is the authoritative cross-repo roadmap for the RapidTriage forensic platform.
+**Authority**: This plan consolidates and supersedes all sub-repo plans. It is the authoritative cross-repo roadmap for the Issen forensic platform.
 
 ---
 
@@ -38,7 +38,7 @@ PARSER         browser-forensic, winevt-forensic, srum-forensic,
                -- accept Path or &[u8]; NO import of CONTAINER/FILESYSTEM/PAGING/OS STRUCT
                -- OS STRUCT (memf-windows) MAY call PARSER when it finds artifact bytes
 
-ORCHESTRATION  RapidTriage -- wires all layers, correlation, TimelineEvent/Evidence, CLI
+ORCHESTRATION  Issen -- wires all layers, correlation, TimelineEvent/Evidence, CLI
 ```
 
 ### Dependency Rules
@@ -51,7 +51,7 @@ ORCHESTRATION  RapidTriage -- wires all layers, correlation, TimelineEvent/Evide
 | PAGING (memf-hw) | CONTAINER + KNOWLEDGE |
 | OS STRUCT (memf-windows, memf-linux) | PAGING + CONTAINER + KNOWLEDGE; MAY call PARSER |
 | PARSER (browser, winevt, srum, etc.) | NO dependency below itself; receives `Path` or `&[u8]` |
-| ORCHESTRATION (RapidTriage) | All layers |
+| ORCHESTRATION (Issen) | All layers |
 
 **Critical constraint**: PARSER crates must never import CONTAINER, FILESYSTEM, PAGING, or OS STRUCT. They receive data as file paths or byte slices. OS STRUCT crates (e.g., memf-windows) may call PARSER crates when they discover artifact bytes in memory (e.g., calling `browser-carve` on SQLite pages found in a VAD region).
 
@@ -100,7 +100,7 @@ Each parser repo follows this four-crate structure:
 | **ext4fs-forensic** | EXISTS | ext4 filesystem parsing | - |
 | **4n6mount** | EXISTS | FUSE bridge | - |
 | **ewf** | EXISTS | E01/EWF container decoding | - |
-| **RapidTriage** | EXISTS, multiple workstreams | Correlation engine, CLI, parser integration | Workstreams 1-10 (see Section 6) |
+| **Issen** | EXISTS, multiple workstreams | Correlation engine, CLI, parser integration | Workstreams 1-10 (see Section 6) |
 
 ---
 
@@ -158,25 +158,25 @@ These block all downstream work and must be resolved before any feature work.
 
 | Repo | Task |
 |---|---|
-| RapidTriage | rt-evtx integrates winevt-carver + winevt-integrity (carver fallback, integrity reporting) |
-| RapidTriage | Workstreams 1-9: evidence model, rendering, narrative, calibration (see Section 6) |
-| RapidTriage | rt CLI: add `rt evtx sessions`, `rt evtx processes`, `rt evtx frequency` subcommands (hayabusa differentiators via rt-evtx) |
+| Issen | rt-evtx integrates winevt-carver + winevt-integrity (carver fallback, integrity reporting) |
+| Issen | Workstreams 1-9: evidence model, rendering, narrative, calibration (see Section 6) |
+| Issen | rt CLI: add `rt evtx sessions`, `rt evtx processes`, `rt evtx frequency` subcommands (hayabusa differentiators via rt-evtx) |
 
 ### Group 5 -- Capstone (depends on all parsers)
 
 | Repo | Task |
 |---|---|
-| RapidTriage | Workstream 10: Supertimeline Engine (see Section 6.10) |
-| RapidTriage | rt-timeline enhancements: EntityIndex, temporal_join, absence detection, timestamp normalization |
-| RapidTriage | TemporalRule YAML schema in rt-correlation (10+ temporal patterns) |
-| RapidTriage | `rt supertimeline` CLI command (JSONL, CSV, narrative, HTML outputs) |
-| RapidTriage | Wire all parser crates into supertimeline assembler |
+| Issen | Workstream 10: Supertimeline Engine (see Section 6.10) |
+| Issen | rt-timeline enhancements: EntityIndex, temporal_join, absence detection, timestamp normalization |
+| Issen | TemporalRule YAML schema in rt-correlation (10+ temporal patterns) |
+| Issen | `rt supertimeline` CLI command (JSONL, CSV, narrative, HTML outputs) |
+| Issen | Wire all parser crates into supertimeline assembler |
 
 ---
 
 ## 5. Core Principle: Evidence Truth Model
 
-RapidTriage must distinguish clearly between:
+Issen must distinguish clearly between:
 
 - **Observed** -- directly present in parsed artifacts
 - **Correlated** -- derived by joining observed facts across sources
@@ -200,7 +200,7 @@ This distinction must exist in:
 
 ---
 
-## 6. RapidTriage Internal: Workstreams 1-10
+## 6. Issen Internal: Workstreams 1-10
 
 ### Workstream 1: Evidence Truth Model
 
@@ -351,7 +351,7 @@ Only print exact hooked functions if: reverse-engineering module exists, YARA/si
 
 Plaso (log2timeline) is the incumbent supertimeline tool. It is Python-based, requires a local disk image, and is fundamentally a **timestamp aggregator**: it collects timestamps from many artifact types and outputs a sorted list. The analyst then loads that list into Timesketch to search and pivot manually.
 
-RapidTriage's supertimeline is a different thing: a **semantic evidence chain builder**. The difference is not performance (though Rust wins that too). The difference is that a sorted list of timestamps is not an investigation -- it is raw material for one. RapidTriage hands the analyst a *narrative*, not a spreadsheet.
+Issen's supertimeline is a different thing: a **semantic evidence chain builder**. The difference is not performance (though Rust wins that too). The difference is that a sorted list of timestamps is not an investigation -- it is raw material for one. Issen hands the analyst a *narrative*, not a spreadsheet.
 
 **The CTF design principle** (from the Hal Pomeranz 2026-03-24 Father rootkit scenario): the boot log entry at 23:16 showing `libymv.so.3` as "file too short" was meaningless in isolation. It became decisive evidence only when correlated with the file's own `$MFT` born time of 23:24 -- an 8-minute gap proving the rootkit existed before its filesystem timestamps claimed. This is not a coincidence to reconcile. It is the finding. **Temporal discrepancy between artifact sources IS a finding, not noise.**
 
@@ -367,7 +367,7 @@ Plaso does not detect any of these. It would list all those timestamps side by s
 
 `winevt-forensic` parses EVTX files. That is one artifact type among roughly thirty that contribute to a Windows supertimeline. Even "all Windows logs" is broader than EVTX -- `setupapi.dev.log` (USB first-connect timestamps), `CBS.log` (patch application), `netsetup.log` -- none of these are EVTX. And all Windows logs combined still need correlation with execution artifacts (Prefetch, AmCache, SRUM), file-access artifacts (LNK, Jump Lists, MRU registry keys, Shellbags), and filesystem metadata ($MFT, $UsnJrnl) to produce an investigation-grade timeline.
 
-There is no Linux equivalent of winevt-forensic as a standalone crate because the Linux log landscape has no single dominant binary format and no hayabusa-style user persona to target. Linux log correlation lives inside RapidTriage's parser stack (`rt-parser-linux`, memory dump parsers, etc.) and flows through `rt-correlation`.
+There is no Linux equivalent of winevt-forensic as a standalone crate because the Linux log landscape has no single dominant binary format and no hayabusa-style user persona to target. Linux log correlation lives inside Issen's parser stack (`rt-parser-linux`, memory dump parsers, etc.) and flows through `rt-correlation`.
 
 #### Artifact Catalog
 
@@ -670,7 +670,7 @@ Current `rt-timeline` is a basic sorted store. It needs:
 
 ## 7. Supertimeline Positioning vs Plaso
 
-| Dimension | Plaso | RapidTriage Supertimeline |
+| Dimension | Plaso | Issen Supertimeline |
 |---|---|---|
 | Language | Python | Rust |
 | Requires full disk image | Yes | No -- streams from S3/SFTP/local |
@@ -683,7 +683,7 @@ Current `rt-timeline` is a basic sorted store. It needs:
 | Narrative generation | No | Yes |
 | Linux correlation | Parser coverage | Parser coverage + temporal rules |
 
-**The pitch: Plaso tells you what happened. RapidTriage tells you what it means.**
+**The pitch: Plaso tells you what happened. Issen tells you what it means.**
 
 ---
 
@@ -697,10 +697,10 @@ srum-forensic     <-- standalone lib + sr-cli
 browser-forensic  <-- standalone lib + bw-cli
 memory-forensic   <-- standalone lib, NO CLI
         all are library deps of
-RapidTriage       <-- full suite, cross-artifact correlation, the rt CLI
+Issen       <-- full suite, cross-artifact correlation, the rt CLI
 ```
 
-**winevt-forensic has no CLI.** The decision was made to keep it a pure library crate. The `rt` CLI in RapidTriage is the single entry point for EVTX-based investigation workflows. RapidTriage must never shell out to other CLIs; it imports them as Rust library crates.
+**winevt-forensic has no CLI.** The decision was made to keep it a pure library crate. The `rt` CLI in Issen is the single entry point for EVTX-based investigation workflows. Issen must never shell out to other CLIs; it imports them as Rust library crates.
 
 ### 8.2 rt CLI -- EVTX Subcommands (Hayabusa Differentiator)
 
@@ -714,7 +714,7 @@ rt evtx processes  --directory /evidence/evtx --link-sessions   # 4688 attribute
 rt evtx frequency  --directory /evidence/evtx --cap 5           # anomaly-by-rarity
 ```
 
-hayabusa is a **defender tool** (bulk alerting, Sigma rules, EDR). `rt` is an **investigator tool** (session reconstruction, attribution, timeline narrative). The audiences overlap but the job-to-be-done differs. `rt-signatures` handles Sigma-equivalent rules at the RapidTriage level.
+hayabusa is a **defender tool** (bulk alerting, Sigma rules, EDR). `rt` is an **investigator tool** (session reconstruction, attribution, timeline narrative). The audiences overlap but the job-to-be-done differs. `rt-signatures` handles Sigma-equivalent rules at the Issen level.
 
 **Implementation tasks (Group 4, after rt-evtx library is complete):**
 - [ ] Add `rt evtx sessions` subcommand to rt-cli
@@ -730,12 +730,12 @@ Target audience: Volatility users with `vol -f mem.dmp windows.pslist` muscle me
 Win them by:
 1. Accepting their flag shapes (`-f`, `--output`)
 2. Making common operations faster (native Rust, no Python startup)
-3. Adding something Volatility cannot: session linkage across memory + EVTX (cross-tool joins requiring winevt-forensic + memory-forensic together, orchestrated by RapidTriage)
+3. Adding something Volatility cannot: session linkage across memory + EVTX (cross-tool joins requiring winevt-forensic + memory-forensic together, orchestrated by Issen)
 
 ### 8.4 Adoption Benefits
 
-- Multiple adoption vectors: hayabusa users, Volatility users, RapidTriage users
-- Clean library boundaries: RapidTriage compiles against library APIs, not CLIs
+- Multiple adoption vectors: hayabusa users, Volatility users, Issen users
+- Clean library boundaries: Issen compiles against library APIs, not CLIs
 - Independent community growth and GitHub presence per tool
 - Smaller blast radius: breaking changes in one crate do not cascade
 
@@ -792,7 +792,7 @@ When dispatching subagents, explicitly instruct them to make **two separate comm
 
 ---
 
-## Recommended Workstream Order (within RapidTriage)
+## Recommended Workstream Order (within Issen)
 
 1. Add integration snapshot test for the scenario (Workstream 8 -- establishes baseline)
 2. Rename `PIVOT FINDINGS` to `CORRELATION FINDINGS` (Workstream 5)

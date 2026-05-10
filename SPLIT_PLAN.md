@@ -1,4 +1,4 @@
-# Split Plan: winevt-forensic → RapidTriage
+# Split Plan: winevt-forensic → Issen
 
 **Date:** 2026-05-04  
 **Last revised:** 2026-05-04 (post-codebase audit, reflects actual repo state)
@@ -31,9 +31,9 @@ Pending (not yet added to workspace):
 
 ---
 
-### RapidTriage — BROKEN PATH DEPS (fix immediately)
+### Issen — BROKEN PATH DEPS (fix immediately)
 
-`RapidTriage/Cargo.toml` still references four crates that no longer exist in winevt-forensic:
+`Issen/Cargo.toml` still references four crates that no longer exist in winevt-forensic:
 
 ```toml
 # THESE ARE BROKEN — delete them:
@@ -66,7 +66,7 @@ winevt-core = { path = "../winevt-forensic/crates/winevt-core" }
 | Wire anti-forensic gap detection into `carve_from_bytes` post-carve | ⏳ Pending (user story 01) |
 | Add `carve_from_file` and `verify_integrity` to winevt-carver | ⏳ Pending (user story 02) |
 | Add `winevt-memory` crate | ⏳ Pending (user stories 04-05) |
-| Remove broken path deps from RapidTriage (`winevt-session` etc.) | 🔴 URGENT |
+| Remove broken path deps from Issen (`winevt-session` etc.) | 🔴 URGENT |
 | Rewrite `rt-evtx/src/session.rs` to own session correlation | 🔴 URGENT |
 | Rewrite `rt-evtx/src/analyze.rs` to own frequency analysis | 🔴 URGENT |
 | Add `winevt-carver` + `winevt-integrity` deps to `rt-evtx` | ⏳ After crates stabilize |
@@ -74,11 +74,11 @@ winevt-core = { path = "../winevt-forensic/crates/winevt-core" }
 
 ---
 
-## Immediate Fixes Required in RapidTriage
+## Immediate Fixes Required in Issen
 
 ### Fix 1 — Remove broken path deps
 
-In `RapidTriage/Cargo.toml`, delete:
+In `Issen/Cargo.toml`, delete:
 ```toml
 winevt-session  = { path = "../winevt-forensic/crates/winevt-session" }
 winevt-handlers = { path = "../winevt-forensic/crates/winevt-handlers" }
@@ -141,9 +141,9 @@ winevt-forensic/
     └── winevt-memory        ← ETW/EVTX memory forensic types      (publish to crates.io v0.1)
 ```
 
-NO CLI. RapidTriage is the only CLI consumer.
+NO CLI. Issen is the only CLI consumer.
 
-### RapidTriage (post-fix)
+### Issen (post-fix)
 
 ```
 rt-evtx/
@@ -156,7 +156,7 @@ rt-evtx/
 
 ---
 
-## Expanded RapidTriage Capabilities (post winevt-carver/winevt-integrity)
+## Expanded Issen Capabilities (post winevt-carver/winevt-integrity)
 
 Per `PLAN.md` §9, once `winevt-carver` and `winevt-integrity` are stable:
 
@@ -184,7 +184,7 @@ winevt-integrity  (crates.io)
     |         |
 winevt-carver  winevt-memory  (crates.io)
 
-RapidTriage/rt-evtx
+Issen/rt-evtx
     ├── winevt-core
     ├── winevt-carver
     └── winevt-integrity
@@ -224,7 +224,7 @@ impl From<&LateralMovementFinding> for Evidence {
 
 | Risk | Status | Mitigation |
 |------|--------|-----------|
-| Broken path deps in RapidTriage break `cargo build` | 🔴 ACTIVE | Fix 1 above — delete 3 lines from Cargo.toml |
+| Broken path deps in Issen break `cargo build` | 🔴 ACTIVE | Fix 1 above — delete 3 lines from Cargo.toml |
 | `rt-evtx/src/lib.rs` calls deleted crates | 🔴 ACTIVE | Fixes 2-4 — move code into rt-evtx |
 | `winevt-core` API changes before crates.io publish | 🟡 | Mark public types `#[non_exhaustive]` |
 | BinXml parsing in carved records | 🟡 | carver returns raw bytes; parsing delegated to `evtx` crate where possible |

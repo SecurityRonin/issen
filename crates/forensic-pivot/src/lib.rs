@@ -1,3 +1,4 @@
+pub mod adapters;
 pub mod downloader;
 pub mod engine;
 pub mod evidence;

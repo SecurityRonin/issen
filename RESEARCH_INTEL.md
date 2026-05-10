@@ -2,7 +2,7 @@
 
 ## Why This Exists
 
-RapidTriage originally set out to scan against YARA, Sigma, and STIX threat intelligence. That is still correct, but it is incomplete.
+Issen originally set out to scan against YARA, Sigma, and STIX threat intelligence. That is still correct, but it is incomplete.
 
 The right direction is the union of:
 
@@ -10,9 +10,9 @@ The right direction is the union of:
 - indicator exchange formats
 - network signature formats
 - threat knowledge / taxonomy formats
-- RapidTriage proprietary correlation rules
+- Issen proprietary correlation rules
 
-This document maps the adjacent schema landscape, recommends what RapidTriage should support, and defines how feeds should be downloaded and kept current.
+This document maps the adjacent schema landscape, recommends what Issen should support, and defines how feeds should be downloaded and kept current.
 
 ## Executive Summary
 
@@ -50,7 +50,7 @@ This document maps the adjacent schema landscape, recommends what RapidTriage sh
 
 ## Recommended Internal Model
 
-RapidTriage should not keep adding one-off parsers everywhere. It should ingest external schemas into a small number of internal types:
+Issen should not keep adding one-off parsers everywhere. It should ingest external schemas into a small number of internal types:
 
 - `ContentSignature`
   - byte/content matching
@@ -71,10 +71,10 @@ RapidTriage should not keep adding one-off parsers everywhere. It should ingest 
   - false-positive suppression, taxonomies, catalogs, whitelists
   - examples: MISP warninglists, MISP taxonomies, forensic-catalog
 - `CorrelationRule`
-  - proprietary RapidTriage cross-artifact logic
+  - proprietary Issen cross-artifact logic
   - examples: miner concealment, SSH-tunneled stratum, persistence stacks
 
-This lets RapidTriage support many external schemas without making every downstream feature schema-aware.
+This lets Issen support many external schemas without making every downstream feature schema-aware.
 
 ## Schema Landscape
 
@@ -85,7 +85,7 @@ What it is:
 
 Why it matters:
 - still the best common format for file and memory signatures
-- directly aligned with RapidTriage’s existing scanning model
+- directly aligned with Issen’s existing scanning model
 
 Support strategy:
 - keep native execution
@@ -135,12 +135,12 @@ What it is:
 - Sigma’s standardized multi-event correlation format
 
 Why it matters:
-- overlaps directly with RapidTriage’s proprietary correlation direction
+- overlaps directly with Issen’s proprietary correlation direction
 - useful for log-native temporal/grouped detections
 
 Support strategy:
 - support as an import format into internal `CorrelationRule`
-- do not let it replace RapidTriage’s richer host/network/forensic correlation model
+- do not let it replace Issen’s richer host/network/forensic correlation model
 - translate supported fields:
   - `rules`
   - `group-by`
@@ -203,7 +203,7 @@ Important feeds:
 - CISA AIS TAXII guidance: https://www.cisa.gov/resources-tools/resources/cisa-automated-indicator-sharing-ais-taxii-server-connection-guide
 
 Recommendation:
-- TAXII is not a schema to “scan with”; it is a transport RapidTriage must support
+- TAXII is not a schema to “scan with”; it is a transport Issen must support
 
 ### 6. MITRE ATT&CK STIX / ATT&CK Data
 
@@ -244,7 +244,7 @@ Support strategy:
 - represent imported Suricata content as:
   - `NetworkSignature` where semantics are preserved
   - extracted `AtomicIndicator` when only IOC fields are usable
-- long term: add packet/flow execution if RapidTriage grows deeper PCAP support
+- long term: add packet/flow execution if Issen grows deeper PCAP support
 
 Official docs:
 - rule format: https://docs.suricata.io/en/latest/rules/intro.html
@@ -293,9 +293,9 @@ Why it matters:
 - but not a direct “intel feed schema”
 
 Support strategy:
-- do not try to auto-execute arbitrary Zeek packages inside RapidTriage
+- do not try to auto-execute arbitrary Zeek packages inside Issen
 - support package-source sync for metadata harvesting only
-- optionally curate selected packages into RapidTriage adapters later
+- optionally curate selected packages into Issen adapters later
 
 Official sources:
 - package source docs: https://docs.zeek.org/projects/package-manager/en/stable/source.html
@@ -337,7 +337,7 @@ What it is:
 - structured false-positive / suppression / known-good lists
 
 Why it matters:
-- ideal input to RapidTriage suppression and confidence-lowering logic
+- ideal input to Issen suppression and confidence-lowering logic
 
 Support strategy:
 - native importer into `ReferenceDataset`
@@ -441,7 +441,7 @@ What it is:
 - event normalization schema
 
 Why it matters:
-- useful if RapidTriage ever normalizes external telemetry broadly
+- useful if Issen ever normalizes external telemetry broadly
 
 Support strategy:
 - not a threat-intel feed
@@ -490,7 +490,7 @@ Recommendation:
 
 ### Native
 
-Use native engines where RapidTriage already has a real execution story:
+Use native engines where Issen already has a real execution story:
 
 - `YARA` -> native content scanning
 - `Sigma` -> native event matching
@@ -500,7 +500,7 @@ Use native engines where RapidTriage already has a real execution story:
 
 ### Translator
 
-Use adapters when the external format is valuable but should map into RapidTriage’s internal model:
+Use adapters when the external format is valuable but should map into Issen’s internal model:
 
 - `Sigma correlation` -> `CorrelationRule`
 - `OpenIOC` -> criteria tree -> `AtomicIndicator` / boolean matcher
@@ -519,7 +519,7 @@ Support as catalogs or schema references, not executable feeds:
 
 ## Feed Download And Update Strategy
 
-RapidTriage should not hardcode one downloader per project in ad hoc fashion. It should use transport families.
+Issen should not hardcode one downloader per project in ad hoc fashion. It should use transport families.
 
 ### Transport Families
 
@@ -559,7 +559,7 @@ Every sync should persist:
 - Zeek package source metadata: daily
 - warninglists/taxonomies/galaxies: daily or weekly
 
-## What RapidTriage Should Build Next
+## What Issen Should Build Next
 
 ### Phase 1
 
@@ -584,7 +584,7 @@ Every sync should persist:
 
 ## Bottom Line
 
-RapidTriage should not choose between “classical rule engines” and “correlation.”
+Issen should not choose between “classical rule engines” and “correlation.”
 
 It should support:
 

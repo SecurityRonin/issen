@@ -1,4 +1,4 @@
-# RapidTriage: Architecture Decision Records
+# Issen: Architecture Decision Records
 
 > **Tier**: 2 --- Strategic Reference
 > **Created**: 2026-03-20
@@ -19,7 +19,7 @@
 | [ADR-0006](#adr-0006-three-tier-plugin-system) | Three-Tier Plugin System | Accepted | 2026-03-20 | 6 |
 | [ADR-0007](#adr-0007-hybrid-publicprivate-repository) | Hybrid Public/Private Repository | Accepted | 2026-03-20 | 1 |
 | [ADR-0008](#adr-0008-local-first-ai-via-ollama) | Local-First AI via Ollama | Accepted | 2026-03-20 | 6 |
-| [ADR-0009](#adr-0009-dual-report-output-html--docx) | Dual Report Output (HTML + DOCX) | Accepted | 2026-03-20 | 6 |
+| [ADR-0009](#adr-0009-dual-repoissen-output-html--docx) | Dual Report Output (HTML + DOCX) | Accepted | 2026-03-20 | 6 |
 | [ADR-0010](#adr-0010-grounded-ai-generation-only) | Grounded AI Generation Only | Accepted | 2026-03-20 | 7 |
 | [ADR-0011](#adr-0011-no-retry-on-corrupted-evidence) | No Retry on Corrupted Evidence | Accepted | 2026-03-20 | 7d |
 | [ADR-0012](#adr-0012-per-pipeline-layer-circuit-breakers) | Per-Pipeline-Layer Circuit Breakers | Accepted | 2026-03-20 | 7d |
@@ -40,7 +40,7 @@ The digital forensics market (~$9B, ~12% CAGR) has mature tools competing on thr
 
 ### Decision
 
-RapidTriage will compete on the forensic-to-legal translation gap by producing attorney-ready deliverables as its primary output. The report is the product, not a byproduct. Every pipeline stage --- from evidence ingestion through correlation to final output --- is designed and measured by its contribution to producing a deliverable that attorneys can use without examiner hand-holding.
+Issen will compete on the forensic-to-legal translation gap by producing attorney-ready deliverables as its primary output. The report is the product, not a byproduct. Every pipeline stage --- from evidence ingestion through correlation to final output --- is designed and measured by its contribution to producing a deliverable that attorneys can use without examiner hand-holding.
 
 ### Alternatives Rejected
 
@@ -111,7 +111,7 @@ Adopt **Time-to-Attorney-Ready Report (TARR)** as the North Star metric. Definit
 
 ### Context
 
-RapidTriage has existing open-source crates (usnjrnl-forensic v0.6, tl v0.1, ewf v0.1, shrinkpath v0.1) already published under Apache 2.0 / MIT dual license. The project needs a licensing strategy for new parsers and the proprietary integration layer. Copyleft licensing (AGPL) could protect against cloud providers repackaging the work, but the forensic community values transparency and code inspection for courtroom admissibility ("you can inspect the code that parsed this evidence"). The primary moat is integration quality, not parser exclusivity.
+Issen has existing open-source crates (usnjrnl-forensic v0.6, tl v0.1, ewf v0.1, shrinkpath v0.1) already published under Apache 2.0 / MIT dual license. The project needs a licensing strategy for new parsers and the proprietary integration layer. Copyleft licensing (AGPL) could protect against cloud providers repackaging the work, but the forensic community values transparency and code inspection for courtroom admissibility ("you can inspect the code that parsed this evidence"). The primary moat is integration quality, not parser exclusivity.
 
 ### Decision
 
@@ -149,11 +149,11 @@ All open-source parsers and utilities use **Apache 2.0 (parsers) / MIT (utilitie
 
 ### Context
 
-RapidTriage must support multiple rendering surfaces: CLI (clap v4), TUI (ratatui), desktop GUI (Tauri v2), and web UI (axum + Leptos). The core analysis logic --- timeline schema, event types, plugin traits, correlation, and reporting --- must produce identical results regardless of which frontend drives it. Side effects (file I/O, database access, network calls) must be isolated to enable deterministic testing of the analysis engine. The Crux framework (cross-platform Rust apps) demonstrates this pattern effectively for multi-surface applications.
+Issen must support multiple rendering surfaces: CLI (clap v4), TUI (ratatui), desktop GUI (Tauri v2), and web UI (axum + Leptos). The core analysis logic --- timeline schema, event types, plugin traits, correlation, and reporting --- must produce identical results regardless of which frontend drives it. Side effects (file I/O, database access, network calls) must be isolated to enable deterministic testing of the analysis engine. The Crux framework (cross-platform Rust apps) demonstrates this pattern effectively for multi-surface applications.
 
 ### Decision
 
-Adopt a **hexagonal (ports-and-adapters) architecture** inspired by Crux. The `rt-core` crate is a side-effect-free pure analysis engine. All I/O, storage, and rendering are handled by port/adapter crates (`rt-pipeline`, `rt-timeline`, `rt-report`, `rt-cli`, `rt-tui`, `rt-gui`, `rt-web`). The core defines traits (ports); adapters implement them. Frontends are thin shells that translate user input into core commands and core output into rendered views.
+Adopt a **hexagonal (ports-and-adapters) architecture** inspired by Crux. The `issen-core` crate is a side-effect-free pure analysis engine. All I/O, storage, and rendering are handled by port/adapter crates (`issen-pipeline`, `issen-timeline`, `issen-report`, `issen-cli`, `issen-tui`, `issen-gui`, `issen-web`). The core defines traits (ports); adapters implement them. Frontends are thin shells that translate user input into core commands and core output into rendered views.
 
 ### Alternatives Rejected
 
@@ -167,14 +167,14 @@ Adopt a **hexagonal (ports-and-adapters) architecture** inspired by Crux. The `r
 
 **Positive**:
 - Identical analysis results across CLI, TUI, GUI, and web --- critical for forensic reproducibility
-- Pure `rt-core` enables deterministic property-based testing without I/O mocking
+- Pure `issen-core` enables deterministic property-based testing without I/O mocking
 - Clean crate boundaries enforce the open-source / proprietary licensing split at compile time
 - New frontends (mobile, embedded) can be added by implementing the port traits without modifying core logic
 
 **Trade-offs**:
 - Steeper initial learning curve for contributors unfamiliar with hexagonal architecture
 - Trait-heavy design increases compile times (Rust monomorphization) and can produce opaque error messages
-- Requires disciplined enforcement of the "no side effects in core" rule --- a single `std::fs::read` in `rt-core` breaks the entire architecture's guarantees
+- Requires disciplined enforcement of the "no side effects in core" rule --- a single `std::fs::read` in `issen-core` breaks the entire architecture's guarantees
 
 ---
 
@@ -190,7 +190,7 @@ Forensic timeline analysis involves querying datasets of 100M+ events with tempo
 
 ### Decision
 
-Use **DuckDB as the primary analytical store** for the hot path (in-process, columnar, `TIMESTAMP_NS`, zone maps) and **SQLite as the cold exchange format** for portable case export and legal hold compliance. `rt-timeline` manages DuckDB during active analysis; case export produces a self-contained SQLite database that any tool (DB Browser, Python, Excel via ODBC) can open.
+Use **DuckDB as the primary analytical store** for the hot path (in-process, columnar, `TIMESTAMP_NS`, zone maps) and **SQLite as the cold exchange format** for portable case export and legal hold compliance. `issen-timeline` manages DuckDB during active analysis; case export produces a self-contained SQLite database that any tool (DB Browser, Python, Excel via ODBC) can open.
 
 ### Alternatives Rejected
 
@@ -224,7 +224,7 @@ Use **DuckDB as the primary analytical store** for the hot path (in-process, col
 
 ### Context
 
-RapidTriage needs an extensibility mechanism for forensic parsers. The DFIR community is diverse: individual contributors write parsers in Rust, Python, Go, and C. Enterprise customers need to integrate proprietary parsers that cannot be open-sourced. The plugin system must balance performance (parsers process millions of records), security (parsers handle untrusted evidence), and accessibility (contributors should not need deep Rust expertise for simple parsers).
+Issen needs an extensibility mechanism for forensic parsers. The DFIR community is diverse: individual contributors write parsers in Rust, Python, Go, and C. Enterprise customers need to integrate proprietary parsers that cannot be open-sourced. The plugin system must balance performance (parsers process millions of records), security (parsers handle untrusted evidence), and accessibility (contributors should not need deep Rust expertise for simple parsers).
 
 ### Decision
 
@@ -265,7 +265,7 @@ Implement a **three-tier plugin system** with progressive capability and isolati
 
 ### Context
 
-RapidTriage has open-source parsers (Apache 2.0/MIT) and proprietary integration components. The repository strategy must enforce the licensing boundary at the code level, prevent accidental proprietary code leakage into public repositories, and allow community contributions to parsers without exposing the integration layer. CI/CD must build both public and private components, and the dependency direction must be strictly enforced.
+Issen has open-source parsers (Apache 2.0/MIT) and proprietary integration components. The repository strategy must enforce the licensing boundary at the code level, prevent accidental proprietary code leakage into public repositories, and allow community contributions to parsers without exposing the integration layer. CI/CD must build both public and private components, and the dependency direction must be strictly enforced.
 
 ### Decision
 
@@ -302,7 +302,7 @@ Maintain a **separate public monorepo** (Apache 2.0/MIT licensed, containing all
 
 ### Context
 
-RapidTriage's intelligence layer (`rt-intel`) uses LLMs for classification, entity extraction, narrative drafting, and cross-case correlation. Forensic evidence is legally sensitive: chain-of-custody requirements, client confidentiality, and air-gapped lab environments all constrain how and where AI processing can occur. The AI capability must add value without creating legal liability or evidence handling violations.
+Issen's intelligence layer (`issen-intel`) uses LLMs for classification, entity extraction, narrative drafting, and cross-case correlation. Forensic evidence is legally sensitive: chain-of-custody requirements, client confidentiality, and air-gapped lab environments all constrain how and where AI processing can occur. The AI capability must add value without creating legal liability or evidence handling violations.
 
 ### Decision
 
@@ -344,7 +344,7 @@ Attorney-ready output serves two distinct use cases in forensic engagements. Dur
 
 ### Decision
 
-Generate **dual-format reports**: interactive HTML (self-contained, single-file, no external dependencies) for exploration and investigation, and court-ready DOCX (with PDF export) for formal filings. Technology: Askama templates for HTML generation, docx-rs with python-docx for DOCX generation, headless Chrome for PDF conversion from HTML. Both formats are generated from the same underlying report data model in `rt-report`.
+Generate **dual-format reports**: interactive HTML (self-contained, single-file, no external dependencies) for exploration and investigation, and couissen-ready DOCX (with PDF export) for formal filings. Technology: Askama templates for HTML generation, docx-rs with python-docx for DOCX generation, headless Chrome for PDF conversion from HTML. Both formats are generated from the same underlying report data model in `issen-report`.
 
 ### Alternatives Rejected
 
@@ -357,7 +357,7 @@ Generate **dual-format reports**: interactive HTML (self-contained, single-file,
 ### Consequences
 
 **Positive**:
-- Addresses both investigation-phase and court-filing-phase needs from a single analysis run
+- Addresses both investigation-phase and couissen-filing-phase needs from a single analysis run
 - Self-contained HTML (no external dependencies) works on any device, including courtroom presentation laptops with restricted software
 - DOCX output integrates directly into law firm document management workflows
 - Single underlying data model ensures both formats contain identical findings
@@ -452,7 +452,7 @@ Forensic evidence is immutable by definition. An examiner works from a forensic 
 
 ### Context
 
-RapidTriage's pipeline has five layers: Layer 0 (Storage I/O), Layer 1 (Image Format), Layer 2 (Volume/Partition), Layer 3 (Filesystem), and Layer 4 (Artifact Parsing). Failures in one layer should not cascade to unrelated layers. A corrupted NTFS volume (Layer 3) should not prevent registry parsing from a second volume, and a failing Event Log parser (Layer 4) should not block Prefetch parsing. The circuit breaker pattern from distributed systems applies, but the granularity must match the pipeline's layer structure.
+Issen's pipeline has five layers: Layer 0 (Storage I/O), Layer 1 (Image Format), Layer 2 (Volume/Partition), Layer 3 (Filesystem), and Layer 4 (Artifact Parsing). Failures in one layer should not cascade to unrelated layers. A corrupted NTFS volume (Layer 3) should not prevent registry parsing from a second volume, and a failing Event Log parser (Layer 4) should not block Prefetch parsing. The circuit breaker pattern from distributed systems applies, but the granularity must match the pipeline's layer structure.
 
 ### Decision
 
@@ -489,15 +489,15 @@ Implement **per-pipeline-layer circuit breakers**. Each layer maintains independ
 
 ### Context
 
-RapidTriage's crates communicate through trait interfaces. In a multi-crate Rust workspace, any crate can potentially call any public function in any other crate. The security model requires trust boundaries: untrusted code (evidence parsers, WASM plugins) should not be able to directly invoke privileged operations (audit log writes, license verification, hash verification). Runtime authentication (tokens, capability objects) adds overhead and complexity. Rust's type system and module visibility rules can enforce these boundaries at compile time with zero runtime cost.
+Issen's crates communicate through trait interfaces. In a multi-crate Rust workspace, any crate can potentially call any public function in any other crate. The security model requires trust boundaries: untrusted code (evidence parsers, WASM plugins) should not be able to directly invoke privileged operations (audit log writes, license verification, hash verification). Runtime authentication (tokens, capability objects) adds overhead and complexity. Rust's type system and module visibility rules can enforce these boundaries at compile time with zero runtime cost.
 
 ### Decision
 
 Use **compile-time crate visibility and sealed traits** as the inter-component authentication mechanism. Privileged traits are defined in internal modules (`pub(crate)` or `pub(in crate::path)`) that are only visible to authorized crates. The sealed trait pattern (a trait with a private supertrait that external crates cannot implement) prevents unauthorized implementations. Trust boundaries map to crate visibility:
 
 - **TB0 (Untrusted)**: Evidence files, WASM plugins, Ollama models --- interact only through sanitized input traits
-- **TB1 (Semi-Trusted)**: `rt-pipeline` --- can call parsing traits but not audit or reporting traits
-- **TB2 (Trusted)**: `rt-core`, `rt-timeline`, `rt-correlation`, `rt-report`, `rt-intel` --- full access to internal traits
+- **TB1 (Semi-Trusted)**: `issen-pipeline` --- can call parsing traits but not audit or reporting traits
+- **TB2 (Trusted)**: `issen-core`, `issen-timeline`, `issen-correlation`, `issen-report`, `issen-intel` --- full access to internal traits
 - **TB3 (Privileged)**: Audit logs, license keys, hash verification --- sealed traits with `pub(crate)` visibility
 
 ### Alternatives Rejected
@@ -531,7 +531,7 @@ Use **compile-time crate visibility and sealed traits** as the inter-component a
 
 ### Context
 
-RapidTriage's user research identified four personas: Sarah Chen (solo IR practitioner), Marcus Webb (forensic examiner at a consulting firm), Diana Reyes (litigation support analyst), and James Okafor (CISO/IR manager). Enterprise features (SSO/SAML, RBAC, team case assignment, audit dashboards, partner integrations) serve James Okafor and large organizations. Solo practitioner features (fast setup, minimal configuration, single-binary deployment, affordable pricing) serve Sarah Chen. These feature sets compete for development resources and frequently conflict in design decisions (e.g., SSO requires network connectivity; solo practitioners work air-gapped).
+Issen's user research identified four personas: Sarah Chen (solo IR practitioner), Marcus Webb (forensic examiner at a consulting firm), Diana Reyes (litigation support analyst), and James Okafor (CISO/IR manager). Enterprise features (SSO/SAML, RBAC, team case assignment, audit dashboards, partner integrations) serve James Okafor and large organizations. Solo practitioner features (fast setup, minimal configuration, single-binary deployment, affordable pricing) serve Sarah Chen. These feature sets compete for development resources and frequently conflict in design decisions (e.g., SSO requires network connectivity; solo practitioners work air-gapped).
 
 ### Decision
 
@@ -554,7 +554,7 @@ RapidTriage's user research identified four personas: Sarah Chen (solo IR practi
 - Solo practitioners are more forgiving of rough edges and more willing to provide direct feedback than enterprise procurement committees
 
 **Trade-offs**:
-- Enterprise customers who discover RapidTriage early may evaluate and reject it due to missing SSO/RBAC, creating a negative first impression that is difficult to overcome later
+- Enterprise customers who discover Issen early may evaluate and reject it due to missing SSO/RBAC, creating a negative first impression that is difficult to overcome later
 - Deferring enterprise features means deferring enterprise revenue --- the product must sustain itself on practitioner-tier pricing ($0--$500/year) through Phase 1 and Phase 2
 - Some architectural decisions made for solo practitioners (e.g., OS-level auth, local-only storage) may require rework when enterprise features are added in Phase 3
 

@@ -29,8 +29,8 @@ mod tests {
 
     #[test]
     fn bad_file_source_variants() {
-        asseissen_ne!(BadFileSource::MalwareBazaar, BadFileSource::VirusShare);
-        asseissen_eq!(
+        assert_ne!(BadFileSource::MalwareBazaar, BadFileSource::VirusShare);
+        assert_eq!(
             BadFileSource::Custom("feed"),
             BadFileSource::Custom("feed")
         );

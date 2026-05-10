@@ -6,7 +6,7 @@ use issen_core::error::RtError;
 /// The caller should store it in the `CollectionManifest` to keep it alive.
 pub fn create_extraction_dir() -> Result<tempfile::TempDir, RtError> {
     tempfile::Builder::new()
-        .prefix("rt-unpack-")
+        .prefix("issen-unpack-")
         .tempdir()
         .map_err(RtError::Io)
 }
@@ -33,7 +33,7 @@ mod tests {
             .and_then(|n| n.to_str())
             .expect("dir name should be valid UTF-8");
         assert!(
-            name.starts_with("rt-unpack-"),
+            name.starts_with("issen-unpack-"),
             "expected prefix 'rt-unpack-', got: {name}"
         );
     }
@@ -42,7 +42,7 @@ mod tests {
     fn test_create_extraction_dir_multiple_calls_return_distinct_paths() {
         let dir1 = create_extraction_dir().expect("create dir1");
         let dir2 = create_extraction_dir().expect("create dir2");
-        asseissen_ne!(
+        assert_ne!(
             dir1.path(),
             dir2.path(),
             "each call should produce a unique temp dir"

@@ -1,8 +1,8 @@
-# RapidTriage Documentation Hub
+# Issen Documentation Hub
 
 > **Integrated forensic triage platform with attorney-ready output**
 
-This index is the entry point to all RapidTriage strategic and technical documentation.
+This index is the entry point to all Issen strategic and technical documentation.
 Every document listed here was generated during the North Star Advisor planning process
 and is the authoritative reference for the project.
 
@@ -341,4 +341,4 @@ All documents were generated during the North Star Advisor planning process on 2
 
 ---
 
-*This documentation hub was generated as Phase 13 of 13 in the North Star Advisor planning process for RapidTriage.*
+*This documentation hub was generated as Phase 13 of 13 in the North Star Advisor planning process for Issen.*

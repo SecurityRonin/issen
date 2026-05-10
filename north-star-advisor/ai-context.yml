@@ -9,7 +9,7 @@ _meta:
   phases_complete: [1, 2, 3, 4, "5a", "5b", "5c", "5d", 6, 7, 8, "7d", 9, 10, 11, 12, 13]
 
 project:
-  name: "RapidTriage"
+  name: "Issen"
   description: "Integrated forensic triage platform that bridges the forensic-to-legal translation gap with attorney-ready output"
   version: "0.1.0"
   target_users: "IR practitioners, forensic examiners, and litigation support teams"
@@ -79,7 +79,7 @@ brand:
     traits: ["Practitioner-first", "Direct", "Technically honest", "Quietly confident", "Outcome-oriented"]
     tone: "SANS DFIR Summit peer conversation, not SaaS product launch"
   tagline: "Evidence tells a story."
-  positioning: "RapidTriage is a forensic triage platform that transforms digital forensic artifacts into attorney-ready reports for IR practitioners, forensic examiners, and litigation support teams."
+  positioning: "Issen is a forensic triage platform that transforms digital forensic artifacts into attorney-ready reports for IR practitioners, forensic examiners, and litigation support teams."
   visual:
     primary_color: "Slate Blue (#475569)"
     accent_color: "Amber (#D97706)"
@@ -171,8 +171,8 @@ architecture:
     tier_2: "WASM (Wasmtime + WIT) — community plugins, v0.3+"
     tier_3: "gRPC (tonic) — enterprise integrations, v0.5+"
   open_core:
-    public: "github.com/h4x0r/rapidtriage (Apache 2.0 / MIT)"
-    private: "rapidtriage-pro (Proprietary)"
+    public: "github.com/h4x0r/issen (Apache 2.0 / MIT)"
+    private: "issen-pro (Proprietary)"
     rule: "Open-source crates NEVER depend on proprietary crates"
 
 # Phase 7: Agent Prompts
@@ -218,8 +218,8 @@ architecture:
 # Deep: Implementation Scaffold
 implementation:
   project_structure:
-    public_repo: "github.com/h4x0r/rapidtriage — Cargo workspace monorepo (Apache 2.0 / MIT)"
-    private_repo: "rapidtriage-pro — Proprietary crates (DOCX/PDF reports, TUI, GUI, Web, correlation, intel)"
+    public_repo: "github.com/h4x0r/issen — Cargo workspace monorepo (Apache 2.0 / MIT)"
+    private_repo: "issen-pro — Proprietary crates (DOCX/PDF reports, TUI, GUI, Web, correlation, intel)"
     crates: ["rt-core", "rt-pipeline", "rt-timeline", "rt-cli", "rt-plugin-sdk", "rt-parser-usnjrnl", "rt-parser-mft", "rt-parser-evtx", "rt-parser-prefetch", "rt-parser-registry", "rt-parser-lnk", "rt-parser-srum", "rt-parser-recyclebin"]
   setup_scripts:
     - "cargo build --workspace (public repo)"

@@ -156,7 +156,7 @@ license:
       - "Evidence never leaves examiner's machine without explicit action"
       - "Open-source parsers remain open permanently (irrevocable)"
 
-positioning: "RapidTriage is a forensic triage platform that transforms digital forensic artifacts into attorney-ready reports and interactive explorations for IR practitioners, forensic examiners, and litigation support teams who spend 80% of engagement time on manual report writing. Unlike AXIOM, Autopsy, or X-Ways, we treat the deliverable as the product."
+positioning: "Issen is a forensic triage platform that transforms digital forensic artifacts into attorney-ready reports and interactive explorations for IR practitioners, forensic examiners, and litigation support teams who spend 80% of engagement time on manual report writing. Unlike AXIOM, Autopsy, or X-Ways, we treat the deliverable as the product."
 
 tech_stack:
     core_language: "Rust"

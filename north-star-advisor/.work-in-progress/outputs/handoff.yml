@@ -167,7 +167,7 @@ observability:
         - "handoff_buffer_utilization"
 
 plugin_handoff:
-    submission: "PR to github.com/h4x0r/rapidtriage with label community-plugin"
+    submission: "PR to github.com/h4x0r/issen with label community-plugin"
     automated_checks: ["WIT conformance", "WASM size <10MB", "Memory <64MB", "Timeout <30s", "Sandbox enforcement", "Fuzz 1000 iterations"]
     review_sla: "First review within 72 hours"
     max_review_rounds: 3

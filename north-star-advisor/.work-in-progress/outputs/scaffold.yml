@@ -5,8 +5,8 @@
 scaffold:
     directory_structure:
         model: "Hybrid dual-repo (public monorepo + private proprietary repo)"
-        public_repo: "github.com/h4x0r/rapidtriage"
-        private_repo: "github.com/h4x0r/rapidtriage-pro"
+        public_repo: "github.com/h4x0r/issen"
+        private_repo: "github.com/h4x0r/issen-pro"
         workspace_resolver: "2"
         rust_edition: "2021"
         minimum_rust_version: "1.80"

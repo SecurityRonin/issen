@@ -1,4 +1,4 @@
-# RapidTriage: Observability
+# Issen: Observability
 
 > **Parent**: [ARCHITECTURE_BLUEPRINT.md](../ARCHITECTURE_BLUEPRINT.md)
 > **Created**: 2026-03-20
@@ -6,7 +6,7 @@
 
 Structured tracing, pipeline metrics, TARR instrumentation, forensic audit logging, and local-first dashboards for air-gapped forensic environments.
 
-**Design Constraint**: RapidTriage operates in air-gapped forensic labs. All observability infrastructure runs locally -- no cloud telemetry, no external endpoints. Every metric, trace, and audit log is stored in local DuckDB or on-disk files.
+**Design Constraint**: Issen operates in air-gapped forensic labs. All observability infrastructure runs locally -- no cloud telemetry, no external endpoints. Every metric, trace, and audit log is stored in local DuckDB or on-disk files.
 
 ---
 
@@ -14,14 +14,14 @@ Structured tracing, pipeline metrics, TARR instrumentation, forensic audit loggi
 
 ### 1.1 Trace Hierarchy
 
-RapidTriage's trace tree mirrors the evidence processing pipeline. Each case execution produces a single root trace that fans out through the data pipeline layers.
+Issen's trace tree mirrors the evidence processing pipeline. Each case execution produces a single root trace that fans out through the data pipeline layers.
 
 ```
 Case Trace (root span)
 |
 +-- Ingest Span
 |   +-- VFS Mount Span
-|   |   +-- E01 Reader Span (rt-ewf)
+|   |   +-- E01 Reader Span (issen-ewf)
 |   |   +-- Raw Image Reader Span
 |   |   +-- KAPE Output Reader Span
 |   +-- Source Fingerprint Span
@@ -29,31 +29,31 @@ Case Trace (root span)
 |
 +-- Parse Span
 |   +-- Parallel Parser Pool Span (rayon)
-|   |   +-- rt-parser-evtx Span
-|   |   +-- rt-parser-mft Span
-|   |   +-- rt-parser-usnjrnl Span
-|   |   +-- rt-parser-prefetch Span
-|   |   +-- rt-parser-registry Span
-|   |   +-- rt-parser-lnk Span
-|   |   +-- rt-parser-amcache Span
-|   |   +-- rt-parser-bam Span
-|   |   +-- rt-parser-browser Span
-|   |   +-- rt-parser-jumplists Span
-|   |   +-- rt-parser-srum Span
+|   |   +-- issen-parser-evtx Span
+|   |   +-- issen-parser-mft Span
+|   |   +-- issen-parser-usnjrnl Span
+|   |   +-- issen-parser-prefetch Span
+|   |   +-- issen-parser-registry Span
+|   |   +-- issen-parser-lnk Span
+|   |   +-- issen-parser-amcache Span
+|   |   +-- issen-parser-bam Span
+|   |   +-- issen-parser-browser Span
+|   |   +-- issen-parser-jumplists Span
+|   |   +-- issen-parser-srum Span
 |   +-- DuckDB Timeline Write Span
 |
-+-- Correlate Span (rt-correlation)
++-- Correlate Span (issen-correlation)
 |   +-- Cross-Artifact Correlation Span
 |   +-- Attack Pattern Detection Span
 |   +-- YARA-X Scan Span
 |   +-- Sigma Rule Evaluation Span
 |
-+-- Intelligence Span (rt-intel, optional)
++-- Intelligence Span (issen-intel, optional)
 |   +-- RAG Query Span
 |   +-- LLM Narrative Generation Span
 |   +-- Grounded Citation Verification Span
 |
-+-- Report Span (rt-report)
++-- Report Span (issen-report)
 |   +-- HTML Report Generation Span
 |   +-- DOCX Report Generation Span
 |   +-- Report Hash + Signing Span
@@ -98,7 +98,7 @@ Every span carries these baseline attributes for forensic traceability:
 | `examiner_id` | `String` | Examiner identity (for audit) |
 | `evidence_source` | `String` | Source evidence container path |
 | `hostname` | `String` | Processing workstation hostname |
-| `rt_version` | `String` | RapidTriage build version |
+| `rt_version` | `String` | Issen build version |
 | `pipeline_stage` | `String` | Current stage: ingest, parse, correlate, intel, report |
 
 ---
@@ -107,7 +107,7 @@ Every span carries these baseline attributes for forensic traceability:
 
 ### 2.1 Handler Architecture
 
-RapidTriage uses the Rust `tracing` crate as its instrumentation backbone with multiple `tracing-subscriber` layers. Each handler consumes structured span and event data independently.
+Issen uses the Rust `tracing` crate as its instrumentation backbone with multiple `tracing-subscriber` layers. Each handler consumes structured span and event data independently.
 
 ```rust
 // src/observability/handler.rs
@@ -161,7 +161,7 @@ impl JsonLogLayer {
         let appender = RollingFileAppender::new(
             Rotation::DAILY,
             &config.log_dir,       // e.g., "./cases/{case_id}/logs"
-            "rapidtriage.log",
+            "issen.log",
         );
         Self { appender }
     }
@@ -286,7 +286,7 @@ pub struct AuditLayer {
 
 ### 3.1 Architecture (Air-Gap Compliant)
 
-RapidTriage replaces cloud telemetry with a fully local observability stack:
+Issen replaces cloud telemetry with a fully local observability stack:
 
 ```
 +-------------------+     +-------------------+     +-------------------+
@@ -302,7 +302,7 @@ RapidTriage replaces cloud telemetry with a fully local observability stack:
                      |              |           |            |
                      v              v           v            v
               +------------------------------------------------------+
-              |            TUI Dashboard (rt-tui)                     |
+              |            TUI Dashboard (issen-tui)                     |
               |   Real-time pipeline monitor + metric explorer        |
               +------------------------------------------------------+
 ```
@@ -314,8 +314,8 @@ RapidTriage replaces cloud telemetry with a fully local observability stack:
 ```
 cases/{case_id}/
 +-- logs/
-|   +-- rapidtriage.log           # JSON structured logs (daily rotation)
-|   +-- rapidtriage.log.2026-03-19
+|   +-- issen.log           # JSON structured logs (daily rotation)
+|   +-- issen.log.2026-03-19
 +-- audit/
 |   +-- audit.jsonl               # Hash-chained audit log
 |   +-- audit.jsonl.sig           # Optional GPG signature
@@ -353,7 +353,7 @@ pub fn init_observability(config: ObservabilityConfig) -> ObservabilityGuard {
 
     tracing::info!(
         case_dir = %config.log_dir.display(),
-        "RapidTriage observability initialized"
+        "Issen observability initialized"
     );
 
     ObservabilityGuard { config }
@@ -783,7 +783,7 @@ impl Sanitizer {
 
 tracing::error!(
     error_category = "parser_failure",
-    parser_id = "rt-parser-evtx",
+    parser_id = "issen-parser-evtx",
     artifact_path = "/evidence/Windows/System32/winevt/Logs/Security.evtx",
     error_message = "Invalid record header at offset 0x1A3F00",
     is_corruption = true,
@@ -895,7 +895,7 @@ Recommendation: Improve report draft quality to reduce review cycles
 
 ## 10. Dashboards & Alerts
 
-### 10.1 TUI Dashboard (rt-tui)
+### 10.1 TUI Dashboard (issen-tui)
 
 The primary dashboard is an interactive TUI built with `ratatui`, providing real-time pipeline monitoring without leaving the terminal.
 
@@ -966,7 +966,7 @@ Since cloud alerting is unavailable in air-gapped environments:
 
 | Alert Channel | Mechanism | Use Case |
 |---------------|-----------|----------|
-| TUI Notification | In-app alert banner in rt-tui | Real-time during processing |
+| TUI Notification | In-app alert banner in issen-tui | Real-time during processing |
 | Desktop Notification | `notify-rust` crate (OS-native) | Background processing alerts |
 | Log File | `WARN`/`ERROR` level in structured log | Post-processing review |
 | Audit Entry | Critical events recorded in audit chain | Forensic defensibility |
@@ -978,10 +978,10 @@ Since cloud alerting is unavailable in air-gapped environments:
 
 ### 11.1 Large Evidence Container Profiling
 
-For evidence sets exceeding 50GB, RapidTriage provides built-in profiling:
+For evidence sets exceeding 50GB, Issen provides built-in profiling:
 
 ```rust
-// Enable with: RAPIDTRIAGE_PROFILE=1 rt-cli ingest --case CASE-ID /evidence
+// Enable with: RAPIDTRIAGE_PROFILE=1 issen-cli ingest --case CASE-ID /evidence
 
 // Produces:
 // - Flame graph (via tracing-flame or pprof-rs)

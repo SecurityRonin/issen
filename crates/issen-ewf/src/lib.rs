@@ -221,7 +221,7 @@ mod tests {
         let issen_err: RtError = ewf_err.into();
         match issen_err {
             RtError::Parse { offset, message } => {
-                asseissen_eq!(offset, 0);
+                assert_eq!(offset, 0);
                 assert!(
                     message.contains("corrupt chunk"),
                     "Expected 'corrupt chunk' in: {message}"
@@ -247,8 +247,8 @@ mod tests {
     #[test]
     fn test_module_compiles() {
         // Verify that EwfDataSource satisfies Send + Sync (required by DataSource).
-        fn asseissen_send_sync<T: Send + Sync>() {}
-        asseissen_send_sync::<EwfDataSource>();
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<EwfDataSource>();
     }
 
     #[test]

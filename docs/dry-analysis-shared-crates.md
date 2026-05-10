@@ -1,7 +1,7 @@
-# DRY Analysis: Shared Code Between RapidTriage and memory-forensic
+# DRY Analysis: Shared Code Between Issen and memory-forensic
 
 **Date:** 2026-04-10  
-**Scope:** `~/src/RapidTriage` and `~/src/memory-forensic`  
+**Scope:** `~/src/Issen` and `~/src/memory-forensic`  
 **Method:** Static analysis of parsers, carvers, scanners, alert heuristics, and walker classifiers across both workspaces
 
 ---
@@ -16,7 +16,7 @@ Both repositories implement forensic analysis functionality that, in several cas
 
 ## Dependency Direction
 
-RapidTriage already depends on `memory-forensic` crates (e.g. `memf-core`, `memf-format`, `memf-linux`, `memf-windows`). Any shared crate must live in the `memory-forensic` workspace. Placing it in `RapidTriage` would create a circular dependency: `memory-forensic → RapidTriage → memory-forensic`.
+Issen already depends on `memory-forensic` crates (e.g. `memf-core`, `memf-format`, `memf-linux`, `memf-windows`). Any shared crate must live in the `memory-forensic` workspace. Placing it in `Issen` would create a circular dependency: `memory-forensic → Issen → memory-forensic`.
 
 ```
 memory-forensic workspace
@@ -26,7 +26,7 @@ memory-forensic workspace
   ├── forensic-patterns    ← NEW (no deps except std)
   └── forensic-types       ← NEW (deps: serde only)
 
-RapidTriage workspace
+Issen workspace
   ├── rt-parser-uac        ← adds forensic-patterns, forensic-types as deps
   ├── rt-navigator         ← adds forensic-patterns as dep
   └── rt-mem               (no change needed)
@@ -38,7 +38,7 @@ RapidTriage workspace
 
 ### A1. Suspicious Port List (HIGH severity)
 
-**RapidTriage** — `crates/rt-navigator/src/investigation/alerts/types.rs`  
+**Issen** — `crates/rt-navigator/src/investigation/alerts/types.rs`  
 Defines `SUSPICIOUS_PORTS: &[u16]` with ~30 entries: 4444, 50050, 31337, 1337, 8888, 9999, 4445, and others widely associated with C2 frameworks (Metasploit, Cobalt Strike, Empire).
 
 **memory-forensic** — Inline in multiple walker classifiers across `memf-linux/` and `memf-windows/`  
@@ -58,7 +58,7 @@ pub fn is_suspicious_port(port: u16) -> bool {
 
 ### A2. Trusted System Library Path Predicates (HIGH severity)
 
-**RapidTriage**  
+**Issen**  
 - `crates/rt-parser-uac/src/parsers/rootkit.rs`: `is_trusted_system_lib_path(path: &str) -> bool` — checks `System32`, `SysWOW64`, `WinSxS` prefixes  
 - `crates/rt-navigator/src/investigation/alerts/filesystem.rs`: a second, slightly different implementation of the same predicate
 
@@ -83,7 +83,7 @@ The Linux and Windows predicates have different sets of trusted directories and 
 
 ### A3. CrontabEntry Struct (HIGH severity)
 
-**RapidTriage** — `crates/rt-parser-uac/src/parsers/process.rs`  
+**Issen** — `crates/rt-parser-uac/src/parsers/process.rs`  
 ```rust
 pub struct CrontabEntry { pub schedule: String, pub command: String, pub user: String }
 ```
@@ -106,7 +106,7 @@ Both crates replace their local definition with `use forensic_types::crontab::Cr
 
 ### A4. Reverse Shell Command Patterns (MODERATE severity)
 
-**RapidTriage** — `crates/rt-navigator/src/investigation/alerts/process.rs`  
+**Issen** — `crates/rt-navigator/src/investigation/alerts/process.rs`  
 Hardcoded slice of pattern strings: `"pty.spawn"`, `"bash -i"`, `"nc -e"`, `"/bin/sh -i"`, `"python -c"`, `"perl -e"`, `"ruby -e"`, `"lua -e"`.
 
 **memory-forensic** — Multiple walker classifiers in `memf-linux/`  
@@ -124,17 +124,17 @@ pub const SUSPICIOUS_DOWNLOAD_TOOLS: &[&str] = &["curl", "wget", "certutil", "bi
 
 ### B1. YARA Scanner
 
-RapidTriage implements a YARA scanner that operates against **files and parsed artifact data** (LNK targets, prefetch paths, strings extracted from UAC collections). memory-forensic implements a YARA scanner that operates against **raw memory regions** (page-aligned byte slices, pool allocations). The scan targets, rule scoping, and error handling are necessarily different.
+Issen implements a YARA scanner that operates against **files and parsed artifact data** (LNK targets, prefetch paths, strings extracted from UAC collections). memory-forensic implements a YARA scanner that operates against **raw memory regions** (page-aligned byte slices, pool allocations). The scan targets, rule scoping, and error handling are necessarily different.
 
 **Do not merge the implementations.** If a shared abstraction becomes valuable in the future, define a `trait YaraScanner` with a single `scan(&[u8]) -> Vec<YaraMatch>` method and let each crate provide its own implementation. Do not implement the trait in a shared crate.
 
 ### B2. Severity Enums
 
-RapidTriage defines `AlertSeverity { Critical, High, Medium, Low, Info }` tuned to triage alert presentation. memory-forensic walkers express severity as `ScanSeverity { Definite, Probable, Suspicious, Informational }` tuned to memory scan confidence levels. These are not the same taxonomy and should not be unified. Merging them would require either losing precision in one domain or adding meaningless variants to both.
+Issen defines `AlertSeverity { Critical, High, Medium, Low, Info }` tuned to triage alert presentation. memory-forensic walkers express severity as `ScanSeverity { Definite, Probable, Suspicious, Informational }` tuned to memory scan confidence levels. These are not the same taxonomy and should not be unified. Merging them would require either losing precision in one domain or adding meaningless variants to both.
 
 ### B3. NetworkConnection / Socket Models
 
-RapidTriage's `NetworkConnection` carries triage-layer fields: parsed timestamps, associated process name from UAC data, alert flags. memory-forensic's socket structures carry raw kernel fields: socket state machine values, struct offsets, kernel virtual addresses. The fields are different because the data sources are different. Do not unify; do not add a common base struct.
+Issen's `NetworkConnection` carries triage-layer fields: parsed timestamps, associated process name from UAC data, alert flags. memory-forensic's socket structures carry raw kernel fields: socket state machine values, struct offsets, kernel virtual addresses. The fields are different because the data sources are different. Do not unify; do not add a common base struct.
 
 ---
 
@@ -142,11 +142,11 @@ RapidTriage's `NetworkConnection` carries triage-layer fields: parsed timestamps
 
 ### C1. Timeline and Correlation Logic
 
-`rt-navigator`'s correlation layer (C2 beacon detection, MFT/process cross-correlation, EventLog/network join) is RapidTriage's primary value proposition over raw walker output. This logic belongs exclusively in `rt-navigator`. Placing it in `memory-forensic` would make the low-level forensic library aware of high-level triage concepts, inverting the dependency and polluting the library's scope.
+`rt-navigator`'s correlation layer (C2 beacon detection, MFT/process cross-correlation, EventLog/network join) is Issen's primary value proposition over raw walker output. This logic belongs exclusively in `rt-navigator`. Placing it in `memory-forensic` would make the low-level forensic library aware of high-level triage concepts, inverting the dependency and polluting the library's scope.
 
 ### C2. IOC Feed Management
 
-IOC (Indicator of Compromise) feed ingestion, deduplication, and TTL management live in `rt-navigator`. memory-forensic walkers have no mechanism for network or file-based feed updates and should not grow one. Feed management is a RapidTriage concern.
+IOC (Indicator of Compromise) feed ingestion, deduplication, and TTL management live in `rt-navigator`. memory-forensic walkers have no mechanism for network or file-based feed updates and should not grow one. Feed management is a Issen concern.
 
 ### C3. Walker Implementation Code
 
@@ -203,8 +203,8 @@ memory-forensic/crates/
 | `AlertSeverity` vs `ScanSeverity` | Different taxonomies; a merged enum would be meaningless |
 | YARA scanner implementation | Different scan targets (files vs. memory regions) |
 | Walker bodies (`walk_*` functions) | Kernel-version-specific ISF offsets; cannot be shared |
-| Timeline / correlation functions | RapidTriage value-add; wrong abstraction layer for memory-forensic |
-| IOC feed ingestion | RapidTriage-only concern; memory-forensic has no feed infrastructure |
+| Timeline / correlation functions | Issen value-add; wrong abstraction layer for memory-forensic |
+| IOC feed ingestion | Issen-only concern; memory-forensic has no feed infrastructure |
 | `detect_alerts` / `anomalies_to_alerts` | Pure triage logic; no place in a forensic evidence library |
 
 ---

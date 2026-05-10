@@ -2,11 +2,11 @@
 
 > **Interactive diagram:** [architecture-diagram.html](architecture-diagram.html) — full system map with all 25 crates, cloud backends, detection engines, and data flow.
 
-This document describes RapidTriage's architecture using progressive disclosure. Start with the overview, then drill into subsystems as needed.
+This document describes Issen's architecture using progressive disclosure. Start with the overview, then drill into subsystems as needed.
 
 ## Overview
 
-RapidTriage transforms forensic evidence collections into structured timelines and assessment findings. Evidence goes in, a DuckDB database with parsed events, signature matches, and remote access detections comes out.
+Issen transforms forensic evidence collections into structured timelines and assessment findings. Evidence goes in, a DuckDB database with parsed events, signature matches, and remote access detections comes out.
 
 ```mermaid
 flowchart LR
@@ -293,7 +293,7 @@ Threat intelligence feeds are downloaded, cached locally, and loaded into engine
 flowchart LR
     Registry["Feed Registry\n(built-in configs)"]
     HTTP["HTTP Downloader\n(reqwest, ETag caching)"]
-    Cache["Local Feed Cache\n(~/.rapidtriage/feeds/)"]
+    Cache["Local Feed Cache\n(~/.issen/feeds/)"]
     Parsers["Feed Parsers\n(plaintext, CSV, JSON, STIX)"]
     Loader["Feed-to-Engine\nLoader"]
     ScanEngine["ScanEngine"]
@@ -343,7 +343,7 @@ Bundled rules include:
 - `correlation.persistence.ld-preload`
 - `correlation.process.hidden-no-memory`
 
-Custom rules in `~/.config/rapidtriage/rules/` merge with bundled rules by ID (duplicates are deduplicated).
+Custom rules in `~/.config/issen/rules/` merge with bundled rules by ID (duplicates are deduplicated).
 
 ### Attack Flow STIX Ingestion
 
@@ -513,7 +513,7 @@ sequenceDiagram
 
 **Graceful degradation.** Missing artifacts produce coverage gaps, not crashes. Every parser failure is caught and logged. The pipeline continues with whatever data is available. Partial results with explicit warnings are more valuable than no results.
 
-**Evidence integrity.** RapidTriage never modifies source evidence. All data flows from evidence into new DuckDB databases. Read-only access to evidence is enforced by design.
+**Evidence integrity.** Issen never modifies source evidence. All data flows from evidence into new DuckDB databases. Read-only access to evidence is enforced by design.
 
 **Plugin extensibility.** New artifact parsers are added by creating a crate, implementing the plugin trait, and linking it. No changes to the pipeline, timeline, or CLI are required.
 

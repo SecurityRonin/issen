@@ -88,7 +88,7 @@ roadmap:
             - "Publish rt-parser-usnjrnl on crates.io"
             - "Publish rt-parser-mft on crates.io"
             - "Publish rt-parser-evtx on crates.io"
-            - "GitHub repo (github.com/h4x0r/rapidtriage)"
+            - "GitHub repo (github.com/h4x0r/issen)"
             - "Apache 2.0 license, CI/CD, documentation"
           definition_of_done: "Three parser crates published on crates.io with passing CI"
       buffer: "10%"

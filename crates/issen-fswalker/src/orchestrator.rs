@@ -382,15 +382,15 @@ mod tests {
 
     #[test]
     fn test_detect_usnjrnl() {
-        asseissen_eq!(
+        assert_eq!(
             detect_artifact_type(Path::new("/evidence/C/\\$Extend/\\$J")),
             None, // escaped paths won't match, but real KAPE paths will
         );
-        asseissen_eq!(
+        assert_eq!(
             detect_artifact_type(Path::new("/evidence/$J")),
             Some(ArtifactType::UsnJournal),
         );
-        asseissen_eq!(
+        assert_eq!(
             detect_artifact_type(Path::new("/kape/C/$UsnJrnl_$J")),
             Some(ArtifactType::UsnJournal),
         );
@@ -398,11 +398,11 @@ mod tests {
 
     #[test]
     fn test_detect_evtx() {
-        asseissen_eq!(
+        assert_eq!(
             detect_artifact_type(Path::new("/logs/Security.evtx")),
             Some(ArtifactType::EventLog),
         );
-        asseissen_eq!(
+        assert_eq!(
             detect_artifact_type(Path::new("/logs/System.evtx")),
             Some(ArtifactType::EventLog),
         );
@@ -410,7 +410,7 @@ mod tests {
 
     #[test]
     fn test_detect_prefetch() {
-        asseissen_eq!(
+        assert_eq!(
             detect_artifact_type(Path::new("/Prefetch/CMD.EXE-12345.pf")),
             Some(ArtifactType::Prefetch),
         );
@@ -418,7 +418,7 @@ mod tests {
 
     #[test]
     fn test_detect_mft() {
-        asseissen_eq!(
+        assert_eq!(
             detect_artifact_type(Path::new("/evidence/$MFT")),
             Some(ArtifactType::Mft),
         );
@@ -426,7 +426,7 @@ mod tests {
 
     #[test]
     fn test_detect_unknown_file() {
-        asseissen_eq!(
+        assert_eq!(
             detect_artifact_type(Path::new("/evidence/readme.txt")),
             None,
         );
@@ -434,7 +434,7 @@ mod tests {
 
     #[test]
     fn test_detect_amcache() {
-        asseissen_eq!(
+        assert_eq!(
             detect_artifact_type(Path::new("/registry/Amcache.hve")),
             Some(ArtifactType::Amcache),
         );
@@ -450,7 +450,7 @@ mod tests {
         std::fs::write(dir.path().join("readme.txt"), b"not an artifact").expect("write");
 
         let artifacts = discover_artifacts(dir.path()).expect("discover");
-        asseissen_eq!(artifacts.len(), 2);
+        assert_eq!(artifacts.len(), 2);
 
         let types: Vec<ArtifactType> = artifacts.iter().map(|a| a.artifact_type).collect();
         assert!(types.contains(&ArtifactType::UsnJournal));
@@ -465,8 +465,8 @@ mod tests {
         std::fs::write(sub.join("CMD.EXE-1234.pf"), b"fake prefetch").expect("write");
 
         let artifacts = discover_artifacts(dir.path()).expect("discover");
-        asseissen_eq!(artifacts.len(), 1);
-        asseissen_eq!(artifacts[0].artifact_type, ArtifactType::Prefetch);
+        assert_eq!(artifacts.len(), 1);
+        assert_eq!(artifacts[0].artifact_type, ArtifactType::Prefetch);
     }
 
     #[test]
@@ -478,9 +478,9 @@ mod tests {
         let progress = ProgressReporter::new();
         let (events, result) = run_pipeline(dir.path(), &progress).expect("pipeline");
 
-        asseissen_eq!(result.artifacts_found, 1);
+        assert_eq!(result.artifacts_found, 1);
         // No parsers registered in this test binary, so nothing parsed.
-        asseissen_eq!(result.artifacts_parsed, 0);
+        assert_eq!(result.artifacts_parsed, 0);
         assert!(events.is_empty());
     }
 
@@ -502,7 +502,7 @@ mod tests {
 
         let progress = ProgressReporter::new();
         let (events, result) = run_auto(dir.path(), &progress).expect("run_auto");
-        asseissen_eq!(result.artifacts_found, 1);
+        assert_eq!(result.artifacts_found, 1);
         assert!(events.is_empty()); // No parsers registered in test binary
     }
 
@@ -519,7 +519,7 @@ mod tests {
             "ev".into(),
         );
         emitter.emit(event).expect("emit");
-        asseissen_eq!(emitter.into_events().len(), 1);
+        assert_eq!(emitter.into_events().len(), 1);
     }
 
     // ── Parallel pipeline tests ──────────────────────────────────────────────
@@ -538,7 +538,7 @@ mod tests {
         let (_events_par, result_par) =
             run_pipeline_parallel(dir.path(), &progress_par).expect("parallel pipeline");
 
-        asseissen_eq!(
+        assert_eq!(
             result_seq.artifacts_found, result_par.artifacts_found,
             "parallel must discover the same number of artifacts as sequential"
         );
@@ -552,8 +552,8 @@ mod tests {
         let (events, result) =
             run_pipeline_parallel(dir.path(), &progress).expect("parallel empty dir");
 
-        asseissen_eq!(result.artifacts_found, 0, "no artifacts in empty dir");
-        asseissen_eq!(result.artifacts_parsed, 0);
+        assert_eq!(result.artifacts_found, 0, "no artifacts in empty dir");
+        assert_eq!(result.artifacts_parsed, 0);
         assert!(events.is_empty(), "no events from empty dir");
         assert!(result.errors.is_empty(), "no errors from empty dir");
     }
@@ -567,8 +567,8 @@ mod tests {
         let (events, result) =
             run_pipeline_parallel(dir.path(), &progress).expect("parallel single artifact");
 
-        asseissen_eq!(result.artifacts_found, 1);
-        asseissen_eq!(
+        assert_eq!(result.artifacts_found, 1);
+        assert_eq!(
             result.artifacts_parsed, 0,
             "no parsers registered in test binary"
         );
@@ -581,14 +581,14 @@ mod tests {
 
     #[test]
     fn parallel_collecting_emitter_is_send_sync() {
-        fn asseissen_send_sync<T: Send + Sync>() {}
-        asseissen_send_sync::<CollectingEmitter>();
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<CollectingEmitter>();
     }
 
     #[test]
     fn parallel_progress_reporter_is_send_sync() {
-        fn asseissen_send_sync<T: Send + Sync>() {}
-        asseissen_send_sync::<ProgressReporter>();
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<ProgressReporter>();
     }
 
     #[test]

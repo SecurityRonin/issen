@@ -1,4 +1,4 @@
-# RapidTriage: North Star Specification
+# Issen: North Star Specification
 
 <!-- GENERATION: This is Step 2 of 13. Requires outputs from BRAND_GUIDELINES. See GENERATION_MANIFEST.md -->
 
@@ -11,7 +11,7 @@
 
 ## Document Purpose
 
-This specification defines **what RapidTriage must achieve** and **how we measure success**. Implementation details exist in supporting documents; this document answers:
+This specification defines **what Issen must achieve** and **how we measure success**. Implementation details exist in supporting documents; this document answers:
 
 1. What is our North Star metric?
 2. Who are we building for?
@@ -96,7 +96,7 @@ The North Star decomposes into input metrics that teams can directly influence:
 
 ### Positioning Statement
 
-> **RapidTriage is a forensic triage platform** that transforms digital forensic artifacts into attorney-ready reports and interactive explorations for IR practitioners, forensic examiners, and litigation support teams who spend 80% of engagement time on manual report writing and evidence reprocessing. Unlike Magnet AXIOM, Autopsy, or X-Ways, we treat the deliverable as the product --- not an afterthought.
+> **Issen is a forensic triage platform** that transforms digital forensic artifacts into attorney-ready reports and interactive explorations for IR practitioners, forensic examiners, and litigation support teams who spend 80% of engagement time on manual report writing and evidence reprocessing. Unlike Magnet AXIOM, Autopsy, or X-Ways, we treat the deliverable as the product --- not an afterthought.
 
 ### What Makes Us Different
 
@@ -112,7 +112,7 @@ The North Star decomposes into input metrics that teams can directly influence:
 | User Need | Current Pain | Our Solution |
 |-----------|--------------|--------------|
 | Get from evidence to deliverable fast | Analysis takes 20% of time; report writing, reformatting, and attorney back-and-forth takes 80% | Integrated pipeline: parse, triage, narrate, deliver --- one tool, one workflow |
-| Produce court-admissible reports | Manual copy-paste between tools breaks chain-of-custody documentation; attorneys question methodology | Automated chain-of-custody tracking, standardized methodology documentation, exhibit-ready formatting |
+| Produce couissen-admissible reports | Manual copy-paste between tools breaks chain-of-custody documentation; attorneys question methodology | Automated chain-of-custody tracking, standardized methodology documentation, exhibit-ready formatting |
 | Handle multiple concurrent cases | Each case requires rebuilding analysis environment, finding templates, remembering tool workflows | Case-centric workspace with persistent state, reusable templates, and consistent methodology across engagements |
 
 ---
@@ -209,7 +209,7 @@ Demographics: 31, litigation support analyst at an Am Law 200 firm,
   paralegal background with forensic technology training. Manages the
   evidence-to-courtroom pipeline for 10-15 matters at a time.
 Current State: Receives forensic reports from internal examiners or
-  outside consultants. Reformats findings into court-filing format,
+  outside consultants. Reformats findings into couissen-filing format,
   creates exhibit lists, ensures Bates numbering, and prepares
   deposition binders. Uses Relativity for document review but
   forensic artifacts arrive as raw CSVs or poorly formatted PDFs.
@@ -259,7 +259,7 @@ Access Barriers: Needs enterprise features (SSO, audit logs, role-based
 
 ## 1.5 Forces of Progress Analysis
 
-Understanding what drives users toward RapidTriage and what holds them back.
+Understanding what drives users toward Issen and what holds them back.
 
 ### Push Forces (Away from Current State)
 
@@ -271,7 +271,7 @@ Understanding what drives users toward RapidTriage and what holds them back.
 | Free tools (Autopsy) produce unusable reports | Autopsy HTML reports are raw data dumps; no narrative, no exhibit formatting, no attorney-ready output | Medium |
 | No integrated triage-to-report pipeline exists | Examiners chain 4-7 tools (KAPE + EZ Tools + Timeline Explorer + AXIOM + Word + manual formatting) per case | Strong |
 
-### Pull Forces (Toward RapidTriage)
+### Pull Forces (Toward Issen)
 
 | Force | Promise | Evidence |
 |-------|---------|----------|
@@ -293,9 +293,9 @@ Understanding what drives users toward RapidTriage and what holds them back.
 
 | Current Habit | Switching Cost | Strategy |
 |---------------|----------------|----------|
-| KAPE + EZ Tools + manual workflow | Deep muscle memory; 100+ hours invested in personal templates and scripts | RapidTriage ingests KAPE output natively. Existing workflow becomes the input, not a replacement. Augment, don't replace. |
-| AXIOM as primary analysis tool | Firm licenses paid annually; training investment; case history in AXIOM format | Position as complement for report generation, not AXIOM replacement. "Analyze in AXIOM, deliver with RapidTriage." Phase 2 adds direct analysis to reduce dependency. |
-| Custom Word templates for reports | Hours of formatting work baked into personal templates; each examiner's template is different | Import existing Word templates as RapidTriage report templates. Migration path, not abandonment. |
+| KAPE + EZ Tools + manual workflow | Deep muscle memory; 100+ hours invested in personal templates and scripts | Issen ingests KAPE output natively. Existing workflow becomes the input, not a replacement. Augment, don't replace. |
+| AXIOM as primary analysis tool | Firm licenses paid annually; training investment; case history in AXIOM format | Position as complement for report generation, not AXIOM replacement. "Analyze in AXIOM, deliver with Issen." Phase 2 adds direct analysis to reduce dependency. |
+| Custom Word templates for reports | Hours of formatting work baked into personal templates; each examiner's template is different | Import existing Word templates as Issen report templates. Migration path, not abandonment. |
 | Spreadsheet-based case tracking | Simple, understood, no learning curve | Phase 1 does not replace case management. Focus on the deliverable, not the workflow wrapper. |
 
 ---
@@ -318,7 +318,7 @@ Understanding what drives users toward RapidTriage and what holds them back.
 | **USN Journal parsing (usnjrnl-forensic)** | Parses $UsnJrnl:$J with full record type support; matches or exceeds MFTECmd accuracy | USN Journal is the single most valuable Windows triage artifact for timeline reconstruction |
 | **Unified timeline generation (tl)** | Merges parsed artifacts into a single, sortable, filterable timeline view | Timeline is the core analytical view; everything flows from temporal ordering |
 | **Interactive HTML report** | Navigable HTML report with timeline visualization, artifact drill-down, and executive summary | The "wow" deliverable --- attorneys can explore evidence without examiner hand-holding |
-| **Word/PDF expert witness report** | Formatted .docx with methodology section, findings narrative, exhibit references, and chain-of-custody appendix | The court-filing deliverable --- what the attorney actually submits |
+| **Word/PDF expert witness report** | Formatted .docx with methodology section, findings narrative, exhibit references, and chain-of-custody appendix | The couissen-filing deliverable --- what the attorney actually submits |
 | **E01/raw disk image support (ewf)** | Reads EnCase E01 format and raw disk images directly | E01 is the de facto standard evidence container in DFIR; not supporting it is a non-starter |
 | **Chain-of-custody documentation** | Automated hash verification at ingestion; documented methodology in every report | Courtroom credibility requires documented chain-of-custody from evidence receipt through analysis |
 
@@ -332,7 +332,7 @@ Understanding what drives users toward RapidTriage and what holds them back.
 | **GUI/desktop application** | CLI + report output first. GUI is Phase 2. Practitioners are comfortable with CLI. |
 | **Cloud/SaaS deployment** | Forensic evidence cannot leave examiner's machine in most engagements. Local-first is both simpler and required. |
 | **Mobile artifact support** | Different evidence domain (Cellebrite territory). Windows-first strategy. |
-| **AI/LLM-assisted narrative generation** | Tempting but risky for court-admissible work. Must nail deterministic report generation first. |
+| **AI/LLM-assisted narrative generation** | Tempting but risky for couissen-admissible work. Must nail deterministic report generation first. |
 
 **Phase 1 Success Criteria**:
 
@@ -350,7 +350,7 @@ Understanding what drives users toward RapidTriage and what holds them back.
 
 **Theme**: "From CLI tool to professional platform"
 
-**Objective**: Add GUI, expanded artifact coverage, and template customization to make RapidTriage a daily-driver tool for small IR teams (2-5 people).
+**Objective**: Add GUI, expanded artifact coverage, and template customization to make Issen a daily-driver tool for small IR teams (2-5 people).
 
 **Unlocked By**: Phase 1 success criteria met
 
@@ -372,7 +372,7 @@ Understanding what drives users toward RapidTriage and what holds them back.
 | **TARR (full artifact set)** | < 3 hours for standard IR case with expanded artifacts | > 6 hours (GUI added friction, not speed) |
 | **Paid conversions** | 50 paying users at $50-100/mo (professional tier) | < 15 paying users (value not sufficient to monetize) |
 | **Artifact coverage** | Covers 80%+ of artifacts encountered in standard Windows IR engagement | < 60% (still requires fallback to other tools too often) |
-| **Team adoption** | 5 firms (2+ examiners each) using RapidTriage as primary report tool | < 2 firms (solo-only tool, not team-viable) |
+| **Team adoption** | 5 firms (2+ examiners each) using Issen as primary report tool | < 2 firms (solo-only tool, not team-viable) |
 
 ---
 
@@ -411,14 +411,14 @@ These features are explicitly out of scope regardless of phase. They represent s
 
 | Feature | Rationale for Rejection |
 |---------|------------------------|
-| **Evidence collection agent/tool** | Collection is solved (KAPE, Velociraptor, ACQUIRE). Building a collector fragments focus and competes with established, trusted tools. RapidTriage ingests their output. (Brand: "Not a collection tool") |
-| **eDiscovery / document review platform** | Different problem, different users, different regulatory requirements. RapidTriage produces evidence for Relativity/Nuix; it does not replace them. (Brand: "Not an eDiscovery platform") |
+| **Evidence collection agent/tool** | Collection is solved (KAPE, Velociraptor, ACQUIRE). Building a collector fragments focus and competes with established, trusted tools. Issen ingests their output. (Brand: "Not a collection tool") |
+| **eDiscovery / document review platform** | Different problem, different users, different regulatory requirements. Issen produces evidence for Relativity/Nuix; it does not replace them. (Brand: "Not an eDiscovery platform") |
 | **Real-time detection / SIEM functionality** | Post-incident forensic analysis, not real-time monitoring. Alert fatigue and detection engineering are entirely different domains. (Brand: "Not a SIEM/SOC tool") |
 | **Enterprise-first feature prioritization** | Solo examiner and small IR team first. Enterprise features come in Phase 3 after product-market fit is proven with practitioners. (Brand: "Not enterprise-first") |
-| **AI-generated expert opinions** | The examiner provides expert opinion; the tool eliminates translation work. Generating forensic conclusions via LLM is ethically and legally dangerous for court-admissible work. (Brand: "Not a competitor to the examiner") |
+| **AI-generated expert opinions** | The examiner provides expert opinion; the tool eliminates translation work. Generating forensic conclusions via LLM is ethically and legally dangerous for couissen-admissible work. (Brand: "Not a competitor to the examiner") |
 | **Mobile device forensics** | Cellebrite and MSAB own this market with hardware-level extraction. Mobile is a different evidence domain requiring different parsers, different legal frameworks, and different expertise. |
 | **Memory forensics** | Volatility/Rekall are excellent and open-source. Memory analysis is a specialized skill; integrating it adds massive complexity without improving the deliverable pipeline. |
-| **Malware analysis / sandboxing** | Separate discipline with dedicated tools (Cuckoo, ANY.RUN, Joe Sandbox). RapidTriage may reference malware findings but does not perform dynamic analysis. |
+| **Malware analysis / sandboxing** | Separate discipline with dedicated tools (Cuckoo, ANY.RUN, Joe Sandbox). Issen may reference malware findings but does not perform dynamic analysis. |
 | **Cloud forensics (AWS/Azure/GCP)** | Cloud IR requires platform-specific APIs and is rapidly evolving. Phase 3+ consideration at earliest, and only if the triage-to-report pattern applies. |
 
 ---
@@ -435,7 +435,7 @@ These features are explicitly out of scope regardless of phase. They represent s
 
 | Constraint Type | Specification |
 |-----------------|---------------|
-| **Prohibited Uses** | RapidTriage must never be used to fabricate, alter, or misrepresent forensic evidence. The tool must not generate false findings or manipulate timestamps. No feature may compromise chain-of-custody integrity. |
+| **Prohibited Uses** | Issen must never be used to fabricate, alter, or misrepresent forensic evidence. The tool must not generate false findings or manipulate timestamps. No feature may compromise chain-of-custody integrity. |
 | **Required Behaviors** | Every report must include methodology documentation sufficient for Daubert/Frye admissibility challenges. Hash verification at ingestion is mandatory and cannot be bypassed. All parsing logic must be deterministic and reproducible. |
 | **Data Principles** | Evidence never leaves the examiner's machine without explicit action. No telemetry on evidence content. Usage analytics (if any) are opt-in and contain no case data. Open-source parsers remain open permanently --- this commitment is irrevocable. |
 
@@ -482,7 +482,7 @@ Before committing significant resources, validate assumptions:
 |------|----------|-------------------|----------|
 | **Problem** | Do examiners actually spend 60-80% of time on report writing? | 10+ practitioner interviews confirming the ratio; founder's own consulting data | Proceed (validated through consulting experience) |
 | **Solution** | Does an integrated pipeline actually reduce TARR by 50%+? | 5 beta users complete end-to-end case; measure actual TARR vs. their baseline | Proceed / Pivot |
-| **Retention** | Do examiners use RapidTriage for their second case? | > 60% of beta users who complete case 1 start case 2 within 30 days | Proceed / Pivot |
+| **Retention** | Do examiners use Issen for their second case? | > 60% of beta users who complete case 1 start case 2 within 30 days | Proceed / Pivot |
 | **Scale** | Can this grow beyond solo practitioners to teams? | 3+ firms express interest in multi-user deployment after Phase 1 launch | Proceed to Phase 2 / Stay solo-focused |
 
 ---
@@ -581,7 +581,7 @@ EVIDENCE INPUT (E01 / Raw / KAPE output / Velociraptor output)
 
 | Constraint | Requirement | Rationale |
 |------------|-------------|-----------|
-| **Correctness** | 100% parse accuracy vs. reference tools (EZ Tools, AXIOM) | Court-admissible work has zero tolerance for parsing errors. One wrong timestamp destroys credibility. |
+| **Correctness** | 100% parse accuracy vs. reference tools (EZ Tools, AXIOM) | Couissen-admissible work has zero tolerance for parsing errors. One wrong timestamp destroys credibility. |
 | **Single binary** | No runtime dependencies (no Python, Java, .NET, Docker) | Examiners work on locked-down forensic workstations. Complex installs are adoption killers. |
 | **Local-first** | Evidence never transmitted over network by default | Forensic evidence is legally sensitive. Many engagements prohibit cloud processing. Client trust requires local processing. |
 | **Cross-platform** | Windows primary, macOS/Linux secondary | Forensic workstations are predominantly Windows. Rust enables cross-platform from single codebase. |
@@ -628,7 +628,7 @@ EVIDENCE INPUT (E01 / Raw / KAPE output / Velociraptor output)
 
 | Risk | Monitoring | Threshold | Action |
 |------|------------|-----------|--------|
-| Solo founder burnout / bus factor | Weekly development velocity tracking; community contributor pipeline | 2+ consecutive weeks of zero commits; no community contributors after 6 months | Prioritize contributor onboarding documentation; consider part-time contract help funded by consulting revenue |
+| Solo founder burnout / bus factor | Weekly development velocity tracking; community contributor pipeline | 2+ consecutive weeks of zero commits; no community contributors after 6 months | Prioritize contributor onboarding documentation; consider paissen-time contract help funded by consulting revenue |
 | Rust ecosystem gaps (docx generation, complex formatting) | Track blocking issues in rust-docx and alternative libraries | Word report generation requires > 50% Python subprocess calls | Invest in Rust docx library contribution or accept Python dependency for report generation |
 | Evidence format incompatibility | Beta user evidence ingestion success rate | > 10% of beta evidence sets fail to ingest | Prioritize format support; add specific error messages guiding workarounds |
 | Performance regression on large evidence sets | Benchmark suite on 10GB, 50GB, 100GB evidence sets | P95 pipeline time exceeds 2x target | Profile and optimize; consider streaming/incremental processing |
@@ -664,8 +664,8 @@ Supporting Documentation
 | **TARR** | Time-to-Attorney-Ready Report. The North Star metric measuring elapsed time from evidence ingestion to completed deliverable. |
 | **Attorney-ready** | A report that an attorney can file, submit as an exhibit, or use in proceedings without substantive reformatting or clarification. |
 | **Triage** | Rapid forensic analysis focused on key artifacts to answer specific investigative questions, as opposed to comprehensive full-disk forensic examination. |
-| **KAPE** | Kroll Artifact Parser and Extractor. A widely-used forensic collection tool that gathers artifacts from live systems or mounted images. RapidTriage's primary input format. |
-| **Velociraptor** | An open-source endpoint monitoring and forensic collection tool. Alternative collection source supported by RapidTriage. |
+| **KAPE** | Kroll Artifact Parser and Extractor. A widely-used forensic collection tool that gathers artifacts from live systems or mounted images. Issen's primary input format. |
+| **Velociraptor** | An open-source endpoint monitoring and forensic collection tool. Alternative collection source supported by Issen. |
 | **E01** | EnCase Evidence File format. The de facto standard forensic disk image container. Supported by the ewf crate. |
 | **USN Journal** | Update Sequence Number Journal ($UsnJrnl:$J). An NTFS filesystem artifact that records file system changes. Primary artifact for timeline reconstruction. |
 | **Chain-of-custody** | Documented chronological history of evidence handling from collection through analysis to presentation, required for court admissibility. |

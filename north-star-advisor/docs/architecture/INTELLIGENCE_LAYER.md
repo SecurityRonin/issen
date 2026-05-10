@@ -1,8 +1,8 @@
-# RapidTriage: Intelligence Layer Architecture
+# Issen: Intelligence Layer Architecture
 
 > **Version**: 1.0
 > **Date**: 2026-03-20
-> **Component**: `rt-intel`
+> **Component**: `issen-intel`
 > **Status**: Architecture Specification
 > **Classification**: Proprietary
 
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-The intelligence layer (`rt-intel`) is RapidTriage's AI-powered analytical brain -- and the source of its next-generation competitive differentiation. It provides AI-assisted forensic report drafting, automated threat detection, threat intelligence enrichment, image series analysis, and anomaly detection. Every AI feature is **optional** -- the platform operates fully without them via a global AI-free toggle.
+The intelligence layer (`issen-intel`) is Issen's AI-powered analytical brain -- and the source of its next-generation competitive differentiation. It provides AI-assisted forensic report drafting, automated threat detection, threat intelligence enrichment, image series analysis, and anomaly detection. Every AI feature is **optional** -- the platform operates fully without them via a global AI-free toggle.
 
 The architecture follows three non-negotiable principles:
 
@@ -41,7 +41,7 @@ The architecture follows three non-negotiable principles:
 
 ### 1.1 Knowledge Requirements
 
-What knowledge does `rt-intel` need beyond model training data?
+What knowledge does `issen-intel` need beyond model training data?
 
 | Function | Knowledge Domain | Data Source | Format | Volume | Update Cadence |
 |----------|-----------------|-------------|--------|--------|----------------|
@@ -66,9 +66,9 @@ What knowledge does `rt-intel` need beyond model training data?
 
 | Requirement | Priority | Phase | Dependency |
 |-------------|----------|-------|------------|
-| Grounded narrative drafting | P0 | Phase 2 | rt-timeline query API |
-| YARA-X file scanning | P0 | Phase 2 | rt-pipeline extracted files |
-| Sigma event matching | P0 | Phase 2 | rt-timeline DuckDB store |
+| Grounded narrative drafting | P0 | Phase 2 | issen-timeline query API |
+| YARA-X file scanning | P0 | Phase 2 | issen-pipeline extracted files |
+| Sigma event matching | P0 | Phase 2 | issen-timeline DuckDB store |
 | Case-specific RAG | P1 | Phase 2 | Embedding pipeline, lancedb |
 | MITRE ATT&CK auto-mapping | P1 | Phase 2 | ATT&CK STIX data loader |
 | IOC extraction + enrichment | P1 | Phase 2 | TI abstraction layer |
@@ -83,7 +83,7 @@ What knowledge does `rt-intel` need beyond model training data?
 
 ### 2.1 Dual RAG Pipeline Design
 
-RapidTriage implements a **modular dual RAG architecture** with three distinct knowledge stores, each with its own retrieval pipeline, merged at generation time with mandatory source attribution.
+Issen implements a **modular dual RAG architecture** with three distinct knowledge stores, each with its own retrieval pipeline, merged at generation time with mandatory source attribution.
 
 ```
                     ┌────────────────────────────────────────────────┐
@@ -173,7 +173,7 @@ Each RAG store supports hybrid search combining vector similarity with structure
 | Property | Case-Specific | Cross-Case | Reference |
 |----------|--------------|------------|-----------|
 | Engine | lancedb (embedded) | lancedb (embedded) | lancedb (embedded) |
-| Location | `{case_dir}/.rt/vectors/` | `~/.rapidtriage/knowledge/` | `~/.rapidtriage/reference/` |
+| Location | `{case_dir}/.rt/vectors/` | `~/.issen/knowledge/` | `~/.issen/reference/` |
 | Dimensions | 768 (nomic-embed-text) | 768 (nomic-embed-text) | 768 (nomic-embed-text) |
 | Distance metric | Cosine | Cosine | Cosine |
 | Expected records | 10K-500K per case | 50K-2M (growing) | ~20K (stable) |
@@ -186,7 +186,7 @@ Each RAG store supports hybrid search combining vector similarity with structure
 
 ### 3.1 Multi-Model Routing Architecture
 
-RapidTriage uses a **local-first multi-model routing** strategy: 80% of AI tasks use small, fast models (7B-13B parameters); 20% of complex tasks route to larger models (70B) or cloud APIs (only with explicit user consent).
+Issen uses a **local-first multi-model routing** strategy: 80% of AI tasks use small, fast models (7B-13B parameters); 20% of complex tasks route to larger models (70B) or cloud APIs (only with explicit user consent).
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -319,7 +319,7 @@ Embedder configuration:
 
 ### 5.1 Grounded Generation Architecture
 
-Every AI-generated sentence in RapidTriage traces to specific forensic artifacts. There is no free-form generation path.
+Every AI-generated sentence in Issen traces to specific forensic artifacts. There is no free-form generation path.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -447,7 +447,7 @@ INVOICE_Q3.PDF.EXE-A1B2C3D4.pf, Last Run Time #1].
 |----------|--------------|
 | Engine | YARA-X (Rust native, compiled rules) |
 | Rule sources | Built-in rules (common malware families, webshells, stealer logs), community rules (YARA-Forge, Malpedia), custom examiner rules |
-| Scan targets | All files extracted by `rt-pipeline` Layer 1-3 handlers |
+| Scan targets | All files extracted by `issen-pipeline` Layer 1-3 handlers |
 | Execution | Parallel scan via rayon thread pool, one rule set compiled once per case |
 | Output | Detection hits written as `DetectionResult` events tagged on matching `TimelineEvent` records |
 | Performance target | Scan 100K files in <60 seconds on 8-core machine |
@@ -455,8 +455,8 @@ INVOICE_Q3.PDF.EXE-A1B2C3D4.pf, Last Run Time #1].
 **Rule management:**
 
 ```
-~/.rapidtriage/rules/yara/
-├── builtin/          # Ships with RapidTriage, versioned
+~/.issen/rules/yara/
+├── builtin/          # Ships with Issen, versioned
 │   ├── malware/      # Known malware families
 │   ├── webshells/    # PHP/ASP/JSP webshells
 │   ├── stealers/     # Infostealer artifacts
@@ -487,7 +487,7 @@ INVOICE_Q3.PDF.EXE-A1B2C3D4.pf, Last Run Time #1].
 |----------|--------------|
 | Engine | Custom Sigma-to-DuckDB SQL transpiler (ported from tl v0.1) |
 | Rule sources | SigmaHQ repository (2000+ rules), custom examiner rules |
-| Target | `TimelineEvent` records in `rt-timeline` DuckDB store |
+| Target | `TimelineEvent` records in `issen-timeline` DuckDB store |
 | Execution | Batch SQL execution against DuckDB -- inherits DuckDB's columnar scan performance |
 | Output | Detection hits tagged on matching events (`sigma-hit` tag) with rule metadata |
 
@@ -533,7 +533,7 @@ detection:                   →   SELECT * FROM timeline_events
 
 ### 7.1 TI Abstraction Layer
 
-RapidTriage implements a pluggable threat intelligence abstraction layer supporting both online (API) and offline (exported feed file) modes for air-gapped forensic labs.
+Issen implements a pluggable threat intelligence abstraction layer supporting both online (API) and offline (exported feed file) modes for air-gapped forensic labs.
 
 ```rust
 /// Trait for threat intelligence backends
@@ -562,7 +562,7 @@ pub trait ThreatIntelProvider: Send + Sync {
 
 ### 7.3 IOC Extraction Pipeline
 
-IOCs are automatically extracted during artifact parsing by `rt-pipeline` and enriched by `rt-intel`:
+IOCs are automatically extracted during artifact parsing by `issen-pipeline` and enriched by `issen-intel`:
 
 ```
 ┌─────────────────┐     ┌──────────────┐     ┌──────────────┐     ┌───────────┐
@@ -785,7 +785,7 @@ Deterministic correlation rules that connect artifacts across different parsers:
 
 | Method | Purpose | When to Use | Implementation |
 |--------|---------|-------------|----------------|
-| Citation resolver | Verify every [SOURCE:...] traces to real evidence | Every generation | Parse citations, query rt-timeline for existence |
+| Citation resolver | Verify every [SOURCE:...] traces to real evidence | Every generation | Parse citations, query issen-timeline for existence |
 | Prohibited pattern detector | Catch legal conclusions, causal attribution | Every generation | Regex + NLI model for semantic detection |
 | LLM-as-judge (faithfulness) | Score how grounded output is in retrieved context | Every generation | Second model compares output against context |
 | LLM-as-judge (coherence) | Score readability and logical flow | Report drafts | Second model rates on 1-5 scale |
@@ -821,7 +821,7 @@ Deterministic correlation rules that connect artifacts across different parsers:
 │                    Intelligence Data Pipeline                     │
 │                                                                   │
 │  ┌─────────────┐     ┌──────────────┐     ┌─────────────────┐   │
-│  │ rt-pipeline │────►│ Event Stream │────►│ Embedding Queue │   │
+│  │ issen-pipeline │────►│ Event Stream │────►│ Embedding Queue │   │
 │  │ (parsed     │     │ (channel)    │     │ (async, batched)│   │
 │  │  artifacts) │     └──────┬───────┘     └────────┬────────┘   │
 │  └─────────────┘            │                      │            │
@@ -899,7 +899,7 @@ All AI features are behind a global toggle (`config.ai.enabled = false`). When d
 2. **No model downloads**: No automatic model downloads occur in AI-free mode
 3. **No network calls for AI**: No API calls to cloud AI providers
 4. **Full feature parity for core forensics**: Parsing, timeline, detection, and reporting templates all work identically
-5. **Configuration persistence**: AI-free preference is stored in `~/.rapidtriage/config.toml` and survives upgrades
+5. **Configuration persistence**: AI-free preference is stored in `~/.issen/config.toml` and survives upgrades
 6. **Per-feature granularity**: Advanced users can enable specific AI features while keeping others disabled (e.g., enable OCR but disable narrative generation)
 
 ---
@@ -938,7 +938,7 @@ All AI features are behind a global toggle (`config.ai.enabled = false`). When d
 - [Anomaly Detection in a Forensic Timeline with Deep Autoencoders](https://www.sciencedirect.com/science/article/abs/pii/S2214212621002076)
 - [SoK: Timeline-Based Event Reconstruction for Digital Forensics (2025)](https://www.sciencedirect.com/science/article/pii/S266628172500071X)
 - [Effective Near-Duplicate Image Detection Using Perceptual Hashing and Deep Learning (2025)](https://www.sciencedirect.com/science/article/abs/pii/S0306457325000287)
-- [Using Local LLMs for Criminal Intelligence Report Generation](https://alessandro-negro.medium.com/using-local-deployment-of-open-source-llms-for-criminal-intelligence-report-generation-ddb8db944620)
+- [Using Local LLMs for Criminal Intelligence Report Generation](https://alessandro-negro.medium.com/using-local-deployment-of-open-source-llms-for-criminal-intelligence-repoissen-generation-ddb8db944620)
 - [CASE: Cyber-investigation Analysis Standard Expression](https://caseontology.org/)
 - [UCO: Unified Cybersecurity Ontology](https://unifiedcyberontology.org/)
 - [MalChela: Rust-based MITRE ATT&CK toolkit](https://github.com/target/malchela)

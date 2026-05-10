@@ -31,3 +31,13 @@ tarpaulin-report.html
 
 # OS
 Thumbs.db
+
+# Tool configs (MCP, Serena)
+.playwright-mcp/
+.serena/
+
+# Generated site
+site/
+
+# Test data (large CTF images / evidence archives — do not commit)
+tests/data/

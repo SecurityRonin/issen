@@ -157,7 +157,7 @@ mod tests {
             create: || Box::new(AlwaysHighProvider),
         };
         let provider = (reg.create)();
-        asseissen_eq!(provider.name(), "AlwaysHigh");
+        assert_eq!(provider.name(), "AlwaysHigh");
     }
 
     #[test]
@@ -166,7 +166,7 @@ mod tests {
             create: || Box::new(AlwaysNoneProvider),
         };
         let provider: Box<dyn CollectionProvider> = (reg.create)();
-        asseissen_eq!(provider.name(), "AlwaysNone");
+        assert_eq!(provider.name(), "AlwaysNone");
     }
 
     // ---------------------------------------------------------------------------
@@ -176,14 +176,14 @@ mod tests {
     #[test]
     fn test_always_high_provider_name() {
         let p = AlwaysHighProvider;
-        asseissen_eq!(p.name(), "AlwaysHigh");
+        assert_eq!(p.name(), "AlwaysHigh");
     }
 
     #[test]
     fn test_always_high_provider_probe_returns_high() {
         let p = AlwaysHighProvider;
         let result = p.probe(Path::new("/any/path"));
-        asseissen_eq!(result.unwrap(), Confidence::High);
+        assert_eq!(result.unwrap(), Confidence::High);
     }
 
     #[test]
@@ -193,14 +193,14 @@ mod tests {
         std::fs::write(&fake_path, b"dummy").unwrap();
         let p = AlwaysHighProvider;
         let manifest = p.open(&fake_path).expect("open should succeed");
-        asseissen_eq!(manifest.format_name, "AlwaysHigh");
-        asseissen_eq!(manifest.metadata.hostname.as_deref(), Some("mock-host"));
+        assert_eq!(manifest.format_name, "AlwaysHigh");
+        assert_eq!(manifest.metadata.hostname.as_deref(), Some("mock-host"));
     }
 
     #[test]
     fn test_always_err_provider_name() {
         let p = AlwaysErrProvider;
-        asseissen_eq!(p.name(), "AlwaysErr");
+        assert_eq!(p.name(), "AlwaysErr");
     }
 
     #[test]
@@ -221,14 +221,14 @@ mod tests {
     #[test]
     fn test_always_none_provider_name() {
         let p = AlwaysNoneProvider;
-        asseissen_eq!(p.name(), "AlwaysNone");
+        assert_eq!(p.name(), "AlwaysNone");
     }
 
     #[test]
     fn test_always_none_provider_probe_returns_none_confidence() {
         let p = AlwaysNoneProvider;
         let result = p.probe(Path::new("/any/path"));
-        asseissen_eq!(result.unwrap(), Confidence::None);
+        assert_eq!(result.unwrap(), Confidence::None);
     }
 
     #[test]
@@ -267,7 +267,7 @@ mod tests {
         let fake_path = dir.path().join("collection.zip");
         std::fs::write(&fake_path, b"dummy content").unwrap();
         let manifest = open_collection(&fake_path).expect("open_collection should succeed");
-        asseissen_eq!(manifest.format_name, "AlwaysHigh");
+        assert_eq!(manifest.format_name, "AlwaysHigh");
     }
 
     #[test]
@@ -294,7 +294,7 @@ mod tests {
         let result = open_collection(&path);
         assert!(result.is_ok());
         let manifest = result.unwrap();
-        asseissen_eq!(manifest.format_name, "AlwaysHigh");
+        assert_eq!(manifest.format_name, "AlwaysHigh");
     }
 
     #[test]
@@ -303,8 +303,8 @@ mod tests {
         let path = dir.path().join("test.zip");
         std::fs::write(&path, b"dummy").unwrap();
         let manifest = open_collection(&path).expect("should succeed");
-        asseissen_eq!(manifest.metadata.hostname.as_deref(), Some("mock-host"));
-        asseissen_eq!(manifest.metadata.os_type, OsType::Unknown);
+        assert_eq!(manifest.metadata.hostname.as_deref(), Some("mock-host"));
+        assert_eq!(manifest.metadata.os_type, OsType::Unknown);
     }
 
     #[test]
@@ -321,7 +321,7 @@ mod tests {
         // Verifies the &str lifetime is valid when the provider is boxed.
         let p: Box<dyn CollectionProvider> = Box::new(AlwaysHighProvider);
         let name: &str = p.name();
-        asseissen_eq!(name, "AlwaysHigh");
+        assert_eq!(name, "AlwaysHigh");
     }
 
     #[test]

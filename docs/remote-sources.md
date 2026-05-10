@@ -1,6 +1,6 @@
 # Remote Sources
 
-RapidTriage ingests evidence from 48 URI schemes via [Apache OpenDAL](https://opendal.apache.org/). Every scheme uses the same interface — `rt ingest --source <URI>` — regardless of backend. The `rt-remote-io` crate handles all authentication, streaming, and path resolution transparently.
+Issen ingests evidence from 48 URI schemes via [Apache OpenDAL](https://opendal.apache.org/). Every scheme uses the same interface — `rt ingest --source <URI>` — regardless of backend. The `rt-remote-io` crate handles all authentication, streaming, and path resolution transparently.
 
 ```bash
 rt ingest --source s3://dfir-bucket/case/collection.tar.gz --output case.duckdb
@@ -175,7 +175,7 @@ rt ingest --source "gdrive://https://drive.google.com/file/d/1BxiMVs0.../view"
 
 Authentication priority:
 1. `GOOGLE_APPLICATION_CREDENTIALS` — service account JSON (recommended for automation)
-2. `GDRIVE_CLIENT_ID` + `GDRIVE_CLIENT_SECRET` — OAuth2 (browser popup on first run, token cached in `~/.config/rapidtriage/gdrive-token.json`)
+2. `GDRIVE_CLIENT_ID` + `GDRIVE_CLIENT_SECRET` — OAuth2 (browser popup on first run, token cached in `~/.config/issen/gdrive-token.json`)
 3. Saved token from previous OAuth2 session
 
 ### Microsoft OneDrive — `onedrive://path`
@@ -586,4 +586,4 @@ let (op, path) = operator_for_uri("s3://my-bucket/evidence/collection.tar.gz")?;
 let bytes = op.read(&path).await?;
 ```
 
-See the [API docs](https://securityronin.github.io/rapidtriage/rt_remote_io/) for the full interface.
+See the [API docs](https://securityronin.github.io/issen/rt_remote_io/) for the full interface.

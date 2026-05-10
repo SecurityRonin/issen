@@ -1292,7 +1292,7 @@ mod tests {
     #[test]
     fn dispatch_linux_ps_headers_are_correct() {
         let expected = ["PID", "PPID", "Name", "State"];
-        asseissen_eq!(expected.len(), 4);
+        assert_eq!(expected.len(), 4);
         assert!(expected.contains(&"PID"));
         assert!(expected.contains(&"PPID"));
         assert!(expected.contains(&"Name"));
@@ -1302,7 +1302,7 @@ mod tests {
     #[test]
     fn dispatch_linux_modules_headers_are_correct() {
         let expected = ["Base", "Size", "Name", "State"];
-        asseissen_eq!(expected.len(), 4);
+        assert_eq!(expected.len(), 4);
         assert!(expected.contains(&"Name"));
         assert!(expected.contains(&"Base"));
     }
@@ -1310,7 +1310,7 @@ mod tests {
     #[test]
     fn dispatch_linux_netstat_headers_are_correct() {
         let expected = ["Proto", "Local", "Remote", "State", "PID"];
-        asseissen_eq!(expected.len(), 5);
+        assert_eq!(expected.len(), 5);
         assert!(expected.contains(&"Proto"));
         assert!(expected.contains(&"PID"));
     }
@@ -1318,7 +1318,7 @@ mod tests {
     #[test]
     fn dispatch_windows_ps_headers_are_correct() {
         let expected = ["PID", "PPID", "Name", "State"];
-        asseissen_eq!(expected.len(), 4);
+        assert_eq!(expected.len(), 4);
         assert!(expected.contains(&"PID"));
         assert!(expected.contains(&"PPID"));
     }
@@ -1326,14 +1326,14 @@ mod tests {
     #[test]
     fn dispatch_windows_modules_headers_are_correct() {
         let expected = ["Base", "Size", "Name", "Path"];
-        asseissen_eq!(expected.len(), 4);
+        assert_eq!(expected.len(), 4);
         assert!(expected.contains(&"Path"));
     }
 
     #[test]
     fn dispatch_windows_netstat_headers_are_correct() {
         let expected = ["Proto", "Local", "Remote", "State", "PID", "Process"];
-        asseissen_eq!(expected.len(), 6);
+        assert_eq!(expected.len(), 6);
         assert!(expected.contains(&"Process"));
     }
 
@@ -1407,9 +1407,9 @@ mod tests {
             name: "test".into(),
         };
         let row = struct_to_row(&d, &["pid", "name", "missing"]);
-        asseissen_eq!(row[0], "42");
-        asseissen_eq!(row[1], "test");
-        asseissen_eq!(row[2], "");
+        assert_eq!(row[0], "42");
+        assert_eq!(row[1], "test");
+        assert_eq!(row[2], "");
     }
 
     // -----------------------------------------------------------------------
@@ -1584,7 +1584,7 @@ mod tests {
         };
         // Header "process name" → key "process_name" after normalisation.
         let row = struct_to_row(&d, &["process name"]);
-        asseissen_eq!(row[0], "sshd");
+        assert_eq!(row[0], "sshd");
     }
 
     #[test]
@@ -1599,8 +1599,8 @@ mod tests {
             flag: true,
         };
         let row = struct_to_row(&d, &["count", "flag"]);
-        asseissen_eq!(row[0], "99");
-        asseissen_eq!(row[1], "true");
+        assert_eq!(row[0], "99");
+        assert_eq!(row[1], "true");
     }
 
     // -----------------------------------------------------------------------

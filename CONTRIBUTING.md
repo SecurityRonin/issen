@@ -11,8 +11,8 @@ Please open an issue before large changes so we can align on approach.
 ## Getting started
 
 ```bash
-git clone https://github.com/SecurityRonin/rapidtriage
-cd rapidtriage
+git clone https://github.com/SecurityRonin/issen
+cd issen
 cargo test --workspace
 ```
 

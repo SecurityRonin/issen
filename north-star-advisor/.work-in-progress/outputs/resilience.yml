@@ -189,7 +189,7 @@ resilience:
       emergency: "Halt new work, flush everything, suspend WASM"
 
   checkpoint_resume:
-    store: "SQLite (case-dir/.rapidtriage/checkpoints.db)"
+    store: "SQLite (case-dir/.issen/checkpoints.db)"
     granularity: "Per-artifact, per-parser"
     data_preserved_on_crash: true
     idempotency_key_inputs:

@@ -232,6 +232,6 @@ accessibility:
       - "Screen reader optimized TUI mode"
 
   differentiation:
-    statement: "No forensic tool advertises WCAG compliance. RapidTriage treats accessibility as unoccupied competitive differentiation."
+    statement: "No forensic tool advertises WCAG compliance. Issen treats accessibility as unoccupied competitive differentiation."
     attorney_requirement: "HTML reports must meet WCAG 2.1 AA for ADA compliance in legal proceedings."
     examiner_benefit: "Dark mode, keyboard efficiency, and eye-strain reduction for 12-16 hour IR sessions."

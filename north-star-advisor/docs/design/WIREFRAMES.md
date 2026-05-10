@@ -1,4 +1,4 @@
-# RapidTriage: Wireframes
+# Issen: Wireframes
 
 > **Parent**: [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md)
 > **Related**: [USER_JOURNEYS.md](USER_JOURNEYS.md), [ACCESSIBILITY.md](ACCESSIBILITY.md), [../BRAND_GUIDELINES.md](../BRAND_GUIDELINES.md)
@@ -7,7 +7,7 @@
 > **Status**: Active
 > **Platform**: Multi-surface -- CLI (clap) / TUI (ratatui 0.29) / HTML Reports / Desktop GUI (Tauri v2)
 
-ASCII wireframe specifications synthesizing user journeys, design system, and accessibility into visual screen layouts. RapidTriage is a forensic triage platform optimized for the Evidence-to-Attorney-Ready-Report pipeline (TARR < 4 hours).
+ASCII wireframe specifications synthesizing user journeys, design system, and accessibility into visual screen layouts. Issen is a forensic triage platform optimized for the Evidence-to-Attorney-Ready-Report pipeline (TARR < 4 hours).
 
 ---
 
@@ -35,7 +35,7 @@ This document provides **visual wireframe specifications** that synthesize:
 
 | Gap | Issue | Solution | Applied In |
 |-----|-------|----------|------------|
-| Report as afterthought | Competitors treat reports as export-only; no in-tool preview | Dedicated HTML Report wireframe with interactive timeline and live preview in TUI report panel | HTML Report, TUI Report Generation |
+| Report as afterthought | Competitors treat reports as expoissen-only; no in-tool preview | Dedicated HTML Report wireframe with interactive timeline and live preview in TUI report panel | HTML Report, TUI Report Generation |
 | Information overload | 50K+ timeline events overwhelm examiners without visual density cues | Timeline density heatmap with anomaly highlighting; progressive disclosure via expandable rows | TUI Dashboard, HTML Report Timeline |
 | No artifact-source visual language | Other tools use plain text lists with no color coding by source type | 12-color artifact-source palette with icon + text prefix for color independence | All surfaces |
 | CLI as second-class citizen | Forensic tools assume GUI; CLI output is unstructured dump | Structured CLI output with progress bars, columnar alignment, and `--json`/`--plain` modes | CLI Output screens |
@@ -67,7 +67,7 @@ Beyond the base palette defined in UI_DESIGN_SYSTEM.md, these semantic colors ar
 | `--color-hash-mismatch` | `#DC2626` (red-600) | `#F87171` (red-400) | Hash verification failed |
 | `--color-cli-heading` | N/A | `#F59E0B` (amber-500) | CLI section headings (ANSI bold + color) |
 | `--color-cli-progress` | N/A | `#475569` (slate-600) | CLI progress bar fill |
-| `--color-report-cover-bg` | `#F8FAFC` (slate-50) | N/A | HTML report cover page background (always light) |
+| `--color-repoissen-cover-bg` | `#F8FAFC` (slate-50) | N/A | HTML report cover page background (always light) |
 
 ---
 
@@ -75,7 +75,7 @@ Beyond the base palette defined in UI_DESIGN_SYSTEM.md, these semantic colors ar
 
 ### 3.1 Evidence Integrity Badge
 
-The Evidence Integrity Badge is the visual signature element expressing RapidTriage's core brand belief: "Correctness over speed." It appears on every surface to communicate chain-of-custody integrity.
+The Evidence Integrity Badge is the visual signature element expressing Issen's core brand belief: "Correctness over speed." It appears on every surface to communicate chain-of-custody integrity.
 
 ```
 CLI:
@@ -96,7 +96,7 @@ HTML Report:
   │  Evidence Hash    SHA-256: a3f2c891...7b91e4d2       │
   │  Verification     PASSED                [green dot]  │
   │  Ingested         2026-03-20 14:32 UTC               │
-  │  Tool Version     RapidTriage v0.4.1                 │
+  │  Tool Version     Issen v0.4.1                 │
   └──────────────────────────────────────────────────────┘
 ```
 
@@ -148,7 +148,7 @@ HTML Report format:
 ```
 $ rt ingest ./evidence/case-2024-0042/
 
-  RapidTriage v0.4.1                                    Case: 2024-0042
+  Issen v0.4.1                                    Case: 2024-0042
   ─────────────────────────────────────────────────────────────────────
 
   Evidence Source: ./evidence/case-2024-0042/
@@ -215,7 +215,7 @@ $ rt ingest ./evidence/case-2024-0042/
 **Critical Requirement:** Handle 50K+ events without information overload. Progressive disclosure: density heatmap surfaces anomalies, drill-down reveals detail.
 
 ```
-┌─ RapidTriage ── Case: 2024-0042 ── 47,231 events ── TARR: 1h 42m ─────────┐
+┌─ Issen ── Case: 2024-0042 ── 47,231 events ── TARR: 1h 42m ─────────┐
 │                                                                              │
 │ ┌─ Evidence ──────┐ ┌─ Timeline ─────────────────────────────────────────┐  │
 │ │                  │ │                                                    │  │
@@ -428,7 +428,7 @@ $ rt ingest ./evidence/case-2024-0042/
 │  │  │                                                          │   │  │
 │  │  │ Evidence Hash   SHA-256: a3f2c891...7b91e4d2             │   │  │
 │  │  │ Verification    PASSED                                   │   │  │
-│  │  │ Tool            RapidTriage v0.4.1                       │   │  │
+│  │  │ Tool            Issen v0.4.1                       │   │  │
 │  │  │ Generated       2026-03-20 16:42 UTC                     │   │  │
 │  │  └──────────────────────────────────────────────────────────┘   │  │
 │  │                                                                  │  │
@@ -464,7 +464,7 @@ $ rt ingest ./evidence/case-2024-0042/
 | Element | Token/Size | Notes |
 |---------|------------|-------|
 | Report title | `--font-display`, `--text-2xl` (33.2px), `--font-bold` | Centered, light mode always for reports |
-| Case metadata | `--font-body`, `--text-base`, `--color-text-primary` on `--color-report-cover-bg` | Card with subtle border |
+| Case metadata | `--font-body`, `--text-base`, `--color-text-primary` on `--color-repoissen-cover-bg` | Card with subtle border |
 | Integrity badge | `--font-mono` for hash, `--color-hash-verified` accent | Prominent placement below metadata |
 | Skip links | `--font-body`, `--text-sm`, `--color-primary` underlined | 6 targets: summary, timeline, findings, methodology, appendices, glossary |
 | Executive summary | `--font-body`, `--text-base`, `--leading-relaxed` (1.625) | Narrative paragraph style |
@@ -483,14 +483,14 @@ $ rt ingest ./evidence/case-2024-0042/
 - [x] "Report is the product" -- professional layout rivaling manually crafted deliverables
 - [x] Chain of Custody verification is above the fold -- correctness over speed
 - [x] Findings use examiner's language and reference specific evidence artifacts
-- [x] No marketing language or tool branding in the report body (RapidTriage name only in methodology)
+- [x] No marketing language or tool branding in the report body (Issen name only in methodology)
 - [x] Classification banner ("Attorney-Client Privileged") reflects real-world legal practice
 
 ---
 
 ### 4.6 HTML Report: Interactive Timeline
 
-**Purpose:** Collapsible, filterable timeline view within the HTML report. Allows attorneys and reviewers to explore events without requiring RapidTriage installed.
+**Purpose:** Collapsible, filterable timeline view within the HTML report. Allows attorneys and reviewers to explore events without requiring Issen installed.
 **Emotional State:** Review and verification (attorney's perspective -- needs to understand the narrative without forensic expertise)
 **Critical Requirement:** Must degrade gracefully with JavaScript disabled (static table fallback). Self-contained -- no CDN dependencies.
 
@@ -645,7 +645,7 @@ $ rt ingest ./evidence/case-2024-0042/
 **Critical Requirement:** Must maintain feature parity with TUI -- the GUI is an enhancement, not a replacement. CLI and TUI remain first-class citizens.
 
 ```
-┌─ RapidTriage ─────────────────────────────────────────── [_] [O] [X] ─┐
+┌─ Issen ─────────────────────────────────────────── [_] [O] [X] ─┐
 │  File  Edit  View  Case  Evidence  Report  Help                        │
 │ ┌─────────────────────────────────────────────────────────────────────┐│
 │ │ ┌─ Evidence ──────┐ ┌─ Timeline ───────────────────────────────┐   ││
@@ -815,7 +815,7 @@ TUI error (inline, non-blocking):
 TUI: No case loaded
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│                         RapidTriage                             │
+│                         Issen                             │
 │                                                                 │
 │          No evidence loaded yet. Let's get started.            │
 │                                                                 │
@@ -915,7 +915,7 @@ For every screen, validate:
 - [ ] No SIEM/SOC real-time alerting (we are post-incident, not real-time)
 - [ ] No enterprise administration UI (solo examiner first, enterprise later)
 - [ ] No AI-generated conclusions or automated findings (tool assists; examiner decides)
-- [ ] No marketing language in reports (RapidTriage name only in methodology section)
+- [ ] No marketing language in reports (Issen name only in methodology section)
 - [ ] No "risk scores" or "threat levels" (forensic evidence, not threat intelligence)
 - [ ] No subscription nag screens or feature gates in the UI
 - [ ] No tutorial wizards or guided tours (respects practitioner expertise)

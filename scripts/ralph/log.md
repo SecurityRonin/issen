@@ -1,4 +1,4 @@
-# Ralph Loop Log — RapidTriage
+# Ralph Loop Log — Issen
 
 Log of completed iterations. Most recent first.
 

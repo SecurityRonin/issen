@@ -1,14 +1,14 @@
-# RapidTriage
+# Issen
 
 **Incident response triage — fast, scriptable, forensically sound.**
 
-RapidTriage is an open-source CLI tool for digital forensics and incident response (DFIR) practitioners. It parses artefacts, correlates events, and surfaces indicators of compromise across Windows, Linux, and macOS evidence — from live collections, disk images, memory dumps, and log streams simultaneously.
+Issen is an open-source CLI tool for digital forensics and incident response (DFIR) practitioners. It parses artefacts, correlates events, and surfaces indicators of compromise across Windows, Linux, and macOS evidence — from live collections, disk images, memory dumps, and log streams simultaneously.
 
 ```bash
-cargo install --git https://github.com/SecurityRonin/rapidtriage rt-cli
+cargo install --git https://github.com/SecurityRonin/issen rt-cli
 ```
 
-**[GitHub Repository →](https://github.com/SecurityRonin/rapidtriage)** · **[Architecture →](architecture-diagram.html)**
+**[GitHub Repository →](https://github.com/SecurityRonin/issen)** · **[Architecture →](architecture-diagram.html)**
 
 ---
 
@@ -21,10 +21,10 @@ Disk image         Memory dump          Log stream
   browser-forensic   carve → parser       EventRecord
   srum-forensic      srum-forensic        srum-forensic
        ↓                   ↓                    ↓
-            RapidTriage — correlation — TimelineEvent
+            Issen — correlation — TimelineEvent
 ```
 
-RapidTriage navigates each evidence type on its own terms — filesystem paths for disk images, page-table walks for memory, record-number seeks for log streams — then correlates across all three.
+Issen navigates each evidence type on its own terms — filesystem paths for disk images, page-table walks for memory, record-number seeks for log streams — then correlates across all three.
 
 ---
 
@@ -43,4 +43,4 @@ Each library is independently usable in your own Rust tooling:
 
 ---
 
-[Privacy Policy](privacy.md) · [Terms of Service](terms.md) · [GitHub](https://github.com/SecurityRonin/rapidtriage) · © 2026 Security Ronin Ltd.
+[Privacy Policy](privacy.md) · [Terms of Service](terms.md) · [GitHub](https://github.com/SecurityRonin/issen) · © 2026 Security Ronin Ltd.

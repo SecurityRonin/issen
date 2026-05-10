@@ -87,26 +87,26 @@ mod tests {
     #[test]
     fn test_slice_data_source() {
         let source = SliceDataSource::new(vec![1, 2, 3, 4, 5]);
-        asseissen_eq!(source.len(), 5);
+        assert_eq!(source.len(), 5);
         assert!(!source.is_empty());
 
         let mut buf = [0u8; 3];
         let n = source.read_at(0, &mut buf).expect("read");
-        asseissen_eq!(n, 3);
-        asseissen_eq!(buf, [1, 2, 3]);
+        assert_eq!(n, 3);
+        assert_eq!(buf, [1, 2, 3]);
 
         let n = source.read_at(3, &mut buf).expect("read");
-        asseissen_eq!(n, 2);
-        asseissen_eq!(&buf[..2], &[4, 5]);
+        assert_eq!(n, 2);
+        assert_eq!(&buf[..2], &[4, 5]);
 
         let n = source.read_at(10, &mut buf).expect("read past end");
-        asseissen_eq!(n, 0);
+        assert_eq!(n, 0);
     }
 
     #[test]
     fn test_slice_data_source_empty() {
         let source = SliceDataSource::new(vec![]);
-        asseissen_eq!(source.len(), 0);
+        assert_eq!(source.len(), 0);
         assert!(source.is_empty());
     }
 
@@ -117,17 +117,17 @@ mod tests {
         std::fs::write(&path, b"hello world").expect("write");
 
         let source = FileDataSource::open(&path).expect("open");
-        asseissen_eq!(source.len(), 11);
-        asseissen_eq!(source.path(), path);
+        assert_eq!(source.len(), 11);
+        assert_eq!(source.path(), path);
 
         let mut buf = [0u8; 5];
         let n = source.read_at(0, &mut buf).expect("read");
-        asseissen_eq!(n, 5);
-        asseissen_eq!(&buf, b"hello");
+        assert_eq!(n, 5);
+        assert_eq!(&buf, b"hello");
 
         let n = source.read_at(6, &mut buf).expect("read");
-        asseissen_eq!(n, 5);
-        asseissen_eq!(&buf, b"world");
+        assert_eq!(n, 5);
+        assert_eq!(&buf, b"world");
     }
 
     #[test]

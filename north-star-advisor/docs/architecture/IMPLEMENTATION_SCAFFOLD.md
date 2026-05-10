@@ -1,21 +1,21 @@
-# RapidTriage: Implementation Scaffold
+# Issen: Implementation Scaffold
 
 > **Parent**: [ARCHITECTURE_BLUEPRINT.md](../ARCHITECTURE_BLUEPRINT.md)
 > **Created**: 2026-03-20
 > **Status**: Active
 
-Directory structure, workspace configuration, build automation, CI/CD pipeline, and the git-clone-to-running-tests developer path for RapidTriage.
+Directory structure, workspace configuration, build automation, CI/CD pipeline, and the git-clone-to-running-tests developer path for Issen.
 
 ---
 
 ## 1. Directory Structure
 
-RapidTriage uses a **hybrid dual-repo** model: a public Cargo workspace monorepo (Apache 2.0 / MIT) and a separate private repo for proprietary crates. Both repos are developed independently; the private repo consumes public crates as path or git dependencies.
+Issen uses a **hybrid dual-repo** model: a public Cargo workspace monorepo (Apache 2.0 / MIT) and a separate private repo for proprietary crates. Both repos are developed independently; the private repo consumes public crates as path or git dependencies.
 
-### 1.1 Public Monorepo (`github.com/h4x0r/rapidtriage`)
+### 1.1 Public Monorepo (`github.com/h4x0r/issen`)
 
 ```
-rapidtriage/
+issen/
 ├── Cargo.toml                          # Virtual workspace manifest
 ├── Cargo.lock                          # Pinned dependency graph
 ├── LICENSING.md                        # Per-crate license declarations
@@ -38,7 +38,7 @@ rapidtriage/
 ├── .pre-commit-config.yaml             # Pre-commit hooks
 ├── clippy.toml                         # Workspace-wide clippy configuration
 ├── crates/
-│   ├── rt-core/                        # Core types & plugin traits (Apache 2.0)
+│   ├── issen-core/                        # Core types & plugin traits (Apache 2.0)
 │   │   ├── Cargo.toml
 │   │   ├── LICENSE-APACHE
 │   │   └── src/
@@ -62,7 +62,7 @@ rapidtriage/
 │   │       ├── error.rs                # RtError enum (thiserror)
 │   │       └── config.rs               # Runtime configuration types
 │   │
-│   ├── rt-pipeline/                    # Evidence ingestion pipeline (Apache 2.0)
+│   ├── issen-pipeline/                    # Evidence ingestion pipeline (Apache 2.0)
 │   │   ├── Cargo.toml
 │   │   ├── LICENSE-APACHE
 │   │   └── src/
@@ -78,15 +78,15 @@ rapidtriage/
 │   │       ├── fingerprint.rs          # SourceFingerprint for incremental
 │   │       └── progress.rs             # Progress reporting channel
 │   │
-│   ├── rt-plugin-sdk/                  # Plugin development kit (Apache 2.0)
+│   ├── issen-plugin-sdk/                  # Plugin development kit (Apache 2.0)
 │   │   ├── Cargo.toml
 │   │   ├── LICENSE-APACHE
 │   │   └── src/
-│   │       ├── lib.rs                  # Re-exports from rt-core
+│   │       ├── lib.rs                  # Re-exports from issen-core
 │   │       ├── test_harness.rs         # Test utilities for parser authors
 │   │       └── macros.rs               # #[forensic_parser] proc macro
 │   │
-│   ├── rt-timeline/                    # DuckDB timeline store (Apache 2.0)
+│   ├── issen-timeline/                    # DuckDB timeline store (Apache 2.0)
 │   │   ├── Cargo.toml
 │   │   ├── LICENSE-APACHE
 │   │   └── src/
@@ -97,7 +97,7 @@ rapidtriage/
 │   │       ├── export.rs               # SQLite portable export
 │   │       └── stats.rs                # Timeline statistics
 │   │
-│   ├── rt-ewf/                         # E01/EWF forensic image reader (MIT)
+│   ├── issen-ewf/                         # E01/EWF forensic image reader (MIT)
 │   │   ├── Cargo.toml
 │   │   ├── LICENSE-MIT
 │   │   └── src/
@@ -106,28 +106,28 @@ rapidtriage/
 │   │       ├── segment.rs              # Multi-segment file handling
 │   │       └── reader.rs               # Streaming read interface
 │   │
-│   ├── rt-shrinkpath/                  # Path utility (MIT)
+│   ├── issen-shrinkpath/                  # Path utility (MIT)
 │   │   ├── Cargo.toml
 │   │   ├── LICENSE-MIT
 │   │   └── src/lib.rs
 │   │
 │   ├── parsers/                        # First-party parsers (all Apache 2.0)
-│   │   ├── rt-parser-usnjrnl/          # USN Journal
+│   │   ├── issen-parser-usnjrnl/          # USN Journal
 │   │   │   ├── Cargo.toml
 │   │   │   └── src/lib.rs
-│   │   ├── rt-parser-mft/              # Master File Table
-│   │   ├── rt-parser-evtx/             # Windows Event Logs
-│   │   ├── rt-parser-prefetch/         # Prefetch files
-│   │   ├── rt-parser-registry/         # Windows Registry hives
-│   │   ├── rt-parser-shellbags/        # Shellbags
-│   │   ├── rt-parser-lnk/             # LNK shortcut files
-│   │   ├── rt-parser-amcache/          # Application cache
-│   │   ├── rt-parser-bam/              # Background Activity Monitor
-│   │   ├── rt-parser-browser/          # Browser history
-│   │   ├── rt-parser-jumplists/        # Jump Lists
-│   │   └── rt-parser-srum/             # System Resource Usage Monitor
+│   │   ├── issen-parser-mft/              # Master File Table
+│   │   ├── issen-parser-evtx/             # Windows Event Logs
+│   │   ├── issen-parser-prefetch/         # Prefetch files
+│   │   ├── issen-parser-registry/         # Windows Registry hives
+│   │   ├── issen-parser-shellbags/        # Shellbags
+│   │   ├── issen-parser-lnk/             # LNK shortcut files
+│   │   ├── issen-parser-amcache/          # Application cache
+│   │   ├── issen-parser-bam/              # Background Activity Monitor
+│   │   ├── issen-parser-browser/          # Browser history
+│   │   ├── issen-parser-jumplists/        # Jump Lists
+│   │   └── issen-parser-srum/             # System Resource Usage Monitor
 │   │
-│   └── rt-cli/                         # CLI frontend (Apache 2.0)
+│   └── issen-cli/                         # CLI frontend (Apache 2.0)
 │       ├── Cargo.toml
 │       ├── LICENSE-APACHE
 │       └── src/
@@ -173,16 +173,16 @@ rapidtriage/
     └── docs/
 ```
 
-### 1.2 Private Repository (`github.com/h4x0r/rapidtriage-pro`)
+### 1.2 Private Repository (`github.com/h4x0r/issen-pro`)
 
 ```
-rapidtriage-pro/
-├── Cargo.toml                          # Workspace manifest (path deps to ../rapidtriage/crates/)
+issen-pro/
+├── Cargo.toml                          # Workspace manifest (path deps to ../issen/crates/)
 ├── Cargo.lock
 ├── .cargo/
 │   └── config.toml                     # paths override for local development
 ├── crates/
-│   ├── rt-report/                      # Report engine (Proprietary)
+│   ├── issen-report/                      # Report engine (Proprietary)
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
@@ -191,7 +191,7 @@ rapidtriage-pro/
 │   │       ├── pdf.rs                  # PDF rendering
 │   │       └── templates/              # Askama report templates
 │   │
-│   ├── rt-correlation/                 # Cross-artifact correlation (Proprietary)
+│   ├── issen-correlation/                 # Cross-artifact correlation (Proprietary)
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
@@ -199,7 +199,7 @@ rapidtriage-pro/
 │   │       ├── patterns.rs             # Attack pattern definitions
 │   │       └── graph.rs                # Event relationship graph
 │   │
-│   ├── rt-intel/                       # Intelligence layer (Proprietary)
+│   ├── issen-intel/                       # Intelligence layer (Proprietary)
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
@@ -209,7 +209,7 @@ rapidtriage-pro/
 │   │       ├── sigma.rs                # Sigma rule engine
 │   │       └── enrichment.rs           # Threat intelligence enrichment
 │   │
-│   ├── rt-tui/                         # Terminal UI (Proprietary)
+│   ├── issen-tui/                         # Terminal UI (Proprietary)
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── main.rs
@@ -217,21 +217,21 @@ rapidtriage-pro/
 │   │       ├── views/                  # Timeline, detail, filter views
 │   │       └── keybindings.rs
 │   │
-│   ├── rt-gui/                         # Desktop GUI (Proprietary)
+│   ├── issen-gui/                         # Desktop GUI (Proprietary)
 │   │   ├── Cargo.toml
 │   │   ├── tauri.conf.json
 │   │   └── src/
 │   │       ├── main.rs                 # Tauri entry point
 │   │       └── commands/               # Tauri IPC commands
 │   │
-│   ├── rt-web/                         # Web UI (Proprietary)
+│   ├── issen-web/                         # Web UI (Proprietary)
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── main.rs                 # axum server
 │   │       ├── routes/                 # API endpoints
 │   │       └── frontend/               # Leptos components
 │   │
-│   └── rt-license/                     # License validation (Proprietary)
+│   └── issen-license/                     # License validation (Proprietary)
 │       ├── Cargo.toml
 │       └── src/
 │           ├── lib.rs
@@ -253,25 +253,25 @@ rapidtriage-pro/
 [workspace]
 resolver = "2"
 members = [
-    "crates/rt-core",
-    "crates/rt-pipeline",
-    "crates/rt-plugin-sdk",
-    "crates/rt-timeline",
-    "crates/rt-ewf",
-    "crates/rt-shrinkpath",
-    "crates/parsers/rt-parser-usnjrnl",
-    "crates/parsers/rt-parser-mft",
-    "crates/parsers/rt-parser-evtx",
-    "crates/parsers/rt-parser-prefetch",
-    "crates/parsers/rt-parser-registry",
-    "crates/parsers/rt-parser-shellbags",
-    "crates/parsers/rt-parser-lnk",
-    "crates/parsers/rt-parser-amcache",
-    "crates/parsers/rt-parser-bam",
-    "crates/parsers/rt-parser-browser",
-    "crates/parsers/rt-parser-jumplists",
-    "crates/parsers/rt-parser-srum",
-    "crates/rt-cli",
+    "crates/issen-core",
+    "crates/issen-pipeline",
+    "crates/issen-plugin-sdk",
+    "crates/issen-timeline",
+    "crates/issen-ewf",
+    "crates/issen-shrinkpath",
+    "crates/parsers/issen-parser-usnjrnl",
+    "crates/parsers/issen-parser-mft",
+    "crates/parsers/issen-parser-evtx",
+    "crates/parsers/issen-parser-prefetch",
+    "crates/parsers/issen-parser-registry",
+    "crates/parsers/issen-parser-shellbags",
+    "crates/parsers/issen-parser-lnk",
+    "crates/parsers/issen-parser-amcache",
+    "crates/parsers/issen-parser-bam",
+    "crates/parsers/issen-parser-browser",
+    "crates/parsers/issen-parser-jumplists",
+    "crates/parsers/issen-parser-srum",
+    "crates/issen-cli",
     "xtask",
 ]
 
@@ -279,18 +279,18 @@ members = [
 edition = "2021"
 rust-version = "1.80"
 license = "Apache-2.0"
-repository = "https://github.com/h4x0r/rapidtriage"
-homepage = "https://rapidtriage.dev"
-authors = ["RapidTriage Contributors"]
+repository = "https://github.com/h4x0r/issen"
+homepage = "https://issen.dev"
+authors = ["Issen Contributors"]
 
 [workspace.dependencies]
 # Internal crates (path dependencies)
-rt-core       = { path = "crates/rt-core" }
-rt-pipeline   = { path = "crates/rt-pipeline" }
-rt-plugin-sdk = { path = "crates/rt-plugin-sdk" }
-rt-timeline   = { path = "crates/rt-timeline" }
-rt-ewf        = { path = "crates/rt-ewf" }
-rt-shrinkpath = { path = "crates/rt-shrinkpath" }
+issen-core       = { path = "crates/issen-core" }
+issen-pipeline   = { path = "crates/issen-pipeline" }
+issen-plugin-sdk = { path = "crates/issen-plugin-sdk" }
+issen-timeline   = { path = "crates/issen-timeline" }
+issen-ewf        = { path = "crates/issen-ewf" }
+issen-shrinkpath = { path = "crates/issen-shrinkpath" }
 
 # External dependencies (pinned to compatible ranges)
 duckdb       = { version = "1", features = ["bundled"] }
@@ -332,15 +332,15 @@ panic = "deny"
 Feature flags control optional capabilities without pulling in proprietary code.
 
 ```toml
-# crates/rt-core/Cargo.toml
+# crates/issen-core/Cargo.toml
 [features]
 default = []
-report-hooks = []       # Enables trait extension points for report engine
+repoissen-hooks = []       # Enables trait extension points for report engine
 correlation-hooks = []  # Enables trait extension points for correlation engine
 intel-hooks = []        # Enables trait extension points for intelligence layer
 simd = ["dep:packed_simd"]  # SIMD-accelerated parsing (opt-in)
 
-# crates/rt-pipeline/Cargo.toml
+# crates/issen-pipeline/Cargo.toml
 [features]
 default = ["all-parsers"]
 all-parsers = [
@@ -348,36 +348,36 @@ all-parsers = [
     "parser-registry", "parser-shellbags", "parser-lnk", "parser-amcache",
     "parser-bam", "parser-browser", "parser-jumplists", "parser-srum",
 ]
-parser-usnjrnl = ["dep:rt-parser-usnjrnl"]
-parser-mft = ["dep:rt-parser-mft"]
-parser-evtx = ["dep:rt-parser-evtx"]
-parser-prefetch = ["dep:rt-parser-prefetch"]
-parser-registry = ["dep:rt-parser-registry"]
-parser-shellbags = ["dep:rt-parser-shellbags"]
-parser-lnk = ["dep:rt-parser-lnk"]
-parser-amcache = ["dep:rt-parser-amcache"]
-parser-bam = ["dep:rt-parser-bam"]
-parser-browser = ["dep:rt-parser-browser"]
-parser-jumplists = ["dep:rt-parser-jumplists"]
-parser-srum = ["dep:rt-parser-srum"]
+parser-usnjrnl = ["dep:issen-parser-usnjrnl"]
+parser-mft = ["dep:issen-parser-mft"]
+parser-evtx = ["dep:issen-parser-evtx"]
+parser-prefetch = ["dep:issen-parser-prefetch"]
+parser-registry = ["dep:issen-parser-registry"]
+parser-shellbags = ["dep:issen-parser-shellbags"]
+parser-lnk = ["dep:issen-parser-lnk"]
+parser-amcache = ["dep:issen-parser-amcache"]
+parser-bam = ["dep:issen-parser-bam"]
+parser-browser = ["dep:issen-parser-browser"]
+parser-jumplists = ["dep:issen-parser-jumplists"]
+parser-srum = ["dep:issen-parser-srum"]
 
-# crates/rt-cli/Cargo.toml
+# crates/issen-cli/Cargo.toml
 [features]
 default = ["color"]
 color = ["dep:owo-colors"]
 json-output = []        # JSON output format (always available, flag for clarity)
 ```
 
-### 2.3 Example Crate `Cargo.toml` (`rt-core`)
+### 2.3 Example Crate `Cargo.toml` (`issen-core`)
 
 ```toml
 [package]
-name = "rt-core"
+name = "issen-core"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license = "Apache-2.0"
-description = "Core types, timeline schema, and plugin traits for RapidTriage"
+description = "Core types, timeline schema, and plugin traits for Issen"
 repository.workspace = true
 
 [dependencies]
@@ -396,12 +396,12 @@ insta = { workspace = true }
 
 ## 3. Plugin Trait (BaseAgent Equivalent)
 
-RapidTriage does not use LLM-style "agents" in the traditional sense. Instead, the core extensibility primitive is the **`ForensicParser` trait**, which plays the same role as a BaseAgent class: every parser implements it, and the pipeline orchestrates them uniformly.
+Issen does not use LLM-style "agents" in the traditional sense. Instead, the core extensibility primitive is the **`ForensicParser` trait**, which plays the same role as a BaseAgent class: every parser implements it, and the pipeline orchestrates them uniformly.
 
 ### 3.1 Interface Definition
 
 ```rust
-// crates/rt-core/src/plugin/traits.rs
+// crates/issen-core/src/plugin/traits.rs
 
 use crate::artifacts::ArtifactType;
 use crate::error::RtError;
@@ -472,7 +472,7 @@ pub trait ForensicParser: Send + Sync {
 ### 3.2 Compile-Time Registration
 
 ```rust
-// crates/rt-core/src/plugin/registry.rs
+// crates/issen-core/src/plugin/registry.rs
 
 use super::traits::ForensicParser;
 
@@ -494,7 +494,7 @@ pub fn all_parsers() -> Vec<Box<dyn ForensicParser>> {
 ### 3.3 Default Constants
 
 ```rust
-// crates/rt-core/src/config.rs
+// crates/issen-core/src/config.rs
 
 /// Default buffer size for streaming reads (64 KiB).
 pub const DEFAULT_BUFFER_SIZE: usize = 64 * 1024;
@@ -519,7 +519,7 @@ pub const ARTIFACT_TIMEOUT_SECS: u64 = 300;
 ### 4.1 Example Parser: USN Journal
 
 ```rust
-// crates/parsers/rt-parser-usnjrnl/src/lib.rs
+// crates/parsers/issen-parser-usnjrnl/src/lib.rs
 
 use rt_core::artifacts::ArtifactType;
 use rt_core::error::RtError;
@@ -609,7 +609,7 @@ inventory::submit! {
 ### 4.2 Pipeline Orchestrator (Parallel Dispatch)
 
 ```rust
-// crates/rt-pipeline/src/orchestrator.rs
+// crates/issen-pipeline/src/orchestrator.rs
 
 use rayon::prelude::*;
 use rt_core::plugin::registry::all_parsers;
@@ -649,12 +649,12 @@ impl PipelineOrchestrator {
 
 ## 5. CLI Interface (API Routes Equivalent)
 
-RapidTriage is CLI-first. The CLI subcommands serve the same role as API routes in a web application.
+Issen is CLI-first. The CLI subcommands serve the same role as API routes in a web application.
 
 ### 5.1 Main Entry Point
 
 ```rust
-// crates/rt-cli/src/main.rs
+// crates/issen-cli/src/main.rs
 
 use clap::Parser;
 
@@ -662,7 +662,7 @@ mod commands;
 mod output;
 
 #[derive(Parser)]
-#[command(name = "rt", version, about = "RapidTriage forensic analysis platform")]
+#[command(name = "rt", version, about = "Issen forensic analysis platform")]
 struct Cli {
     #[command(subcommand)]
     command: commands::Command,
@@ -702,7 +702,7 @@ fn main() -> anyhow::Result<()> {
 ### 5.2 Subcommands
 
 ```rust
-// crates/rt-cli/src/commands/mod.rs
+// crates/issen-cli/src/commands/mod.rs
 
 pub mod ingest;
 pub mod timeline;
@@ -725,7 +725,7 @@ pub enum Command {
 ### 5.3 Health Check Equivalent (Info Command)
 
 ```rust
-// crates/rt-cli/src/commands/info.rs
+// crates/issen-cli/src/commands/info.rs
 
 use rt_core::plugin::registry::all_parsers;
 
@@ -784,7 +784,7 @@ pub fn run(args: InfoArgs, format: super::super::output::OutputFormat) -> anyhow
 ### 6.2 Configuration File (`rt.toml`)
 
 ```toml
-# Optional configuration file (searched in CWD, then ~/.config/rapidtriage/)
+# Optional configuration file (searched in CWD, then ~/.config/issen/)
 
 [pipeline]
 threads = 0                     # 0 = auto-detect
@@ -803,7 +803,7 @@ color = true
 ### 6.3 Configuration Validation (Startup)
 
 ```rust
-// crates/rt-core/src/config.rs
+// crates/issen-core/src/config.rs
 
 use std::path::PathBuf;
 use thiserror::Error;
@@ -1016,7 +1016,7 @@ jobs:
           tool: 'cargo'
           output-file-path: output.txt
           fail-on-alert: true
-          alert-threshold: '120%'     # Fail if 20% regression
+          aleissen-threshold: '120%'     # Fail if 20% regression
           comment-on-alert: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -1082,11 +1082,11 @@ url = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/re
 [imports.mozilla]
 url = "https://raw.githubusercontent.com/nickel-org/nickel.rs/main/supply-chain/audits.toml"
 
-[policy.rt-core]
+[policy.issen-core]
 audit-as-crates-io = false
 criteria = "safe-to-deploy"
 
-[policy.rt-pipeline]
+[policy.issen-pipeline]
 audit-as-crates-io = false
 criteria = "safe-to-deploy"
 ```
@@ -1260,8 +1260,8 @@ This section is the step-by-step path from a fresh clone to a passing test suite
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/h4x0r/rapidtriage.git
-cd rapidtriage
+git clone https://github.com/h4x0r/issen.git
+cd issen
 
 # 2. Verify toolchain (rust-toolchain.toml auto-installs via rustup)
 rustc --version    # Should be >= 1.80
@@ -1288,8 +1288,8 @@ cargo test --workspace --all-features
 #   Expected: all tests pass, ~30 seconds on modern hardware
 
 # 8. Run a single crate's tests (faster iteration)
-cargo test -p rt-core
-cargo test -p rt-parser-usnjrnl
+cargo test -p issen-core
+cargo test -p issen-parser-usnjrnl
 
 # 9. Run clippy (must pass with zero warnings)
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -1305,8 +1305,8 @@ cargo deny check
 cargo vet
 
 # 13. Try the CLI
-cargo run -p rt-cli -- info --parsers
-cargo run -p rt-cli -- parse --artifact usnjrnl tests/fixtures/usnjrnl/sample.bin
+cargo run -p issen-cli -- info --parsers
+cargo run -p issen-cli -- parse --artifact usnjrnl tests/fixtures/usnjrnl/sample.bin
 ```
 
 ### First-Build Troubleshooting
@@ -1324,9 +1324,9 @@ cargo run -p rt-cli -- parse --artifact usnjrnl tests/fixtures/usnjrnl/sample.bi
 
 ```
 1. Create feature branch:   git checkout -b feat/parser-shellbags
-2. Implement changes:        Edit crates/parsers/rt-parser-shellbags/src/lib.rs
-3. Run targeted tests:       cargo test -p rt-parser-shellbags
-4. Run lint:                 cargo clippy -p rt-parser-shellbags -- -D warnings
+2. Implement changes:        Edit crates/parsers/issen-parser-shellbags/src/lib.rs
+3. Run targeted tests:       cargo test -p issen-parser-shellbags
+4. Run lint:                 cargo clippy -p issen-parser-shellbags -- -D warnings
 5. Run full suite:           cargo xtask ci
 6. Commit:                   git commit  (pre-commit hooks run fmt + clippy)
 7. Push:                     git push    (pre-push hooks run tests + deny)
@@ -1338,23 +1338,23 @@ cargo run -p rt-cli -- parse --artifact usnjrnl tests/fixtures/usnjrnl/sample.bi
 ## Appendix A: Crate Dependency Graph
 
 ```
-rt-core (pure, no deps)
-├── rt-plugin-sdk (re-exports rt-core traits)
-├── rt-pipeline (depends on rt-core)
-│   └── rt-parser-* (each depends on rt-core via rt-plugin-sdk)
-├── rt-timeline (depends on rt-core + duckdb)
-├── rt-ewf (standalone, MIT)
-├── rt-shrinkpath (standalone, MIT)
-└── rt-cli (depends on rt-core, rt-pipeline, rt-timeline)
+issen-core (pure, no deps)
+├── issen-plugin-sdk (re-exports issen-core traits)
+├── issen-pipeline (depends on issen-core)
+│   └── issen-parser-* (each depends on issen-core via issen-plugin-sdk)
+├── issen-timeline (depends on issen-core + duckdb)
+├── issen-ewf (standalone, MIT)
+├── issen-shrinkpath (standalone, MIT)
+└── issen-cli (depends on issen-core, issen-pipeline, issen-timeline)
 
 --- proprietary (separate repo) ---
-rt-report (depends on rt-core, rt-timeline)
-rt-correlation (depends on rt-core, rt-timeline)
-rt-intel (depends on rt-core, rt-timeline, ollama-rs, yara-x, lancedb)
-rt-tui (depends on rt-core, rt-timeline, ratatui)
-rt-gui (depends on rt-core, rt-timeline, rt-report, tauri)
-rt-web (depends on rt-core, rt-timeline, rt-report, axum, leptos)
-rt-license (standalone)
+issen-report (depends on issen-core, issen-timeline)
+issen-correlation (depends on issen-core, issen-timeline)
+issen-intel (depends on issen-core, issen-timeline, ollama-rs, yara-x, lancedb)
+issen-tui (depends on issen-core, issen-timeline, ratatui)
+issen-gui (depends on issen-core, issen-timeline, issen-report, tauri)
+issen-web (depends on issen-core, issen-timeline, issen-report, axum, leptos)
+issen-license (standalone)
 ```
 
 ---
@@ -1363,15 +1363,15 @@ rt-license (standalone)
 
 | Crate | Feature | Default | Description |
 |-------|---------|---------|-------------|
-| `rt-core` | `report-hooks` | No | Extension points for report engine |
-| `rt-core` | `correlation-hooks` | No | Extension points for correlation engine |
-| `rt-core` | `intel-hooks` | No | Extension points for intelligence layer |
-| `rt-core` | `simd` | No | SIMD-accelerated parsing |
-| `rt-pipeline` | `all-parsers` | Yes | Include all first-party parsers |
-| `rt-pipeline` | `parser-usnjrnl` | Yes (via all) | USN Journal parser |
-| `rt-pipeline` | `parser-mft` | Yes (via all) | MFT parser |
-| `rt-pipeline` | `parser-evtx` | Yes (via all) | Windows Event Log parser |
-| `rt-pipeline` | `parser-prefetch` | Yes (via all) | Prefetch parser |
-| `rt-pipeline` | `parser-registry` | Yes (via all) | Windows Registry parser |
-| `rt-cli` | `color` | Yes | Colored terminal output |
-| `rt-cli` | `json-output` | No | JSON output format |
+| `issen-core` | `repoissen-hooks` | No | Extension points for report engine |
+| `issen-core` | `correlation-hooks` | No | Extension points for correlation engine |
+| `issen-core` | `intel-hooks` | No | Extension points for intelligence layer |
+| `issen-core` | `simd` | No | SIMD-accelerated parsing |
+| `issen-pipeline` | `all-parsers` | Yes | Include all first-party parsers |
+| `issen-pipeline` | `parser-usnjrnl` | Yes (via all) | USN Journal parser |
+| `issen-pipeline` | `parser-mft` | Yes (via all) | MFT parser |
+| `issen-pipeline` | `parser-evtx` | Yes (via all) | Windows Event Log parser |
+| `issen-pipeline` | `parser-prefetch` | Yes (via all) | Prefetch parser |
+| `issen-pipeline` | `parser-registry` | Yes (via all) | Windows Registry parser |
+| `issen-cli` | `color` | Yes | Colored terminal output |
+| `issen-cli` | `json-output` | No | JSON output format |

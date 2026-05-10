@@ -2,7 +2,7 @@
 # Generated: 2026-03-20T00:00:00Z
 
 # Core (from exploration)
-application_name: "RapidTriage"
+application_name: "Issen"
 one_line_description: "Integrated forensic triage platform that bridges the forensic-to-legal translation gap with attorney-ready output"
 target_users: "IR practitioners, forensic examiners, and litigation support teams who conduct digital forensic investigations and need to produce deliverables for legal teams"
 core_problem: "Forensic analysis is ~20% of engagement cost; the remaining ~80% is manual report writing, evidence reprocessing, and attorney back-and-forth because every forensic tool produces engineer-oriented output that attorneys cannot use"

@@ -35,19 +35,19 @@ mod tests {
 
     #[test]
     fn browser_family_chromium_and_firefox_are_distinct() {
-        asseissen_ne!(BrowserFamily::Chromium, BrowserFamily::Firefox);
+        assert_ne!(BrowserFamily::Chromium, BrowserFamily::Firefox);
     }
 
     #[test]
     fn detect_browser_chrome_history_path() {
         let p = Path::new("/home/user/.config/google-chrome/Default/History");
-        asseissen_eq!(detect_browser(p), Some(BrowserFamily::Chromium));
+        assert_eq!(detect_browser(p), Some(BrowserFamily::Chromium));
     }
 
     #[test]
     fn detect_browser_firefox_places_path() {
         let p = Path::new("/home/user/.mozilla/firefox/abc.default/places.sqlite");
-        asseissen_eq!(detect_browser(p), Some(BrowserFamily::Firefox));
+        assert_eq!(detect_browser(p), Some(BrowserFamily::Firefox));
     }
 
     #[test]

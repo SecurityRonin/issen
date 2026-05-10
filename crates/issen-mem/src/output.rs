@@ -203,9 +203,9 @@ mod tests {
 
     #[test]
     fn output_format_display() {
-        asseissen_eq!(OutputFormat::Text.to_string(), "text");
-        asseissen_eq!(OutputFormat::Json.to_string(), "json");
-        asseissen_eq!(OutputFormat::Bodyfile.to_string(), "bodyfile");
+        assert_eq!(OutputFormat::Text.to_string(), "text");
+        assert_eq!(OutputFormat::Json.to_string(), "json");
+        assert_eq!(OutputFormat::Bodyfile.to_string(), "bodyfile");
     }
 
     #[test]
@@ -219,7 +219,7 @@ mod tests {
 
         // Must be two non-empty lines, each parseable as a JSON object.
         let lines: Vec<&str> = json_str.trim().lines().collect();
-        asseissen_eq!(lines.len(), 2);
+        assert_eq!(lines.len(), 2);
         for line in lines {
             let v: serde_json::Value = serde_json::from_str(line).expect("valid JSON per line");
             assert!(v.is_object());
@@ -232,8 +232,8 @@ mod tests {
         let rows = vec![vec!["7".into(), "sshd".into()]];
         let json_str = rows_to_json(headers, &rows).unwrap();
         let v: serde_json::Value = serde_json::from_str(json_str.trim()).unwrap();
-        asseissen_eq!(v["pid"], "7");
-        asseissen_eq!(v["name"], "sshd");
+        assert_eq!(v["pid"], "7");
+        assert_eq!(v["name"], "sshd");
     }
 
     #[test]
@@ -282,7 +282,7 @@ mod tests {
         assert!(out.contains("1024"), "bodyfile must contain size: {out}");
         // Verify structure: exactly 10 pipe separators per line
         let line = out.trim();
-        asseissen_eq!(
+        assert_eq!(
             line.chars().filter(|&c| c == '|').count(),
             10,
             "bodyfile line must have 10 pipe separators: {line}"
@@ -298,7 +298,7 @@ mod tests {
         let line = out.trim();
         assert!(line.contains("/etc/passwd"), "path must appear: {line}");
         // Should have 10 pipe separators
-        asseissen_eq!(
+        assert_eq!(
             line.chars().filter(|&c| c == '|').count(),
             10,
             "bodyfile line must have 10 pipe separators even with missing cols: {line}"
@@ -338,7 +338,7 @@ mod tests {
         let rows = vec![vec!["1".into(), "init".into()]];
         let out = rows_to_stix("process", headers, &rows);
         let v: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
-        asseissen_eq!(
+        assert_eq!(
             v["type"], "bundle",
             "top-level 'type' must be 'bundle': {out}"
         );
@@ -356,7 +356,7 @@ mod tests {
     fn stix_empty_rows_produces_empty_objects() {
         let out = rows_to_stix("process", &["pid", "name"], &[]);
         let v: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
-        asseissen_eq!(
+        assert_eq!(
             v["objects"].as_array().map(|a| a.len()).unwrap_or(1),
             0,
             "empty rows must produce empty objects array: {out}"
@@ -370,16 +370,16 @@ mod tests {
     #[test]
     fn output_format_default_is_text() {
         let fmt: OutputFormat = OutputFormat::default();
-        asseissen_eq!(fmt, OutputFormat::Text, "default must be Text");
+        assert_eq!(fmt, OutputFormat::Text, "default must be Text");
     }
 
     #[test]
     fn output_format_clone_and_copy() {
         let fmt = OutputFormat::Json;
         let cloned = fmt; // Copy
-        asseissen_eq!(fmt, cloned);
+        assert_eq!(fmt, cloned);
         let cloned2 = fmt.clone();
-        asseissen_eq!(fmt, cloned2);
+        assert_eq!(fmt, cloned2);
     }
 
     #[test]
@@ -441,10 +441,10 @@ mod tests {
         let out = rows_to_stix("process", headers, &rows);
         let v: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
         let obj = &v["objects"][0];
-        asseissen_eq!(obj["object_type"], "process");
-        asseissen_eq!(obj["type"], "observed-data");
-        asseissen_eq!(obj["custom_properties"]["pid"], "2");
-        asseissen_eq!(obj["custom_properties"]["name"], "kthreadd");
+        assert_eq!(obj["object_type"], "process");
+        assert_eq!(obj["type"], "observed-data");
+        assert_eq!(obj["custom_properties"]["pid"], "2");
+        assert_eq!(obj["custom_properties"]["name"], "kthreadd");
     }
 
     // -----------------------------------------------------------------------

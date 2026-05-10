@@ -82,7 +82,7 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license = "Apache-2.0"
-description = "Filesystem walker and artifact dispatch for RapidTriage"
+description = "Filesystem walker and artifact dispatch for Issen"
 repository.workspace = true
 
 [dependencies]
@@ -135,7 +135,7 @@ use rt_fswalker::progress::ProgressReporter;
 - [ ] **Step 6: Run tests to verify rename is clean**
 
 ```bash
-cd /Users/4n6h4x0r/src/RapidTriage && cargo test --workspace 2>&1 | tail -5
+cd /Users/4n6h4x0r/src/Issen && cargo test --workspace 2>&1 | tail -5
 ```
 
 Expected: All existing tests pass (the crate name change is transparent to test code since internal `use crate::` paths don't change).
@@ -285,7 +285,7 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license = "Apache-2.0"
-description = "Collection format detection and extraction for RapidTriage"
+description = "Collection format detection and extraction for Issen"
 repository.workspace = true
 
 [dependencies]
@@ -640,7 +640,7 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license = "Apache-2.0"
-description = "Velociraptor collection format handler for RapidTriage"
+description = "Velociraptor collection format handler for Issen"
 repository.workspace = true
 
 [dependencies]
@@ -1378,7 +1378,7 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license = "Apache-2.0"
-description = "UAC (Unix Artifact Collector) collection format handler for RapidTriage"
+description = "UAC (Unix Artifact Collector) collection format handler for Issen"
 repository.workspace = true
 
 [dependencies]

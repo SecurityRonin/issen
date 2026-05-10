@@ -1,4 +1,4 @@
-# RapidTriage: Resilience Patterns
+# Issen: Resilience Patterns
 
 > **Axiom**: *Correctness > Speed* -- When parsing speed conflicts with forensic accuracy, choose accuracy. Rust lets us have both, but when forced to pick, correctness wins.
 >
@@ -10,7 +10,7 @@
 
 ## 1. Circuit Breaker Pattern
 
-Forensic evidence is inherently unreliable -- corrupted disk images, truncated logs, partially overwritten artifacts. Every component in the RapidTriage pipeline must tolerate upstream failures without cascading collapse. Circuit breakers prevent a single corrupted evidence source from consuming all resources and blocking the entire pipeline.
+Forensic evidence is inherently unreliable -- corrupted disk images, truncated logs, partially overwritten artifacts. Every component in the Issen pipeline must tolerate upstream failures without cascading collapse. Circuit breakers prevent a single corrupted evidence source from consuming all resources and blocking the entire pipeline.
 
 ### 1.1 Circuit Breaker Configuration
 
@@ -27,15 +27,15 @@ Forensic evidence is inherently unreliable -- corrupted disk images, truncated l
 
 | Component | Failure Threshold | Reset Timeout | Rationale |
 |-----------|-------------------|---------------|-----------|
-| `rt-pipeline` (Layer 0: Container) | 3 failures | 10s | E01/VHDX container errors are usually fatal for that image; fail fast |
-| `rt-pipeline` (Layer 1: Filesystem) | 5 failures | 30s | NTFS/ext4 corruption may be localized; allow more attempts |
-| `rt-pipeline` (Layer 2: Artifact) | 5 failures | 30s | Individual artifact files may be corrupted but siblings are fine |
-| `rt-pipeline` (Layer 3: Parser) | 10 failures | 60s | Parsers process many records; high threshold for per-record failures |
-| `rt-pipeline` (Layer 4: Enrichment) | 3 failures | 15s | LLM/enrichment failures should degrade gracefully, not block |
-| `rt-timeline` (DuckDB) | 3 failures | 10s | Database errors are usually systemic; fast circuit break |
-| `rt-intel` (ForensicLLM) | 3 failures | 60s | Model inference failures may need cooldown; longer reset |
-| `rt-report` (Report Engine) | 3 failures | 15s | Report generation failures should not retry aggressively |
-| `rt-correlation` | 5 failures | 30s | Correlation operates on partial data; tolerate some failures |
+| `issen-pipeline` (Layer 0: Container) | 3 failures | 10s | E01/VHDX container errors are usually fatal for that image; fail fast |
+| `issen-pipeline` (Layer 1: Filesystem) | 5 failures | 30s | NTFS/ext4 corruption may be localized; allow more attempts |
+| `issen-pipeline` (Layer 2: Artifact) | 5 failures | 30s | Individual artifact files may be corrupted but siblings are fine |
+| `issen-pipeline` (Layer 3: Parser) | 10 failures | 60s | Parsers process many records; high threshold for per-record failures |
+| `issen-pipeline` (Layer 4: Enrichment) | 3 failures | 15s | LLM/enrichment failures should degrade gracefully, not block |
+| `issen-timeline` (DuckDB) | 3 failures | 10s | Database errors are usually systemic; fast circuit break |
+| `issen-intel` (ForensicLLM) | 3 failures | 60s | Model inference failures may need cooldown; longer reset |
+| `issen-report` (Report Engine) | 3 failures | 15s | Report generation failures should not retry aggressively |
+| `issen-correlation` | 5 failures | 30s | Correlation operates on partial data; tolerate some failures |
 | WASM Plugin (Tier 2) | 3 failures | 30s | Sandboxed plugin failures are isolated; moderate reset |
 | gRPC Plugin (Tier 3) | 3 failures | 45s | External process may need restart time |
 
@@ -183,7 +183,7 @@ impl CircuitBreaker {
 ```
 
 **Forensic-specific design decisions:**
-- **Per-layer circuit breakers** in `rt-pipeline` rather than per-component, because a single corrupted NTFS volume should not shut down parsing of registry hives or event logs from the same image.
+- **Per-layer circuit breakers** in `issen-pipeline` rather than per-component, because a single corrupted NTFS volume should not shut down parsing of registry hives or event logs from the same image.
 - **High threshold for Layer 3 (Parser)** because parsers process thousands of records and individual record corruption is common -- only systemic parser failure should trip the circuit.
 - **Fast reset for Layer 0 (Container)** because container-level failures (bad E01 segment, truncated VHDX) are almost always unrecoverable, so quick detection prevents wasted time.
 
@@ -191,7 +191,7 @@ impl CircuitBreaker {
 
 ## 2. Fallback Chains
 
-RapidTriage follows the axiom *"the tool must NEVER lose already-parsed data if a later parser crashes."* Fallback chains ensure every component degrades to a safe state that preserves work completed so far. In a forensic context, partial results with integrity metadata are infinitely more valuable than no results.
+Issen follows the axiom *"the tool must NEVER lose already-parsed data if a later parser crashes."* Fallback chains ensure every component degrades to a safe state that preserves work completed so far. In a forensic context, partial results with integrity metadata are infinitely more valuable than no results.
 
 ### 2.1 Fallback Strategy
 
@@ -209,15 +209,15 @@ Every fallback chain ends in a **safe default** that:
 
 | Component | Level 1 (Primary) | Level 2 (Simplified) | Level 3 (Cached/Partial) | Level 4 (Safe Default) |
 |-----------|-------------------|----------------------|--------------------------|------------------------|
-| `rt-pipeline` Layer 0 | Parse container (E01/VHDX/raw) | Try alternate parser/raw fallback | Return metadata-only (image hash, size) | Log "container unreadable" + preserve hash |
-| `rt-pipeline` Layer 1 | Full filesystem walk | Targeted path extraction (known artifact locations) | File listing from MFT-only parse | Log "filesystem damaged" + raw byte offsets |
-| `rt-pipeline` Layer 2 | Extract artifact file | Copy raw bytes without interpretation | Return file metadata (path, timestamps, hash) | Log "artifact inaccessible" + record location |
-| `rt-pipeline` Layer 3 | Full parser (structured output) | Lenient parser (skip malformed records) | Raw text extraction (strings) | Log "parser failed" + preserve raw bytes |
-| `rt-pipeline` Layer 4 | LLM enrichment (ForensicLLM) | Smaller model (7B classification) | Rule-based enrichment (YARA/Sigma only) | Pass through unenriched with flag |
-| `rt-timeline` | DuckDB columnar insert | Batch insert with conflict resolution | Append to overflow log (CSV fallback) | In-memory buffer with periodic flush attempt |
-| `rt-intel` | Large model narrative (70B+) | Small model summary (7B-13B) | Template-based output | Raw findings list (no narrative) |
-| `rt-report` | Full dual-format (HTML + DOCX) | HTML-only report | Markdown export | Structured JSON dump of all findings |
-| `rt-correlation` | Full cross-artifact correlation | Pairwise correlation (reduced scope) | Timestamp-only correlation | Individual artifact timelines (no cross-ref) |
+| `issen-pipeline` Layer 0 | Parse container (E01/VHDX/raw) | Try alternate parser/raw fallback | Return metadata-only (image hash, size) | Log "container unreadable" + preserve hash |
+| `issen-pipeline` Layer 1 | Full filesystem walk | Targeted path extraction (known artifact locations) | File listing from MFT-only parse | Log "filesystem damaged" + raw byte offsets |
+| `issen-pipeline` Layer 2 | Extract artifact file | Copy raw bytes without interpretation | Return file metadata (path, timestamps, hash) | Log "artifact inaccessible" + record location |
+| `issen-pipeline` Layer 3 | Full parser (structured output) | Lenient parser (skip malformed records) | Raw text extraction (strings) | Log "parser failed" + preserve raw bytes |
+| `issen-pipeline` Layer 4 | LLM enrichment (ForensicLLM) | Smaller model (7B classification) | Rule-based enrichment (YARA/Sigma only) | Pass through unenriched with flag |
+| `issen-timeline` | DuckDB columnar insert | Batch insert with conflict resolution | Append to overflow log (CSV fallback) | In-memory buffer with periodic flush attempt |
+| `issen-intel` | Large model narrative (70B+) | Small model summary (7B-13B) | Template-based output | Raw findings list (no narrative) |
+| `issen-report` | Full dual-format (HTML + DOCX) | HTML-only report | Markdown export | Structured JSON dump of all findings |
+| `issen-correlation` | Full cross-artifact correlation | Pairwise correlation (reduced scope) | Timestamp-only correlation | Individual artifact timelines (no cross-ref) |
 | WASM Plugin (Tier 2) | Execute in sandbox | Execute with tighter resource limits | Return plugin metadata + error | Skip plugin, log gap in coverage |
 | gRPC Plugin (Tier 3) | Call external process | Retry with timeout backoff | Return cached result if available | Skip plugin, log gap in coverage |
 
@@ -356,7 +356,7 @@ fn evtx_fallback_chain(path: &Path) -> Vec<FallbackLevel<ParseResult>> {
 
 ## 3. Timeout Handling
 
-RapidTriage's north star metric TARR (Time-to-Attorney-Ready Report) targets under 4 hours for a standard IR triage case. Timeout budgets enforce this ceiling and prevent any single component from consuming the entire budget. The pipeline must always produce *something* within the time budget -- partial results with clear coverage gaps are acceptable; hanging indefinitely is not.
+Issen's north star metric TARR (Time-to-Attorney-Ready Report) targets under 4 hours for a standard IR triage case. Timeout budgets enforce this ceiling and prevent any single component from consuming the entire budget. The pipeline must always produce *something* within the time budget -- partial results with clear coverage gaps are acceptable; hanging indefinitely is not.
 
 ### 3.1 Timeout Configuration
 
@@ -370,10 +370,10 @@ RapidTriage's north star metric TARR (Time-to-Attorney-Ready Report) targets und
 | **Layer 3: Parser** (per record) | 100ms | Individual record parse; prevents single corrupt record from stalling |
 | **Layer 4: Enrichment** (LLM) | 30 seconds per call | Local LLM inference; includes model loading if cold |
 | **Layer 4: Enrichment** (YARA/Sigma) | 5 minutes total | Rule scanning across all artifacts |
-| `rt-timeline` (DuckDB insert batch) | 60 seconds | Batch insert of parsed events; DuckDB is fast |
-| `rt-intel` (Narrative generation) | 5 minutes | LLM narrative drafting for report sections |
-| `rt-report` (Full generation) | 30 minutes | HTML + DOCX rendering, template expansion, chart generation |
-| `rt-correlation` (Full analysis) | 20 minutes | Cross-artifact pattern detection across timeline |
+| `issen-timeline` (DuckDB insert batch) | 60 seconds | Batch insert of parsed events; DuckDB is fast |
+| `issen-intel` (Narrative generation) | 5 minutes | LLM narrative drafting for report sections |
+| `issen-report` (Full generation) | 30 minutes | HTML + DOCX rendering, template expansion, chart generation |
+| `issen-correlation` (Full analysis) | 20 minutes | Cross-artifact pattern detection across timeline |
 | WASM Plugin (Tier 2) | 60 seconds | Sandboxed execution with strict resource limits |
 | gRPC Plugin (Tier 3) | 30 seconds | External process call with connection timeout |
 
@@ -553,7 +553,7 @@ pub struct CheckpointStore {
 
 impl CheckpointStore {
     pub fn open(case_dir: &Path) -> Result<Self> {
-        let db_path = case_dir.join(".rapidtriage/checkpoints.db");
+        let db_path = case_dir.join(".issen/checkpoints.db");
         let db = rusqlite::Connection::open(&db_path)?;
         db.execute_batch("
             CREATE TABLE IF NOT EXISTS checkpoints (
@@ -900,7 +900,7 @@ pub fn retry_config_for_class(class: ErrorClass) -> RetryConfig {
 
 ## 6. Memory Pressure Handling
 
-Forensic evidence can be enormous -- 500GB+ disk images, millions of event log records, hundreds of thousands of registry keys. RapidTriage must handle memory pressure gracefully without losing parsed data.
+Forensic evidence can be enormous -- 500GB+ disk images, millions of event log records, hundreds of thousands of registry keys. Issen must handle memory pressure gracefully without losing parsed data.
 
 ### 6.1 Memory Budget and Monitoring
 
@@ -1035,7 +1035,7 @@ pub async fn process_streaming<P: StreamingParser>(
 
 ## 7. Plugin Crash Isolation
 
-RapidTriage supports three tiers of plugins. Each tier has different isolation guarantees:
+Issen supports three tiers of plugins. Each tier has different isolation guarantees:
 
 ### 7.1 Plugin Tier Isolation Matrix
 
@@ -1243,7 +1243,7 @@ pub async fn execute_plugin_with_recovery<T>(
 
 ## 8. LLM Fallback Chains
 
-The `rt-intel` component uses LLMs for narrative generation, classification, and enrichment. LLM availability is inherently unreliable -- models may be loading, GPU memory may be exhausted, or the user may not have a large model available. RapidTriage implements a multi-tier LLM fallback chain aligned with the architecture's model routing strategy.
+The `issen-intel` component uses LLMs for narrative generation, classification, and enrichment. LLM availability is inherently unreliable -- models may be loading, GPU memory may be exhausted, or the user may not have a large model available. Issen implements a multi-tier LLM fallback chain aligned with the architecture's model routing strategy.
 
 ### 8.1 LLM Fallback Tiers
 
@@ -1334,7 +1334,7 @@ impl ForensicLlmChain {
 
 ### 8.3 AI-Free Mode
 
-RapidTriage must function completely without any AI/LLM. This is both a resilience requirement and a user choice (some forensic labs prohibit AI processing of evidence).
+Issen must function completely without any AI/LLM. This is both a resilience requirement and a user choice (some forensic labs prohibit AI processing of evidence).
 
 When running in AI-free mode:
 - All LLM fallback chains immediately resolve to Tier 6 (pass-through)
@@ -1397,11 +1397,11 @@ pub fn compute_system_health(components: &[ComponentHealth]) -> HealthStatus {
 
 | Component | Health Check Method | Healthy Criteria | Degraded Criteria |
 |-----------|-------------------|------------------|-------------------|
-| `rt-pipeline` | Layer completion rate | All layers processing | Any layer using fallbacks |
-| `rt-timeline` | DuckDB query latency | Query < 100ms | Query 100ms-1s |
-| `rt-intel` | Model inference test | Primary model responds | Fallback model in use |
-| `rt-report` | Template render test | Full render < 5s | Render 5-30s |
-| `rt-correlation` | Pattern match test | All patterns evaluated | Subset of patterns |
+| `issen-pipeline` | Layer completion rate | All layers processing | Any layer using fallbacks |
+| `issen-timeline` | DuckDB query latency | Query < 100ms | Query 100ms-1s |
+| `issen-intel` | Model inference test | Primary model responds | Fallback model in use |
+| `issen-report` | Template render test | Full render < 5s | Render 5-30s |
+| `issen-correlation` | Pattern match test | All patterns evaluated | Subset of patterns |
 | WASM Plugins | Instance creation test | Instance starts < 1s | Instance starts 1-5s |
 | gRPC Plugins | gRPC health check | Response < 100ms | Response 100ms-1s |
 | DuckDB | Write throughput | > 100K records/s | 10K-100K records/s |
@@ -1413,7 +1413,7 @@ pub fn compute_system_health(components: &[ComponentHealth]) -> HealthStatus {
 The TUI and CLI display real-time pipeline health using a simplified status model:
 
 ```
-RapidTriage Pipeline Status
+Issen Pipeline Status
 ============================
 Evidence:    case-2026-0319.E01 (47.2 GB)
 TARR Budget: 02:15:30 remaining (43% used)
@@ -1443,7 +1443,7 @@ Memory:      Normal (4.2 GB / 12.8 GB)
 
 ### 10.1 Chaos Testing for Forensic Scenarios
 
-RapidTriage includes a built-in chaos testing framework that simulates the kinds of failures forensic tools actually encounter:
+Issen includes a built-in chaos testing framework that simulates the kinds of failures forensic tools actually encounter:
 
 | Test Scenario | Injection Method | Expected Behavior |
 |---------------|-----------------|-------------------|

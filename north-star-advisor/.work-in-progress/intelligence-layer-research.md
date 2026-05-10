@@ -1,13 +1,13 @@
-# RapidTriage Intelligence Layer — Research & Recommendations
+# Issen Intelligence Layer — Research & Recommendations
 
 > Research date: 2026-03-20
-> Scope: AI/ML integration strategy for the RapidTriage forensic triage platform
+> Scope: AI/ML integration strategy for the Issen forensic triage platform
 
 ---
 
 ## Table of Contents
 
-1. [AI-Assisted Forensic Report Generation](#1-ai-assisted-forensic-report-generation)
+1. [AI-Assisted Forensic Report Generation](#1-ai-assisted-forensic-repoissen-generation)
 2. [Forensic Intelligence / CTI Integration](#2-forensic-intelligence--cti-integration)
 3. [Embedding & RAG for Forensic Data](#3-embedding--rag-for-forensic-data)
 4. [Correlation & Pattern Detection](#4-correlation--pattern-detection)
@@ -45,7 +45,7 @@ The intersection of LLMs and digital forensics is now a serious research field w
 
 ### 1.2 Narrative Generation from Timeline Data
 
-The core use case for RapidTriage is transforming technical timelines into attorney-readable narratives. The research shows this is feasible but requires careful design:
+The core use case for Issen is transforming technical timelines into attorney-readable narratives. The research shows this is feasible but requires careful design:
 
 **What works well:**
 - Text summarization of forensic findings
@@ -61,7 +61,7 @@ The core use case for RapidTriage is transforming technical timelines into attor
 
 ### 1.3 Hallucination Prevention (Critical for Expert Witness Reports)
 
-This is the single most important concern for RapidTriage. A hallucinated fact in an expert witness report can:
+This is the single most important concern for Issen. A hallucinated fact in an expert witness report can:
 - Lead to sanctions against the examiner
 - Trigger Daubert challenges that exclude the entire report
 - End the examiner's career
@@ -72,7 +72,7 @@ This is the single most important concern for RapidTriage. A hallucinated fact i
 - Even RAG-focused legal AI tools produce incorrect information 17-34% of the time
 - 1,093 documented cases where courts found parties relied on hallucinated AI content
 
-**Recommended mitigation architecture for RapidTriage:**
+**Recommended mitigation architecture for Issen:**
 
 1. **Grounded generation only**: Every LLM-generated sentence must trace to specific artifacts in the evidence. No free-form generation.
 2. **Template + fill pattern**: LLM fills structured templates, not free-form prose. Templates enforce correct legal language.
@@ -90,7 +90,7 @@ This is the single most important concern for RapidTriage. A hallucinated fact i
 - **Non-determinism**: Same input may produce different output — run reports through deterministic post-processing
 - **Bias in training data**: LLMs may reflect biases from their training corpus; forensic reports must be objective
 
-**Recommendation for RapidTriage:**
+**Recommendation for Issen:**
 - Always label AI-assisted sections explicitly: "This narrative summary was generated with AI assistance and reviewed by [examiner name]"
 - Store the full generation provenance (model, prompt, raw output, edits) as part of the case file
 - Implement an "AI-free mode" for jurisdictions or clients that prohibit AI assistance
@@ -100,7 +100,7 @@ This is the single most important concern for RapidTriage. A hallucinated fact i
 
 The forensic report workflow demands a multi-tiered review pattern:
 
-**Recommended workflow for RapidTriage:**
+**Recommended workflow for Issen:**
 
 ```
 [Artifact Analysis] → [AI Draft Generation] → [Examiner Review Gate]
@@ -131,7 +131,7 @@ The forensic report workflow demands a multi-tiered review pattern:
 
 ### 2.1 MITRE ATT&CK Mapping from Forensic Artifacts
 
-MITRE ATT&CK provides the common language between forensic findings and threat intelligence. For RapidTriage, automated mapping should work at two levels:
+MITRE ATT&CK provides the common language between forensic findings and threat intelligence. For Issen, automated mapping should work at two levels:
 
 **Artifact-level mapping** (automated):
 - Registry persistence locations → T1547 (Boot or Logon Autostart Execution)
@@ -153,7 +153,7 @@ MITRE ATT&CK provides the common language between forensic findings and threat i
 
 ### 2.2 IOC Extraction and Enrichment
 
-RapidTriage should extract IOCs automatically during artifact parsing:
+Issen should extract IOCs automatically during artifact parsing:
 
 **IOC types to extract:**
 - File hashes (MD5, SHA1, SHA256) from filesystem artifacts
@@ -186,11 +186,11 @@ RapidTriage should extract IOCs automatically during artifact parsing:
 - Connectors: AlienVault OTX, VulnCheck, MISP, MITRE ATT&CK, AbuseCH (free feeds)
 - Integration: Bi-directional sync with MISP via native connector
 
-**Recommended integration strategy for RapidTriage:**
+**Recommended integration strategy for Issen:**
 - Implement a TI abstraction layer with pluggable backends (MISP, OpenCTI, VirusTotal, custom)
 - Support both online (API query) and offline (exported feed file) modes for air-gapped labs
 - Cache enrichment results locally to minimize API calls and support offline analysis
-- Export RapidTriage findings back to MISP/OpenCTI for sharing within trusted communities
+- Export Issen findings back to MISP/OpenCTI for sharing within trusted communities
 
 ### 2.4 Dark Web Monitoring Integration
 
@@ -202,7 +202,7 @@ For infostealer and credential exposure checks:
 - Have I Been Pwned API for email/domain breach checks
 - Custom Telegram channel monitoring (where trading has shifted post-Genesis Market takedown)
 
-**Note**: Dark web monitoring is primarily a SaaS integration play — RapidTriage should consume enrichment data from these platforms, not build its own dark web scraping capability.
+**Note**: Dark web monitoring is primarily a SaaS integration play — Issen should consume enrichment data from these platforms, not build its own dark web scraping capability.
 
 ### 2.5 Infostealer Log Parsing and Correlation
 
@@ -220,7 +220,7 @@ The infostealer ecosystem is critical for modern IR cases:
 - Parsing tools are needed to normalize formats across different stealers
 - Key data fields: credentials (URL, username, password), cookies, autofill data, browser history, cryptocurrency wallets, system info
 
-**Recommended capability for RapidTriage:**
+**Recommended capability for Issen:**
 - Infostealer log parser plugin that normalizes common formats (RedLine, Raccoon, Lumma, Vidar, Acreed)
 - Correlation engine: match extracted credentials/cookies against the organization's domain inventory
 - Timeline integration: when were credentials stolen? (system info timestamps from the stealer log)
@@ -249,7 +249,7 @@ Standard text embeddings may not capture the semantic meaning of forensic artifa
 
 ### 3.2 RAG Architecture for Forensic Knowledge
 
-**Two distinct RAG use cases for RapidTriage:**
+**Two distinct RAG use cases for Issen:**
 
 **Case-specific RAG** (per investigation):
 - Index all artifacts, parsed results, and examiner notes for the current case
@@ -284,7 +284,7 @@ Standard text embeddings may not capture the semantic meaning of forensic artifa
 - Combine with knowledge graph traversal for relationship-based matching
 
 **Recommended vector databases (local/air-gapped compatible):**
-- **Qdrant** (Rust-native): Best fit for RapidTriage's Rust stack; supports hybrid search, can run embedded or as a service
+- **Qdrant** (Rust-native): Best fit for Issen's Rust stack; supports hybrid search, can run embedded or as a service
 - **LanceDB** (Rust-native): Embedded vector database, serverless, good for single-machine deployments
 - **SQLite with vector extensions**: Minimal dependency for simple cases
 - **Milvus Lite**: Embedded mode for development, full cluster for production
@@ -299,7 +299,7 @@ Knowledge graphs complement vector search by modeling explicit relationships:
 - **STIX 2.1**: Foundation for threat intelligence knowledge graphs
 - **CRATELO**: Specifically targets cyber incident and forensic data representation
 
-**Recommended graph structure for RapidTriage:**
+**Recommended graph structure for Issen:**
 ```
 [User Account] ──uses──→ [Device]
        ↓                      ↓
@@ -341,7 +341,7 @@ Research validates several approaches for forensic timeline anomaly detection:
 - Results: 70.59% sensitivity, 82.21% specificity, 83.14% accuracy
 - Advantage: automatically generates analysis reports for investigators
 
-**Recommended approach for RapidTriage:**
+**Recommended approach for Issen:**
 - **Temporal density analysis**: Identify time periods with unusual activity volume (e.g., burst of file modifications at 3 AM)
 - **Behavioral baselining**: Learn normal patterns for a user/system, flag deviations
 - **Inter-arrival time analysis**: Detect automated/scripted activity (inhuman speed between events)
@@ -349,7 +349,7 @@ Research validates several approaches for forensic timeline anomaly detection:
 
 ### 4.2 Clustering Related Events
 
-**Cross-artifact correlation is RapidTriage's core differentiator.** Example correlation chain:
+**Cross-artifact correlation is Issen's core differentiator.** Example correlation chain:
 
 ```
 Browser download (Chrome History) → File creation (USN Journal) →
@@ -374,10 +374,10 @@ Registry modification (Registry hive) → Scheduled task creation (Task XML)
 - Nine workflow modules: NTFS exploration, high-resolution timelines, browser/activity extraction, static malware detection, credential enumeration
 - Deterministic, artifact-driven analysis for objectively demonstrable outputs
 
-**Recommendation for RapidTriage:**
+**Recommendation for Issen:**
 - Build activity reconstruction as a first-class feature
 - Map activities to human-readable descriptions: "User John opened malicious.docx from email at 14:32, which spawned PowerShell at 14:33, which downloaded payload.exe at 14:34"
-- This is exactly the forensic-to-legal translation that is RapidTriage's differentiator
+- This is exactly the forensic-to-legal translation that is Issen's differentiator
 
 ### 4.4 Network of Artifacts Visualization
 
@@ -424,7 +424,7 @@ This is a specific and valuable use case for mobile forensic cases. The workflow
 - `phash` crate: Perceptual hash with Hamming distance comparison
 - Both use Hamming distance for similarity scoring; threshold of 2-5 bits on 128-bit hash for near-duplicates
 
-**Recommended approach for RapidTriage:**
+**Recommended approach for Issen:**
 - Use dHash as fast pre-filter (eliminates obviously different images)
 - Use pHash for robust matching of candidates
 - Combine with EXIF metadata analysis for provenance chain reconstruction
@@ -463,7 +463,7 @@ Key metadata fields for forensic provenance:
    - Currently Latin alphabet only
    - Early preview stage but promising
 
-**Recommended for RapidTriage:**
+**Recommended for Issen:**
 - Tesseract bindings for production use (mature, multilingual)
 - `ocrs` as experimental option for environments where Tesseract installation is problematic
 - Preprocessing pipeline: grayscale → contrast enhancement (CLAHE) → Gaussian blur → Otsu thresholding → upscaling
@@ -535,13 +535,13 @@ Key metadata fields for forensic provenance:
 
 ### 6.4 ForensicLLM as a Starting Point
 
-The ForensicLLM project provides a blueprint for RapidTriage:
+The ForensicLLM project provides a blueprint for Issen:
 - Fine-tuned LLaMA-3.1-8B on forensic domain data
 - 4-bit quantization for resource-constrained environments
 - RAG comparison baseline
 - Published methodology for creating forensic training data
 
-**Recommendation:** Consider fine-tuning a model on RapidTriage's specific output format and forensic vocabulary, using the ForensicLLM approach as a template.
+**Recommendation:** Consider fine-tuning a model on Issen's specific output format and forensic vocabulary, using the ForensicLLM approach as a template.
 
 ---
 
@@ -549,7 +549,7 @@ The ForensicLLM project provides a blueprint for RapidTriage:
 
 ### 7.1 Sigma Rules Integration
 
-RapidTriage's `tl` (timeline) tool already has Sigma support. To deepen this:
+Issen's `tl` (timeline) tool already has Sigma support. To deepen this:
 
 **Current state of Sigma:**
 - Generic, open YAML-based signature format for log events
@@ -565,7 +565,7 @@ RapidTriage's `tl` (timeline) tool already has Sigma support. To deepen this:
 
 ### 7.2 YARA Rules Integration
 
-**YARA capabilities relevant to RapidTriage:**
+**YARA capabilities relevant to Issen:**
 - Malware detection in filesystem images (scan mounted E01/raw images)
 - IOC detection: file names, registry keys, network artifacts
 - Memory dump analysis
@@ -582,11 +582,11 @@ RapidTriage's `tl` (timeline) tool already has Sigma support. To deepen this:
 - String extraction with MITRE ATT&CK mapping
 - VirusTotal and Malware Bazaar API integration
 - NSRL database queries for known-good filtering
-- Written in Rust — directly relevant architecture reference for RapidTriage
+- Written in Rust — directly relevant architecture reference for Issen
 
 ### 7.3 Custom Rule Engine
 
-RapidTriage should support a layered detection approach:
+Issen should support a layered detection approach:
 
 ```
 Layer 1: Sigma rules (log/event-based detection)
@@ -604,7 +604,7 @@ Layer 5: LLM-assisted analysis (natural language pattern description)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      RapidTriage Intelligence Layer                  │
+│                      Issen Intelligence Layer                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
@@ -801,7 +801,7 @@ Layer 5: LLM-assisted analysis (natural language pattern description)
 
 ### Local LLM Deployment
 - [Local LLM Deployment: Privacy-First AI Guide (DigitalApplied)](https://www.digitalapplied.com/blog/local-llm-deployment-privacy-guide-2025)
-- [Using Local LLMs for Criminal Intelligence Report Generation (Medium)](https://alessandro-negro.medium.com/using-local-deployment-of-open-source-llms-for-criminal-intelligence-report-generation-ddb8db944620)
+- [Using Local LLMs for Criminal Intelligence Report Generation (Medium)](https://alessandro-negro.medium.com/using-local-deployment-of-open-source-llms-for-criminal-intelligence-repoissen-generation-ddb8db944620)
 - [Self-hosted Llama Deployments for Regulated Industries (Meta)](https://www.llama.com/docs/deployment/regulated-industry-self-hosting/)
 - [Run LLMs Locally with Ollama (Cohorte)](https://www.cohorte.co/blog/run-llms-locally-with-ollama-privacy-first-ai-for-developers-in-2025)
 - [Self-Hosted LLM Guide: Setup, Tools & Cost Comparison 2026 (PremAI)](https://blog.premai.io/self-hosted-llm-guide-setup-tools-cost-comparison-2026/)

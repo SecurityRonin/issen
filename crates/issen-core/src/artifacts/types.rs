@@ -87,16 +87,16 @@ mod tests {
 
     #[test]
     fn test_linux_artifact_types_display() {
-        asseissen_eq!(format!("{}", ArtifactType::Bodyfile), "Bodyfile");
-        asseissen_eq!(format!("{}", ArtifactType::NetworkState), "Network State");
-        asseissen_eq!(format!("{}", ArtifactType::ProcessList), "Process List");
-        asseissen_eq!(format!("{}", ArtifactType::PackageList), "Package List");
-        asseissen_eq!(format!("{}", ArtifactType::SystemInfo), "System Info");
-        asseissen_eq!(format!("{}", ArtifactType::LoginHistory), "Login History");
-        asseissen_eq!(format!("{}", ArtifactType::CrontabConfig), "Crontab");
-        asseissen_eq!(format!("{}", ArtifactType::HashManifest), "Hash Manifest");
-        asseissen_eq!(format!("{}", ArtifactType::RootkitScan), "Rootkit Scan");
-        asseissen_eq!(format!("{}", ArtifactType::SystemConfig), "System Config");
+        assert_eq!(format!("{}", ArtifactType::Bodyfile), "Bodyfile");
+        assert_eq!(format!("{}", ArtifactType::NetworkState), "Network State");
+        assert_eq!(format!("{}", ArtifactType::ProcessList), "Process List");
+        assert_eq!(format!("{}", ArtifactType::PackageList), "Package List");
+        assert_eq!(format!("{}", ArtifactType::SystemInfo), "System Info");
+        assert_eq!(format!("{}", ArtifactType::LoginHistory), "Login History");
+        assert_eq!(format!("{}", ArtifactType::CrontabConfig), "Crontab");
+        assert_eq!(format!("{}", ArtifactType::HashManifest), "Hash Manifest");
+        assert_eq!(format!("{}", ArtifactType::RootkitScan), "Rootkit Scan");
+        assert_eq!(format!("{}", ArtifactType::SystemConfig), "System Config");
     }
 
     #[test]
@@ -104,6 +104,6 @@ mod tests {
         let original = ArtifactType::Bodyfile;
         let json = serde_json::to_string(&original).expect("serialize");
         let back: ArtifactType = serde_json::from_str(&json).expect("deserialize");
-        asseissen_eq!(original, back);
+        assert_eq!(original, back);
     }
 }

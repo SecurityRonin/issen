@@ -1,4 +1,4 @@
-# RapidTriage: Accessibility Strategy
+# Issen: Accessibility Strategy
 
 > **Parent**: [USER_JOURNEYS.md](USER_JOURNEYS.md)
 > **Related**: [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md)
@@ -7,11 +7,11 @@
 > **Status**: Active
 > **WCAG Target**: 2.1 Level AA (HTML Reports); best-effort (TUI/CLI)
 
-Comprehensive accessibility patterns for RapidTriage, a multi-surface forensic triage platform (CLI, TUI, HTML reports, future Tauri GUI, future Web UI). This document covers WCAG compliance for attorney-facing HTML reports, terminal accessibility for examiner-facing TUI, CLI output modes for programmatic access, and inclusive design for long forensic analysis sessions.
+Comprehensive accessibility patterns for Issen, a multi-surface forensic triage platform (CLI, TUI, HTML reports, future Tauri GUI, future Web UI). This document covers WCAG compliance for attorney-facing HTML reports, terminal accessibility for examiner-facing TUI, CLI output modes for programmatic access, and inclusive design for long forensic analysis sessions.
 
 ## Document Purpose
 
-This document defines **accessibility as a first-class citizen** in RapidTriage. It provides:
+This document defines **accessibility as a first-class citizen** in Issen. It provides:
 
 1. WCAG 2.1 AA compliance checklist (HTML reports and web surfaces)
 2. Multi-surface accessibility matrix (CLI, TUI, HTML, GUI, print)
@@ -19,10 +19,10 @@ This document defines **accessibility as a first-class citizen** in RapidTriage.
 4. Focus management during evidence parsing and report generation
 5. Cognitive load mitigation for 12-16 hour IR sessions
 6. Terminal accessibility patterns for TUI and CLI
-7. Print/PDF accessibility for court-ready deliverables
+7. Print/PDF accessibility for couissen-ready deliverables
 8. Testing protocols and tooling per surface
 
-**Design Principle**: Accessibility is not a feature -- it is the foundation. Every pattern here enables users to accomplish their goals regardless of ability. No forensic tool advertises WCAG compliance today; RapidTriage treats this as unoccupied differentiation.
+**Design Principle**: Accessibility is not a feature -- it is the foundation. Every pattern here enables users to accomplish their goals regardless of ability. No forensic tool advertises WCAG compliance today; Issen treats this as unoccupied differentiation.
 
 **Relationship to Other Documents:**
 - **UI_DESIGN_SYSTEM.md** implements the visual tokens (focus rings, colors, contrast ratios)
@@ -33,7 +33,7 @@ This document defines **accessibility as a first-class citizen** in RapidTriage.
 
 ## 1. Multi-Surface Accessibility Matrix
 
-RapidTriage spans five surfaces with different accessibility constraints and strategies:
+Issen spans five surfaces with different accessibility constraints and strategies:
 
 | Surface | Technology | WCAG Target | Screen Reader | Keyboard Nav | Dark Mode | Color Independence |
 |---------|-----------|-------------|---------------|--------------|-----------|-------------------|
@@ -146,7 +146,7 @@ This checklist applies to HTML reports, the Tauri GUI, and future Web UI. Criter
 
 ### 2.1 Perceivable
 
-| Criterion | Requirement | RapidTriage Implementation | Status |
+| Criterion | Requirement | Issen Implementation | Status |
 |-----------|-------------|---------------------------|--------|
 | **1.1.1 Non-text Content** | All images have alt text | Alt text on density heatmaps, timeline charts, evidence screenshots; `aria-label` on icon-only buttons | Planned |
 | **1.3.1 Info and Relationships** | Semantic HTML structure | `<header>`, `<nav>`, `<main>`, `<section>`, `<aside>` landmarks; heading hierarchy H1-H4; form `<label>` associations | Planned |
@@ -163,13 +163,13 @@ This checklist applies to HTML reports, the Tauri GUI, and future Web UI. Criter
 
 ### 2.2 Operable
 
-| Criterion | Requirement | RapidTriage Implementation | Status |
+| Criterion | Requirement | Issen Implementation | Status |
 |-----------|-------------|---------------------------|--------|
 | **2.1.1 Keyboard** | All functionality via keyboard | Tab through interactive elements; Enter/Space to activate; arrow keys in data tables; vim-style shortcuts as progressive enhancement | Planned |
 | **2.1.2 No Keyboard Trap** | Keyboard focus never trapped | Modal dialogs trap focus but Esc always exits; filter dropdowns close on Esc; export dialogs closeable | Planned |
 | **2.1.4 Character Key Shortcuts** | Single-key shortcuts configurable | `j`/`k` navigation disabled when focus in input; `?` shortcut help; all shortcuts remappable in settings | Planned |
 | **2.4.1 Bypass Blocks** | Skip navigation links | Skip links: "Skip to timeline", "Skip to findings", "Skip to report controls" | Planned |
-| **2.4.2 Page Titled** | Descriptive page titles | `<title>` includes case name and section: "RapidTriage -- Case 2024-0042 -- Timeline" | Planned |
+| **2.4.2 Page Titled** | Descriptive page titles | `<title>` includes case name and section: "Issen -- Case 2024-0042 -- Timeline" | Planned |
 | **2.4.3 Focus Order** | Logical focus sequence | Tab order: navigation > filters > main content > detail pane > actions | Planned |
 | **2.4.6 Headings and Labels** | Descriptive headings | Section headings describe content: "Timeline Events (12,847)", "Findings Summary (7 Critical)" | Planned |
 | **2.4.7 Focus Visible** | Visible focus indicator | `outline: 2px solid var(--ring); outline-offset: 2px;` on all focusable elements | Planned |
@@ -178,7 +178,7 @@ This checklist applies to HTML reports, the Tauri GUI, and future Web UI. Criter
 
 ### 2.3 Understandable
 
-| Criterion | Requirement | RapidTriage Implementation | Status |
+| Criterion | Requirement | Issen Implementation | Status |
 |-----------|-------------|---------------------------|--------|
 | **3.1.1 Language of Page** | `lang` attribute set | `<html lang="en">` on all HTML reports; Word documents set language to en-US | Planned |
 | **3.1.2 Language of Parts** | `lang` on foreign text | Forensic artifacts may contain non-English strings; wrapped in `<span lang="...">` when detectable | Planned |
@@ -193,7 +193,7 @@ This checklist applies to HTML reports, the Tauri GUI, and future Web UI. Criter
 
 ### 2.4 Robust
 
-| Criterion | Requirement | RapidTriage Implementation | Status |
+| Criterion | Requirement | Issen Implementation | Status |
 |-----------|-------------|---------------------------|--------|
 | **4.1.1 Parsing** | Valid HTML | No duplicate IDs; proper nesting; W3C validator clean; unique IDs per timeline event | Planned |
 | **4.1.2 Name, Role, Value** | ARIA on custom widgets | `role="grid"` on data tables; `role="tree"` on artifact tree; `role="tablist"` on view switcher; `aria-sort` on sortable columns | Planned |
@@ -205,7 +205,7 @@ This checklist applies to HTML reports, the Tauri GUI, and future Web UI. Criter
 
 ### 3.1 The Challenge
 
-RapidTriage involves:
+Issen involves:
 - **8-10 minute P95 parse time** with 5 sequential stages (ingest, validate, parse, correlate, index)
 - **Streaming output** as artifacts are parsed in real-time
 - **Progress states** that update frequently across multiple parsers running in parallel
@@ -666,7 +666,7 @@ Long-running forensic operations must set clear expectations:
 
 ## 6. Color Independence
 
-Forensic tools typically rely heavily on color coding for artifact types and severity. RapidTriage ensures no information is conveyed by color alone.
+Forensic tools typically rely heavily on color coding for artifact types and severity. Issen ensures no information is conveyed by color alone.
 
 ### 6.1 Artifact Type Encoding
 
