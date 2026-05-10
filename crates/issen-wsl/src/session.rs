@@ -1,4 +1,6 @@
-//! WSL session detection — correlates EVTX events into session lifetimes.
+//! WSL session detection — correlates EVTX events into session lifetimes by PID.
+
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SessionEventKind {
@@ -31,6 +33,36 @@ impl WslSession {
 }
 
 /// Correlate a slice of `SessionEvent`s into `WslSession`s by PID.
-pub fn build_sessions(_events: &[SessionEvent]) -> Vec<WslSession> {
-    todo!("implement build_sessions")
+///
+/// Events must be pre-sorted by timestamp (or at least: starts before stops).
+/// An orphaned Stop (no preceding Start for that PID) is silently ignored.
+pub fn build_sessions(events: &[SessionEvent]) -> Vec<WslSession> {
+    let mut open: HashMap<u32, WslSession> = HashMap::new();
+    let mut finished: Vec<WslSession> = Vec::new();
+
+    for ev in events {
+        match ev.kind {
+            SessionEventKind::Start => {
+                open.insert(ev.windows_pid, WslSession {
+                    distro: ev.distro.clone().unwrap_or_default(),
+                    windows_pid: ev.windows_pid,
+                    start_ns: ev.timestamp_ns,
+                    end_ns: None,
+                    user: ev.user.clone(),
+                });
+            }
+            SessionEventKind::Stop => {
+                if let Some(mut session) = open.remove(&ev.windows_pid) {
+                    session.end_ns = Some(ev.timestamp_ns);
+                    finished.push(session);
+                }
+                // Orphaned stop: no open session for this PID → ignore.
+            }
+        }
+    }
+
+    // Remaining open sessions (no stop seen).
+    finished.extend(open.into_values());
+    finished.sort_by_key(|s| s.start_ns);
+    finished
 }
