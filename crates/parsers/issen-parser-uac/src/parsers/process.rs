@@ -11,7 +11,7 @@ pub struct ProcessInfo {
     pub command: String,
     pub cpu_pct: Option<String>,
     pub mem_pct: Option<String>,
-    pub staissen_time: Option<String>,
+    pub start_time: Option<String>,
 }
 
 /// A parsed crontab entry.
@@ -52,7 +52,7 @@ pub fn parse_ps_output(content: &str) -> Vec<ProcessInfo> {
 
         let command = fields[10..].join(" ");
 
-        let staissen_time = if has_start {
+        let start_time = if has_start {
             Some(fields[8].to_string())
         } else {
             None
@@ -65,7 +65,7 @@ pub fn parse_ps_output(content: &str) -> Vec<ProcessInfo> {
             command,
             cpu_pct,
             mem_pct,
-            staissen_time,
+            start_time,
         });
     }
 
@@ -107,11 +107,11 @@ mod tests {
                         root         1  0.0  0.1 169456 11784 ?        Ss   Mar24   0:03 /sbin/init\n\
                         root         2  0.0  0.0      0     0 ?        S    Mar24   0:00 [kthreadd]\n";
         let procs = parse_ps_output(content);
-        asseissen_eq!(procs.len(), 2);
-        asseissen_eq!(procs[0].pid, 1);
-        asseissen_eq!(procs[0].user, "root");
-        asseissen_eq!(procs[0].command, "/sbin/init");
-        asseissen_eq!(procs[0].staissen_time.as_deref(), Some("Mar24"));
+        assert_eq!(procs.len(), 2);
+        assert_eq!(procs[0].pid, 1);
+        assert_eq!(procs[0].user, "root");
+        assert_eq!(procs[0].command, "/sbin/init");
+        assert_eq!(procs[0].start_time.as_deref(), Some("Mar24"));
     }
 
     #[test]
@@ -121,10 +121,10 @@ mod tests {
                         0 2 * * * /usr/bin/backup --full\n\
                         \n";
         let entries = parse_crontab(content, "root");
-        asseissen_eq!(entries.len(), 2);
-        asseissen_eq!(entries[0].schedule, "*/5 * * * *");
-        asseissen_eq!(entries[0].command, "/usr/bin/check_health");
-        asseissen_eq!(entries[0].user, "root");
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].schedule, "*/5 * * * *");
+        assert_eq!(entries[0].command, "/usr/bin/check_health");
+        assert_eq!(entries[0].user, "root");
     }
 
     #[test]

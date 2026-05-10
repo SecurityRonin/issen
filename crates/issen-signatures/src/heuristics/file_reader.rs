@@ -94,7 +94,7 @@ mod tests {
         let reader = MockFileReader(data);
         assert!(reader.is_available());
         let bytes = reader.read_first_bytes(10, 8).unwrap();
-        asseissen_eq!(&bytes[..4], b"\x89PNG");
+        assert_eq!(&bytes[..4], b"\x89PNG");
     }
 
     #[test]
@@ -103,7 +103,7 @@ mod tests {
         data.insert(5, vec![0xFF, 0xD8, 0xFF]);
         let reader = MockFileReader(data);
         let bytes = reader.read_first_bytes(5, 100).unwrap();
-        asseissen_eq!(bytes.len(), 3);
+        assert_eq!(bytes.len(), 3);
     }
 
     #[test]

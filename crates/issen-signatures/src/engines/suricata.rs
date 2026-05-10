@@ -230,14 +230,14 @@ impl SuricataParser {
         }
 
         // Handle IP groups: [10.0.0.1,10.0.0.2]
-        let stripped = raw.trim_staissen_matches('[').trim_end_matches(']');
+        let stripped = raw.trim_start_matches('[').trim_end_matches(']');
         for part in stripped.split(',') {
             let part = part.trim();
             if part.is_empty() || part.starts_with('$') || part == "any" {
                 continue;
             }
             // Strip negation prefix.
-            let clean = part.trim_staissen_matches('!');
+            let clean = part.trim_start_matches('!');
 
             if clean.contains('/') {
                 iocs.push(SuricataIoc::Network(clean.to_string()));
@@ -311,8 +311,8 @@ mod tests {
         let rule = SuricataParser::parse_rule(basic_rule())
             .unwrap()
             .expect("should parse");
-        asseissen_eq!(rule.sid, 1_000_001);
-        asseissen_eq!(rule.msg, "Evil traffic");
+        assert_eq!(rule.sid, 1_000_001);
+        assert_eq!(rule.msg, "Evil traffic");
         assert!(rule.iocs.contains(&SuricataIoc::Ip("192.168.1.100".into())));
         assert!(rule.iocs.contains(&SuricataIoc::Ip("10.0.0.1".into())));
         assert!(rule
@@ -361,8 +361,8 @@ mod tests {
     fn test_parse_rule_sid_msg() {
         let line = r#"alert tcp any any -> any any (msg:"Hello World"; sid:99; rev:1;)"#;
         let rule = SuricataParser::parse_rule(line).unwrap().unwrap();
-        asseissen_eq!(rule.sid, 99);
-        asseissen_eq!(rule.msg, "Hello World");
+        assert_eq!(rule.sid, 99);
+        assert_eq!(rule.msg, "Hello World");
     }
 
     // 6. Classtype and reference extraction.
@@ -370,8 +370,8 @@ mod tests {
     fn test_parse_rule_classtype_reference() {
         let line = r#"alert tcp any any -> any any (msg:"Ref test"; sid:100; rev:1; classtype:trojan-activity; reference:url,example.com/report;)"#;
         let rule = SuricataParser::parse_rule(line).unwrap().unwrap();
-        asseissen_eq!(rule.classtype.as_deref(), Some("trojan-activity"));
-        asseissen_eq!(rule.references, vec!["url,example.com/report"]);
+        assert_eq!(rule.classtype.as_deref(), Some("trojan-activity"));
+        assert_eq!(rule.references, vec!["url,example.com/report"]);
     }
 
     // 7. Comment lines should be skipped.
@@ -398,9 +398,9 @@ mod tests {
             r#"alert udp 9.8.7.6 any -> 3.2.1.0 53 (msg:"R2"; sid:2; rev:1;)"#,
         );
         let rules = SuricataParser::parse_rules(&data);
-        asseissen_eq!(rules.len(), 2);
-        asseissen_eq!(rules[0].sid, 1);
-        asseissen_eq!(rules[1].sid, 2);
+        assert_eq!(rules.len(), 2);
+        assert_eq!(rules[0].sid, 1);
+        assert_eq!(rules[1].sid, 2);
     }
 
     // 10. Parse from a temp file.
@@ -415,8 +415,8 @@ mod tests {
         f.flush().unwrap();
 
         let rules = SuricataParser::parse_file(f.path()).unwrap();
-        asseissen_eq!(rules.len(), 1);
-        asseissen_eq!(rules[0].sid, 42);
+        assert_eq!(rules.len(), 1);
+        assert_eq!(rules[0].sid, 42);
     }
 
     // 11. Extract IOCs into a NetworkIocStore.
@@ -428,7 +428,7 @@ mod tests {
         let mut store = NetworkIocStore::new("suricata-test");
         let n = SuricataParser::extract_to_network_store(&[rule], &mut store);
         // 1 IP + 1 CIDR + 1 domain = 3
-        asseissen_eq!(n, 3);
+        assert_eq!(n, 3);
         assert!(store.lookup_ip("1.2.3.4").is_some());
         assert!(store.lookup_ip("10.0.0.5").is_some()); // inside the /24
         assert!(store.lookup_domain("bad.example.org").is_some());

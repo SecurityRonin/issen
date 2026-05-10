@@ -165,7 +165,7 @@ mod tests {
     #[test]
     fn compile_valid_rule() {
         let engine = YaraEngine::from_source(RULE_MALWARE).unwrap();
-        asseissen_eq!(engine.rule_count(), 1);
+        assert_eq!(engine.rule_count(), 1);
     }
 
     // 2. Compile an invalid rule and expect an error.
@@ -183,8 +183,8 @@ mod tests {
     fn scan_matching_bytes() {
         let engine = YaraEngine::from_source(RULE_MALWARE).unwrap();
         let matches = engine.scan_bytes(b"this contains malware inside").unwrap();
-        asseissen_eq!(matches.len(), 1);
-        asseissen_eq!(matches[0].rule_name, "detect_malware");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].rule_name, "detect_malware");
         assert!(matches[0].strings_matched.contains(&"$a".to_owned()));
     }
 
@@ -214,11 +214,11 @@ mod tests {
             }
         "#;
         let engine = YaraEngine::from_source(rules).unwrap();
-        asseissen_eq!(engine.rule_count(), 2);
+        assert_eq!(engine.rule_count(), 2);
 
         let matches = engine.scan_bytes(b"only alpha here").unwrap();
-        asseissen_eq!(matches.len(), 1);
-        asseissen_eq!(matches[0].rule_name, "alpha");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].rule_name, "alpha");
     }
 
     // 6. Rule with tags — verify tags appear in YaraMatch.
@@ -234,7 +234,7 @@ mod tests {
         "#;
         let engine = YaraEngine::from_source(rule).unwrap();
         let matches = engine.scan_bytes(b"deliver the payload now").unwrap();
-        asseissen_eq!(matches.len(), 1);
+        assert_eq!(matches.len(), 1);
         assert!(matches[0].tags.contains(&"trojan".to_owned()));
         assert!(matches[0].tags.contains(&"dropper".to_owned()));
     }
@@ -256,8 +256,8 @@ mod tests {
 
         let engine = YaraEngine::from_source(RULE_MALWARE).unwrap();
         let matches = engine.scan_file(tmp.path()).unwrap();
-        asseissen_eq!(matches.len(), 1);
-        asseissen_eq!(matches[0].rule_name, "detect_malware");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].rule_name, "detect_malware");
     }
 
     // 9. Compile from multiple sources.
@@ -280,10 +280,10 @@ mod tests {
             }
         "#;
         let engine = YaraEngine::from_sources(&[src1, src2]).unwrap();
-        asseissen_eq!(engine.rule_count(), 2);
+        assert_eq!(engine.rule_count(), 2);
 
         let matches = engine.scan_bytes(b"one and two").unwrap();
-        asseissen_eq!(matches.len(), 2);
+        assert_eq!(matches.len(), 2);
     }
 
     // 10. Rule with hex strings.
@@ -302,8 +302,8 @@ mod tests {
         // Data that contains the hex pattern (MZ header).
         let data: &[u8] = &[0x4D, 0x5A, 0x90, 0x00, 0xFF, 0xFF];
         let matches = engine.scan_bytes(data).unwrap();
-        asseissen_eq!(matches.len(), 1);
-        asseissen_eq!(matches[0].rule_name, "hex_detect");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].rule_name, "hex_detect");
         assert!(matches[0].strings_matched.contains(&"$hex".to_owned()));
 
         // Data that does NOT contain the hex pattern.
@@ -323,11 +323,11 @@ mod tests {
         tmp.flush().unwrap();
 
         let engine = YaraEngine::from_file(tmp.path()).unwrap();
-        asseissen_eq!(engine.rule_count(), 1);
+        assert_eq!(engine.rule_count(), 1);
 
         let matches = engine.scan_bytes(b"read from disk").unwrap();
-        asseissen_eq!(matches.len(), 1);
-        asseissen_eq!(matches[0].rule_name, "from_file");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].rule_name, "from_file");
     }
 
     // 12. Namespace defaults to "default".
@@ -335,7 +335,7 @@ mod tests {
     fn default_namespace() {
         let engine = YaraEngine::from_source(RULE_MALWARE).unwrap();
         let matches = engine.scan_bytes(b"malware").unwrap();
-        asseissen_eq!(matches.len(), 1);
-        asseissen_eq!(matches[0].namespace, "default");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].namespace, "default");
     }
 }

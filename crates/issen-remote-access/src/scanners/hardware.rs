@@ -64,7 +64,7 @@ impl HardwareScanner {
                                     ("service_name".into(), svc.name.clone()),
                                     ("display_name".into(), svc.display_name.clone()),
                                     ("image_path".into(), svc.image_path.clone()),
-                                    ("staissen_type".into(), svc.staissen_type.to_string()),
+                                    ("start_type".into(), svc.start_type.to_string()),
                                 ]),
                             });
                         break; // Don't double-match the same service
@@ -189,22 +189,22 @@ mod tests {
             name: "hpiLO".into(),
             display_name: "HP iLO Management Service".into(),
             image_path: r"C:\Program Files\HP\iLO\hpilod.exe".into(),
-            staissen_type: 2,
+            start_type: 2,
             service_type: 16,
             account: Some("LocalSystem".into()),
         });
 
         let scanner = HardwareScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "HP iLO");
-        asseissen_eq!(findings[0].category, RemoteAccessCategory::HardwareRemote);
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "HP iLO");
+        assert_eq!(findings[0].category, RemoteAccessCategory::HardwareRemote);
+        assert_eq!(
             findings[0].detection_source,
             DetectionSource::CategoryScanner("hardware".into())
         );
         assert!(!findings[0].artifacts.is_empty());
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].artifact_type,
             HitArtifactType::Service
         );
@@ -243,15 +243,15 @@ mod tests {
             display_name: "Intel(R) Management and Security Application Local Management Service"
                 .into(),
             image_path: r"C:\Program Files\Intel\iCLS Client\LMS.exe".into(),
-            staissen_type: 2,
+            start_type: 2,
             service_type: 16,
             account: Some("LocalSystem".into()),
         });
 
         let scanner = HardwareScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "Intel Local Management Service");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "Intel Local Management Service");
         assert!(!findings[0].artifacts.is_empty());
     }
 
@@ -268,14 +268,14 @@ mod tests {
             name: "iDRAC Service Module".into(),
             display_name: "Dell iDRAC Service Module".into(),
             image_path: r"C:\Program Files\Dell\iDRAC\iDRACsvc.exe".into(),
-            staissen_type: 2,
+            start_type: 2,
             service_type: 16,
             account: Some("LocalSystem".into()),
         });
 
         let scanner = HardwareScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "Dell iDRAC");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "Dell iDRAC");
     }
 }

@@ -248,7 +248,7 @@ pub(super) fn check_temporal_patterns(bodyfile: &[BodyfileEntry], alerts: &mut V
         .map(|(hour, paths)| (*hour, paths))
         .collect();
 
-    burst_hours.soissen_by_key(|(hour, _)| *hour);
+    burst_hours.sort_by_key(|(hour, _)| *hour);
 
     for (hour, paths) in &burst_hours {
         let count = paths.len();

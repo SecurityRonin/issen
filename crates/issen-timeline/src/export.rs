@@ -8,7 +8,7 @@ impl TimelineStore {
     ///
     /// The SQLite file includes the full timeline, evidence source metadata,
     /// and is suitable for legal hold, archival, and case exchange.
-    pub fn expoissen_sqlite(&self, output_path: &Path) -> Result<u64, TimelineStoreError> {
+    pub fn export_sqlite(&self, output_path: &Path) -> Result<u64, TimelineStoreError> {
         let rows = self.query(&TimelineQuery::new())?;
         let row_count = rows.len() as u64;
 
@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[test]
-    fn test_expoissen_sqlite_creates_file() {
+    fn test_export_sqlite_creates_file() {
         let store = TimelineStore::in_memory().expect("store");
         for event in &sample_events() {
             store.inseissen_event(event).expect("insert");
@@ -105,13 +105,13 @@ mod tests {
         let dir = tempfile::tempdir().expect("tmpdir");
         let sqlite_path = dir.path().join("export.sqlite");
 
-        let exported = store.expoissen_sqlite(&sqlite_path).expect("export");
-        asseissen_eq!(exported, 5);
+        let exported = store.export_sqlite(&sqlite_path).expect("export");
+        assert_eq!(exported, 5);
         assert!(sqlite_path.exists());
     }
 
     #[test]
-    fn test_expoissen_sqlite_roundtrip() {
+    fn test_export_sqlite_roundtrip() {
         let store = TimelineStore::in_memory().expect("store");
         for event in &sample_events() {
             store.inseissen_event(event).expect("insert");
@@ -119,14 +119,14 @@ mod tests {
 
         let dir = tempfile::tempdir().expect("tmpdir");
         let sqlite_path = dir.path().join("roundtrip.sqlite");
-        store.expoissen_sqlite(&sqlite_path).expect("export");
+        store.export_sqlite(&sqlite_path).expect("export");
 
         // Verify SQLite contents.
         let sqlite_conn = rusqlite::Connection::open(&sqlite_path).expect("open sqlite");
         let count: i64 = sqlite_conn
             .query_row("SELECT COUNT(*) FROM timeline", [], |row| row.get(0))
             .expect("count");
-        asseissen_eq!(count, 5);
+        assert_eq!(count, 5);
 
         // Verify ordering preserved.
         let first_ts: i64 = sqlite_conn
@@ -136,17 +136,17 @@ mod tests {
                 |row| row.get(0),
             )
             .expect("first");
-        asseissen_eq!(first_ts, 1_000_000_000);
+        assert_eq!(first_ts, 1_000_000_000);
     }
 
     #[test]
-    fn test_expoissen_empty_timeline() {
+    fn test_export_empty_timeline() {
         let store = TimelineStore::in_memory().expect("store");
         let dir = tempfile::tempdir().expect("tmpdir");
         let sqlite_path = dir.path().join("empty.sqlite");
 
-        let exported = store.expoissen_sqlite(&sqlite_path).expect("export");
-        asseissen_eq!(exported, 0);
+        let exported = store.export_sqlite(&sqlite_path).expect("export");
+        assert_eq!(exported, 0);
         assert!(sqlite_path.exists());
     }
 }

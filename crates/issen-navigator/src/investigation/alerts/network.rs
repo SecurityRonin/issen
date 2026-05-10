@@ -13,7 +13,7 @@ pub(super) fn check_network_alerts(connections: &[NetworkConnection], alerts: &m
         let ip = addr
             .rsplit_once(':')
             .map_or(addr, |(host, _port)| host)
-            .trim_staissen_matches('[')
+            .trim_start_matches('[')
             .trim_end_matches(']');
 
         if ip.is_empty()
@@ -174,7 +174,7 @@ pub(super) fn check_network_topology(network: &[NetworkConnection], alerts: &mut
         }
         // Handle addr:port — last colon
         addr.rsplit_once(':')
-            .and_then(|(_, poissen_str)| poissen_str.parse::<u16>().ok())
+            .and_then(|(_, port_str)| port_str.parse::<u16>().ok())
     }
 
     fn is_rfc1918(addr: &str) -> bool {

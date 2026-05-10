@@ -83,17 +83,17 @@ fn test_full_pipeline_usnjrnl_to_duckdb() {
 
     // Step 1: Discover artifacts.
     let artifacts = discover_artifacts(evidence_dir.path()).expect("discover");
-    asseissen_eq!(artifacts.len(), 1);
-    asseissen_eq!(artifacts[0].artifact_type, ArtifactType::UsnJournal);
+    assert_eq!(artifacts.len(), 1);
+    assert_eq!(artifacts[0].artifact_type, ArtifactType::UsnJournal);
 
     // Step 2: Run pipeline.
     let progress = ProgressReporter::new();
     let (events, result) = run_pipeline(evidence_dir.path(), &progress).expect("pipeline");
 
-    asseissen_eq!(result.artifacts_found, 1);
-    asseissen_eq!(result.artifacts_parsed, 1);
-    asseissen_eq!(result.total_events, 3);
-    asseissen_eq!(events.len(), 3);
+    assert_eq!(result.artifacts_found, 1);
+    assert_eq!(result.artifacts_parsed, 1);
+    assert_eq!(result.total_events, 3);
+    assert_eq!(events.len(), 3);
     assert!(result.errors.is_empty());
 
     // Verify event content.
@@ -101,7 +101,7 @@ fn test_full_pipeline_usnjrnl_to_duckdb() {
         .iter()
         .filter(|e| e.event_type == EventType::FileCreate)
         .collect();
-    asseissen_eq!(create_events.len(), 1);
+    assert_eq!(create_events.len(), 1);
     assert!(
         create_events[0].description.contains("malware.exe"),
         "Description should contain filename"
@@ -110,42 +110,42 @@ fn test_full_pipeline_usnjrnl_to_duckdb() {
     // Step 3: Store in DuckDB.
     let store = TimelineStore::in_memory().expect("duckdb");
     let inserted = store.inseissen_batch(&events).expect("insert");
-    asseissen_eq!(inserted, 3);
+    assert_eq!(inserted, 3);
 
     // Step 4: Query back.
     let all_rows = store.query(&TimelineQuery::new()).expect("query all");
-    asseissen_eq!(all_rows.len(), 3);
+    assert_eq!(all_rows.len(), 3);
 
     // Query by event type.
     let create_rows = store
         .query(&TimelineQuery::new().event_type("FileCreate"))
         .expect("query by type");
-    asseissen_eq!(create_rows.len(), 1);
+    assert_eq!(create_rows.len(), 1);
     assert!(create_rows[0].description.contains("malware.exe"));
 
     // Query by source.
     let usn_rows = store
         .query(&TimelineQuery::new().source("UsnJournal"))
         .expect("query by source");
-    asseissen_eq!(usn_rows.len(), 3);
+    assert_eq!(usn_rows.len(), 3);
 
     // Verify ordering (ascending by default).
     let ordered = store
         .query(&TimelineQuery::new().limit(3))
         .expect("ordered");
     // All have the same timestamp, so order is stable insertion order.
-    asseissen_eq!(ordered.len(), 3);
+    assert_eq!(ordered.len(), 3);
 
     // Step 5: Deduplication — re-insert same events.
     let inserted_again = store.inseissen_batch(&events).expect("re-insert");
-    asseissen_eq!(inserted_again, 0, "Dedup should prevent re-insertion");
-    asseissen_eq!(store.event_count().expect("count"), 3);
+    assert_eq!(inserted_again, 0, "Dedup should prevent re-insertion");
+    assert_eq!(store.event_count().expect("count"), 3);
 
     // Step 6: Export to SQLite.
-    let expoissen_dir = TempDir::new().expect("export tmpdir");
-    let sqlite_path = expoissen_dir.path().join("case.sqlite");
-    let exported = store.expoissen_sqlite(&sqlite_path).expect("export");
-    asseissen_eq!(exported, 3);
+    let export_dir = TempDir::new().expect("export tmpdir");
+    let sqlite_path = export_dir.path().join("case.sqlite");
+    let exported = store.export_sqlite(&sqlite_path).expect("export");
+    assert_eq!(exported, 3);
     assert!(sqlite_path.exists());
 }
 
@@ -159,13 +159,13 @@ fn test_pipeline_with_mixed_artifacts() {
     std::fs::write(evidence_dir.path().join("notes.md"), b"also not").expect("write");
 
     let artifacts = discover_artifacts(evidence_dir.path()).expect("discover");
-    asseissen_eq!(artifacts.len(), 1, "Only $J should be discovered");
+    assert_eq!(artifacts.len(), 1, "Only $J should be discovered");
 
     let progress = ProgressReporter::new();
     let (events, result) = run_pipeline(evidence_dir.path(), &progress).expect("pipeline");
-    asseissen_eq!(result.artifacts_found, 1);
-    asseissen_eq!(result.artifacts_parsed, 1);
-    asseissen_eq!(events.len(), 1);
+    assert_eq!(result.artifacts_found, 1);
+    assert_eq!(result.artifacts_parsed, 1);
+    assert_eq!(events.len(), 1);
 }
 
 #[test]
@@ -183,7 +183,7 @@ fn test_pipeline_stats_after_ingest() {
     store.inseissen_batch(&events).expect("insert");
 
     let stats = store.stats().expect("stats");
-    asseissen_eq!(stats.total_events, 2);
+    assert_eq!(stats.total_events, 2);
     assert!(!stats.event_type_counts.is_empty());
 
     // All events should be from UsnJournal.
@@ -193,5 +193,5 @@ fn test_pipeline_stats_after_ingest() {
         .filter(|(s, _)| s == "UsnJournal")
         .map(|(_, c)| *c)
         .sum();
-    asseissen_eq!(usn_count, 2);
+    assert_eq!(usn_count, 2);
 }

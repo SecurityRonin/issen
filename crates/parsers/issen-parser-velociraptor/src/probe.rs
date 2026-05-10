@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn test_probe_nonexistent_file() {
         let result = probe_velociraptor(Path::new("/nonexistent/file.zip"));
-        asseissen_eq!(result.expect("should not error"), Confidence::None);
+        assert_eq!(result.expect("should not error"), Confidence::None);
     }
 
     #[test]
@@ -69,7 +69,7 @@ mod tests {
         let dir = tempfile::tempdir().expect("tmpdir");
         let path = dir.path().join("not_a_zip.txt");
         std::fs::write(&path, b"this is not a zip file").expect("write");
-        asseissen_eq!(probe_velociraptor(&path).expect("probe"), Confidence::None);
+        assert_eq!(probe_velociraptor(&path).expect("probe"), Confidence::None);
     }
 
     #[test]
@@ -78,7 +78,7 @@ mod tests {
         let path = dir.path().join("empty.zip");
         let file = std::fs::File::create(&path).expect("create");
         zip::ZipWriter::new(file).finish().expect("zip finish");
-        asseissen_eq!(probe_velociraptor(&path).expect("probe"), Confidence::None);
+        assert_eq!(probe_velociraptor(&path).expect("probe"), Confidence::None);
     }
 
     #[test]
@@ -88,11 +88,11 @@ mod tests {
         let file = std::fs::File::create(&path).expect("create");
         let mut zip = zip::ZipWriter::new(file);
         let opts = zip::write::SimpleFileOptions::default();
-        zip.staissen_file("uploads/ntfs/%5C%5C.%5CC%3A/$MFT", opts)
+        zip.start_file("uploads/ntfs/%5C%5C.%5CC%3A/$MFT", opts)
             .expect("entry");
         zip.write_all(b"fake mft data").expect("write");
         zip.finish().expect("finish");
-        asseissen_eq!(probe_velociraptor(&path).expect("probe"), Confidence::High);
+        assert_eq!(probe_velociraptor(&path).expect("probe"), Confidence::High);
     }
 
     #[test]
@@ -102,11 +102,11 @@ mod tests {
         let file = std::fs::File::create(&path).expect("create");
         let mut zip = zip::ZipWriter::new(file);
         let opts = zip::write::SimpleFileOptions::default();
-        zip.staissen_file("uploads/plain/file.txt", opts)
+        zip.start_file("uploads/plain/file.txt", opts)
             .expect("entry");
         zip.write_all(b"data").expect("write");
         zip.finish().expect("finish");
-        asseissen_eq!(
+        assert_eq!(
             probe_velociraptor(&path).expect("probe"),
             Confidence::Medium
         );

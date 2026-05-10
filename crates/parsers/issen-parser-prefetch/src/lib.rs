@@ -173,10 +173,10 @@ mod tests {
         let events = parser::parse_prefetch(tmp.path(), "test-source")
             .expect("parse_prefetch must not Err on valid header");
 
-        asseissen_eq!(events.len(), 1, "expected exactly one event");
+        assert_eq!(events.len(), 1, "expected exactly one event");
         let ev = &events[0];
 
-        asseissen_eq!(
+        assert_eq!(
             ev.source,
             ArtifactType::Prefetch,
             "event source must be Prefetch"
@@ -196,13 +196,13 @@ mod tests {
             "description should contain hash, got: {}",
             ev.description
         );
-        asseissen_eq!(ev.timestamp_ns, 0, "timestamp_ns should be 0 (stub)");
-        asseissen_eq!(
+        assert_eq!(ev.timestamp_ns, 0, "timestamp_ns should be 0 (stub)");
+        assert_eq!(
             ev.metadata.get("version").and_then(|v| v.as_u64()),
             Some(30),
             "metadata version should be 30"
         );
-        asseissen_eq!(
+        assert_eq!(
             ev.metadata.get("file_size").and_then(|v| v.as_u64()),
             Some(84),
             "metadata file_size should be 84"

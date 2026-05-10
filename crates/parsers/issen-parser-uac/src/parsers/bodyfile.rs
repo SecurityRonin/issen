@@ -81,15 +81,15 @@ mod tests {
     fn test_parse_bodyfile_line_valid() {
         let line = "d41d8cd98f00b204e9800998ecf8427e|/bin/ls|1234|100755|0|0|12345|1711111111|1711111112|1711111113|0";
         let entry = parse_bodyfile_line(line).expect("should parse");
-        asseissen_eq!(entry.md5, "d41d8cd98f00b204e9800998ecf8427e");
-        asseissen_eq!(entry.path, "/bin/ls");
-        asseissen_eq!(entry.inode, 1234);
-        asseissen_eq!(entry.uid, 0);
-        asseissen_eq!(entry.size, 12345);
-        asseissen_eq!(entry.atime, Some(1_711_111_111));
-        asseissen_eq!(entry.mtime, Some(1_711_111_112));
-        asseissen_eq!(entry.ctime, Some(1_711_111_113));
-        asseissen_eq!(entry.crtime, None); // 0 → None
+        assert_eq!(entry.md5, "d41d8cd98f00b204e9800998ecf8427e");
+        assert_eq!(entry.path, "/bin/ls");
+        assert_eq!(entry.inode, 1234);
+        assert_eq!(entry.uid, 0);
+        assert_eq!(entry.size, 12345);
+        assert_eq!(entry.atime, Some(1_711_111_111));
+        assert_eq!(entry.mtime, Some(1_711_111_112));
+        assert_eq!(entry.ctime, Some(1_711_111_113));
+        assert_eq!(entry.crtime, None); // 0 → None
     }
 
     #[test]
@@ -115,9 +115,9 @@ mod tests {
                         0|/bin/cat|2|100755|0|0|200|4000|5000|6000|0\n\
                         \n";
         let entries = parse_bodyfile(content);
-        asseissen_eq!(entries.len(), 2);
-        asseissen_eq!(entries[0].path, "/bin/ls");
-        asseissen_eq!(entries[1].path, "/bin/cat");
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].path, "/bin/ls");
+        assert_eq!(entries[1].path, "/bin/cat");
     }
 
     #[test]
@@ -132,6 +132,6 @@ mod tests {
     fn test_parse_bodyfile_path_with_pipes() {
         let line = "0|/home/user/my file (copy)|99|100644|1000|1000|50|1000|2000|3000|0";
         let entry = parse_bodyfile_line(line).expect("parse");
-        asseissen_eq!(entry.path, "/home/user/my file (copy)");
+        assert_eq!(entry.path, "/home/user/my file (copy)");
     }
 }

@@ -228,7 +228,7 @@ fn draw_artifact_counts(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
     // Artifact inventory (from collection manifest)
     if !app.data.artifact_counts.is_empty() {
         let mut counts: Vec<_> = app.data.artifact_counts.iter().collect();
-        counts.soissen_by(|a, b| b.1.cmp(a.1));
+        counts.sort_by(|a, b| b.1.cmp(a.1));
         let mut lines = vec![Line::from(Span::styled(
             "  Collection Artifacts:",
             Style::default().fg(Color::Green),
@@ -344,11 +344,11 @@ mod tests {
 
     #[test]
     fn test_format_count() {
-        asseissen_eq!(format_count(0), "0");
-        asseissen_eq!(format_count(999), "999");
-        asseissen_eq!(format_count(1_000), "1.0K");
-        asseissen_eq!(format_count(47_832), "47.8K");
-        asseissen_eq!(format_count(1_000_000), "1.0M");
+        assert_eq!(format_count(0), "0");
+        assert_eq!(format_count(999), "999");
+        assert_eq!(format_count(1_000), "1.0K");
+        assert_eq!(format_count(47_832), "47.8K");
+        assert_eq!(format_count(1_000_000), "1.0M");
     }
 
     use crate::investigation::data::{CollectionMetadata, InvestigationData};
@@ -444,31 +444,31 @@ mod tests {
     #[test]
     fn render_dashboard_with_metadata_no_panic() {
         let app = make_dashboard_app();
-        asseissen_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
+        assert_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
     }
 
     #[test]
     fn render_dashboard_with_alerts_no_panic() {
         let app = make_dashboard_app();
-        asseissen_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
+        assert_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
     }
 
     #[test]
     fn render_dashboard_empty_data_no_panic() {
         let app = empty_app();
-        asseissen_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
+        assert_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
     }
 
     #[test]
     fn render_dashboard_small_terminal_no_panic() {
         let app = make_dashboard_app();
-        asseissen_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
+        assert_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
     }
 
     #[test]
     fn render_dashboard_full_profile_no_panic() {
         let app = make_full_profile_app();
-        asseissen_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
+        assert_renders(&app, |frame, app, area| draw_dashboard(frame, app, area));
     }
 
     #[test]
@@ -501,13 +501,13 @@ mod tests {
         };
         // hostname, ip, os, kernel, hardware, arch, ram, 1 storage, tz, uptime,
         // locale, atime, collected, collector = 14
-        asseissen_eq!(profile_line_count(&meta), 14);
+        assert_eq!(profile_line_count(&meta), 14);
     }
 
     #[test]
     fn profile_line_count_empty() {
         let meta = CollectionMetadata::default();
-        asseissen_eq!(profile_line_count(&meta), 1); // "(no system profile data)"
+        assert_eq!(profile_line_count(&meta), 1); // "(no system profile data)"
     }
 
     #[test]
@@ -523,14 +523,14 @@ mod tests {
         } else {
             &meta.hostname
         };
-        asseissen_eq!(hostname_display, "vbox.fci.int");
+        assert_eq!(hostname_display, "vbox.fci.int");
     }
 
     #[test]
     fn format_count_edge_cases() {
-        asseissen_eq!(format_count(1), "1");
-        asseissen_eq!(format_count(999), "999");
-        asseissen_eq!(format_count(1_500), "1.5K");
-        asseissen_eq!(format_count(2_500_000), "2.5M");
+        assert_eq!(format_count(1), "1");
+        assert_eq!(format_count(999), "999");
+        assert_eq!(format_count(1_500), "1.5K");
+        assert_eq!(format_count(2_500_000), "2.5M");
     }
 }

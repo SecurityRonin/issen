@@ -90,7 +90,7 @@ mod tests {
         write_csv(&events, &mut out).unwrap();
         let text = String::from_utf8(out).unwrap();
         let first_line = text.lines().next().unwrap();
-        asseissen_eq!(
+        assert_eq!(
             first_line,
             "timestamp,event_type,source,path,description,evidence_source"
         );
@@ -129,15 +129,15 @@ mod tests {
         let line = text.lines().next().expect("expected output line");
         // bodyfile: 0|path|0|----------|0|0|0|atime|mtime|ctime|crtime
         let fields: Vec<&str> = line.split('|').collect();
-        asseissen_eq!(fields.len(), 11, "wrong field count: {line}");
+        assert_eq!(fields.len(), 11, "wrong field count: {line}");
         // atime (index 7) should be 0 for FileCreate
-        asseissen_eq!(fields[7], "0", "atime should be 0 for FileCreate: {line}");
+        assert_eq!(fields[7], "0", "atime should be 0 for FileCreate: {line}");
         // mtime (index 8) should be 0 for FileCreate
-        asseissen_eq!(fields[8], "0", "mtime should be 0 for FileCreate: {line}");
+        assert_eq!(fields[8], "0", "mtime should be 0 for FileCreate: {line}");
         // ctime (index 9) should be 0 for FileCreate
-        asseissen_eq!(fields[9], "0", "ctime should be 0 for FileCreate: {line}");
+        assert_eq!(fields[9], "0", "ctime should be 0 for FileCreate: {line}");
         // crtime (index 10) should be the epoch timestamp
-        asseissen_eq!(
+        assert_eq!(
             fields[10],
             expected_epoch.to_string(),
             "crtime should be epoch ts for FileCreate: {line}"
@@ -154,17 +154,17 @@ mod tests {
         let text = String::from_utf8(out).unwrap();
         let line = text.lines().next().expect("expected output line");
         let fields: Vec<&str> = line.split('|').collect();
-        asseissen_eq!(fields.len(), 11, "wrong field count: {line}");
+        assert_eq!(fields.len(), 11, "wrong field count: {line}");
         // mtime (index 8) should be the epoch timestamp for FileModify
-        asseissen_eq!(
+        assert_eq!(
             fields[8],
             expected_epoch.to_string(),
             "mtime should be epoch ts for FileModify: {line}"
         );
         // atime (index 7) should be 0
-        asseissen_eq!(fields[7], "0", "atime should be 0 for FileModify: {line}");
+        assert_eq!(fields[7], "0", "atime should be 0 for FileModify: {line}");
         // crtime (index 10) should be 0
-        asseissen_eq!(fields[10], "0", "crtime should be 0 for FileModify: {line}");
+        assert_eq!(fields[10], "0", "crtime should be 0 for FileModify: {line}");
     }
 
     #[test]
@@ -178,6 +178,6 @@ mod tests {
         assert!(line.contains('|'), "output should be pipe-separated: {line}");
         // Must have exactly 10 pipes (11 fields)
         let pipe_count = line.chars().filter(|&c| c == '|').count();
-        asseissen_eq!(pipe_count, 10, "should have 10 pipe separators (11 fields): {line}");
+        assert_eq!(pipe_count, 10, "should have 10 pipe separators (11 fields): {line}");
     }
 }

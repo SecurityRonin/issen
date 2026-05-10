@@ -140,7 +140,7 @@ mod tests {
         let events = parser::parse_hive(tmp.path(), "test-source")
             .expect("parse_hive must not return Err");
         for event in &events {
-            asseissen_eq!(
+            assert_eq!(
                 event.source,
                 ArtifactType::Registry,
                 "event source must be Registry, got {:?}",

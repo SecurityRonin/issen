@@ -70,12 +70,12 @@ mod tests {
     fn test_stats_empty_store() {
         let store = TimelineStore::in_memory().expect("store");
         let stats = store.stats().expect("stats");
-        asseissen_eq!(stats.total_events, 0);
+        assert_eq!(stats.total_events, 0);
         assert!(stats.earliest_timestamp_ns.is_none());
         assert!(stats.latest_timestamp_ns.is_none());
         assert!(stats.event_type_counts.is_empty());
         assert!(stats.source_counts.is_empty());
-        asseissen_eq!(stats.evidence_source_count, 0);
+        assert_eq!(stats.evidence_source_count, 0);
     }
 
     #[test]
@@ -116,20 +116,20 @@ mod tests {
         }
 
         let stats = store.stats().expect("stats");
-        asseissen_eq!(stats.total_events, 3);
-        asseissen_eq!(stats.earliest_timestamp_ns, Some(1_000));
-        asseissen_eq!(stats.latest_timestamp_ns, Some(3_000));
-        asseissen_eq!(stats.evidence_source_count, 2);
+        assert_eq!(stats.total_events, 3);
+        assert_eq!(stats.earliest_timestamp_ns, Some(1_000));
+        assert_eq!(stats.latest_timestamp_ns, Some(3_000));
+        assert_eq!(stats.evidence_source_count, 2);
 
         // FileCreate should have count 2.
         let fc = stats
             .event_type_counts
             .iter()
             .find(|(t, _)| t == "FileCreate");
-        asseissen_eq!(fc.map(|(_, c)| *c), Some(2));
+        assert_eq!(fc.map(|(_, c)| *c), Some(2));
 
         // UsnJournal should have count 2.
         let usn = stats.source_counts.iter().find(|(s, _)| s == "UsnJournal");
-        asseissen_eq!(usn.map(|(_, c)| *c), Some(2));
+        assert_eq!(usn.map(|(_, c)| *c), Some(2));
     }
 }

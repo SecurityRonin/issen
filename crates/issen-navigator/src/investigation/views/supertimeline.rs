@@ -164,12 +164,12 @@ mod tests {
     #[test]
     fn format_timestamp_valid() {
         // 2024-01-01T00:00:00 UTC = 1704067200
-        asseissen_eq!(format_timestamp(1704067200), "2024-01-01T00:00:00");
+        assert_eq!(format_timestamp(1704067200), "2024-01-01T00:00:00");
     }
 
     #[test]
     fn format_timestamp_zero() {
-        asseissen_eq!(format_timestamp(0), "1970-01-01T00:00:00");
+        assert_eq!(format_timestamp(0), "1970-01-01T00:00:00");
     }
 
     #[test]
@@ -181,13 +181,13 @@ mod tests {
 
     #[test]
     fn truncate_path_short() {
-        asseissen_eq!(truncate_path("/short/path", 40), "/short/path");
+        assert_eq!(truncate_path("/short/path", 40), "/short/path");
     }
 
     #[test]
     fn truncate_path_exact_length() {
         let path = "x".repeat(40);
-        asseissen_eq!(truncate_path(&path, 40), path);
+        assert_eq!(truncate_path(&path, 40), path);
     }
 
     #[test]
@@ -195,7 +195,7 @@ mod tests {
         let path = "/very/long/path/that/exceeds/the/maximum/allowed/length/for/display";
         let result = truncate_path(path, 30);
         assert!(result.starts_with("..."));
-        asseissen_eq!(result.len(), 30);
+        assert_eq!(result.len(), 30);
     }
 
     #[test]

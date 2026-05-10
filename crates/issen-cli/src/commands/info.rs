@@ -26,7 +26,7 @@ pub fn run(db_path: &Path) -> Result<()> {
     if !stats.event_type_counts.is_empty() {
         println!("\nEvent Types:");
         let mut types: Vec<_> = stats.event_type_counts.iter().collect();
-        types.soissen_by(|a, b| b.1.cmp(&a.1));
+        types.sort_by(|a, b| b.1.cmp(&a.1));
         for (et, count) in types {
             println!("  {:<20} {count}", et);
         }
@@ -35,7 +35,7 @@ pub fn run(db_path: &Path) -> Result<()> {
     if !stats.source_counts.is_empty() {
         println!("\nArtifact Sources:");
         let mut sources: Vec<_> = stats.source_counts.iter().collect();
-        sources.soissen_by(|a, b| b.1.cmp(&a.1));
+        sources.sort_by(|a, b| b.1.cmp(&a.1));
         for (src, count) in sources {
             println!("  {:<20} {count}", src);
         }

@@ -468,12 +468,12 @@ mod tests {
         );
 
         let record = UsnRecordV2::parse(&data).expect("parse record");
-        asseissen_eq!(record.file_name, "report.docx");
-        asseissen_eq!(record.major_version, 2);
-        asseissen_eq!(record.reason.0, UsnReasonFlags::FILE_CREATE);
-        asseissen_eq!(record.file_reference_number, 12345);
-        asseissen_eq!(record.parent_file_reference_number, 67890);
-        asseissen_eq!(record.usn, 1024);
+        assert_eq!(record.file_name, "report.docx");
+        assert_eq!(record.major_version, 2);
+        assert_eq!(record.reason.0, UsnReasonFlags::FILE_CREATE);
+        assert_eq!(record.file_reference_number, 12345);
+        assert_eq!(record.parent_file_reference_number, 67890);
+        assert_eq!(record.usn, 1024);
     }
 
     #[test]
@@ -483,7 +483,7 @@ mod tests {
         let filetime: i64 = 133_444_736_000_000_000;
         let unix_ns = UsnRecordV2::filetime_to_unix_ns(filetime);
         let expected_ns: i64 = 1_700_000_000 * 1_000_000_000;
-        asseissen_eq!(unix_ns, expected_ns);
+        assert_eq!(unix_ns, expected_ns);
     }
 
     #[test]
@@ -495,23 +495,23 @@ mod tests {
 
     #[test]
     fn test_reason_flags_to_event_type() {
-        asseissen_eq!(
+        assert_eq!(
             UsnReasonFlags(UsnReasonFlags::FILE_CREATE).to_event_type(),
             EventType::FileCreate,
         );
-        asseissen_eq!(
+        assert_eq!(
             UsnReasonFlags(UsnReasonFlags::FILE_DELETE).to_event_type(),
             EventType::FileDelete,
         );
-        asseissen_eq!(
+        assert_eq!(
             UsnReasonFlags(UsnReasonFlags::RENAME_NEW_NAME).to_event_type(),
             EventType::FileRename,
         );
-        asseissen_eq!(
+        assert_eq!(
             UsnReasonFlags(UsnReasonFlags::DATA_OVERWRITE).to_event_type(),
             EventType::FileModify,
         );
-        asseissen_eq!(
+        assert_eq!(
             UsnReasonFlags(UsnReasonFlags::CLOSE).to_event_type(),
             EventType::FileAccess,
         );
@@ -528,8 +528,8 @@ mod tests {
     #[test]
     fn test_parser_trait_contract() {
         let parser = UsnJrnlParser;
-        asseissen_eq!(parser.name(), "USN Journal Parser");
-        asseissen_eq!(parser.supported_artifacts(), &[ArtifactType::UsnJournal]);
+        assert_eq!(parser.name(), "USN Journal Parser");
+        assert_eq!(parser.supported_artifacts(), &[ArtifactType::UsnJournal]);
         assert!(parser.capabilities().streaming);
         assert!(parser.capabilities().deterministic);
     }
@@ -561,15 +561,15 @@ mod tests {
         let parser = UsnJrnlParser;
 
         let stats = parser.parse(&source, &emitter).expect("parse");
-        asseissen_eq!(stats.events_emitted, 2);
-        asseissen_eq!(stats.errors_recovered, 0);
+        assert_eq!(stats.events_emitted, 2);
+        assert_eq!(stats.errors_recovered, 0);
 
         let events = emitter.into_events();
-        asseissen_eq!(events.len(), 2);
-        asseissen_eq!(events[0].source, ArtifactType::UsnJournal);
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[0].source, ArtifactType::UsnJournal);
         assert!(events[0].description.contains("file1.txt"));
         assert!(events[1].description.contains("file2.exe"));
-        asseissen_eq!(events[1].event_type, EventType::FileDelete);
+        assert_eq!(events[1].event_type, EventType::FileDelete);
     }
 
     #[test]
@@ -593,7 +593,7 @@ mod tests {
         let parser = UsnJrnlParser;
 
         let stats = parser.parse(&source, &emitter).expect("parse");
-        asseissen_eq!(
+        assert_eq!(
             stats.events_emitted, 1,
             "Should skip padding and find the record"
         );
@@ -606,8 +606,8 @@ mod tests {
         let parser = UsnJrnlParser;
 
         let stats = parser.parse(&source, &emitter).expect("parse");
-        asseissen_eq!(stats.events_emitted, 0);
-        asseissen_eq!(stats.bytes_processed, 0);
+        assert_eq!(stats.events_emitted, 0);
+        assert_eq!(stats.bytes_processed, 0);
     }
 
     #[test]
@@ -635,20 +635,20 @@ mod tests {
         let record = UsnRecordV2::parse(&data).expect("parse");
         let event = record_to_event(&record, "evidence-001");
 
-        asseissen_eq!(event.source, ArtifactType::UsnJournal);
-        asseissen_eq!(event.event_type, EventType::FileCreate);
-        asseissen_eq!(event.evidence_source_id, "evidence-001");
+        assert_eq!(event.source, ArtifactType::UsnJournal);
+        assert_eq!(event.event_type, EventType::FileCreate);
+        assert_eq!(event.evidence_source_id, "evidence-001");
         assert!(event.metadata.contains_key("usn"));
         assert!(event.metadata.contains_key("reason_flags"));
         assert!(event.metadata.contains_key("file_reference"));
-        asseissen_eq!(event.metadata["usn"], serde_json::json!(999));
-        asseissen_eq!(event.metadata["file_reference"], serde_json::json!(42));
+        assert_eq!(event.metadata["usn"], serde_json::json!(999));
+        assert_eq!(event.metadata["file_reference"], serde_json::json!(42));
     }
 
     #[test]
     fn test_utf16le_decode() {
         // "test" in UTF-16LE
         let data = [0x74, 0x00, 0x65, 0x00, 0x73, 0x00, 0x74, 0x00];
-        asseissen_eq!(decode_utf16le(&data), "test");
+        assert_eq!(decode_utf16le(&data), "test");
     }
 }

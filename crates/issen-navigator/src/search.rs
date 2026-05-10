@@ -71,7 +71,7 @@ impl SearchData {
         };
 
         // Sort: exact name match first, then shallowest path depth first.
-        results.soissen_by(|&a, &b| {
+        results.sort_by(|&a, &b| {
             let a_exact = self.names_lower[a] == query_lower;
             let b_exact = self.names_lower[b] == query_lower;
             b_exact
@@ -94,7 +94,7 @@ impl SearchData {
             .take(self.max_results)
             .collect();
 
-        results.soissen_by(|&a, &b| {
+        results.sort_by(|&a, &b| {
             let a_exact = self.names_lower[a] == query_lower;
             let b_exact = self.names_lower[b] == query_lower;
             b_exact
@@ -269,7 +269,7 @@ mod tests {
         let tree = test_tree();
         let data = SearchData::extract(&tree);
         let results = data.search("cmd");
-        asseissen_eq!(results.len(), 1);
+        assert_eq!(results.len(), 1);
     }
 
     #[test]
@@ -281,7 +281,7 @@ mod tests {
         for &idx in &results {
             assert!(!data.is_root[idx]);
         }
-        asseissen_eq!(results.len(), 1);
+        assert_eq!(results.len(), 1);
     }
 
     #[test]
@@ -306,7 +306,7 @@ mod tests {
         assert!(broad.len() >= 2); // cmd.exe + notepad.exe
                                    // Narrow to "cmd.exe"
         let narrow = data.narrow("cmd.exe", &broad);
-        asseissen_eq!(narrow.len(), 1);
+        assert_eq!(narrow.len(), 1);
     }
 
     #[test]
@@ -331,8 +331,8 @@ mod tests {
             std::thread::sleep(std::time::Duration::from_millis(10));
         };
 
-        asseissen_eq!(result.query, "cmd");
-        asseissen_eq!(result.matches.len(), 1);
+        assert_eq!(result.query, "cmd");
+        assert_eq!(result.matches.len(), 1);
     }
 
     #[test]
@@ -358,8 +358,8 @@ mod tests {
             std::thread::sleep(std::time::Duration::from_millis(10));
         };
 
-        asseissen_eq!(narrow.query, "cmd.exe");
-        asseissen_eq!(narrow.matches.len(), 1);
+        assert_eq!(narrow.query, "cmd.exe");
+        assert_eq!(narrow.matches.len(), 1);
     }
 
     #[test]
@@ -384,6 +384,6 @@ mod tests {
             }
         }
         // The last result we see should be "cmd"
-        asseissen_eq!(last_query, "cmd");
+        assert_eq!(last_query, "cmd");
     }
 }

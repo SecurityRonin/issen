@@ -76,7 +76,7 @@ use sources::ArtifactSources;
 
 #[derive(Parser)]
 #[command(
-    name = "rt-nav",
+    name = "issen-nav",
     about = "Forensic file navigator — browse a reconstructed NTFS tree from $MFT"
 )]
 struct Cli {
@@ -367,7 +367,7 @@ fn try_open_collection(
 
     if !data.artifact_counts.is_empty() {
         let mut counts: Vec<_> = data.artifact_counts.iter().collect();
-        counts.soissen_by(|a, b| b.1.cmp(a.1));
+        counts.sort_by(|a, b| b.1.cmp(a.1));
         let summary: Vec<String> = counts.iter().map(|(k, v)| format!("{v} {k}")).collect();
         eprintln!("  Artifacts: {}", summary.join(", "));
     }
@@ -439,7 +439,7 @@ fn try_load_mft(
 
     // Merge into existing timeline and re-sort
     data.timeline.extend(mft_events);
-    data.timeline.soissen_by_key(|e| e.timestamp);
+    data.timeline.sort_by_key(|e| e.timestamp);
 
     // Run heuristics on MFT
     let config = HeuristicsConfig::default();

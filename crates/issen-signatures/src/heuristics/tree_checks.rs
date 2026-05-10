@@ -219,7 +219,7 @@ mod tests {
         ];
         let tree = FileTree::from_nodes(nodes);
         let index = check_tree(&tree);
-        asseissen_eq!(index.flagged_count(), 0);
+        assert_eq!(index.flagged_count(), 0);
     }
 
     #[test]
@@ -231,7 +231,7 @@ mod tests {
         ];
         let tree = FileTree::from_nodes(nodes);
         let index = check_tree(&tree);
-        asseissen_eq!(index.flagged_count(), 0);
+        assert_eq!(index.flagged_count(), 0);
     }
 
     #[test]
@@ -288,7 +288,7 @@ mod tests {
         let nodes = vec![dir(".", 5, 5), file("notepad.exe", 100, 5, 1024)];
         let tree = FileTree::from_nodes(nodes);
         let index = check_tree(&tree);
-        asseissen_eq!(index.flagged_count(), 0);
+        assert_eq!(index.flagged_count(), 0);
     }
 
     #[test]
@@ -306,6 +306,6 @@ mod tests {
         ];
         let tree = FileTree::from_nodes(nodes);
         let index = check_tree(&tree);
-        asseissen_eq!(index.flagged_count(), 0);
+        assert_eq!(index.flagged_count(), 0);
     }
 }

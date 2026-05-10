@@ -696,7 +696,7 @@ mod tests {
     #[test]
     fn mem_uri_returns_ok_with_path() {
         let (_, path) = operator_for_uri("mem://bucket/key").expect("should succeed for mem://");
-        asseissen_eq!(path, "bucket/key");
+        assert_eq!(path, "bucket/key");
     }
 
     #[test]
@@ -725,7 +725,7 @@ mod tests {
     fn sftp_uri_path_extraction() {
         let result = operator_for_uri("sftp://host/remote/path");
         match result {
-            Ok((_, path)) => asseissen_eq!(path, "remote/path"),
+            Ok((_, path)) => assert_eq!(path, "remote/path"),
             Err(e) => {
                 let msg = e.to_string();
                 assert!(
@@ -755,7 +755,7 @@ mod tests {
     fn hdfs_uri_path_extraction() {
         let result = operator_for_uri("hdfs://namenode:9000/user/data");
         match result {
-            Ok((_, path)) => asseissen_eq!(path, "user/data"),
+            Ok((_, path)) => assert_eq!(path, "user/data"),
             Err(e) => {
                 let msg = e.to_string();
                 assert!(
@@ -785,7 +785,7 @@ mod tests {
     fn webhdfs_uri_path_extraction() {
         let result = operator_for_uri("webhdfs://namenode:50070/user/data");
         match result {
-            Ok((_, path)) => asseissen_eq!(path, "user/data"),
+            Ok((_, path)) => assert_eq!(path, "user/data"),
             Err(e) => {
                 let msg = e.to_string();
                 assert!(

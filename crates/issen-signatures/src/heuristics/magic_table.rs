@@ -279,21 +279,21 @@ mod tests {
     fn identify_jpeg() {
         let data = b"\xFF\xD8\xFF\xE0rest of jpeg data";
         let entry = identify_format(data).unwrap();
-        asseissen_eq!(entry.description, "JPEG");
+        assert_eq!(entry.description, "JPEG");
     }
 
     #[test]
     fn identify_pe() {
         let data = b"MZ\x90\x00\x03\x00\x00\x00";
         let entry = identify_format(data).unwrap();
-        asseissen_eq!(entry.description, "PE executable");
+        assert_eq!(entry.description, "PE executable");
     }
 
     #[test]
     fn identify_pdf() {
         let data = b"%PDF-1.4 blah blah";
         let entry = identify_format(data).unwrap();
-        asseissen_eq!(entry.description, "PDF");
+        assert_eq!(entry.description, "PDF");
     }
 
     #[test]

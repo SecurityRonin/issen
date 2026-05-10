@@ -120,20 +120,20 @@ mod tests {
 
         let scanner = WebShellScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "Web Shell");
-        asseissen_eq!(findings[0].category, RemoteAccessCategory::WebShell);
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "Web Shell");
+        assert_eq!(findings[0].category, RemoteAccessCategory::WebShell);
+        assert_eq!(
             findings[0].detection_source,
             DetectionSource::CategoryScanner("webshell".into())
         );
         assert!(!findings[0].artifacts.is_empty());
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].artifact_type,
             HitArtifactType::FilePresence
         );
         assert!(findings[0].artifacts[0].value.contains("cmd.aspx"));
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].context.get("web_server"),
             Some(&"IIS".to_string())
         );
@@ -173,10 +173,10 @@ mod tests {
 
         let scanner = WebShellScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "Web Shell");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "Web Shell");
         assert!(findings[0].artifacts[0].value.contains("shell.php"));
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].context.get("web_server"),
             Some(&"XAMPP".to_string())
         );

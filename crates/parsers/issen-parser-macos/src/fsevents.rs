@@ -182,8 +182,8 @@ mod tests {
         tmp.flush().expect("flush");
 
         let events = parse_fsevents_log(tmp.path(), "test-source").expect("must not Err");
-        asseissen_eq!(events.len(), 1);
-        asseissen_eq!(
+        assert_eq!(events.len(), 1);
+        assert_eq!(
             events[0].event_type,
             issen_core::timeline::event::EventType::FileCreate,
             "Created flag should map to FileCreate"
@@ -203,8 +203,8 @@ mod tests {
         tmp.flush().expect("flush");
 
         let events = parse_fsevents_log(tmp.path(), "test-source").expect("must not Err");
-        asseissen_eq!(events.len(), 1);
-        asseissen_eq!(
+        assert_eq!(events.len(), 1);
+        assert_eq!(
             events[0].event_type,
             issen_core::timeline::event::EventType::ProcessExec,
             "Executable flag should map to ProcessExec"

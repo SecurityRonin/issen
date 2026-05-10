@@ -225,7 +225,7 @@ mod tests {
     fn test_query_all() {
         let store = populated_store();
         let rows = store.query(&TimelineQuery::new()).expect("query");
-        asseissen_eq!(rows.len(), 4);
+        assert_eq!(rows.len(), 4);
         // Default ordering is ascending by timestamp.
         assert!(rows[0].timestamp_ns < rows[3].timestamp_ns);
     }
@@ -240,9 +240,9 @@ mod tests {
                     .to_ns(3_000_000_000),
             )
             .expect("query");
-        asseissen_eq!(rows.len(), 2);
-        asseissen_eq!(rows[0].timestamp_ns, 2_000_000_000);
-        asseissen_eq!(rows[1].timestamp_ns, 3_000_000_000);
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].timestamp_ns, 2_000_000_000);
+        assert_eq!(rows[1].timestamp_ns, 3_000_000_000);
     }
 
     #[test]
@@ -251,8 +251,8 @@ mod tests {
         let rows = store
             .query(&TimelineQuery::new().event_type("FileCreate"))
             .expect("query");
-        asseissen_eq!(rows.len(), 1);
-        asseissen_eq!(rows[0].event_type, "FileCreate");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].event_type, "FileCreate");
     }
 
     #[test]
@@ -261,7 +261,7 @@ mod tests {
         let rows = store
             .query(&TimelineQuery::new().source("UsnJournal"))
             .expect("query");
-        asseissen_eq!(rows.len(), 2);
+        assert_eq!(rows.len(), 2);
     }
 
     #[test]
@@ -270,14 +270,14 @@ mod tests {
         let rows = store
             .query(&TimelineQuery::new().evidence_source("ev-002"))
             .expect("query");
-        asseissen_eq!(rows.len(), 2);
+        assert_eq!(rows.len(), 2);
     }
 
     #[test]
     fn test_query_with_limit() {
         let store = populated_store();
         let rows = store.query(&TimelineQuery::new().limit(2)).expect("query");
-        asseissen_eq!(rows.len(), 2);
+        assert_eq!(rows.len(), 2);
     }
 
     #[test]
@@ -286,7 +286,7 @@ mod tests {
         let rows = store
             .query(&TimelineQuery::new().descending())
             .expect("query");
-        asseissen_eq!(rows.len(), 4);
+        assert_eq!(rows.len(), 4);
         assert!(rows[0].timestamp_ns > rows[3].timestamp_ns);
     }
 
@@ -301,7 +301,7 @@ mod tests {
                     .source("UsnJournal"),
             )
             .expect("query");
-        asseissen_eq!(
+        assert_eq!(
             rows.len(),
             2,
             "Should match FileCreate + FileDelete from USN"

@@ -156,7 +156,7 @@ mod tests {
             .expect("download_gdrive_file should succeed");
 
         server.join().expect("mock server panicked");
-        asseissen_eq!(sink, BODY, "sink should contain exactly the response body");
+        assert_eq!(sink, BODY, "sink should contain exactly the response body");
     }
 
     #[test]
@@ -180,7 +180,7 @@ mod tests {
             has_bearer,
             "request should contain Authorization: Bearer header; got: {request_lines:?}"
         );
-        asseissen_eq!(sink, BODY, "sink should contain exactly the response body");
+        assert_eq!(sink, BODY, "sink should contain exactly the response body");
     }
 
     #[test]
@@ -210,7 +210,7 @@ mod tests {
             .expect("download should succeed");
 
         server.join().expect("mock server panicked");
-        asseissen_eq!(
+        assert_eq!(
             count,
             BODY.len() as u64,
             "returned byte count should match body length"

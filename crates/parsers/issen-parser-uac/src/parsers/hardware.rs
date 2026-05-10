@@ -43,6 +43,6 @@ mod tests {
         std::fs::write(dir.path().join("lspci.txt"), "00:00.0 Host bridge").expect("write");
 
         let info = parse_hardware_dir(dir.path());
-        asseissen_eq!(info.len(), 2);
+        assert_eq!(info.len(), 2);
     }
 }

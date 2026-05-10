@@ -128,24 +128,24 @@ mod tests {
 
         let scanner = FirewallScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "Windows Firewall");
-        asseissen_eq!(findings[0].category, RemoteAccessCategory::FirewallConfig);
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "Windows Firewall");
+        assert_eq!(findings[0].category, RemoteAccessCategory::FirewallConfig);
+        assert_eq!(
             findings[0].detection_source,
             DetectionSource::CategoryScanner("firewall".into())
         );
         assert!(!findings[0].artifacts.is_empty());
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].artifact_type,
             HitArtifactType::RegistryValue
         );
         assert!(findings[0].artifacts[0].value.contains("DISABLED"));
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].context.get("profile"),
             Some(&"DomainProfile".to_string())
         );
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].context.get("risk"),
             Some(&"high".to_string())
         );
@@ -224,9 +224,9 @@ mod tests {
 
         let scanner = FirewallScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
+        assert_eq!(findings.len(), 1);
         // Should have 2 artifacts (one per disabled profile)
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts.len(),
             2,
             "expected 2 artifacts for 2 disabled profiles, got {}",

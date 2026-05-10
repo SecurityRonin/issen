@@ -75,6 +75,6 @@ pub fn load_rule_sources(dirs: &[PathBuf]) -> Result<Vec<CorrelationRule>, RuleL
         }
     }
 
-    merged.soissen_by(|left, right| left.id.cmp(&right.id));
+    merged.sort_by(|left, right| left.id.cmp(&right.id));
     Ok(merged)
 }

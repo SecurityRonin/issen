@@ -166,6 +166,6 @@ mod tests {
         let tree = FileTree::from_nodes(nodes);
         let config = HeuristicsConfig::default();
         let index = run_tier1(&tree, &config);
-        asseissen_eq!(index.flagged_count(), 0);
+        assert_eq!(index.flagged_count(), 0);
     }
 }

@@ -117,7 +117,7 @@ impl AnomalyIndex {
                 anomalies.iter().map(|a| a.severity).max().map(|s| (idx, s))
             })
             .collect();
-        entries.soissen_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+        entries.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
         entries.into_iter().map(|(idx, _)| idx).collect()
     }
 
@@ -145,7 +145,7 @@ mod tests {
     #[test]
     fn empty_index_has_no_flagged() {
         let idx = AnomalyIndex::new();
-        asseissen_eq!(idx.flagged_count(), 0);
+        assert_eq!(idx.flagged_count(), 0);
         assert!(idx.flagged_entries().is_empty());
     }
 
@@ -159,8 +159,8 @@ mod tests {
     fn add_and_retrieve_anomaly() {
         let mut idx = AnomalyIndex::new();
         idx.add(10, make_anomaly(Severity::High, "HEUR-TS-001"));
-        asseissen_eq!(idx.for_node(10).len(), 1);
-        asseissen_eq!(idx.for_node(10)[0].rule_id, "HEUR-TS-001");
+        assert_eq!(idx.for_node(10).len(), 1);
+        assert_eq!(idx.for_node(10)[0].rule_id, "HEUR-TS-001");
     }
 
     #[test]
@@ -168,7 +168,7 @@ mod tests {
         let mut idx = AnomalyIndex::new();
         idx.add(10, make_anomaly(Severity::Low, "HEUR-TS-003"));
         idx.add(10, make_anomaly(Severity::High, "HEUR-TS-001"));
-        asseissen_eq!(idx.for_node(10).len(), 2);
+        assert_eq!(idx.for_node(10).len(), 2);
     }
 
     #[test]
@@ -176,7 +176,7 @@ mod tests {
         let mut idx = AnomalyIndex::new();
         idx.add(10, make_anomaly(Severity::Low, "HEUR-TS-003"));
         idx.add(10, make_anomaly(Severity::High, "HEUR-TS-001"));
-        asseissen_eq!(idx.max_severity(10), Some(Severity::High));
+        assert_eq!(idx.max_severity(10), Some(Severity::High));
     }
 
     #[test]
@@ -191,7 +191,7 @@ mod tests {
         idx.add(10, make_anomaly(Severity::High, "HEUR-TS-001"));
         idx.add(10, make_anomaly(Severity::Low, "HEUR-TS-003"));
         idx.add(20, make_anomaly(Severity::Medium, "HEUR-LOC-001"));
-        asseissen_eq!(idx.flagged_count(), 2);
+        assert_eq!(idx.flagged_count(), 2);
     }
 
     #[test]
@@ -201,7 +201,7 @@ mod tests {
         idx.add(20, make_anomaly(Severity::Critical, "r2"));
         idx.add(30, make_anomaly(Severity::Medium, "r3"));
         let entries = idx.flagged_entries();
-        asseissen_eq!(entries, vec![20, 30, 10]);
+        assert_eq!(entries, vec![20, 30, 10]);
     }
 
     #[test]
@@ -212,19 +212,19 @@ mod tests {
         b.add(10, make_anomaly(Severity::Low, "r2"));
         b.add(20, make_anomaly(Severity::Medium, "r3"));
         a.merge(b);
-        asseissen_eq!(a.for_node(10).len(), 2);
-        asseissen_eq!(a.for_node(20).len(), 1);
-        asseissen_eq!(a.flagged_count(), 2);
+        assert_eq!(a.for_node(10).len(), 2);
+        assert_eq!(a.for_node(20).len(), 1);
+        assert_eq!(a.flagged_count(), 2);
     }
 
     #[test]
     fn category_as_str() {
-        asseissen_eq!(AnomalyCategory::Timestomping.as_str(), "timestomping");
-        asseissen_eq!(
+        assert_eq!(AnomalyCategory::Timestomping.as_str(), "timestomping");
+        assert_eq!(
             AnomalyCategory::SuspiciousLocation.as_str(),
             "suspicious_location"
         );
-        asseissen_eq!(AnomalyCategory::GhostFile.as_str(), "ghost_file");
+        assert_eq!(AnomalyCategory::GhostFile.as_str(), "ghost_file");
     }
 
     #[test]
@@ -235,11 +235,11 @@ mod tests {
 
     #[test]
     fn anomaly_category_display() {
-        asseissen_eq!(format!("{}", AnomalyCategory::Timestomping), "Timestomping");
-        asseissen_eq!(
+        assert_eq!(format!("{}", AnomalyCategory::Timestomping), "Timestomping");
+        assert_eq!(
             format!("{}", AnomalyCategory::SuspiciousLocation),
             "Suspicious Location"
         );
-        asseissen_eq!(format!("{}", AnomalyCategory::GhostFile), "Ghost File");
+        assert_eq!(format!("{}", AnomalyCategory::GhostFile), "Ghost File");
     }
 }

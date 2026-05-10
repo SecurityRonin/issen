@@ -513,7 +513,7 @@ tags:
             "failed to parse valid rule: {:?}",
             result.err()
         );
-        asseissen_eq!(engine.rule_count(), 1);
+        assert_eq!(engine.rule_count(), 1);
     }
 
     // -----------------------------------------------------------------------
@@ -565,10 +565,10 @@ level: low
         ]);
 
         let matches = engine.evaluate(&event);
-        asseissen_eq!(matches.len(), 1);
-        asseissen_eq!(matches[0].rule_title, "Suspicious Process Creation");
-        asseissen_eq!(matches[0].rule_id.as_deref(), Some("test-rule-001"));
-        asseissen_eq!(matches[0].level, "high");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].rule_title, "Suspicious Process Creation");
+        assert_eq!(matches[0].rule_id.as_deref(), Some("test-rule-001"));
+        assert_eq!(matches[0].level, "high");
     }
 
     // -----------------------------------------------------------------------
@@ -609,7 +609,7 @@ detection:
 
         // Both fields match -> should match.
         let event_match = make_event(&[("FieldA", "valueA"), ("FieldB", "valueB")]);
-        asseissen_eq!(engine.evaluate(&event_match).len(), 1);
+        assert_eq!(engine.evaluate(&event_match).len(), 1);
 
         // Only one field matches -> should NOT match (AND logic).
         let event_partial = make_event(&[("FieldA", "valueA"), ("FieldB", "wrong")]);
@@ -634,7 +634,7 @@ detection:
         engine.load_rule(yaml).unwrap();
 
         let event_match = make_event(&[("CommandLine", "invoke-mimikatz.ps1 -DumpCreds")]);
-        asseissen_eq!(engine.evaluate(&event_match).len(), 1);
+        assert_eq!(engine.evaluate(&event_match).len(), 1);
 
         let event_no_match = make_event(&[("CommandLine", "notepad.exe")]);
         assert!(engine.evaluate(&event_no_match).is_empty());
@@ -658,7 +658,7 @@ detection:
         engine.load_rule(yaml).unwrap();
 
         let event_match = make_event(&[("Image", r"C:\Temp\malware.exe")]);
-        asseissen_eq!(engine.evaluate(&event_match).len(), 1);
+        assert_eq!(engine.evaluate(&event_match).len(), 1);
 
         let event_no_match = make_event(&[("Image", r"C:\Program Files\app.exe")]);
         assert!(engine.evaluate(&event_no_match).is_empty());
@@ -682,7 +682,7 @@ detection:
         engine.load_rule(yaml).unwrap();
 
         let event_match = make_event(&[("Image", r"C:\Windows\System32\cmd.exe")]);
-        asseissen_eq!(engine.evaluate(&event_match).len(), 1);
+        assert_eq!(engine.evaluate(&event_match).len(), 1);
 
         let event_no_match = make_event(&[("Image", r"C:\Windows\System32\powershell.exe")]);
         assert!(engine.evaluate(&event_no_match).is_empty());
@@ -714,12 +714,12 @@ detection:
         let mut engine = SigmaEngine::new();
         engine.load_rule(rule_a).unwrap();
         engine.load_rule(rule_b).unwrap();
-        asseissen_eq!(engine.rule_count(), 2);
+        assert_eq!(engine.rule_count(), 2);
 
         let event = make_event(&[("Category", "malware")]);
         let matches = engine.evaluate(&event);
-        asseissen_eq!(matches.len(), 1);
-        asseissen_eq!(matches[0].rule_title, "Rule A");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].rule_title, "Rule A");
     }
 
     // -----------------------------------------------------------------------
@@ -755,8 +755,8 @@ detection:
 
         let mut engine = SigmaEngine::new();
         let count = engine.load_rules_dir(dir.path()).unwrap();
-        asseissen_eq!(count, 2);
-        asseissen_eq!(engine.rule_count(), 2);
+        assert_eq!(count, 2);
+        assert_eq!(engine.rule_count(), 2);
     }
 
     // -----------------------------------------------------------------------
@@ -765,7 +765,7 @@ detection:
     #[test]
     fn test_rule_count_empty() {
         let engine = SigmaEngine::new();
-        asseissen_eq!(engine.rule_count(), 0);
+        assert_eq!(engine.rule_count(), 0);
     }
 
     // -----------------------------------------------------------------------
@@ -790,12 +790,12 @@ tags:
 
         let event = make_event(&[("Threat", "active")]);
         let matches = engine.evaluate(&event);
-        asseissen_eq!(matches.len(), 1);
+        assert_eq!(matches.len(), 1);
 
         let m = &matches[0];
-        asseissen_eq!(m.level, "critical");
-        asseissen_eq!(m.description.as_deref(), Some("A critical finding"));
-        asseissen_eq!(m.tags, vec!["attack.impact".to_string()]);
+        assert_eq!(m.level, "critical");
+        assert_eq!(m.description.as_deref(), Some("A critical finding"));
+        assert_eq!(m.tags, vec!["attack.impact".to_string()]);
     }
 
     // -----------------------------------------------------------------------
@@ -816,8 +816,8 @@ detection:
 
         let event = make_event(&[("Foo", "bar")]);
         let matches = engine.evaluate(&event);
-        asseissen_eq!(matches.len(), 1);
-        asseissen_eq!(matches[0].level, "informational");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].level, "informational");
     }
 
     // -----------------------------------------------------------------------
@@ -843,7 +843,7 @@ detection:
         // Any of the three values should match.
         for action in &["login", "logon", "authenticate"] {
             let event = make_event(&[("Action", action)]);
-            asseissen_eq!(
+            assert_eq!(
                 engine.evaluate(&event).len(),
                 1,
                 "should match for action={}",
@@ -876,7 +876,7 @@ detection:
 
         // Matches selection but NOT excluded by filter.
         let event_match = make_event(&[("EventType", "process_create"), ("User", "admin")]);
-        asseissen_eq!(engine.evaluate(&event_match).len(), 1);
+        assert_eq!(engine.evaluate(&event_match).len(), 1);
 
         // Matches selection BUT also matches filter -> excluded.
         let event_filtered = make_event(&[("EventType", "process_create"), ("User", "SYSTEM")]);
@@ -906,7 +906,7 @@ detection:
 
         let event = make_event(&[("X", "Y")]);
         let matches = engine.evaluate(&event);
-        asseissen_eq!(matches.len(), 1);
+        assert_eq!(matches.len(), 1);
         assert!(matches[0].tags.is_empty());
     }
 
@@ -930,10 +930,10 @@ detection:
         engine.load_rule(yaml).unwrap();
 
         let event_web = make_event(&[("Source", "web")]);
-        asseissen_eq!(engine.evaluate(&event_web).len(), 1);
+        assert_eq!(engine.evaluate(&event_web).len(), 1);
 
         let event_api = make_event(&[("Source", "api")]);
-        asseissen_eq!(engine.evaluate(&event_api).len(), 1);
+        assert_eq!(engine.evaluate(&event_api).len(), 1);
 
         let event_none = make_event(&[("Source", "internal")]);
         assert!(engine.evaluate(&event_none).is_empty());

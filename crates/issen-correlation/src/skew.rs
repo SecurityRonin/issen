@@ -181,9 +181,9 @@ mod tests {
             ),
         ];
         let findings = detect_time_skew(&events, &SkewOpts::default());
-        asseissen_eq!(findings.len(), 1, "expected exactly one finding");
-        asseissen_eq!(findings[0].path, "/etc/passwd");
-        asseissen_eq!(findings[0].delta_secs, 600);
+        assert_eq!(findings.len(), 1, "expected exactly one finding");
+        assert_eq!(findings[0].path, "/etc/passwd");
+        assert_eq!(findings[0].delta_secs, 600);
     }
 
     #[test]
@@ -204,13 +204,13 @@ mod tests {
             ),
         ];
         let findings = detect_time_skew(&events, &SkewOpts::default());
-        asseissen_eq!(findings.len(), 1, "expected one finding");
+        assert_eq!(findings.len(), 1, "expected one finding");
         assert!(
             findings[0].delta_secs > 0,
             "delta_secs must be positive, got {}",
             findings[0].delta_secs
         );
-        asseissen_eq!(findings[0].delta_secs, 1800);
+        assert_eq!(findings[0].delta_secs, 1800);
     }
 
     #[test]
@@ -229,7 +229,7 @@ mod tests {
             make("b2", EvidenceSource::Memory, "/path/B", ts(9, 2, 0)),
         ];
         let findings = detect_time_skew(&events, &SkewOpts::default());
-        asseissen_eq!(findings.len(), 1, "expected exactly one finding (for /path/A)");
-        asseissen_eq!(findings[0].path, "/path/A");
+        assert_eq!(findings.len(), 1, "expected exactly one finding (for /path/A)");
+        assert_eq!(findings[0].path, "/path/A");
     }
 }

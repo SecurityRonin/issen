@@ -12,7 +12,7 @@ fn test_probe_real_uac_collection() {
 
     let provider = issen_parser_uac::UacProvider;
     let confidence = provider.probe(path).expect("probe should succeed");
-    asseissen_eq!(confidence, Confidence::High, "Should detect UAC tar.gz");
+    assert_eq!(confidence, Confidence::High, "Should detect UAC tar.gz");
 }
 
 #[test]
@@ -26,9 +26,9 @@ fn test_open_real_uac_collection() {
     let provider = issen_parser_uac::UacProvider;
     let manifest = provider.open(path).expect("open should succeed");
 
-    asseissen_eq!(manifest.format_name, "UAC");
-    asseissen_eq!(manifest.metadata.hostname.as_deref(), Some("vbox-linux"));
-    asseissen_eq!(manifest.metadata.os_type, issen_unpack::OsType::Linux);
+    assert_eq!(manifest.format_name, "UAC");
+    assert_eq!(manifest.metadata.hostname.as_deref(), Some("vbox-linux"));
+    assert_eq!(manifest.metadata.os_type, issen_unpack::OsType::Linux);
     assert!(!manifest.artifacts.is_empty(), "Should discover artifacts");
 
     // Verify extracted files exist

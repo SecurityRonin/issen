@@ -223,14 +223,14 @@ pub fn logins_to_events(records: &[LoginRecord], acquisition_time: i64) -> Vec<T
 
 /// Convert process list entries into timeline events.
 ///
-/// Only processes with a parseable `staissen_time` produce events.
+/// Only processes with a parseable `start_time` produce events.
 #[must_use]
 pub fn processes_to_events(procs: &[ProcessInfo]) -> Vec<TimelineEvent> {
     let mut events = Vec::with_capacity(procs.len());
 
     for proc in procs {
-        if let Some(ref staissen_str) = proc.staissen_time {
-            if let Ok(ts) = parse_ps_staissen_time(staissen_str) {
+        if let Some(ref start_str) = proc.start_time {
+            if let Ok(ts) = parse_ps_start_time(start_str) {
                 events.push(TimelineEvent {
                     timestamp: ts,
                     timestamp_type: TimestampType::ProcessStart,
@@ -446,7 +446,7 @@ pub fn parse_login_time(s: &str, fallback_year: i64) -> Result<i64, ()> {
 /// # Errors
 ///
 /// Returns `Err(())` if the string cannot be parsed into a full timestamp.
-pub fn parse_ps_staissen_time(s: &str) -> Result<i64, ()> {
+pub fn parse_ps_start_time(s: &str) -> Result<i64, ()> {
     let s = s.trim();
     if s.is_empty() {
         return Err(());
@@ -505,11 +505,11 @@ mod tests {
             None, // crtime=None → skipped
         );
         let events = bodyfile_to_events(&[entry]);
-        asseissen_eq!(events.len(), 3);
-        asseissen_eq!(events[0].timestamp_type, TimestampType::Modified);
-        asseissen_eq!(events[1].timestamp_type, TimestampType::Accessed);
-        asseissen_eq!(events[2].timestamp_type, TimestampType::Changed);
-        asseissen_eq!(events[0].path, "/etc/passwd");
+        assert_eq!(events.len(), 3);
+        assert_eq!(events[0].timestamp_type, TimestampType::Modified);
+        assert_eq!(events[1].timestamp_type, TimestampType::Accessed);
+        assert_eq!(events[2].timestamp_type, TimestampType::Changed);
+        assert_eq!(events[0].path, "/etc/passwd");
     }
 
     #[test]
@@ -526,7 +526,7 @@ mod tests {
     }
 
     #[test]
-    fn processes_no_staissen_time_empty_result() {
+    fn processes_no_start_time_empty_result() {
         let proc = ProcessInfo {
             pid: 1,
             ppid: 0,
@@ -534,14 +534,14 @@ mod tests {
             command: "/sbin/init".into(),
             cpu_pct: None,
             mem_pct: None,
-            staissen_time: None,
+            start_time: None,
         };
         let events = processes_to_events(&[proc]);
         assert!(events.is_empty());
     }
 
     #[test]
-    fn processes_unparseable_staissen_time_empty_result() {
+    fn processes_unparseable_start_time_empty_result() {
         let proc = ProcessInfo {
             pid: 42,
             ppid: 1,
@@ -549,7 +549,7 @@ mod tests {
             command: "bash".into(),
             cpu_pct: None,
             mem_pct: None,
-            staissen_time: Some("Mar24".into()),
+            start_time: Some("Mar24".into()),
         };
         let events = processes_to_events(&[proc]);
         // "Mar24" is not a full timestamp, so should be empty.
@@ -559,7 +559,7 @@ mod tests {
     #[test]
     fn sparkline_empty_events() {
         let bins = build_sparkline(&[], 10);
-        asseissen_eq!(bins.len(), 10);
+        assert_eq!(bins.len(), 10);
         assert!(bins.iter().all(|&b| b == 0));
     }
 
@@ -574,10 +574,10 @@ mod tests {
             extra: String::new(),
         }];
         let bins = build_sparkline(&events, 5);
-        asseissen_eq!(bins.len(), 5);
+        assert_eq!(bins.len(), 5);
         // Single event → all in bin 0
-        asseissen_eq!(bins[0], 1);
-        asseissen_eq!(bins.iter().sum::<u64>(), 1);
+        assert_eq!(bins[0], 1);
+        assert_eq!(bins.iter().sum::<u64>(), 1);
     }
 
     #[test]
@@ -595,9 +595,9 @@ mod tests {
             .collect();
 
         let bins = build_sparkline(&events, 10);
-        asseissen_eq!(bins.len(), 10);
+        assert_eq!(bins.len(), 10);
         // All 100 events should be distributed across the 10 bins
-        asseissen_eq!(bins.iter().sum::<u64>(), 100);
+        assert_eq!(bins.iter().sum::<u64>(), 100);
         // Each bin should have some events (roughly 10 each)
         for bin in &bins {
             assert!(*bin > 0, "no bin should be empty for uniform data");
@@ -606,7 +606,7 @@ mod tests {
 
     #[test]
     fn timeline_source_all_has_eight_variants() {
-        asseissen_eq!(TimelineSource::all().len(), 8);
+        assert_eq!(TimelineSource::all().len(), 8);
     }
 
     #[test]
@@ -629,11 +629,11 @@ mod tests {
         };
 
         let events = usn_to_events(&[record]);
-        asseissen_eq!(events.len(), 1);
-        asseissen_eq!(events[0].timestamp, 1_705_276_800);
-        asseissen_eq!(events[0].timestamp_type, TimestampType::UsnChange);
-        asseissen_eq!(events[0].source, TimelineSource::UsnJournal);
-        asseissen_eq!(events[0].path, "test.txt");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].timestamp, 1_705_276_800);
+        assert_eq!(events[0].timestamp_type, TimestampType::UsnChange);
+        assert_eq!(events[0].source, TimelineSource::UsnJournal);
+        assert_eq!(events[0].path, "test.txt");
     }
 
     #[test]

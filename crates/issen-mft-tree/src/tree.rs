@@ -48,7 +48,7 @@ impl FileTree {
 
         for child_list in &mut children {
             let n = &nodes;
-            child_list.soissen_by(|&a, &b| {
+            child_list.sort_by(|&a, &b| {
                 n[b].is_dir
                     .cmp(&n[a].is_dir)
                     .then_with(|| n[a].name.to_lowercase().cmp(&n[b].name.to_lowercase()))
@@ -407,14 +407,14 @@ mod tests {
     fn from_nodes_builds_tree_with_correct_entry_count() {
         let nodes = sample_nodes();
         let tree = FileTree::from_nodes(nodes);
-        asseissen_eq!(tree.allocated_entries, 11);
+        assert_eq!(tree.allocated_entries, 11);
     }
 
     #[test]
     fn from_nodes_finds_root_at_entry_5() {
         let tree = FileTree::from_nodes(sample_nodes());
         let root = tree.root_idx().expect("should have root");
-        asseissen_eq!(tree.node(root).mft_entry, ROOT_MFT_ENTRY);
+        assert_eq!(tree.node(root).mft_entry, ROOT_MFT_ENTRY);
     }
 
     #[test]
@@ -430,7 +430,7 @@ mod tests {
         let tree = FileTree::from_nodes(sample_nodes());
         let root = tree.root_idx().unwrap();
         // Windows/, Users/, pagefile.sys
-        asseissen_eq!(tree.children(root).len(), 3);
+        assert_eq!(tree.children(root).len(), 3);
     }
 
     #[test]
@@ -460,14 +460,14 @@ mod tests {
             .map(|&i| tree.node(i).name.as_str())
             .collect();
         // Users before Windows (alphabetical)
-        asseissen_eq!(dir_names, vec!["Users", "Windows"]);
+        assert_eq!(dir_names, vec!["Users", "Windows"]);
     }
 
     #[test]
     fn system32_has_two_files() {
         let tree = FileTree::from_nodes(sample_nodes());
         let sys32 = tree.entry_to_idx(31).expect("System32 should exist");
-        asseissen_eq!(tree.children(*sys32).len(), 2);
+        assert_eq!(tree.children(*sys32).len(), 2);
     }
 
     // -- cached_path tests ---------------------------------------------------
@@ -476,28 +476,28 @@ mod tests {
     fn cached_path_of_root_is_slash() {
         let tree = FileTree::from_nodes(sample_nodes());
         let root = tree.root_idx().unwrap();
-        asseissen_eq!(tree.cached_path(root), "/");
+        assert_eq!(tree.cached_path(root), "/");
     }
 
     #[test]
     fn cached_path_of_direct_child() {
         let tree = FileTree::from_nodes(sample_nodes());
         let idx = *tree.entry_to_idx(30).unwrap();
-        asseissen_eq!(tree.cached_path(idx), "/Windows");
+        assert_eq!(tree.cached_path(idx), "/Windows");
     }
 
     #[test]
     fn cached_path_of_deeply_nested_file() {
         let tree = FileTree::from_nodes(sample_nodes());
         let idx = *tree.entry_to_idx(200).unwrap();
-        asseissen_eq!(tree.cached_path(idx), "/Users/admin/Desktop/report.docx");
+        assert_eq!(tree.cached_path(idx), "/Users/admin/Desktop/report.docx");
     }
 
     #[test]
     fn cached_path_of_system32_exe() {
         let tree = FileTree::from_nodes(sample_nodes());
         let idx = *tree.entry_to_idx(100).unwrap();
-        asseissen_eq!(tree.cached_path(idx), "/Windows/System32/cmd.exe");
+        assert_eq!(tree.cached_path(idx), "/Windows/System32/cmd.exe");
     }
 
     // -- search tests --------------------------------------------------------
@@ -506,8 +506,8 @@ mod tests {
     fn search_finds_file_by_name() {
         let tree = FileTree::from_nodes(sample_nodes());
         let results = tree.search("cmd.exe");
-        asseissen_eq!(results.len(), 1);
-        asseissen_eq!(tree.node(results[0]).name, "cmd.exe");
+        assert_eq!(results.len(), 1);
+        assert_eq!(tree.node(results[0]).name, "cmd.exe");
     }
 
     #[test]
@@ -523,7 +523,7 @@ mod tests {
         let tree = FileTree::from_nodes(sample_nodes());
         let lower = tree.search("windows");
         let upper = tree.search("WINDOWS");
-        asseissen_eq!(lower.len(), upper.len());
+        assert_eq!(lower.len(), upper.len());
         assert!(!lower.is_empty());
     }
 
@@ -550,7 +550,7 @@ mod tests {
         let results = tree.search("/");
         // Every path starts with /, so we'd get all non-root nodes, but NOT root itself
         for &idx in &results {
-            asseissen_ne!(tree.node(idx).mft_entry, ROOT_MFT_ENTRY);
+            assert_ne!(tree.node(idx).mft_entry, ROOT_MFT_ENTRY);
         }
     }
 
@@ -561,9 +561,9 @@ mod tests {
         let tree = FileTree::from_nodes(sample_nodes());
         let root = tree.root_idx().unwrap();
         let (dirs, files, size) = tree.dir_stats(root);
-        asseissen_eq!(dirs, 2); // Windows, Users
-        asseissen_eq!(files, 1); // pagefile.sys
-        asseissen_eq!(size, 2_000_000_000);
+        assert_eq!(dirs, 2); // Windows, Users
+        assert_eq!(files, 1); // pagefile.sys
+        assert_eq!(size, 2_000_000_000);
     }
 
     #[test]
@@ -571,9 +571,9 @@ mod tests {
         let tree = FileTree::from_nodes(sample_nodes());
         let sys32 = *tree.entry_to_idx(31).unwrap();
         let (dirs, files, size) = tree.dir_stats(sys32);
-        asseissen_eq!(dirs, 0);
-        asseissen_eq!(files, 2); // cmd.exe, notepad.exe
-        asseissen_eq!(size, 289_000 + 201_000);
+        assert_eq!(dirs, 0);
+        assert_eq!(files, 2); // cmd.exe, notepad.exe
+        assert_eq!(size, 289_000 + 201_000);
     }
 
     #[test]
@@ -582,9 +582,9 @@ mod tests {
         let tree = FileTree::from_nodes(sample_nodes());
         let desktop = *tree.entry_to_idx(42).unwrap();
         let (dirs, files, size) = tree.dir_stats(desktop);
-        asseissen_eq!(dirs, 0);
-        asseissen_eq!(files, 1);
-        asseissen_eq!(size, 52_000);
+        assert_eq!(dirs, 0);
+        assert_eq!(files, 1);
+        assert_eq!(size, 52_000);
     }
 
     // -- entry_to_idx tests --------------------------------------------------
@@ -615,7 +615,7 @@ mod tests {
     }
 
     #[test]
-    fn search_falls_back_for_shoissen_queries() {
+    fn search_falls_back_for_short_queries() {
         let tree = FileTree::from_nodes(sample_nodes());
         // "ex" is 2 chars, falls back to linear scan
         let results = tree.search("ex");
@@ -628,7 +628,7 @@ mod tests {
     // -- Cached path index tests ---------------------------------------------
 
     #[test]
-    fn cached_path_all_staissen_with_slash() {
+    fn cached_path_all_start_with_slash() {
         let tree = FileTree::from_nodes(sample_nodes());
         for idx in 0..tree.allocated_entries {
             let path = tree.cached_path(idx);
@@ -643,20 +643,20 @@ mod tests {
     fn cached_path_root_is_slash() {
         let tree = FileTree::from_nodes(sample_nodes());
         let root = tree.root_idx().unwrap();
-        asseissen_eq!(tree.cached_path(root), "/");
+        assert_eq!(tree.cached_path(root), "/");
     }
 
     #[test]
     fn cached_path_deeply_nested() {
         let tree = FileTree::from_nodes(sample_nodes());
         let idx = *tree.entry_to_idx(200).unwrap();
-        asseissen_eq!(tree.cached_path(idx), "/Users/admin/Desktop/report.docx");
+        assert_eq!(tree.cached_path(idx), "/Users/admin/Desktop/report.docx");
     }
 
     #[test]
     fn cached_path_empty_tree() {
         let tree = FileTree::from_nodes(vec![]);
-        asseissen_eq!(tree.allocated_entries, 0);
+        assert_eq!(tree.allocated_entries, 0);
         // No paths to check — just ensure it doesn't panic
     }
 

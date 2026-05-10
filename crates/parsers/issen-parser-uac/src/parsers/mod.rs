@@ -24,6 +24,74 @@ use tracing::info;
 
 pub use mem_sockstat::SockstatEntry;
 
+/// A group of hidden processes that share a network endpoint and form a
+/// recognizable shell upgrade chain (e.g. `sh → python3 → bash`).
+#[derive(Debug, Clone, Serialize)]
+pub struct ShellUpgradeChain {
+    /// PIDs involved in the chain.
+    pub pids: Vec<u32>,
+    /// Process names in the chain (e.g. `["sh", "python3", "bash"]`).
+    pub process_names: Vec<String>,
+    /// `dst_ip:dst_port` shared by all processes in the chain.
+    pub shared_endpoint: String,
+}
+
+const SHELL_OR_INTERPRETER_NAMES: &[&str] = &[
+    "sh", "bash", "dash", "zsh", "ksh", "fish",
+    "python", "python2", "python3", "perl", "ruby", "node", "nodejs", "php",
+];
+
+/// Detect interpreter-upgraded shell chains among hidden processes.
+///
+/// A chain requires at least two hidden processes sharing the same external
+/// `(dst_ip:dst_port)`, where at least one process is a shell or interpreter.
+/// Covers both `sh → python3 → bash` (full pty.spawn) and `sh → bash` patterns.
+#[must_use]
+pub fn detect_shell_upgrade_chain(analysis: &HiddenProcessAnalysis) -> Vec<ShellUpgradeChain> {
+    use std::collections::HashMap;
+
+    // Group findings by their first connection's (dst_addr, dst_port).
+    let mut by_endpoint: HashMap<String, Vec<&HiddenProcessFinding>> = HashMap::new();
+    for finding in &analysis.findings {
+        let endpoint = finding.connections.iter().find_map(|c| {
+            let port = c.dst_port?;
+            let addr = &c.dst_addr;
+            if addr.is_empty() || addr == "-" {
+                return None;
+            }
+            Some(format!("{addr}:{port}"))
+        });
+        if let Some(ep) = endpoint {
+            by_endpoint.entry(ep).or_default().push(finding);
+        }
+    }
+
+    let mut chains = Vec::new();
+    for (endpoint, group) in by_endpoint {
+        if group.len() < 2 {
+            continue;
+        }
+        let names: Vec<String> = group
+            .iter()
+            .filter_map(|f| f.process_name.clone())
+            .collect();
+        let has_shell_or_interp = names.iter().any(|n| {
+            let lc = n.to_lowercase();
+            SHELL_OR_INTERPRETER_NAMES.iter().any(|s| lc == *s || lc.starts_with(s))
+        });
+        if has_shell_or_interp {
+            let mut pids: Vec<u32> = group.iter().map(|f| f.pid).collect();
+            pids.sort_unstable();
+            chains.push(ShellUpgradeChain {
+                pids,
+                process_names: names,
+                shared_endpoint: endpoint,
+            });
+        }
+    }
+    chains
+}
+
 /// A hidden process discovered by correlating `/proc` PID enumeration with
 /// `ps` output and (optionally) Volatility memory sockstat.
 #[derive(Debug, Clone, Serialize)]
@@ -232,8 +300,8 @@ mod tests {
     fn test_parse_all_categories_empty_dir() {
         let dir = tempfile::tempdir().expect("tmpdir");
         let result = parse_all_categories(dir.path());
-        asseissen_eq!(result.bodyfile_entries, 0);
-        asseissen_eq!(result.network_connections, 0);
+        assert_eq!(result.bodyfile_entries, 0);
+        assert_eq!(result.network_connections, 0);
     }
 
     #[test]
@@ -249,7 +317,7 @@ mod tests {
         .expect("write");
 
         let result = parse_all_categories(dir.path());
-        asseissen_eq!(result.bodyfile_entries, 2);
+        assert_eq!(result.bodyfile_entries, 2);
     }
 
     // =========================================================================
@@ -280,10 +348,10 @@ mod tests {
         std::fs::write(proc_dir.join("hidden_pids_for_ps_command.txt"), "1234\n").expect("write");
 
         let analysis = analyze_hidden_processes(dir.path());
-        asseissen_eq!(analysis.hidden_pids, vec![1234]);
+        assert_eq!(analysis.hidden_pids, vec![1234]);
         // Without sockstat, we still surface the hidden PID
-        asseissen_eq!(analysis.findings.len(), 1);
-        asseissen_eq!(analysis.findings[0].pid, 1234);
+        assert_eq!(analysis.findings.len(), 1);
+        assert_eq!(analysis.findings[0].pid, 1234);
         assert!(analysis.findings[0].process_name.is_none());
         assert!(analysis.findings[0].connections.is_empty());
     }
@@ -347,22 +415,134 @@ mod tests {
         std::fs::write(mem_dir.join("output-sockstat"), sockstat).expect("write");
 
         let analysis = analyze_hidden_processes(dir.path());
-        asseissen_eq!(analysis.hidden_pids, vec![977]);
-        asseissen_eq!(analysis.findings.len(), 1);
+        assert_eq!(analysis.hidden_pids, vec![977]);
+        assert_eq!(analysis.findings.len(), 1);
 
         let finding = &analysis.findings[0];
-        asseissen_eq!(finding.pid, 977);
-        asseissen_eq!(finding.process_name.as_deref(), Some("top"));
+        assert_eq!(finding.pid, 977);
+        assert_eq!(finding.process_name.as_deref(), Some("top"));
         // Should surface "libuv-worker" as a thread name — the XMRig indicator
         assert!(
             finding.thread_names.contains(&"libuv-worker".to_string()),
             "expected libuv-worker in thread_names: {:?}",
             finding.thread_names
         );
-        asseissen_eq!(finding.connections.len(), 3);
+        assert_eq!(finding.connections.len(), 3);
         // All connections are to localhost:3333 (Stratum mining tunnel)
         assert!(finding.connections.iter().all(|c| c.dst_port == Some(3333)));
     }
+
+    // ── Gap 2 RED: detect_shell_upgrade_chain ──────────────────────────────
+
+    #[test]
+    fn shell_upgrade_chain_empty_input_returns_empty() {
+        let analysis = HiddenProcessAnalysis::default();
+        assert!(detect_shell_upgrade_chain(&analysis).is_empty());
+    }
+
+    #[test]
+    fn shell_upgrade_chain_single_process_no_chain() {
+        // One hidden process with connections — not a chain
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let proc_dir = dir.path().join("live_response/process");
+        std::fs::create_dir_all(&proc_dir).expect("mkdir");
+        std::fs::write(proc_dir.join("hidden_pids_for_ps_command.txt"), "939\n").expect("write");
+
+        let mem_dir = dir.path().join("memory_dump");
+        std::fs::create_dir_all(&mem_dir).expect("mkdir");
+        let sockstat = format!(
+            "{}\
+             4026531840\tsh\t939\t939\t0\t0xABC\tAF_INET\tSTREAM\tTCP\t192.168.4.22\t22\t192.168.4.35\t48411\tESTABLISHED\t-\n",
+            header()
+        );
+        std::fs::write(mem_dir.join("output-sockstat"), sockstat).expect("write");
+        let analysis = analyze_hidden_processes(dir.path());
+        assert!(detect_shell_upgrade_chain(&analysis).is_empty(), "single process is not a chain");
+    }
+
+    #[test]
+    fn shell_upgrade_chain_detected_for_sh_python_bash_on_same_endpoint() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let proc_dir = dir.path().join("live_response/process");
+        std::fs::create_dir_all(&proc_dir).expect("mkdir");
+        std::fs::write(
+            proc_dir.join("hidden_pids_for_ps_command.txt"),
+            "939\n940\n941\n",
+        ).expect("write");
+
+        let mem_dir = dir.path().join("memory_dump");
+        std::fs::create_dir_all(&mem_dir).expect("mkdir");
+        let sockstat = format!(
+            "{}\
+             4026531840\tsh\t939\t939\t0\t0xABC\tAF_INET\tSTREAM\tTCP\t192.168.4.22\t22\t192.168.4.35\t48411\tESTABLISHED\t-\n\
+             4026531840\tpython3\t940\t940\t0\t0xABC\tAF_INET\tSTREAM\tTCP\t192.168.4.22\t22\t192.168.4.35\t48411\tESTABLISHED\t-\n\
+             4026531840\tbash\t941\t941\t8\t0xABC\tAF_INET\tSTREAM\tTCP\t192.168.4.22\t22\t192.168.4.35\t48411\tESTABLISHED\t-\n",
+            header()
+        );
+        std::fs::write(mem_dir.join("output-sockstat"), sockstat).expect("write");
+        let analysis = analyze_hidden_processes(dir.path());
+
+        let chains = detect_shell_upgrade_chain(&analysis);
+        assert_eq!(chains.len(), 1, "sh→python3→bash on same endpoint is one chain");
+        let chain = &chains[0];
+        assert!(chain.pids.contains(&939));
+        assert!(chain.pids.contains(&940));
+        assert!(chain.pids.contains(&941));
+        assert!(chain.process_names.iter().any(|n| n == "sh"));
+        assert!(chain.process_names.iter().any(|n| n == "python3"));
+        assert!(chain.process_names.iter().any(|n| n == "bash"));
+        // Shared endpoint should be the attacker IP:port
+        assert!(chain.shared_endpoint.contains("192.168.4.35"));
+    }
+
+    #[test]
+    fn shell_upgrade_chain_miner_processes_not_detected_as_chain() {
+        // XMRig processes on port 3333 are NOT a shell upgrade chain
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let proc_dir = dir.path().join("live_response/process");
+        std::fs::create_dir_all(&proc_dir).expect("mkdir");
+        std::fs::write(proc_dir.join("hidden_pids_for_ps_command.txt"), "977\n").expect("write");
+        let mem_dir = dir.path().join("memory_dump");
+        std::fs::create_dir_all(&mem_dir).expect("mkdir");
+        let sockstat = format!(
+            "{}\
+             4026531840\ttop\t977\t977\t17\t0xABC\tAF_INET\tSTREAM\tTCP\t127.0.0.1\t59182\t127.0.0.1\t3333\tESTABLISHED\t-\n\
+             4026531840\tlibuv-worker\t977\t978\t17\t0xABC\tAF_INET\tSTREAM\tTCP\t127.0.0.1\t59182\t127.0.0.1\t3333\tESTABLISHED\t-\n",
+            header()
+        );
+        std::fs::write(mem_dir.join("output-sockstat"), sockstat).expect("write");
+        let analysis = analyze_hidden_processes(dir.path());
+        // libuv-worker is not a shell/interpreter
+        assert!(detect_shell_upgrade_chain(&analysis).is_empty(), "miner threads are not a shell upgrade chain");
+    }
+
+    #[test]
+    fn shell_upgrade_chain_separate_endpoints_separate_chains() {
+        // Two independent shell upgrade chains on different endpoints
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let proc_dir = dir.path().join("live_response/process");
+        std::fs::create_dir_all(&proc_dir).expect("mkdir");
+        std::fs::write(
+            proc_dir.join("hidden_pids_for_ps_command.txt"),
+            "100\n101\n200\n201\n",
+        ).expect("write");
+        let mem_dir = dir.path().join("memory_dump");
+        std::fs::create_dir_all(&mem_dir).expect("mkdir");
+        let sockstat = format!(
+            "{}\
+             4026531840\tsh\t100\t100\t0\t0xABC\tAF_INET\tSTREAM\tTCP\t10.0.0.1\t22\t10.0.0.2\t9000\tESTABLISHED\t-\n\
+             4026531840\tbash\t101\t101\t0\t0xABC\tAF_INET\tSTREAM\tTCP\t10.0.0.1\t22\t10.0.0.2\t9000\tESTABLISHED\t-\n\
+             4026531840\tsh\t200\t200\t0\t0xDEF\tAF_INET\tSTREAM\tTCP\t10.0.0.1\t22\t10.0.0.3\t9001\tESTABLISHED\t-\n\
+             4026531840\tbash\t201\t201\t0\t0xDEF\tAF_INET\tSTREAM\tTCP\t10.0.0.1\t22\t10.0.0.3\t9001\tESTABLISHED\t-\n",
+            header()
+        );
+        std::fs::write(mem_dir.join("output-sockstat"), sockstat).expect("write");
+        let analysis = analyze_hidden_processes(dir.path());
+        let chains = detect_shell_upgrade_chain(&analysis);
+        assert_eq!(chains.len(), 2, "two separate endpoints → two chains");
+    }
+
+    // ── existing test ───────────────────────────────────────────────────────
 
     #[test]
     fn analyze_ssh_reverse_shell_chain() {
@@ -389,12 +569,12 @@ mod tests {
         std::fs::write(mem_dir.join("output-sockstat"), sockstat).expect("write");
 
         let analysis = analyze_hidden_processes(dir.path());
-        asseissen_eq!(analysis.hidden_pids.len(), 3);
-        asseissen_eq!(analysis.findings.len(), 3);
+        assert_eq!(analysis.hidden_pids.len(), 3);
+        assert_eq!(analysis.findings.len(), 3);
 
         // python3 is the pty.spawn process
         let py = analysis.findings.iter().find(|f| f.pid == 940).unwrap();
-        asseissen_eq!(py.process_name.as_deref(), Some("python3"));
+        assert_eq!(py.process_name.as_deref(), Some("python3"));
         assert!(py.connections.iter().all(|c| c.dst_port == Some(48411)));
     }
 }

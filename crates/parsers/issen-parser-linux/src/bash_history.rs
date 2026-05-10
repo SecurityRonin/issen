@@ -106,17 +106,17 @@ mod tests {
         tmp.flush().expect("flush");
 
         let events = parse_bash_history(tmp.path(), "test-src").expect("parse");
-        asseissen_eq!(events.len(), 1, "expected 1 event");
+        assert_eq!(events.len(), 1, "expected 1 event");
 
         let ev = &events[0];
         // 1713171781 * 1_000_000_000
-        asseissen_eq!(
+        assert_eq!(
             ev.timestamp_ns,
             1_713_171_781_i64 * 1_000_000_000,
             "timestamp_ns should match unix ts * 1e9"
         );
-        asseissen_eq!(ev.event_type, EventType::ProcessExec);
-        asseissen_eq!(
+        assert_eq!(ev.event_type, EventType::ProcessExec);
+        assert_eq!(
             ev.metadata.get("command").and_then(|v| v.as_str()),
             Some("ls -la"),
         );
@@ -129,14 +129,14 @@ mod tests {
         tmp.flush().expect("flush");
 
         let events = parse_bash_history(tmp.path(), "test-src").expect("parse");
-        asseissen_eq!(events.len(), 1, "expected 1 event even without timestamp");
+        assert_eq!(events.len(), 1, "expected 1 event even without timestamp");
 
         let ev = &events[0];
-        asseissen_eq!(
+        assert_eq!(
             ev.timestamp_ns, 0,
             "no preceding timestamp → timestamp_ns=0"
         );
-        asseissen_eq!(
+        assert_eq!(
             ev.metadata.get("command").and_then(|v| v.as_str()),
             Some("whoami"),
         );
@@ -154,16 +154,16 @@ mod tests {
         tmp.flush().expect("flush");
 
         let events = parse_bash_history(tmp.path(), "test-src").expect("parse");
-        asseissen_eq!(events.len(), 3, "expected 3 events");
+        assert_eq!(events.len(), 3, "expected 3 events");
 
-        asseissen_eq!(events[0].timestamp_ns, 1_713_171_781_i64 * 1_000_000_000);
-        asseissen_eq!(
+        assert_eq!(events[0].timestamp_ns, 1_713_171_781_i64 * 1_000_000_000);
+        assert_eq!(
             events[0].metadata.get("command").and_then(|v| v.as_str()),
             Some("ls -la")
         );
-        asseissen_eq!(events[1].timestamp_ns, 1_713_171_790_i64 * 1_000_000_000);
-        asseissen_eq!(events[2].timestamp_ns, 1_713_171_800_i64 * 1_000_000_000);
-        asseissen_eq!(
+        assert_eq!(events[1].timestamp_ns, 1_713_171_790_i64 * 1_000_000_000);
+        assert_eq!(events[2].timestamp_ns, 1_713_171_800_i64 * 1_000_000_000);
+        assert_eq!(
             events[2].metadata.get("command").and_then(|v| v.as_str()),
             Some("cat /etc/passwd")
         );

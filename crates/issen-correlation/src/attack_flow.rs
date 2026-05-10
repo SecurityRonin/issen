@@ -48,7 +48,7 @@ pub struct AttackFlowRoot {
     pub name: String,
     pub description: Option<String>,
     pub scope: String,
-    pub staissen_refs: Vec<String>,
+    pub start_refs: Vec<String>,
 }
 
 /// Full parsed Attack Flow STIX 2.1 bundle.
@@ -108,7 +108,7 @@ struct RawObject {
     #[serde(default)]
     effect_refs: Option<Vec<String>>,
     #[serde(default)]
-    staissen_refs: Option<Vec<String>>,
+    start_refs: Option<Vec<String>>,
 }
 
 // ── Public functions ──────────────────────────────────────────────────────────
@@ -143,7 +143,7 @@ pub fn parse_attack_flow_bundle(json: &str) -> anyhow::Result<AttackFlowBundle> 
                     name: obj.name.unwrap_or_default(),
                     description: obj.description,
                     scope: obj.scope.unwrap_or_default(),
-                    staissen_refs: obj.staissen_refs.unwrap_or_default(),
+                    start_refs: obj.start_refs.unwrap_or_default(),
                 });
             }
             Some("attack-action") => {
@@ -186,7 +186,7 @@ pub fn parse_attack_flow_bundle(json: &str) -> anyhow::Result<AttackFlowBundle> 
 
 /// Convert an [`AttackFlowBundle`] into [`CorrelationRule`] objects.
 ///
-/// Walks the DAG via `effect_refs` (BFS from `staissen_refs`).
+/// Walks the DAG via `effect_refs` (BFS from `start_refs`).
 /// Each action with a `technique_id` becomes a [`RuleClause`].
 /// Returns an empty vec if no actions have a `technique_id`.
 pub fn bundle_to_correlation_rules(bundle: &AttackFlowBundle) -> Vec<CorrelationRule> {
@@ -203,8 +203,8 @@ pub fn bundle_to_correlation_rules(bundle: &AttackFlowBundle) -> Vec<Correlation
         bundle.operators.iter().map(|o| (o.id.as_str(), o)).collect();
 
     // Determine start nodes
-    let staissen_ids: Vec<&str> = if let Some(flow) = &bundle.flow {
-        flow.staissen_refs.iter().map(String::as_str).collect()
+    let start_ids: Vec<&str> = if let Some(flow) = &bundle.flow {
+        flow.start_refs.iter().map(String::as_str).collect()
     } else {
         // No flow root: use actions not referenced by any other action's effect_refs
         let referenced: HashSet<&str> = bundle
@@ -222,7 +222,7 @@ pub fn bundle_to_correlation_rules(bundle: &AttackFlowBundle) -> Vec<Correlation
 
     // BFS to collect ordered list of actions with technique_ids
     let mut visited: HashSet<&str> = HashSet::new();
-    let mut queue: VecDeque<&str> = staissen_ids.into_iter().collect();
+    let mut queue: VecDeque<&str> = start_ids.into_iter().collect();
     let mut ordered_actions: Vec<&AttackAction> = Vec::new();
 
     while let Some(current_id) = queue.pop_front() {
@@ -311,11 +311,11 @@ pub fn bundle_to_flow_graph(bundle: &AttackFlowBundle) -> FlowGraph {
         .map_or_else(|| "Attack Flow".to_string(), |f| f.name.clone());
 
     // Assign short IDs to actions
-    let action_shoissen_ids: HashMap<&str, String> = bundle
+    let action_short_ids: HashMap<&str, String> = bundle
         .actions
         .iter()
         .enumerate()
-        .map(|(i, a)| (a.id.as_str(), shoissen_id(i)))
+        .map(|(i, a)| (a.id.as_str(), short_id(i)))
         .collect();
 
     let nodes: Vec<FlowNode> = bundle
@@ -323,7 +323,7 @@ pub fn bundle_to_flow_graph(bundle: &AttackFlowBundle) -> FlowGraph {
         .iter()
         .enumerate()
         .map(|(i, action)| FlowNode {
-            id: shoissen_id(i),
+            id: short_id(i),
             label: action.name.clone(),
             tactic_id: action.tactic_id.clone(),
             technique_id: action.technique_id.clone(),
@@ -333,11 +333,11 @@ pub fn bundle_to_flow_graph(bundle: &AttackFlowBundle) -> FlowGraph {
     // Build edges from effect_refs (action → action only; skip operators)
     let mut edges: Vec<FlowEdge> = Vec::new();
     for action in &bundle.actions {
-        let Some(from_short) = action_shoissen_ids.get(action.id.as_str()) else {
+        let Some(from_short) = action_short_ids.get(action.id.as_str()) else {
             continue;
         };
         for target_id in &action.effect_refs {
-            if let Some(to_short) = action_shoissen_ids.get(target_id.as_str()) {
+            if let Some(to_short) = action_short_ids.get(target_id.as_str()) {
                 edges.push(FlowEdge {
                     from: from_short.clone(),
                     to: to_short.clone(),
@@ -346,7 +346,7 @@ pub fn bundle_to_flow_graph(bundle: &AttackFlowBundle) -> FlowGraph {
             // If target is an operator, follow through to its effect_refs
             else if let Some(op) = bundle.operators.iter().find(|o| &o.id == target_id) {
                 for op_target in &op.effect_refs {
-                    if let Some(to_short) = action_shoissen_ids.get(op_target.as_str()) {
+                    if let Some(to_short) = action_short_ids.get(op_target.as_str()) {
                         edges.push(FlowEdge {
                             from: from_short.clone(),
                             to: to_short.clone(),
@@ -443,7 +443,7 @@ pub fn download_attack_flow_corpus_zip(cache_dir: &Path) -> anyhow::Result<PathB
 }
 
 /// Generate a short node ID from an index (0→"A", 25→"Z", 26→"AA", …).
-fn shoissen_id(index: usize) -> String {
+fn short_id(index: usize) -> String {
     let mut n = index;
     let mut result = String::new();
     loop {
@@ -523,11 +523,11 @@ mod tests {
             ]
         }"#;
         let bundle = parse_attack_flow_bundle(json).expect("should parse bundle");
-        asseissen_eq!(bundle.actions.len(), 1);
+        assert_eq!(bundle.actions.len(), 1);
         let action = &bundle.actions[0];
-        asseissen_eq!(action.name, "Phishing");
-        asseissen_eq!(action.tactic_id, Some("TA0001".to_string()));
-        asseissen_eq!(action.technique_id, Some("T1566.002".to_string()));
+        assert_eq!(action.name, "Phishing");
+        assert_eq!(action.tactic_id, Some("TA0001".to_string()));
+        assert_eq!(action.technique_id, Some("T1566.002".to_string()));
     }
 
     // ── Test 4 ────────────────────────────────────────────────────────────────
@@ -548,8 +548,8 @@ mod tests {
             ]
         }"#;
         let bundle = parse_attack_flow_bundle(json).expect("should parse bundle");
-        asseissen_eq!(bundle.operators.len(), 1);
-        asseissen_eq!(bundle.operators[0].operator, "AND");
+        assert_eq!(bundle.operators.len(), 1);
+        assert_eq!(bundle.operators[0].operator, "AND");
     }
 
     // ── Test 5 ────────────────────────────────────────────────────────────────
@@ -566,16 +566,16 @@ mod tests {
                     "id": "attack-flow--cccccccc-0000-0000-0000-000000000001",
                     "name": "Test Flow",
                     "scope": "incident",
-                    "staissen_refs": ["attack-action--aaaaaaaa-0000-0000-0000-000000000001"]
+                    "start_refs": ["attack-action--aaaaaaaa-0000-0000-0000-000000000001"]
                 }
             ]
         }"#;
         let bundle = parse_attack_flow_bundle(json).expect("should parse bundle");
         assert!(bundle.flow.is_some());
         let flow = bundle.flow.as_ref().unwrap();
-        asseissen_eq!(flow.name, "Test Flow");
-        asseissen_eq!(
-            flow.staissen_refs,
+        assert_eq!(flow.name, "Test Flow");
+        assert_eq!(
+            flow.start_refs,
             vec!["attack-action--aaaaaaaa-0000-0000-0000-000000000001".to_string()]
         );
     }
@@ -607,13 +607,13 @@ mod tests {
         }}"#
         );
         let bundle = parse_attack_flow_bundle(&json).expect("should parse bundle");
-        asseissen_eq!(bundle.actions.len(), 2);
+        assert_eq!(bundle.actions.len(), 2);
         let action_a = bundle
             .actions
             .iter()
             .find(|a| a.name == "Action A")
             .expect("Action A not found");
-        asseissen_eq!(action_a.effect_refs, vec![action_b_id.to_string()]);
+        assert_eq!(action_a.effect_refs, vec![action_b_id.to_string()]);
     }
 
     // ── Test 7 ────────────────────────────────────────────────────────────────
@@ -644,8 +644,8 @@ mod tests {
             assets: vec![],
         };
         let rules = bundle_to_correlation_rules(&bundle);
-        asseissen_eq!(rules.len(), 1);
-        asseissen_eq!(rules[0].clauses[0].required_tag, "technique:T1566.002");
+        assert_eq!(rules.len(), 1);
+        assert_eq!(rules[0].clauses[0].required_tag, "technique:T1566.002");
     }
 
     // ── Test 9 ────────────────────────────────────────────────────────────────
@@ -662,7 +662,7 @@ mod tests {
                 name: "Test Chain".into(),
                 description: None,
                 scope: "incident".into(),
-                staissen_refs: vec![action_a_id.into()],
+                start_refs: vec![action_a_id.into()],
             }),
             actions: vec![
                 AttackAction {
@@ -689,10 +689,10 @@ mod tests {
         };
 
         let rules = bundle_to_correlation_rules(&bundle);
-        asseissen_eq!(rules.len(), 1);
-        asseissen_eq!(rules[0].clauses.len(), 2);
-        asseissen_eq!(rules[0].clauses[0].required_tag, "technique:T1566.002");
-        asseissen_eq!(rules[0].clauses[1].required_tag, "technique:T1059.001");
+        assert_eq!(rules.len(), 1);
+        assert_eq!(rules[0].clauses.len(), 2);
+        assert_eq!(rules[0].clauses[0].required_tag, "technique:T1566.002");
+        assert_eq!(rules[0].clauses[1].required_tag, "technique:T1059.001");
     }
 
     // ── Test 10 ───────────────────────────────────────────────────────────────
@@ -726,19 +726,19 @@ mod tests {
             assets: vec![],
         };
         let graph = bundle_to_flow_graph(&bundle);
-        asseissen_eq!(graph.nodes.len(), 2);
-        asseissen_eq!(graph.edges.len(), 1);
+        assert_eq!(graph.nodes.len(), 2);
+        assert_eq!(graph.edges.len(), 1);
     }
 
-    // ── Helper: shoissen_id ──────────────────────────────────────────────────────
+    // ── Helper: short_id ──────────────────────────────────────────────────────
 
     #[test]
-    fn shoissen_id_generates_excel_column_names() {
-        asseissen_eq!(shoissen_id(0), "A");
-        asseissen_eq!(shoissen_id(25), "Z");
-        asseissen_eq!(shoissen_id(26), "AA");
-        asseissen_eq!(shoissen_id(27), "AB");
-        asseissen_eq!(shoissen_id(51), "AZ");
-        asseissen_eq!(shoissen_id(52), "BA");
+    fn short_id_generates_excel_column_names() {
+        assert_eq!(short_id(0), "A");
+        assert_eq!(short_id(25), "Z");
+        assert_eq!(short_id(26), "AA");
+        assert_eq!(short_id(27), "AB");
+        assert_eq!(short_id(51), "AZ");
+        assert_eq!(short_id(52), "BA");
     }
 }

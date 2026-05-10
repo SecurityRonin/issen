@@ -256,15 +256,15 @@ mod tests {
 
         let scanner = TunnelingScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "ngrok");
-        asseissen_eq!(findings[0].category, RemoteAccessCategory::Tunneling);
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "ngrok");
+        assert_eq!(findings[0].category, RemoteAccessCategory::Tunneling);
+        assert_eq!(
             findings[0].detection_source,
             DetectionSource::CategoryScanner("tunneling".into())
         );
         assert!(!findings[0].artifacts.is_empty());
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].artifact_type,
             HitArtifactType::Prefetch
         );
@@ -290,9 +290,9 @@ mod tests {
 
         let scanner = TunnelingScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "netsh portproxy");
-        asseissen_eq!(findings[0].category, RemoteAccessCategory::Tunneling);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "netsh portproxy");
+        assert_eq!(findings[0].category, RemoteAccessCategory::Tunneling);
         // Should have at least 2 artifacts: key existence + value
         assert!(
             findings[0].artifacts.len() >= 2,
@@ -334,17 +334,17 @@ mod tests {
             name: "cloudflared".into(),
             display_name: "Cloudflare Argo Tunnel".into(),
             image_path: r"C:\Program Files\cloudflared\cloudflared.exe".into(),
-            staissen_type: 2,
+            start_type: 2,
             service_type: 16,
             account: Some("LocalSystem".into()),
         });
 
         let scanner = TunnelingScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "cloudflared");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "cloudflared");
         assert!(!findings[0].artifacts.is_empty());
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].artifact_type,
             HitArtifactType::Service
         );

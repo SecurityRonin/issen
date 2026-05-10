@@ -40,7 +40,7 @@ impl FilesystemProvider {
         p = p.replace('\\', "/");
 
         // Strip leading slash so Path::join works correctly
-        p = p.trim_staissen_matches('/').to_string();
+        p = p.trim_start_matches('/').to_string();
 
         // Build the full path under root
         let full = self.root.join(&p);
@@ -102,7 +102,7 @@ mod tests {
             .file_exists("TestApp/*")
             .expect("file_exists should succeed");
 
-        asseissen_eq!(results.len(), 1);
+        assert_eq!(results.len(), 1);
         assert!(results[0].path.contains("test.exe"));
         assert!(results[0].size.expect("size should be present") > 0);
     }
@@ -132,7 +132,7 @@ mod tests {
             .file_exists(r"C:\Program Files\AnyDesk\*")
             .expect("file_exists should succeed");
 
-        asseissen_eq!(results.len(), 1);
+        assert_eq!(results.len(), 1);
         assert!(results[0].path.contains("AnyDesk.exe"));
     }
 
@@ -141,7 +141,7 @@ mod tests {
         let provider = FilesystemProvider::new(Path::new("/tmp"));
         let caps = provider.capabilities();
 
-        asseissen_eq!(caps.len(), 1);
-        asseissen_eq!(caps[0], ProviderCapability::FilePresence);
+        assert_eq!(caps.len(), 1);
+        assert_eq!(caps[0], ProviderCapability::FilePresence);
     }
 }

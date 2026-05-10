@@ -75,7 +75,7 @@ pub fn detect_alerts(input: &AlertInput<'_>) -> Vec<Alert> {
     alerts.extend(correlate_network_eventlog(input));
     alerts.extend(correlate_c2_beacon(input));
 
-    alerts.soissen_by_key(|a| a.severity);
+    alerts.sort_by_key(|a| a.severity);
     alerts
 }
 
@@ -106,7 +106,7 @@ pub fn anomalies_to_alerts(index: &AnomalyIndex, tree: &FileTree) -> Vec<Alert> 
         }
     }
 
-    alerts.soissen_by_key(|a| a.severity);
+    alerts.sort_by_key(|a| a.severity);
     alerts
 }
 
@@ -155,7 +155,7 @@ mod tests {
             command: "python3 -c import pty; pty.spawn(\"/bin/bash\")".into(),
             cpu_pct: None,
             mem_pct: None,
-            staissen_time: None,
+            start_time: None,
         }];
         let input = AlertInput {
             processes: &procs,
@@ -294,7 +294,7 @@ mod tests {
             command: "python3 -c import pty; pty.spawn(\"/bin/sh\")".into(),
             cpu_pct: None,
             mem_pct: None,
-            staissen_time: None,
+            start_time: None,
         }];
         let crontabs = vec![CrontabEntry {
             schedule: "0 * * * *".into(),
@@ -350,13 +350,13 @@ mod tests {
         );
 
         let alerts = anomalies_to_alerts(&index, &tree);
-        asseissen_eq!(alerts.len(), 2);
+        assert_eq!(alerts.len(), 2);
 
         // Sorted by severity: Critical first, then Info (Low maps to Info)
-        asseissen_eq!(alerts[0].severity, AlertSeverity::Critical);
+        assert_eq!(alerts[0].severity, AlertSeverity::Critical);
         assert!(alerts[0].category.starts_with("MFT/"));
         assert!(alerts[0].message.contains("HEUR-TS-001"));
-        asseissen_eq!(alerts[1].severity, AlertSeverity::Info);
+        assert_eq!(alerts[1].severity, AlertSeverity::Info);
     }
 
     #[test]

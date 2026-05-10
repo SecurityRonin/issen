@@ -67,7 +67,7 @@ mod tests {
     #[test]
     fn parse_cr3_hex_valid_with_prefix() {
         let result = parse_cr3_hex("0x1a2b3c");
-        asseissen_eq!(
+        assert_eq!(
             result,
             Ok(0x1a2b3c),
             "0x-prefixed hex should parse correctly"
@@ -77,7 +77,7 @@ mod tests {
     #[test]
     fn parse_cr3_hex_valid_bare() {
         let result = parse_cr3_hex("deadbeef");
-        asseissen_eq!(result, Ok(0xdeadbeef), "bare hex should parse correctly");
+        assert_eq!(result, Ok(0xdeadbeef), "bare hex should parse correctly");
     }
 
     #[test]

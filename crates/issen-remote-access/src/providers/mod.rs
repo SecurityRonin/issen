@@ -117,7 +117,7 @@ pub struct ServiceEntry {
     pub name: String,
     pub display_name: String,
     pub image_path: String,
-    pub staissen_type: u32,
+    pub start_type: u32,
     pub service_type: u32,
     pub account: Option<String>,
 }
@@ -642,13 +642,13 @@ mod tests {
         let values = mock
             .registry_values(r"HKLM\SOFTWARE\TeamViewer")
             .expect("should succeed");
-        asseissen_eq!(values.len(), 1);
-        asseissen_eq!(values[0].name, "Version");
+        assert_eq!(values.len(), 1);
+        assert_eq!(values[0].name, "Version");
 
         let subkeys = mock
             .registry_subkeys(r"HKLM\SOFTWARE\TeamViewer")
             .expect("should succeed");
-        asseissen_eq!(subkeys, vec!["Settings", "Logging"]);
+        assert_eq!(subkeys, vec!["Settings", "Logging"]);
     }
 
     #[test]
@@ -670,9 +670,9 @@ mod tests {
         let files = mock
             .file_exists("C:\\Program Files\\AnyDesk\\*")
             .expect("should succeed");
-        asseissen_eq!(files.len(), 1);
-        asseissen_eq!(files[0].path, "C:\\Program Files\\AnyDesk\\AnyDesk.exe");
-        asseissen_eq!(files[0].size, Some(4_096_000));
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0].path, "C:\\Program Files\\AnyDesk\\AnyDesk.exe");
+        assert_eq!(files[0].size, Some(4_096_000));
 
         let empty = mock.file_exists("C:\\NoMatch\\*").expect("should succeed");
         assert!(empty.is_empty());
@@ -711,8 +711,8 @@ mod tests {
             keyword: None,
         };
         let results = mock.event_log_search(&query).expect("should succeed");
-        asseissen_eq!(results.len(), 1);
-        asseissen_eq!(results[0].event_id, 7045);
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].event_id, 7045);
 
         // Filter by keyword
         let query_kw = EventLogQuery {
@@ -722,7 +722,7 @@ mod tests {
             keyword: Some("TeamViewer".into()),
         };
         let results_kw = mock.event_log_search(&query_kw).expect("should succeed");
-        asseissen_eq!(results_kw.len(), 1);
+        assert_eq!(results_kw.len(), 1);
 
         // No match
         let query_miss = EventLogQuery {
@@ -775,7 +775,7 @@ mod tests {
         let files = composite
             .file_exists("C:\\test\\*")
             .expect("should succeed");
-        asseissen_eq!(files.len(), 1);
+        assert_eq!(files.len(), 1);
     }
 
     #[test]

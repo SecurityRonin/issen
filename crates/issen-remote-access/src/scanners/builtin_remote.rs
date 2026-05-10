@@ -155,7 +155,7 @@ impl BuiltinRemoteScanner {
                             ("service_name".into(), svc.name.clone()),
                             ("display_name".into(), svc.display_name.clone()),
                             ("image_path".into(), svc.image_path.clone()),
-                            ("staissen_type".into(), svc.staissen_type.to_string()),
+                            ("start_type".into(), svc.start_type.to_string()),
                         ]),
                     });
                 }
@@ -258,13 +258,13 @@ mod tests {
 
         let scanner = BuiltinRemoteScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "RDP");
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "RDP");
+        assert_eq!(
             findings[0].category,
             RemoteAccessCategory::BuiltInRemoteAccess
         );
-        asseissen_eq!(
+        assert_eq!(
             findings[0].detection_source,
             DetectionSource::CategoryScanner("builtin_remote".into())
         );
@@ -306,8 +306,8 @@ mod tests {
 
         let scanner = BuiltinRemoteScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "RDP");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "RDP");
         // Should have at least 2 artifacts (RDP enabled + NLA disabled).
         assert!(
             findings[0].artifacts.len() >= 2,
@@ -339,8 +339,8 @@ mod tests {
 
         let scanner = BuiltinRemoteScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "RDP");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "RDP");
 
         // Verify the finding contains the source IP
         let artifact = &findings[0].artifacts[0];
@@ -349,7 +349,7 @@ mod tests {
             "expected IP in finding value, got: {}",
             artifact.value
         );
-        asseissen_eq!(
+        assert_eq!(
             artifact.context.get("source_ip"),
             Some(&"192.168.1.100".to_string())
         );
@@ -368,25 +368,25 @@ mod tests {
             name: "sshd".into(),
             display_name: "OpenSSH SSH Server".into(),
             image_path: r"C:\Windows\System32\OpenSSH\sshd.exe".into(),
-            staissen_type: 2,
+            start_type: 2,
             service_type: 16,
             account: Some("LocalSystem".into()),
         });
 
         let scanner = BuiltinRemoteScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "SSH");
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "SSH");
+        assert_eq!(
             findings[0].category,
             RemoteAccessCategory::BuiltInRemoteAccess
         );
-        asseissen_eq!(
+        assert_eq!(
             findings[0].detection_source,
             DetectionSource::CategoryScanner("builtin_remote".into())
         );
         assert!(!findings[0].artifacts.is_empty());
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].artifact_type,
             HitArtifactType::Service
         );

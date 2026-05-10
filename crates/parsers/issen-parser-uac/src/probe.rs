@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_probe_nonexistent_file() {
-        asseissen_eq!(
+        assert_eq!(
             probe_uac(Path::new("/nonexistent.tar.gz")).expect("probe"),
             Confidence::None
         );
@@ -127,21 +127,21 @@ mod tests {
         let dir = tempfile::tempdir().expect("tmpdir");
         let path = dir.path().join("not_gz.txt");
         std::fs::write(&path, b"not gzip").expect("write");
-        asseissen_eq!(probe_uac(&path).expect("probe"), Confidence::None);
+        assert_eq!(probe_uac(&path).expect("probe"), Confidence::None);
     }
 
     #[test]
     fn test_probe_uac_with_log() {
         let dir = tempfile::tempdir().expect("tmpdir");
         let path = create_uac_tar_gz(dir.path(), true);
-        asseissen_eq!(probe_uac(&path).expect("probe"), Confidence::High);
+        assert_eq!(probe_uac(&path).expect("probe"), Confidence::High);
     }
 
     #[test]
     fn test_probe_uac_without_log() {
         let dir = tempfile::tempdir().expect("tmpdir");
         let path = create_uac_tar_gz(dir.path(), false);
-        asseissen_eq!(
+        assert_eq!(
             probe_uac(&path).expect("probe"),
             Confidence::Medium,
             "Has UAC dirs but no uac.log"

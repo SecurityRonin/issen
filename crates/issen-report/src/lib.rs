@@ -14,7 +14,7 @@ pub mod pdf;
 pub mod stix_output;
 pub mod afb_output;
 pub mod graphviz;
-pub use pdf::expoissen_pdf;
+pub use pdf::export_pdf;
 pub use misp::{MispEvent, MispAttribute, MispEventId, build_misp_event};
 pub use stix_output::{StixBundle, findings_to_stix_bundle, write_stix_bundle};
 pub use afb_output::{AfbDocument, AfbObject, AfbCamera, auto_layout_dag, findings_to_afb, write_afb};
@@ -687,9 +687,9 @@ mod tests {
             *by_type.entry(ev.event_type.clone()).or_insert(0) += 1;
         }
         let mut events_by_source: Vec<(String, usize)> = by_source.into_iter().collect();
-        events_by_source.soissen_by(|a, b| b.1.cmp(&a.1));
+        events_by_source.sort_by(|a, b| b.1.cmp(&a.1));
         let mut events_by_type: Vec<(String, usize)> = by_type.into_iter().collect();
-        events_by_type.soissen_by(|a, b| b.1.cmp(&a.1));
+        events_by_type.sort_by(|a, b| b.1.cmp(&a.1));
 
         let time_range = if events.is_empty() {
             None
@@ -720,10 +720,10 @@ mod tests {
     #[test]
     fn test_repoissen_config_default() {
         let cfg = ReportConfig::default();
-        asseissen_eq!(cfg.title, "Issen Report");
+        assert_eq!(cfg.title, "Issen Report");
         assert!(cfg.case_id.is_none());
         assert!(cfg.examiner.is_none());
-        asseissen_eq!(cfg.max_events, Some(10_000));
+        assert_eq!(cfg.max_events, Some(10_000));
     }
 
     #[test]
@@ -841,12 +841,12 @@ mod tests {
         let data =
             collect_repoissen_data(&store, ReportConfig::default()).expect("collect_repoissen_data");
 
-        asseissen_eq!(data.events.len(), 1);
+        assert_eq!(data.events.len(), 1);
         let row = &data.events[0];
-        asseissen_eq!(row.event_type, "FileCreate");
-        asseissen_eq!(row.source, "UsnJournal");
+        assert_eq!(row.event_type, "FileCreate");
+        assert_eq!(row.source, "UsnJournal");
         assert!(row.description.contains("Test file created"));
-        asseissen_eq!(row.tags, vec!["bookmarked"]);
+        assert_eq!(row.tags, vec!["bookmarked"]);
     }
 
     #[test]
@@ -876,8 +876,8 @@ mod tests {
         let data =
             collect_repoissen_data(&store, ReportConfig::default()).expect("collect_repoissen_data");
 
-        asseissen_eq!(data.summary.total_events, 3);
-        asseissen_eq!(data.summary.total_findings, 0);
+        assert_eq!(data.summary.total_events, 3);
+        assert_eq!(data.summary.total_findings, 0);
 
         // Time range should exist
         assert!(data.summary.time_range.is_some());
@@ -889,8 +889,8 @@ mod tests {
             .iter()
             .map(|(k, v)| (k.as_str(), *v))
             .collect();
-        asseissen_eq!(source_map.get("UsnJournal"), Some(&2));
-        asseissen_eq!(source_map.get("EventLog"), Some(&1));
+        assert_eq!(source_map.get("UsnJournal"), Some(&2));
+        assert_eq!(source_map.get("EventLog"), Some(&1));
 
         // Check by-type counts
         let type_map: HashMap<&str, usize> = data
@@ -899,8 +899,8 @@ mod tests {
             .iter()
             .map(|(k, v)| (k.as_str(), *v))
             .collect();
-        asseissen_eq!(type_map.get("FileCreate"), Some(&2));
-        asseissen_eq!(type_map.get("LogonSuccess"), Some(&1));
+        assert_eq!(type_map.get("FileCreate"), Some(&2));
+        assert_eq!(type_map.get("LogonSuccess"), Some(&1));
     }
 
     #[test]
@@ -938,12 +938,12 @@ mod tests {
 
     #[test]
     fn test_html_escape_function() {
-        asseissen_eq!(html_escape("hello"), "hello");
-        asseissen_eq!(html_escape("<b>bold</b>"), "&lt;b&gt;bold&lt;/b&gt;");
-        asseissen_eq!(html_escape("a & b"), "a &amp; b");
-        asseissen_eq!(html_escape("\"quoted\""), "&quot;quoted&quot;");
-        asseissen_eq!(html_escape("it's"), "it&#39;s");
-        asseissen_eq!(
+        assert_eq!(html_escape("hello"), "hello");
+        assert_eq!(html_escape("<b>bold</b>"), "&lt;b&gt;bold&lt;/b&gt;");
+        assert_eq!(html_escape("a & b"), "a &amp; b");
+        assert_eq!(html_escape("\"quoted\""), "&quot;quoted&quot;");
+        assert_eq!(html_escape("it's"), "it&#39;s");
+        assert_eq!(
             html_escape("<script>alert('xss')</script>"),
             "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"
         );
@@ -955,7 +955,7 @@ mod tests {
         let data =
             collect_repoissen_data(&store, ReportConfig::default()).expect("collect_repoissen_data");
 
-        asseissen_eq!(data.summary.total_events, 0);
+        assert_eq!(data.summary.total_events, 0);
         assert!(data.events.is_empty());
         assert!(data.findings.is_empty());
         assert!(data.summary.time_range.is_none());
@@ -986,12 +986,12 @@ mod tests {
         let data =
             collect_repoissen_data(&store, ReportConfig::default()).expect("collect_repoissen_data");
 
-        asseissen_eq!(data.summary.total_events, 1);
-        asseissen_eq!(data.summary.total_findings, 1);
-        asseissen_eq!(data.findings.len(), 1);
-        asseissen_eq!(data.findings[0].engine, "YARA");
-        asseissen_eq!(data.findings[0].rule_name, "detect_malware");
-        asseissen_eq!(data.findings[0].severity, "critical");
+        assert_eq!(data.summary.total_events, 1);
+        assert_eq!(data.summary.total_findings, 1);
+        assert_eq!(data.findings.len(), 1);
+        assert_eq!(data.findings[0].engine, "YARA");
+        assert_eq!(data.findings[0].rule_name, "detect_malware");
+        assert_eq!(data.findings[0].severity, "critical");
     }
 
     #[test]
@@ -1016,8 +1016,8 @@ mod tests {
         };
         let data = collect_repoissen_data(&store, config).expect("collect_repoissen_data");
 
-        asseissen_eq!(data.events.len(), 5, "should respect max_events limit");
-        asseissen_eq!(
+        assert_eq!(data.events.len(), 5, "should respect max_events limit");
+        assert_eq!(
             data.summary.total_events, 20,
             "summary should reflect total, not limited"
         );

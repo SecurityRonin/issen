@@ -381,7 +381,7 @@ mod tests {
         let ip_feeds = registry.feeds_by_type(FeedIndicatorType::Ip);
         assert!(!ip_feeds.is_empty());
         for feed in &ip_feeds {
-            asseissen_eq!(feed.indicator_type, FeedIndicatorType::Ip);
+            assert_eq!(feed.indicator_type, FeedIndicatorType::Ip);
         }
     }
 
@@ -390,7 +390,7 @@ mod tests {
         let registry = FeedRegistry::with_defaults("/tmp/feeds");
         let feed = registry.find_feed("abusech-feodo-ipblocklist");
         assert!(feed.is_some());
-        asseissen_eq!(feed.expect("feed").name, "Feodo Tracker IP Blocklist");
+        assert_eq!(feed.expect("feed").name, "Feodo Tracker IP Blocklist");
     }
 
     #[test]
@@ -403,7 +403,7 @@ mod tests {
     fn test_registry_cache_path() {
         let registry = FeedRegistry::with_defaults("/tmp/feeds");
         let path = registry.cache_path("abusech-feodo-ipblocklist");
-        asseissen_eq!(path, PathBuf::from("/tmp/feeds/abusech-feodo-ipblocklist"));
+        assert_eq!(path, PathBuf::from("/tmp/feeds/abusech-feodo-ipblocklist"));
     }
 
     #[test]
@@ -425,7 +425,7 @@ mod tests {
             license: None,
         });
 
-        asseissen_eq!(registry.len(), 1);
+        assert_eq!(registry.len(), 1);
         assert!(registry.find_feed("custom-feed").is_some());
     }
 
@@ -434,8 +434,8 @@ mod tests {
         let registry = FeedRegistry::with_defaults("/tmp/feeds");
         let yaml = serde_yaml::to_string(&registry).expect("serialize");
         let parsed: FeedRegistry = serde_yaml::from_str(&yaml).expect("deserialize");
-        asseissen_eq!(parsed.len(), registry.len());
-        asseissen_eq!(parsed.cache_dir, registry.cache_dir);
+        assert_eq!(parsed.len(), registry.len());
+        assert_eq!(parsed.cache_dir, registry.cache_dir);
     }
 
     #[test]
@@ -447,7 +447,7 @@ mod tests {
         registry.save_to_file(&config_path).expect("save");
 
         let loaded = FeedRegistry::load_from_file(&config_path).expect("load");
-        asseissen_eq!(loaded.len(), registry.len());
+        assert_eq!(loaded.len(), registry.len());
     }
 
     #[test]
@@ -468,6 +468,6 @@ mod tests {
         let feeds = default_feeds();
         let no_key: Vec<_> = feeds.iter().filter(|f| !f.requires_api_key).collect();
         // All our default feeds should be free (no API key).
-        asseissen_eq!(no_key.len(), feeds.len());
+        assert_eq!(no_key.len(), feeds.len());
     }
 }

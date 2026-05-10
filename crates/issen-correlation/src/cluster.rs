@@ -95,13 +95,13 @@ mod tests {
         let clusters = cluster_events(&events, &ClusterKey::ByPid);
 
         let group_1234 = clusters.get("1234").expect("cluster for pid 1234");
-        asseissen_eq!(group_1234.len(), 2);
+        assert_eq!(group_1234.len(), 2);
         assert!(group_1234.iter().any(|e| e.id == "ev-1"));
         assert!(group_1234.iter().any(|e| e.id == "ev-2"));
 
         let group_5678 = clusters.get("5678").expect("cluster for pid 5678");
-        asseissen_eq!(group_5678.len(), 1);
-        asseissen_eq!(group_5678[0].id, "ev-3");
+        assert_eq!(group_5678.len(), 1);
+        assert_eq!(group_5678[0].id, "ev-3");
     }
 
     // ── test 2: ByPid sends non-process evidence to __unknown__ ───────────────
@@ -116,8 +116,8 @@ mod tests {
         let clusters = cluster_events(&events, &ClusterKey::ByPid);
 
         let unknown = clusters.get("__unknown__").expect("__unknown__ bucket");
-        asseissen_eq!(unknown.len(), 1);
-        asseissen_eq!(unknown[0].id, "ev-no-pid");
+        assert_eq!(unknown.len(), 1);
+        assert_eq!(unknown[0].id, "ev-no-pid");
     }
 
     // ── test 3: ByUser groups events by "user" attribute ─────────────────────
@@ -133,11 +133,11 @@ mod tests {
         let clusters = cluster_events(&events, &ClusterKey::ByUser);
 
         let alice = clusters.get("alice").expect("cluster for alice");
-        asseissen_eq!(alice.len(), 2);
+        assert_eq!(alice.len(), 2);
 
         let bob = clusters.get("bob").expect("cluster for bob");
-        asseissen_eq!(bob.len(), 1);
-        asseissen_eq!(bob[0].id, "ev-3");
+        assert_eq!(bob.len(), 1);
+        assert_eq!(bob[0].id, "ev-3");
     }
 
     // ── test 4: ByUser sends events without "user" attr to __unknown__ ────────
@@ -153,8 +153,8 @@ mod tests {
 
         assert!(clusters.contains_key("charlie"));
         let unknown = clusters.get("__unknown__").expect("__unknown__ bucket");
-        asseissen_eq!(unknown.len(), 1);
-        asseissen_eq!(unknown[0].id, "ev-no-user");
+        assert_eq!(unknown.len(), 1);
+        assert_eq!(unknown[0].id, "ev-no-user");
     }
 
     // ── test 5: ByPath groups events by "path" attribute ─────────────────────
@@ -171,14 +171,14 @@ mod tests {
         let clusters = cluster_events(&events, &ClusterKey::ByPath);
 
         let passwd = clusters.get("/etc/passwd").expect("cluster for /etc/passwd");
-        asseissen_eq!(passwd.len(), 2);
+        assert_eq!(passwd.len(), 2);
 
         let xmrig = clusters.get("/tmp/xmrig").expect("cluster for /tmp/xmrig");
-        asseissen_eq!(xmrig.len(), 1);
+        assert_eq!(xmrig.len(), 1);
 
         let unknown = clusters.get("__unknown__").expect("__unknown__ bucket");
-        asseissen_eq!(unknown.len(), 1);
-        asseissen_eq!(unknown[0].id, "ev-4");
+        assert_eq!(unknown.len(), 1);
+        assert_eq!(unknown[0].id, "ev-4");
     }
 
     // ── test 6: empty input yields empty map ──────────────────────────────────

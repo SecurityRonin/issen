@@ -252,13 +252,13 @@ mod tests {
         );
 
         let indicators = StixParser::parse_bundle(&json).expect("parse");
-        asseissen_eq!(indicators.len(), 1);
+        assert_eq!(indicators.len(), 1);
 
         let ind = &indicators[0];
-        asseissen_eq!(ind.id, "indicator--1");
-        asseissen_eq!(ind.name.as_deref(), Some("Malicious hash"));
-        asseissen_eq!(ind.labels, vec!["malicious-activity"]);
-        asseissen_eq!(ind.iocs, vec![ExtractedIoc::Sha256("abc123def456".into())]);
+        assert_eq!(ind.id, "indicator--1");
+        assert_eq!(ind.name.as_deref(), Some("Malicious hash"));
+        assert_eq!(ind.labels, vec!["malicious-activity"]);
+        assert_eq!(ind.iocs, vec![ExtractedIoc::Sha256("abc123def456".into())]);
     }
 
     #[test]
@@ -273,8 +273,8 @@ mod tests {
         );
 
         let indicators = StixParser::parse_bundle(&json).expect("parse");
-        asseissen_eq!(indicators.len(), 1);
-        asseissen_eq!(
+        assert_eq!(indicators.len(), 1);
+        assert_eq!(
             indicators[0].iocs,
             vec![ExtractedIoc::Ipv4("192.168.1.1".into())]
         );
@@ -292,8 +292,8 @@ mod tests {
         );
 
         let indicators = StixParser::parse_bundle(&json).expect("parse");
-        asseissen_eq!(indicators.len(), 1);
-        asseissen_eq!(
+        assert_eq!(indicators.len(), 1);
+        assert_eq!(
             indicators[0].iocs,
             vec![ExtractedIoc::Domain("evil.example.com".into())]
         );
@@ -311,8 +311,8 @@ mod tests {
         );
 
         let indicators = StixParser::parse_bundle(&json).expect("parse");
-        asseissen_eq!(indicators.len(), 1);
-        asseissen_eq!(
+        assert_eq!(indicators.len(), 1);
+        assert_eq!(
             indicators[0].iocs,
             vec![ExtractedIoc::Url("http://evil.com/payload".into())]
         );
@@ -326,7 +326,7 @@ mod tests {
             "[ipv4-addr:value = '1.2.3.4' OR ipv4-addr:value = '5.6.7.8' OR domain-name:value = 'bad.com']";
         let iocs = StixParser::extract_iocs_from_pattern(pattern);
 
-        asseissen_eq!(iocs.len(), 3);
+        assert_eq!(iocs.len(), 3);
         assert!(iocs.contains(&ExtractedIoc::Ipv4("1.2.3.4".into())));
         assert!(iocs.contains(&ExtractedIoc::Ipv4("5.6.7.8".into())));
         assert!(iocs.contains(&ExtractedIoc::Domain("bad.com".into())));
@@ -356,8 +356,8 @@ mod tests {
         );
 
         let indicators = StixParser::parse_bundle(&json).expect("parse");
-        asseissen_eq!(indicators.len(), 1);
-        asseissen_eq!(indicators[0].id, "indicator--5");
+        assert_eq!(indicators.len(), 1);
+        assert_eq!(indicators[0].id, "indicator--5");
     }
 
     // -- File parsing -------------------------------------------------------
@@ -378,9 +378,9 @@ mod tests {
         std::fs::write(&path, &json).expect("write");
 
         let indicators = StixParser::parse_file(&path).expect("parse file");
-        asseissen_eq!(indicators.len(), 1);
-        asseissen_eq!(indicators[0].id, "indicator--file");
-        asseissen_eq!(
+        assert_eq!(indicators.len(), 1);
+        assert_eq!(indicators[0].id, "indicator--file");
+        assert_eq!(
             indicators[0].iocs,
             vec![ExtractedIoc::Sha256("deadbeef".into())]
         );
@@ -425,7 +425,7 @@ mod tests {
     fn test_extract_sha256_from_pattern() {
         let pattern = "[file:hashes.'SHA-256' = 'e3b0c44298fc1c149afbf4c8996fb924']";
         let iocs = StixParser::extract_iocs_from_pattern(pattern);
-        asseissen_eq!(
+        assert_eq!(
             iocs,
             vec![ExtractedIoc::Sha256(
                 "e3b0c44298fc1c149afbf4c8996fb924".into()
@@ -437,7 +437,7 @@ mod tests {
     fn test_extract_md5_from_pattern() {
         let pattern = "[file:hashes.MD5 = 'd41d8cd98f00b204e9800998ecf8427e']";
         let iocs = StixParser::extract_iocs_from_pattern(pattern);
-        asseissen_eq!(
+        assert_eq!(
             iocs,
             vec![ExtractedIoc::Md5("d41d8cd98f00b204e9800998ecf8427e".into())]
         );
@@ -447,7 +447,7 @@ mod tests {
     fn test_extract_sha1_from_pattern() {
         let pattern = "[file:hashes.'SHA-1' = 'da39a3ee5e6b4b0d3255bfef95601890afd80709']";
         let iocs = StixParser::extract_iocs_from_pattern(pattern);
-        asseissen_eq!(
+        assert_eq!(
             iocs,
             vec![ExtractedIoc::Sha1(
                 "da39a3ee5e6b4b0d3255bfef95601890afd80709".into()
@@ -459,7 +459,7 @@ mod tests {
     fn test_extract_ipv6_from_pattern() {
         let pattern = "[ipv6-addr:value = '2001:db8::1']";
         let iocs = StixParser::extract_iocs_from_pattern(pattern);
-        asseissen_eq!(iocs, vec![ExtractedIoc::Ipv6("2001:db8::1".into())]);
+        assert_eq!(iocs, vec![ExtractedIoc::Ipv6("2001:db8::1".into())]);
     }
 
     // -- Multiple indicators ------------------------------------------------
@@ -488,10 +488,10 @@ mod tests {
         );
 
         let indicators = StixParser::parse_bundle(&json).expect("parse");
-        asseissen_eq!(indicators.len(), 3);
-        asseissen_eq!(indicators[0].id, "indicator--a");
-        asseissen_eq!(indicators[1].id, "indicator--b");
-        asseissen_eq!(indicators[2].id, "indicator--c");
+        assert_eq!(indicators.len(), 3);
+        assert_eq!(indicators[0].id, "indicator--a");
+        assert_eq!(indicators[1].id, "indicator--b");
+        assert_eq!(indicators[2].id, "indicator--c");
     }
 
     // -- Missing optional fields --------------------------------------------
@@ -507,14 +507,14 @@ mod tests {
         );
 
         let indicators = StixParser::parse_bundle(&json).expect("parse");
-        asseissen_eq!(indicators.len(), 1);
+        assert_eq!(indicators.len(), 1);
 
         let ind = &indicators[0];
-        asseissen_eq!(ind.id, ""); // missing id defaults to empty
+        assert_eq!(ind.id, ""); // missing id defaults to empty
         assert!(ind.name.is_none());
         assert!(ind.description.is_none());
         assert!(ind.labels.is_empty());
-        asseissen_eq!(ind.iocs, vec![ExtractedIoc::Domain("minimal.com".into())]);
+        assert_eq!(ind.iocs, vec![ExtractedIoc::Domain("minimal.com".into())]);
     }
 
     // -- Compound hash patterns ---------------------------------------------
@@ -524,7 +524,7 @@ mod tests {
         let pattern = "[file:hashes.'SHA-256' = 'sha256val' OR file:hashes.MD5 = 'md5val']";
         let iocs = StixParser::extract_iocs_from_pattern(pattern);
 
-        asseissen_eq!(iocs.len(), 2);
+        assert_eq!(iocs.len(), 2);
         assert!(iocs.contains(&ExtractedIoc::Sha256("sha256val".into())));
         assert!(iocs.contains(&ExtractedIoc::Md5("md5val".into())));
     }

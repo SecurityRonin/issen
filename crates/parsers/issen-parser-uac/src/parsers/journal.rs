@@ -198,11 +198,11 @@ mod tests {
     fn parse_syslog_format_line() {
         let content = "Apr 03 02:15:44 myhost sshd[1234]: Accepted publickey for root from 10.0.0.1 port 22\n";
         let entries = parse_journal_text(content);
-        asseissen_eq!(entries.len(), 1);
-        asseissen_eq!(entries[0].timestamp, "Apr 03 02:15:44");
-        asseissen_eq!(entries[0].hostname, "myhost");
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].timestamp, "Apr 03 02:15:44");
+        assert_eq!(entries[0].hostname, "myhost");
         assert!(entries[0].unit.contains("sshd"));
-        asseissen_eq!(entries[0].pid, Some(1234));
+        assert_eq!(entries[0].pid, Some(1234));
         assert!(entries[0].message.contains("Accepted publickey for root"));
     }
 
@@ -223,11 +223,11 @@ MESSAGE=new user: name=hacker\n\
 PRIORITY=5\n\
 \n";
         let entries = parse_journal_text(content);
-        asseissen_eq!(entries.len(), 2);
-        asseissen_eq!(entries[0].unit, "sshd.service");
-        asseissen_eq!(entries[0].pid, Some(1234));
-        asseissen_eq!(entries[0].priority, 6);
-        asseissen_eq!(entries[1].message, "new user: name=hacker");
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].unit, "sshd.service");
+        assert_eq!(entries[0].pid, Some(1234));
+        assert_eq!(entries[0].priority, 6);
+        assert_eq!(entries[1].message, "new user: name=hacker");
     }
 
     #[test]

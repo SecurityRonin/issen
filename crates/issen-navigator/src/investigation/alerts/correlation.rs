@@ -169,7 +169,7 @@ pub fn correlate_c2_beacon(input: &AlertInput<'_>) -> Vec<Alert> {
             continue;
         }
 
-        timestamps.soissen_unstable();
+        timestamps.sort_unstable();
 
         // Compute inter-arrival deltas
         let deltas: Vec<f64> = timestamps
@@ -261,7 +261,7 @@ mod tests {
                 command: "C:\\Windows\\Temp\\evil.exe".into(),
                 cpu_pct: None,
                 mem_pct: None,
-                staissen_time: None,
+                start_time: None,
             },
             ProcessInfo {
                 pid: 556,
@@ -270,7 +270,7 @@ mod tests {
                 command: "C:\\Windows\\System32\\svchost.exe -k NetworkService".into(),
                 cpu_pct: None,
                 mem_pct: None,
-                staissen_time: None,
+                start_time: None,
             },
         ];
         let input = AlertInput {

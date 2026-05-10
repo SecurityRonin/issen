@@ -92,7 +92,7 @@ pub fn findings_to_stix_bundle(
         action_ids.push(action_id);
     }
 
-    let staissen_refs: Vec<&str> = action_ids
+    let start_refs: Vec<&str> = action_ids
         .first()
         .map(|id| vec![id.as_str()])
         .unwrap_or_default();
@@ -108,7 +108,7 @@ pub fn findings_to_stix_bundle(
         "created_by_ref": identity_id,
         "name": title,
         "scope": "incident",
-        "staissen_refs": staissen_refs,
+        "start_refs": start_refs,
         "extensions": {
             ext_key: { "extension_type": "new-sdo" }
         }
@@ -208,7 +208,7 @@ mod tests {
             .iter()
             .find(|o| o.get("type").and_then(|t| t.as_str()) == Some("attack-action"))
             .expect("attack-action must exist");
-        asseissen_eq!(
+        assert_eq!(
             action.get("name").and_then(|n| n.as_str()),
             Some("Lateral Movement via SMB"),
             "action name must match finding title"
@@ -224,7 +224,7 @@ mod tests {
             .iter()
             .find(|o| o.get("type").and_then(|t| t.as_str()) == Some("attack-action"))
             .expect("attack-action must exist");
-        asseissen_eq!(
+        assert_eq!(
             action.get("confidence").and_then(|c| c.as_u64()),
             Some(100),
             "critical severity must map to confidence 100"

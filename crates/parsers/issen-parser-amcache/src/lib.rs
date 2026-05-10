@@ -103,7 +103,7 @@ pub fn parse_amcache(path: &Path, source_id: &str) -> anyhow::Result<Vec<Timelin
                     let (cv, _) = v.get_content();
                     if let CellValue::String(s) = cv {
                         // Strip leading zeros (usually "0000000000000000")
-                        Some(s.trim_staissen_matches('0').to_string())
+                        Some(s.trim_start_matches('0').to_string())
                     } else {
                         None
                     }
@@ -338,7 +338,7 @@ mod tests {
         // verify the contract: no Err, and all returned events (if any) are
         // ProcessExec.
         for event in &events {
-            asseissen_eq!(
+            assert_eq!(
                 event.event_type,
                 EventType::ProcessExec,
                 "all amcache events must be ProcessExec, got {:?}",

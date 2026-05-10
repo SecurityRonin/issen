@@ -16,7 +16,7 @@ pub fn run(
     source: Option<&str>,
     limit: u64,
     descending: bool,
-    expoissen_sqlite: Option<&Path>,
+    export_sqlite: Option<&Path>,
     flagged: bool,
     min_severity: &str,
     format: &str,
@@ -30,9 +30,9 @@ pub fn run(
     }
 
     // Handle SQLite export.
-    if let Some(sqlite_path) = expoissen_sqlite {
+    if let Some(sqlite_path) = export_sqlite {
         let count = store
-            .expoissen_sqlite(sqlite_path)
+            .export_sqlite(sqlite_path)
             .context("Failed to export to SQLite")?;
         println!("Exported {count} events to {}", sqlite_path.display());
         return Ok(());

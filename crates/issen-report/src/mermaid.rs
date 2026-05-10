@@ -282,7 +282,7 @@ mod tests {
             .find(|l| l.contains("X["))
             .expect("node line must exist");
         let raw_quote_count = node_line.chars().filter(|&c| c == '"').count();
-        asseissen_eq!(raw_quote_count, 2, "only the two wrapping quotes should remain in the node line");
+        assert_eq!(raw_quote_count, 2, "only the two wrapping quotes should remain in the node line");
     }
 
     #[test]
@@ -317,7 +317,7 @@ mod tests {
     #[test]
     fn empty_defense_input_returns_empty_string() {
         let input = DefenseInput::default();
-        asseissen_eq!(render_defenses(&input), "", "empty input must return empty string");
+        assert_eq!(render_defenses(&input), "", "empty input must return empty string");
     }
 
     #[test]

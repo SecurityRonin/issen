@@ -229,7 +229,7 @@ mod tests {
         let mut store = HashIocStore::new("test");
         let count = parse_plaintext_hashes(data, &mut store).expect("parse");
 
-        asseissen_eq!(count, 2);
+        assert_eq!(count, 2);
         assert!(store
             .lookup_bad("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
             .is_some());
@@ -243,7 +243,7 @@ mod tests {
         let data = "d41d8cd98f00b204e9800998ecf8427e  # empty file hash\n";
         let mut store = HashIocStore::new("test");
         let count = parse_plaintext_hashes(data, &mut store).expect("parse");
-        asseissen_eq!(count, 1);
+        assert_eq!(count, 1);
     }
 
     #[test]
@@ -251,7 +251,7 @@ mod tests {
         let data = "# just comments\n\n";
         let mut store = HashIocStore::new("test");
         let count = parse_plaintext_hashes(data, &mut store).expect("parse");
-        asseissen_eq!(count, 0);
+        assert_eq!(count, 0);
     }
 
     #[test]
@@ -260,7 +260,7 @@ mod tests {
                      d41d8cd98f00b204e9800998ecf8427e\n";
         let mut store = HashIocStore::new("test");
         let count = parse_plaintext_hashes(data, &mut store).expect("parse");
-        asseissen_eq!(count, 1);
+        assert_eq!(count, 1);
     }
 
     // ── Plain text network parser ──────────────────────────────────
@@ -270,7 +270,7 @@ mod tests {
         let data = "# Feodo Tracker\n10.0.0.1\n10.0.0.2\n";
         let mut store = NetworkIocStore::new("test");
         let count = parse_plaintext_network(data, &mut store).expect("parse");
-        asseissen_eq!(count, 2);
+        assert_eq!(count, 2);
         assert!(store.lookup_ip("10.0.0.1").is_some());
     }
 
@@ -279,10 +279,10 @@ mod tests {
         let data = "10.0.0.1\n192.168.0.0/16\nevil.com\n";
         let mut store = NetworkIocStore::new("test");
         let count = parse_plaintext_network(data, &mut store).expect("parse");
-        asseissen_eq!(count, 3);
-        asseissen_eq!(store.ip_count(), 1);
-        asseissen_eq!(store.cidr_count(), 1);
-        asseissen_eq!(store.domain_count(), 1);
+        assert_eq!(count, 3);
+        assert_eq!(store.ip_count(), 1);
+        assert_eq!(store.cidr_count(), 1);
+        assert_eq!(store.domain_count(), 1);
     }
 
     #[test]
@@ -291,7 +291,7 @@ mod tests {
         let data = "10.0.0.1\t5\n10.0.0.2\t3\n";
         let mut store = NetworkIocStore::new("test");
         let count = parse_plaintext_network(data, &mut store).expect("parse");
-        asseissen_eq!(count, 2);
+        assert_eq!(count, 2);
     }
 
     // ── ThreatFox CSV parser ───────────────────────────────────────
@@ -307,7 +307,7 @@ mod tests {
         let mut network_store = NetworkIocStore::new("threatfox");
         let count = parse_threatfox_csv(data, &mut hash_store, &mut network_store).expect("parse");
 
-        asseissen_eq!(count, 3);
+        assert_eq!(count, 3);
         assert!(hash_store
             .lookup_bad("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
             .is_some());
@@ -321,7 +321,7 @@ mod tests {
         let mut hash_store = HashIocStore::new("test");
         let mut network_store = NetworkIocStore::new("test");
         let count = parse_threatfox_csv(data, &mut hash_store, &mut network_store).expect("parse");
-        asseissen_eq!(count, 1);
+        assert_eq!(count, 1);
         assert!(network_store.lookup_domain("malware.com").is_some());
     }
 
@@ -331,7 +331,7 @@ mod tests {
         let mut hash_store = HashIocStore::new("test");
         let mut network_store = NetworkIocStore::new("test");
         let count = parse_threatfox_csv(data, &mut hash_store, &mut network_store).expect("parse");
-        asseissen_eq!(count, 0);
+        assert_eq!(count, 0);
     }
 
     // ── CISA KEV JSON parser ───────────────────────────────────────
@@ -362,11 +362,11 @@ mod tests {
         }"#;
 
         let vulns = parse_cisa_kev(data).expect("parse");
-        asseissen_eq!(vulns.len(), 2);
-        asseissen_eq!(vulns[0].cve_id, "CVE-2024-1234");
-        asseissen_eq!(vulns[0].vendor, "Microsoft");
-        asseissen_eq!(vulns[0].ransomware_use.as_deref(), Some("Known"));
-        asseissen_eq!(vulns[1].cve_id, "CVE-2024-5678");
+        assert_eq!(vulns.len(), 2);
+        assert_eq!(vulns[0].cve_id, "CVE-2024-1234");
+        assert_eq!(vulns[0].vendor, "Microsoft");
+        assert_eq!(vulns[0].ransomware_use.as_deref(), Some("Known"));
+        assert_eq!(vulns[1].cve_id, "CVE-2024-5678");
     }
 
     #[test]
@@ -386,11 +386,11 @@ mod tests {
 
     #[test]
     fn test_extract_domain_from_url() {
-        asseissen_eq!(extract_domain_from_url("http://evil.com/path"), "evil.com");
-        asseissen_eq!(
+        assert_eq!(extract_domain_from_url("http://evil.com/path"), "evil.com");
+        assert_eq!(
             extract_domain_from_url("https://evil.com:8443/path"),
             "evil.com"
         );
-        asseissen_eq!(extract_domain_from_url("evil.com/path"), "evil.com");
+        assert_eq!(extract_domain_from_url("evil.com/path"), "evil.com");
     }
 }

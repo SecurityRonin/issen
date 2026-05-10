@@ -188,10 +188,10 @@ mod tests {
         let def = load_lolrmm_file(&path).expect("should parse anydesk.yaml");
         let rule = compile_lolrmm(&def, "anydesk.yaml");
 
-        asseissen_eq!(rule.id, "lolrmm:anydesk");
-        asseissen_eq!(rule.tool_name, "AnyDesk");
-        asseissen_eq!(rule.category, RemoteAccessCategory::CommercialRmm);
-        asseissen_eq!(rule.source_file, "anydesk.yaml");
+        assert_eq!(rule.id, "lolrmm:anydesk");
+        assert_eq!(rule.tool_name, "AnyDesk");
+        assert_eq!(rule.category, RemoteAccessCategory::CommercialRmm);
+        assert_eq!(rule.source_file, "anydesk.yaml");
 
         // Should have conditions from registry, disk, event log, network, and installation paths.
         assert!(
@@ -245,9 +245,9 @@ mod tests {
 
         let rule = compile_lolrmm(&def, "empty.yaml");
 
-        asseissen_eq!(rule.id, "lolrmm:emptytool");
-        asseissen_eq!(rule.tool_name, "EmptyTool");
-        asseissen_eq!(rule.category, RemoteAccessCategory::CommercialRmm);
+        assert_eq!(rule.id, "lolrmm:emptytool");
+        assert_eq!(rule.tool_name, "EmptyTool");
+        assert_eq!(rule.category, RemoteAccessCategory::CommercialRmm);
         assert!(
             rule.conditions.is_empty(),
             "empty definition should produce no conditions"

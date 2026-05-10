@@ -39,6 +39,30 @@ pub fn parse_dpkg_output(content: &str) -> Vec<InstalledPackage> {
         .collect()
 }
 
+/// Standard system library path prefixes — libraries here are almost certainly
+/// from a package manager (dpkg/rpm/pacman).
+const PACKAGED_LIB_PREFIXES: &[&str] = &[
+    "/usr/lib/",
+    "/usr/lib64/",
+    "/lib/",
+    "/lib64/",
+    "/usr/libexec/",
+    "/usr/local/lib/",
+];
+
+/// Return paths that are NOT in a standard system library directory.
+///
+/// Any preloaded library outside standard package-manager paths is suspicious
+/// regardless of its filename — this replaces brittle name-based detection.
+#[must_use]
+pub fn find_unpackaged_paths(paths: &[String]) -> Vec<String> {
+    paths
+        .iter()
+        .filter(|p| !PACKAGED_LIB_PREFIXES.iter().any(|prefix| p.starts_with(prefix)))
+        .cloned()
+        .collect()
+}
+
 /// Check whether a filename matches a command prefix using any of the UAC
 /// naming conventions: `cmd.txt`, `cmd-flags.txt`, or `cmd_-flags.txt`
 /// (UAC replaces spaces in the shell command with underscores).
@@ -99,6 +123,66 @@ pub fn parse_packages_dir(dir: &std::path::Path) -> Vec<InstalledPackage> {
 mod tests {
     use super::*;
 
+    // ── Gap 5C RED: find_unpackaged_paths ───────────────────────────────────
+
+    #[test]
+    fn find_unpackaged_paths_empty_returns_empty() {
+        let result = find_unpackaged_paths(&[]);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn find_unpackaged_paths_usr_lib_is_packaged() {
+        let result = find_unpackaged_paths(&["/usr/lib/libssl.so.3".to_string()]);
+        assert!(result.is_empty(), "standard /usr/lib should be considered packaged");
+    }
+
+    #[test]
+    fn find_unpackaged_paths_lib_is_packaged() {
+        let result = find_unpackaged_paths(&["/lib/x86_64-linux-gnu/libc.so.6".to_string()]);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn find_unpackaged_paths_usr_lib64_is_packaged() {
+        let result = find_unpackaged_paths(&["/usr/lib64/libz.so.1".to_string()]);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn find_unpackaged_paths_tmp_path_is_unpackaged() {
+        let result = find_unpackaged_paths(&["/tmp/evil.so".to_string()]);
+        assert_eq!(result, vec!["/tmp/evil.so"]);
+    }
+
+    #[test]
+    fn find_unpackaged_paths_dev_shm_is_unpackaged() {
+        let result = find_unpackaged_paths(&["/dev/shm/rootkit.so".to_string()]);
+        assert_eq!(result, vec!["/dev/shm/rootkit.so"]);
+    }
+
+    #[test]
+    fn find_unpackaged_paths_custom_path_is_unpackaged() {
+        let result = find_unpackaged_paths(&["/var/tmp/libfather.so".to_string()]);
+        assert_eq!(result, vec!["/var/tmp/libfather.so"]);
+    }
+
+    #[test]
+    fn find_unpackaged_paths_mixed_returns_only_unpackaged() {
+        let paths = vec![
+            "/usr/lib/libssl.so.3".to_string(),
+            "/tmp/evil.so".to_string(),
+            "/lib/libc.so.6".to_string(),
+            "/dev/shm/rootkit.so".to_string(),
+        ];
+        let result = find_unpackaged_paths(&paths);
+        assert_eq!(result.len(), 2);
+        assert!(result.contains(&"/tmp/evil.so".to_string()));
+        assert!(result.contains(&"/dev/shm/rootkit.so".to_string()));
+    }
+
+    // ── existing tests ──────────────────────────────────────────────────────
+
     #[test]
     fn test_parse_dpkg_output() {
         let content = "Desired=Unknown/Install/Remove/Purge/Hold\n\
@@ -110,10 +194,10 @@ mod tests {
                         ii  coreutils      8.32-4.1ubun amd64        GNU core utilities\n\
                         rc  old-package    1.0          amd64        removed package\n";
         let pkgs = parse_dpkg_output(content);
-        asseissen_eq!(pkgs.len(), 2);
-        asseissen_eq!(pkgs[0].name, "bash");
-        asseissen_eq!(pkgs[0].version, "5.1-6ubuntu1");
-        asseissen_eq!(pkgs[1].name, "coreutils");
+        assert_eq!(pkgs.len(), 2);
+        assert_eq!(pkgs[0].name, "bash");
+        assert_eq!(pkgs[0].version, "5.1-6ubuntu1");
+        assert_eq!(pkgs[1].name, "coreutils");
     }
 
     #[test]
@@ -129,7 +213,7 @@ mod tests {
             !pkgs.is_empty(),
             "parse_packages_dir should find dpkg_-l.txt (UAC underscore naming)"
         );
-        asseissen_eq!(pkgs.len(), 2);
+        assert_eq!(pkgs.len(), 2);
     }
 
     #[test]
@@ -139,6 +223,6 @@ mod tests {
         std::fs::write(dir.path().join("dpkg-l.txt"), content).unwrap();
 
         let pkgs = parse_packages_dir(dir.path());
-        asseissen_eq!(pkgs.len(), 1, "legacy dpkg-l.txt should still be found");
+        assert_eq!(pkgs.len(), 1, "legacy dpkg-l.txt should still be found");
     }
 }

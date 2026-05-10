@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn test_velociraptor_provider_name() {
         let provider = VelociraptorProvider;
-        asseissen_eq!(provider.name(), "Velociraptor");
+        assert_eq!(provider.name(), "Velociraptor");
     }
 
     #[test]
@@ -91,18 +91,18 @@ mod tests {
         let file = std::fs::File::create(&zip_path).expect("create");
         let mut zip = zip::ZipWriter::new(file);
         let opts = zip::write::SimpleFileOptions::default();
-        zip.staissen_file("uploads/ntfs/%5C%5C.%5CC%3A/$MFT", opts)
+        zip.start_file("uploads/ntfs/%5C%5C.%5CC%3A/$MFT", opts)
             .expect("add");
         zip.write_all(b"mft").expect("write");
         zip.finish().expect("finish");
 
         let provider = VelociraptorProvider;
         let confidence = provider.probe(&zip_path).expect("probe");
-        asseissen_eq!(confidence, Confidence::High);
+        assert_eq!(confidence, Confidence::High);
 
         let manifest = provider.open(&zip_path).expect("open");
-        asseissen_eq!(manifest.format_name, "Velociraptor");
-        asseissen_eq!(manifest.metadata.hostname.as_deref(), Some("HOST"));
+        assert_eq!(manifest.format_name, "Velociraptor");
+        assert_eq!(manifest.metadata.hostname.as_deref(), Some("HOST"));
         assert!(!manifest.artifacts.is_empty());
     }
 }

@@ -123,14 +123,14 @@ mod tests {
     fn ntfs_timestamps_equality() {
         let a = default_timestamps();
         let b = default_timestamps();
-        asseissen_eq!(a, b);
+        assert_eq!(a, b);
     }
 
     #[test]
     fn ntfs_timestamps_copy_semantics() {
         let a = default_timestamps();
         let b = a; // Copy
-        asseissen_eq!(a, b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -159,7 +159,7 @@ mod tests {
             ads_names: Vec::new(),
         };
         assert!(node.fn_timestamps.is_some());
-        asseissen_ne!(
+        assert_ne!(
             node.si_timestamps.created,
             node.fn_timestamps.unwrap().created
         );
@@ -209,7 +209,7 @@ mod tests {
             ads_names: Vec::new(),
         };
         assert!(node.is_dir);
-        asseissen_eq!(node.size, 0);
+        assert_eq!(node.size, 0);
     }
 
     // -- Attribute flags tests ------------------------------------------------
@@ -237,18 +237,18 @@ mod tests {
 
     #[test]
     fn format_attributes_none() {
-        asseissen_eq!(node_with_attrs(0).format_attributes(), "------");
+        assert_eq!(node_with_attrs(0).format_attributes(), "------");
     }
 
     #[test]
     fn format_attributes_all() {
         let attrs = 0x0001 | 0x0002 | 0x0004 | 0x0020 | 0x0800 | 0x4000;
-        asseissen_eq!(node_with_attrs(attrs).format_attributes(), "RHSACE");
+        assert_eq!(node_with_attrs(attrs).format_attributes(), "RHSACE");
     }
 
     #[test]
     fn format_attributes_hidden_system() {
-        asseissen_eq!(
+        assert_eq!(
             node_with_attrs(0x0002 | 0x0004).format_attributes(),
             "-HS---"
         );
@@ -256,7 +256,7 @@ mod tests {
 
     #[test]
     fn format_attributes_archive_only() {
-        asseissen_eq!(node_with_attrs(0x0020).format_attributes(), "---A--");
+        assert_eq!(node_with_attrs(0x0020).format_attributes(), "---A--");
     }
 
     #[test]

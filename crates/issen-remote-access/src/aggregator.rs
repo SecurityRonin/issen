@@ -97,13 +97,13 @@ mod tests {
         ];
 
         let merged = merge_findings(findings);
-        asseissen_eq!(merged.len(), 1);
+        assert_eq!(merged.len(), 1);
 
         let f = &merged[0];
-        asseissen_eq!(f.tool_name, "TeamViewer");
-        asseissen_eq!(f.artifacts.len(), 2);
-        asseissen_eq!(f.first_seen, Some(1000));
-        asseissen_eq!(f.last_seen, Some(2000));
+        assert_eq!(f.tool_name, "TeamViewer");
+        assert_eq!(f.artifacts.len(), 2);
+        assert_eq!(f.first_seen, Some(1000));
+        assert_eq!(f.last_seen, Some(2000));
     }
 
     #[test]
@@ -114,9 +114,9 @@ mod tests {
         ];
 
         let merged = merge_findings(findings);
-        asseissen_eq!(merged.len(), 2);
-        asseissen_eq!(merged[0].tool_name, "TeamViewer");
-        asseissen_eq!(merged[1].tool_name, "AnyDesk");
+        assert_eq!(merged.len(), 2);
+        assert_eq!(merged[0].tool_name, "TeamViewer");
+        assert_eq!(merged[1].tool_name, "AnyDesk");
     }
 
     #[test]
@@ -127,11 +127,11 @@ mod tests {
         ];
 
         let merged = merge_findings(findings);
-        asseissen_eq!(merged.len(), 1);
+        assert_eq!(merged.len(), 1);
 
         let f = &merged[0];
-        asseissen_eq!(f.first_seen, Some(5000));
-        asseissen_eq!(f.last_seen, Some(5000));
+        assert_eq!(f.first_seen, Some(5000));
+        assert_eq!(f.last_seen, Some(5000));
     }
 
     #[test]

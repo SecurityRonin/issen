@@ -73,7 +73,7 @@ pub struct App {
     pub collapsed: HashSet<usize>,
     /// Stack of (`dir_idx`, cursor) for `Backspace` navigation.
     path_stack: Vec<(usize, usize)>,
-    pub soissen_mode: SortMode,
+    pub sort_mode: SortMode,
     /// Active search query (empty = no filter).
     pub search_query: String,
     /// Whether the search input bar is active.
@@ -139,7 +139,7 @@ impl App {
             depths: Vec::new(),
             collapsed,
             path_stack: Vec::new(),
-            soissen_mode: SortMode::Name,
+            sort_mode: SortMode::Name,
             search_query: String::new(),
             searching: false,
             flagged_filter: false,
@@ -220,7 +220,7 @@ impl App {
         let mut stack: Vec<(usize, usize)> = Vec::new();
 
         let mut root_children = self.tree.children(self.current_dir).to_vec();
-        soissen_children_by(&self.tree, self.soissen_mode, &mut root_children);
+        sort_children_by(&self.tree, self.sort_mode, &mut root_children);
         for &child in root_children.iter().rev() {
             stack.push((child, 0));
         }
@@ -238,7 +238,7 @@ impl App {
 
             if node.is_dir && !self.collapsed.contains(&idx) {
                 let mut children = self.tree.children(idx).to_vec();
-                soissen_children_by(&self.tree, self.soissen_mode, &mut children);
+                sort_children_by(&self.tree, self.sort_mode, &mut children);
                 for &child in children.iter().rev() {
                     stack.push((child, depth + 1));
                 }
@@ -428,7 +428,7 @@ impl App {
 
             // Sort
             KeyCode::Char('s') => {
-                self.soissen_mode = self.soissen_mode.next();
+                self.sort_mode = self.sort_mode.next();
                 self.refresh_entries();
             }
 
@@ -657,8 +657,8 @@ impl App {
 // ---------------------------------------------------------------------------
 
 /// Sort a list of sibling node indices: directories first, then by sort mode.
-fn soissen_children_by(tree: &FileTree, mode: SortMode, children: &mut [usize]) {
-    children.soissen_by(|&a, &b| {
+fn sort_children_by(tree: &FileTree, mode: SortMode, children: &mut [usize]) {
+    children.sort_by(|&a, &b| {
         let na = tree.node(a);
         let nb = tree.node(b);
         nb.is_dir.cmp(&na.is_dir).then_with(|| match mode {
@@ -786,28 +786,28 @@ mod tests {
     #[test]
     fn initial_state_at_root() {
         let app = test_app();
-        asseissen_eq!(app.selected, 0);
-        asseissen_eq!(app.current_path(), "/");
+        assert_eq!(app.selected, 0);
+        assert_eq!(app.current_path(), "/");
         assert!(!app.searching);
         assert!(app.search_query.is_empty());
-        asseissen_eq!(app.soissen_mode, SortMode::Name);
+        assert_eq!(app.sort_mode, SortMode::Name);
     }
 
     #[test]
     fn root_has_correct_entries() {
         let app = test_app();
         // Folders default collapsed: docs/, src/, config.toml = 3 top-level items
-        asseissen_eq!(app.entries.len(), 3);
+        assert_eq!(app.entries.len(), 3);
     }
 
     #[test]
     fn depths_parallel_entries() {
         let app = test_app();
-        asseissen_eq!(app.entries.len(), app.depths.len());
+        assert_eq!(app.entries.len(), app.depths.len());
         // All collapsed: only top-level items at depth 0
-        asseissen_eq!(app.depths[0], 0); // docs/
-        asseissen_eq!(app.depths[1], 0); // src/
-        asseissen_eq!(app.depths[2], 0); // config.toml
+        assert_eq!(app.depths[0], 0); // docs/
+        assert_eq!(app.depths[1], 0); // src/
+        assert_eq!(app.depths[2], 0); // config.toml
     }
 
     // -- Movement tests ------------------------------------------------------
@@ -815,9 +815,9 @@ mod tests {
     #[test]
     fn j_moves_down() {
         let mut app = test_app();
-        asseissen_eq!(app.selected, 0);
+        assert_eq!(app.selected, 0);
         app.handle_key(key(KeyCode::Char('j')));
-        asseissen_eq!(app.selected, 1);
+        assert_eq!(app.selected, 1);
     }
 
     #[test]
@@ -825,14 +825,14 @@ mod tests {
         let mut app = test_app();
         app.handle_key(key(KeyCode::Char('j'))); // go to 1
         app.handle_key(key(KeyCode::Char('k'))); // back to 0
-        asseissen_eq!(app.selected, 0);
+        assert_eq!(app.selected, 0);
     }
 
     #[test]
     fn k_at_top_stays_at_zero() {
         let mut app = test_app();
         app.handle_key(key(KeyCode::Char('k')));
-        asseissen_eq!(app.selected, 0);
+        assert_eq!(app.selected, 0);
     }
 
     #[test]
@@ -841,14 +841,14 @@ mod tests {
         for _ in 0..100 {
             app.handle_key(key(KeyCode::Char('j')));
         }
-        asseissen_eq!(app.selected, app.entries.len() - 1);
+        assert_eq!(app.selected, app.entries.len() - 1);
     }
 
     #[test]
     fn down_arrow_moves_down() {
         let mut app = test_app();
         app.handle_key(key(KeyCode::Down));
-        asseissen_eq!(app.selected, 1);
+        assert_eq!(app.selected, 1);
     }
 
     #[test]
@@ -856,7 +856,7 @@ mod tests {
         let mut app = test_app();
         app.handle_key(key(KeyCode::Down));
         app.handle_key(key(KeyCode::Up));
-        asseissen_eq!(app.selected, 0);
+        assert_eq!(app.selected, 0);
     }
 
     #[test]
@@ -865,14 +865,14 @@ mod tests {
         app.handle_key(key(KeyCode::Char('j')));
         app.handle_key(key(KeyCode::Char('j')));
         app.handle_key(key(KeyCode::Char('g')));
-        asseissen_eq!(app.selected, 0);
+        assert_eq!(app.selected, 0);
     }
 
     #[test]
     fn shift_g_jumps_to_bottom() {
         let mut app = test_app();
         app.handle_key(key(KeyCode::Char('G')));
-        asseissen_eq!(app.selected, app.entries.len() - 1);
+        assert_eq!(app.selected, app.entries.len() - 1);
     }
 
     #[test]
@@ -880,14 +880,14 @@ mod tests {
         let mut app = test_app();
         app.handle_key(key(KeyCode::PageDown));
         // Only 6 entries in tree mode, visible_height=40 > 6, so clamps to last
-        asseissen_eq!(app.selected, app.entries.len() - 1);
+        assert_eq!(app.selected, app.entries.len() - 1);
     }
 
     #[test]
     fn ctrl_f_pages_down() {
         let mut app = test_app();
         app.handle_key(key_ctrl('f'));
-        asseissen_eq!(app.selected, app.entries.len() - 1);
+        assert_eq!(app.selected, app.entries.len() - 1);
     }
 
     #[test]
@@ -895,7 +895,7 @@ mod tests {
         let mut app = test_app();
         app.handle_key(key(KeyCode::Char('G'))); // go to bottom
         app.handle_key(key_ctrl('b'));
-        asseissen_eq!(app.selected, 0); // 6 items, visible_height=40 > 6, clamps to 0
+        assert_eq!(app.selected, 0); // 6 items, visible_height=40 > 6, clamps to 0
     }
 
     // -- Navigation tests ----------------------------------------------------
@@ -907,8 +907,8 @@ mod tests {
         assert!(app.tree.node(app.entries[0]).is_dir);
         app.handle_key(key(KeyCode::Enter));
         // Should now be inside that directory
-        asseissen_ne!(app.current_path(), "/");
-        asseissen_eq!(app.selected, 0);
+        assert_ne!(app.current_path(), "/");
+        assert_eq!(app.selected, 0);
     }
 
     #[test]
@@ -916,10 +916,10 @@ mod tests {
         let mut app = test_app();
         app.handle_key(key(KeyCode::Enter)); // go into first dir
         let inner_path = app.current_path();
-        asseissen_ne!(inner_path, "/");
+        assert_ne!(inner_path, "/");
 
         app.handle_key(key(KeyCode::Backspace)); // back
-        asseissen_eq!(app.current_path(), "/");
+        assert_eq!(app.current_path(), "/");
     }
 
     #[test]
@@ -931,22 +931,22 @@ mod tests {
         // Now: docs/(0), notes.txt(1), readme.txt(1), src/(0), ...
         app.selected = 1;
         assert!(!app.tree.node(app.entries[1]).is_dir);
-        asseissen_eq!(app.depths[1], 1);
+        assert_eq!(app.depths[1], 1);
         app.handle_key(key(KeyCode::Char('h'))); // jump to parent (docs/ at index 0)
-        asseissen_eq!(app.selected, 0);
+        assert_eq!(app.selected, 0);
         assert!(app.tree.node(app.entries[0]).is_dir);
-        asseissen_eq!(app.current_path(), "/"); // didn't change root
+        assert_eq!(app.current_path(), "/"); // didn't change root
     }
 
     #[test]
     fn h_at_depth0_navigates_back() {
         let mut app = test_app();
         app.handle_key(key(KeyCode::Enter)); // go into first dir
-        asseissen_ne!(app.current_path(), "/");
+        assert_ne!(app.current_path(), "/");
         // At depth 0 in inner dir, h falls back to navigate_back
-        asseissen_eq!(app.depths[app.selected], 0);
+        assert_eq!(app.depths[app.selected], 0);
         app.handle_key(key(KeyCode::Char('h')));
-        asseissen_eq!(app.current_path(), "/");
+        assert_eq!(app.current_path(), "/");
     }
 
     #[test]
@@ -964,9 +964,9 @@ mod tests {
         // h should collapse it, not jump to parent
         app.handle_key(key(KeyCode::Char('h')));
         assert!(app.collapsed.contains(&app.entries[0]));
-        asseissen_eq!(app.entries.len(), 3); // back to all collapsed
-        asseissen_eq!(app.selected, 0); // cursor stays on docs/
-        asseissen_eq!(app.current_path(), "/"); // didn't navigate away
+        assert_eq!(app.entries.len(), 3); // back to all collapsed
+        assert_eq!(app.selected, 0); // cursor stays on docs/
+        assert_eq!(app.current_path(), "/"); // didn't navigate away
     }
 
     #[test]
@@ -996,7 +996,7 @@ mod tests {
         assert!(!app.collapsed.contains(&idx));
         assert!(app.entries.len() > entries_collapsed);
         // Still at root
-        asseissen_eq!(app.current_path(), "/");
+        assert_eq!(app.current_path(), "/");
     }
 
     #[test]
@@ -1007,14 +1007,14 @@ mod tests {
         app.refresh_entries();
         // docs/ is now expanded, l should navigate into it
         app.handle_key(key(KeyCode::Char('l')));
-        asseissen_ne!(app.current_path(), "/");
+        assert_ne!(app.current_path(), "/");
     }
 
     #[test]
     fn backspace_at_root_is_noop() {
         let mut app = test_app();
         app.handle_key(key(KeyCode::Backspace));
-        asseissen_eq!(app.current_path(), "/");
+        assert_eq!(app.current_path(), "/");
     }
 
     #[test]
@@ -1023,13 +1023,13 @@ mod tests {
         // All collapsed: 0=docs/, 1=src/, 2=config.toml
         // Navigate to src/ (index 1) and enter it
         app.selected = 1;
-        asseissen_eq!(app.tree.node(app.entries[1]).name, "src");
+        assert_eq!(app.tree.node(app.entries[1]).name, "src");
         app.handle_key(key(KeyCode::Enter)); // go into src/
-        asseissen_eq!(app.current_path(), "/src");
+        assert_eq!(app.current_path(), "/src");
         app.handle_key(key(KeyCode::Backspace)); // go back
-        asseissen_eq!(app.current_path(), "/");
+        assert_eq!(app.current_path(), "/");
         // Cursor should land on src/ in the tree
-        asseissen_eq!(app.tree.node(app.entries[app.selected]).name, "src");
+        assert_eq!(app.tree.node(app.entries[app.selected]).name, "src");
     }
 
     #[test]
@@ -1040,23 +1040,23 @@ mod tests {
         assert!(!app.tree.node(app.entries[app.selected]).is_dir);
         let path_before = app.current_path().to_string();
         app.handle_key(key(KeyCode::Enter));
-        asseissen_eq!(app.current_path(), path_before);
+        assert_eq!(app.current_path(), path_before);
     }
 
     // -- Sort tests ----------------------------------------------------------
 
     #[test]
-    fn s_cycles_soissen_mode() {
+    fn s_cycles_sort_mode() {
         let mut app = test_app();
-        asseissen_eq!(app.soissen_mode, SortMode::Name);
+        assert_eq!(app.sort_mode, SortMode::Name);
         app.handle_key(key(KeyCode::Char('s')));
-        asseissen_eq!(app.soissen_mode, SortMode::Size);
+        assert_eq!(app.sort_mode, SortMode::Size);
         app.handle_key(key(KeyCode::Char('s')));
-        asseissen_eq!(app.soissen_mode, SortMode::Modified);
+        assert_eq!(app.sort_mode, SortMode::Modified);
         app.handle_key(key(KeyCode::Char('s')));
-        asseissen_eq!(app.soissen_mode, SortMode::Created);
+        assert_eq!(app.sort_mode, SortMode::Created);
         app.handle_key(key(KeyCode::Char('s')));
-        asseissen_eq!(app.soissen_mode, SortMode::Name);
+        assert_eq!(app.sort_mode, SortMode::Name);
     }
 
     // -- Quit tests ----------------------------------------------------------
@@ -1064,25 +1064,25 @@ mod tests {
     #[test]
     fn q_returns_quit() {
         let mut app = test_app();
-        asseissen_eq!(app.handle_key(key(KeyCode::Char('q'))), Action::Quit);
+        assert_eq!(app.handle_key(key(KeyCode::Char('q'))), Action::Quit);
     }
 
     #[test]
     fn esc_returns_quit() {
         let mut app = test_app();
-        asseissen_eq!(app.handle_key(key(KeyCode::Esc)), Action::Quit);
+        assert_eq!(app.handle_key(key(KeyCode::Esc)), Action::Quit);
     }
 
     #[test]
     fn ctrl_c_returns_quit() {
         let mut app = test_app();
-        asseissen_eq!(app.handle_key(key_ctrl('c')), Action::Quit);
+        assert_eq!(app.handle_key(key_ctrl('c')), Action::Quit);
     }
 
     #[test]
     fn j_returns_continue() {
         let mut app = test_app();
-        asseissen_eq!(app.handle_key(key(KeyCode::Char('j'))), Action::Continue);
+        assert_eq!(app.handle_key(key(KeyCode::Char('j'))), Action::Continue);
     }
 
     // -- Search tests --------------------------------------------------------
@@ -1106,8 +1106,8 @@ mod tests {
         app.incremental_search(); // Synchronous fallback for tests
         assert!(!app.search_results.is_empty());
         // Stays at root — ancestors expanded in-place, cursor on match
-        asseissen_eq!(app.current_path(), "/");
-        asseissen_eq!(app.tree.node(app.entries[app.selected]).name, "main.rs");
+        assert_eq!(app.current_path(), "/");
+        assert_eq!(app.tree.node(app.entries[app.selected]).name, "main.rs");
         // src/ should have been expanded to reveal main.rs
         let src_idx = app
             .entries
@@ -1126,10 +1126,10 @@ mod tests {
             app.handle_key(key(KeyCode::Char(c)));
         }
         app.incremental_search(); // Synchronous fallback for tests
-        asseissen_eq!(app.search_results.len(), 1);
+        assert_eq!(app.search_results.len(), 1);
         // Stays at root — docs/ expanded to reveal readme.txt
-        asseissen_eq!(app.current_path(), "/");
-        asseissen_eq!(app.tree.node(app.entries[app.selected]).name, "readme.txt");
+        assert_eq!(app.current_path(), "/");
+        assert_eq!(app.tree.node(app.entries[app.selected]).name, "readme.txt");
     }
 
     #[test]
@@ -1146,12 +1146,12 @@ mod tests {
                                   // Search expanded src/ to reveal main.rs
         assert!(app.entries.len() > orig_entries_len);
         app.handle_key(key(KeyCode::Esc));
-        asseissen_eq!(app.current_dir, orig_dir);
-        asseissen_eq!(app.selected, orig_selected);
+        assert_eq!(app.current_dir, orig_dir);
+        assert_eq!(app.selected, orig_selected);
         assert!(app.search_query.is_empty());
         assert!(app.search_results.is_empty());
         // Collapse state restored — back to original entry count
-        asseissen_eq!(app.entries.len(), orig_entries_len);
+        assert_eq!(app.entries.len(), orig_entries_len);
     }
 
     #[test]
@@ -1165,9 +1165,9 @@ mod tests {
         app.handle_key(key(KeyCode::Enter));
         assert!(!app.searching);
         // Stays at root with main.rs selected (src/ expanded in-place)
-        asseissen_eq!(app.current_path(), "/");
-        asseissen_eq!(app.search_query, "main.rs");
-        asseissen_eq!(app.tree.node(app.entries[app.selected]).name, "main.rs");
+        assert_eq!(app.current_path(), "/");
+        assert_eq!(app.search_query, "main.rs");
+        assert_eq!(app.tree.node(app.entries[app.selected]).name, "main.rs");
     }
 
     #[test]
@@ -1177,9 +1177,9 @@ mod tests {
         for c in "main".chars() {
             app.handle_key(key(KeyCode::Char(c)));
         }
-        asseissen_eq!(app.search_query, "main");
+        assert_eq!(app.search_query, "main");
         app.handle_key(key(KeyCode::Backspace));
-        asseissen_eq!(app.search_query, "mai");
+        assert_eq!(app.search_query, "mai");
     }
 
     #[test]
@@ -1188,15 +1188,15 @@ mod tests {
         app.handle_key(key(KeyCode::Char('/')));
         app.handle_key(key(KeyCode::Char('a')));
         assert!(app.searching);
-        asseissen_eq!(app.selected, 0);
+        assert_eq!(app.selected, 0);
         // Down arrow should move cursor even while searching
         app.handle_key(key(KeyCode::Down));
-        asseissen_eq!(app.selected, 1);
+        assert_eq!(app.selected, 1);
         assert!(app.searching); // still in search mode
-        asseissen_eq!(app.search_query, "a"); // query unchanged
+        assert_eq!(app.search_query, "a"); // query unchanged
                                            // Up arrow
         app.handle_key(key(KeyCode::Up));
-        asseissen_eq!(app.selected, 0);
+        assert_eq!(app.selected, 0);
     }
 
     #[test]
@@ -1208,9 +1208,9 @@ mod tests {
         assert!(app.searching);
         // Ctrl-F should page down
         app.handle_key(key_ctrl('f'));
-        asseissen_eq!(app.selected, 2); // moved by visible_height
+        assert_eq!(app.selected, 2); // moved by visible_height
         assert!(app.searching);
-        asseissen_eq!(app.search_query, "x"); // query unchanged (not 'xf')
+        assert_eq!(app.search_query, "x"); // query unchanged (not 'xf')
     }
 
     #[test]
@@ -1221,7 +1221,7 @@ mod tests {
         app.handle_key(key(KeyCode::Char('/')));
         // Ctrl-B should page up
         app.handle_key(key_ctrl('b'));
-        asseissen_eq!(app.selected, 0);
+        assert_eq!(app.selected, 0);
         assert!(app.searching);
     }
 
@@ -1239,7 +1239,7 @@ mod tests {
         let first_selected = app.selected;
         app.handle_key(key(KeyCode::Char('n')));
         // Cursor should move to a different entry
-        asseissen_ne!(app.selected, first_selected);
+        assert_ne!(app.selected, first_selected);
     }
 
     #[test]
@@ -1252,9 +1252,9 @@ mod tests {
         app.incremental_search(); // Synchronous fallback for tests
         app.handle_key(key(KeyCode::Enter));
         app.handle_key(key(KeyCode::Char('n'))); // go to second match
-        asseissen_eq!(app.search_cursor, 1);
+        assert_eq!(app.search_cursor, 1);
         app.handle_key(key(KeyCode::Char('N'))); // back to first
-        asseissen_eq!(app.search_cursor, 0);
+        assert_eq!(app.search_cursor, 0);
     }
 
     #[test]
@@ -1268,7 +1268,7 @@ mod tests {
         app.incremental_search(); // Synchronous fallback for tests
         assert!(app.search_results.is_empty());
         // Should still be in original dir
-        asseissen_eq!(app.current_dir, orig_dir);
+        assert_eq!(app.current_dir, orig_dir);
     }
 
     #[test]
@@ -1288,13 +1288,13 @@ mod tests {
         assert!(docs_pos.is_some());
         app.selected = docs_pos.unwrap();
         app.handle_key(key(KeyCode::Enter));
-        asseissen_eq!(app.current_path(), "/docs");
+        assert_eq!(app.current_path(), "/docs");
     }
 
     #[test]
     fn esc_outside_search_quits() {
         let mut app = test_app();
-        asseissen_eq!(app.handle_key(key(KeyCode::Esc)), Action::Quit);
+        assert_eq!(app.handle_key(key(KeyCode::Esc)), Action::Quit);
     }
 
     #[test]
@@ -1341,10 +1341,10 @@ mod tests {
             },
         );
         let mut app = App::new(tree, anomaly_index).unwrap();
-        asseissen_eq!(app.entries.len(), 2); // both files visible (flat, no subdirs)
+        assert_eq!(app.entries.len(), 2); // both files visible (flat, no subdirs)
         app.handle_key(key(KeyCode::Char('f')));
-        asseissen_eq!(app.entries.len(), 1); // only flagged
-        asseissen_eq!(app.tree.node(app.entries[0]).name, "flagged.exe");
+        assert_eq!(app.entries.len(), 1); // only flagged
+        assert_eq!(app.tree.node(app.entries[0]).name, "flagged.exe");
     }
 
     // -- Collapse / expand tests ----------------------------------------------
@@ -1353,14 +1353,14 @@ mod tests {
     fn space_collapses_folder() {
         let mut app = test_app();
         // Folders default collapsed: docs/, src/, config.toml = 3
-        asseissen_eq!(app.entries.len(), 3);
+        assert_eq!(app.entries.len(), 3);
         // Expand docs/ first
         app.handle_key(key(KeyCode::Char(' '))); // toggle docs/ → expanded
-        asseissen_eq!(app.entries.len(), 5); // docs/, notes.txt, readme.txt, src/, config.toml
+        assert_eq!(app.entries.len(), 5); // docs/, notes.txt, readme.txt, src/, config.toml
         assert!(!app.collapsed.contains(&app.entries[0]));
         // Collapse it again
         app.handle_key(key(KeyCode::Char(' '))); // toggle docs/ → collapsed
-        asseissen_eq!(app.entries.len(), 3);
+        assert_eq!(app.entries.len(), 3);
         assert!(app.collapsed.contains(&app.entries[0]));
     }
 
@@ -1368,9 +1368,9 @@ mod tests {
     fn space_expands_collapsed_folder() {
         let mut app = test_app();
         // Folders default collapsed: 3 entries
-        asseissen_eq!(app.entries.len(), 3);
+        assert_eq!(app.entries.len(), 3);
         app.handle_key(key(KeyCode::Char(' '))); // expand docs/
-        asseissen_eq!(app.entries.len(), 5); // docs/ + 2 children + src/ + config.toml
+        assert_eq!(app.entries.len(), 5); // docs/ + 2 children + src/ + config.toml
     }
 
     #[test]
@@ -1381,33 +1381,33 @@ mod tests {
         assert!(!app.tree.node(app.entries[2]).is_dir);
         let before = app.entries.len();
         app.handle_key(key(KeyCode::Char(' ')));
-        asseissen_eq!(app.entries.len(), before); // no change
+        assert_eq!(app.entries.len(), before); // no change
     }
 
     #[test]
     fn collapse_state_preserved_after_navigate_back() {
         let mut app = test_app();
         // All collapsed: docs/, src/, config.toml = 3
-        asseissen_eq!(app.entries.len(), 3);
+        assert_eq!(app.entries.len(), 3);
         // Expand docs/
         app.handle_key(key(KeyCode::Char(' ')));
-        asseissen_eq!(app.entries.len(), 5);
+        assert_eq!(app.entries.len(), 5);
         // Navigate into src/ (now at index 3 after expanding docs/)
         app.selected = 3;
-        asseissen_eq!(app.tree.node(app.entries[3]).name, "src");
+        assert_eq!(app.tree.node(app.entries[3]).name, "src");
         app.handle_key(key(KeyCode::Enter));
-        asseissen_eq!(app.current_path(), "/src");
+        assert_eq!(app.current_path(), "/src");
         // Navigate back
         app.handle_key(key(KeyCode::Backspace));
         // docs/ should still be expanded, src/ still collapsed = 5 entries
-        asseissen_eq!(app.entries.len(), 5);
+        assert_eq!(app.entries.len(), 5);
     }
 
     #[test]
     fn search_expands_ancestors_to_reveal_match() {
         let mut app = test_app();
         // Folders default collapsed: docs/, src/, config.toml = 3
-        asseissen_eq!(app.entries.len(), 3);
+        assert_eq!(app.entries.len(), 3);
         // Search for readme.txt (inside collapsed docs/)
         app.handle_key(key(KeyCode::Char('/')));
         for c in "readme".chars() {
@@ -1416,8 +1416,8 @@ mod tests {
         app.incremental_search();
         assert!(!app.search_results.is_empty());
         // Stays at root — docs/ expanded in-place to reveal readme.txt
-        asseissen_eq!(app.current_path(), "/");
-        asseissen_eq!(app.tree.node(app.entries[app.selected]).name, "readme.txt");
+        assert_eq!(app.current_path(), "/");
+        assert_eq!(app.tree.node(app.entries[app.selected]).name, "readme.txt");
         // docs/ should be expanded now
         let docs_idx = app
             .entries

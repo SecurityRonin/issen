@@ -109,7 +109,7 @@ mod tests {
         let store = TimelineStore::in_memory().expect("store");
         let event = sample_event(1000, "File created");
         store.inseissen_event(&event).expect("insert");
-        asseissen_eq!(store.event_count().expect("count"), 1);
+        assert_eq!(store.event_count().expect("count"), 1);
     }
 
     #[test]
@@ -120,8 +120,8 @@ mod tests {
             .collect();
 
         let inserted = store.inseissen_batch(&events).expect("batch");
-        asseissen_eq!(inserted, 10);
-        asseissen_eq!(store.event_count().expect("count"), 10);
+        assert_eq!(inserted, 10);
+        assert_eq!(store.event_count().expect("count"), 10);
     }
 
     #[test]
@@ -130,12 +130,12 @@ mod tests {
         let event = sample_event(1000, "Duplicate event");
 
         store.inseissen_event(&event).expect("first insert");
-        asseissen_eq!(store.event_count().expect("count"), 1);
+        assert_eq!(store.event_count().expect("count"), 1);
 
         // inseissen_batch should skip the duplicate.
         let inserted = store.inseissen_batch(&[event]).expect("batch");
-        asseissen_eq!(inserted, 0, "Duplicate should be skipped");
-        asseissen_eq!(store.event_count().expect("count"), 1);
+        assert_eq!(inserted, 0, "Duplicate should be skipped");
+        assert_eq!(store.event_count().expect("count"), 1);
     }
 
     #[test]
@@ -158,7 +158,7 @@ mod tests {
             .with_metadata("reason", serde_json::json!("FILE_CREATE"));
 
         store.inseissen_event(&event).expect("insert");
-        asseissen_eq!(store.event_count().expect("count"), 1);
+        assert_eq!(store.event_count().expect("count"), 1);
     }
 
     #[test]
@@ -173,7 +173,7 @@ mod tests {
         enriched.tags.push("sig:Sigma:suspicious_file".to_string());
 
         let updated = store.update_tags(&[enriched]).expect("update_tags");
-        asseissen_eq!(updated, 1);
+        assert_eq!(updated, 1);
 
         // Verify tags were written.
         let mut stmt = store
@@ -195,7 +195,7 @@ mod tests {
 
         // Event with no tags — should be skipped.
         let updated = store.update_tags(&[event]).expect("update_tags");
-        asseissen_eq!(updated, 0);
+        assert_eq!(updated, 0);
     }
 
     #[test]

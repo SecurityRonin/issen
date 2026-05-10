@@ -176,7 +176,7 @@ mod tests {
             .expect("parse_lnk must not Err on valid header");
 
         // AccessTime=0 is skipped, so expect 2 events: CreationTime + WriteTime
-        asseissen_eq!(events.len(), 2, "expected 2 events (skip zero AccessTime)");
+        assert_eq!(events.len(), 2, "expected 2 events (skip zero AccessTime)");
 
         // First event: FileCreate from CreationTime
         let create_ev = events
@@ -187,11 +187,11 @@ mod tests {
         // filetime_to_ns(132000000000000000) = ((132000000000000000 - 116444736000000000) * 100)
         // = (15555264000000000 * 100) = 1555526400000000000
         let expected_create_ns: i64 = 1_555_526_400_000_000_000;
-        asseissen_eq!(
+        assert_eq!(
             create_ev.timestamp_ns, expected_create_ns,
             "CreationTime timestamp mismatch"
         );
-        asseissen_eq!(create_ev.source, ArtifactType::Lnk);
+        assert_eq!(create_ev.source, ArtifactType::Lnk);
         assert!(
             create_ev.description.contains("LNK shortcut"),
             "description should contain 'LNK shortcut'"
@@ -206,13 +206,13 @@ mod tests {
         // filetime_to_ns(133000000000000000) = ((133000000000000000 - 116444736000000000) * 100)
         // = (16555264000000000 * 100) = 1655526400000000000
         let expected_write_ns: i64 = 1_655_526_400_000_000_000;
-        asseissen_eq!(
+        assert_eq!(
             modify_ev.timestamp_ns, expected_write_ns,
             "WriteTime timestamp mismatch"
         );
 
         // Check metadata present
-        asseissen_eq!(
+        assert_eq!(
             create_ev.metadata.get("file_size").and_then(|v| v.as_u64()),
             Some(1234),
             "metadata file_size should be 1234"

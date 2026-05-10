@@ -145,7 +145,7 @@ fn test_velociraptor_collection_has_mft() {
         }
     }
     let mut sorted: Vec<_> = type_counts.iter().collect();
-    sorted.soissen_by(|a, b| b.1.cmp(a.1));
+    sorted.sort_by(|a, b| b.1.cmp(a.1));
     for (t, c) in &sorted {
         eprintln!("  {c} {t}");
     }
@@ -218,7 +218,7 @@ fn test_velociraptor_loads_investigation_data() {
     );
     eprintln!("  Artifact counts:");
     let mut sorted: Vec<_> = data.artifact_counts.iter().collect();
-    sorted.soissen_by(|a, b| b.1.cmp(a.1));
+    sorted.sort_by(|a, b| b.1.cmp(a.1));
     for (label, count) in &sorted {
         eprintln!("    {count} {label}");
     }

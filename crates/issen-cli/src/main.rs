@@ -97,7 +97,7 @@ pub enum Commands {
 
         /// Export to SQLite file instead of printing.
         #[arg(long)]
-        expoissen_sqlite: Option<PathBuf>,
+        export_sqlite: Option<PathBuf>,
 
         /// Show scan findings instead of timeline events.
         #[arg(long)]
@@ -364,7 +364,7 @@ fn main() -> ExitCode {
             source,
             limit,
             descending,
-            expoissen_sqlite,
+            export_sqlite,
             flagged,
             min_severity,
             format,
@@ -374,7 +374,7 @@ fn main() -> ExitCode {
             source.as_deref(),
             limit,
             descending,
-            expoissen_sqlite.as_deref(),
+            export_sqlite.as_deref(),
             flagged,
             &min_severity,
             &format,

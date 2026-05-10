@@ -75,32 +75,32 @@ mod tests {
 
     #[test]
     fn from_u32_fixed_is_3() {
-        asseissen_eq!(LnkDriveType::from_u32(3), LnkDriveType::Fixed);
+        assert_eq!(LnkDriveType::from_u32(3), LnkDriveType::Fixed);
     }
 
     #[test]
     fn from_u32_removable_is_2() {
-        asseissen_eq!(LnkDriveType::from_u32(2), LnkDriveType::Removable);
+        assert_eq!(LnkDriveType::from_u32(2), LnkDriveType::Removable);
     }
 
     #[test]
     fn from_u32_network_is_4() {
-        asseissen_eq!(LnkDriveType::from_u32(4), LnkDriveType::Network);
+        assert_eq!(LnkDriveType::from_u32(4), LnkDriveType::Network);
     }
 
     #[test]
     fn from_u32_unknown_on_unrecognised() {
-        asseissen_eq!(LnkDriveType::from_u32(99), LnkDriveType::Unknown);
+        assert_eq!(LnkDriveType::from_u32(99), LnkDriveType::Unknown);
     }
 
     #[test]
     fn from_lecmd_str_fixed() {
-        asseissen_eq!(LnkDriveType::from_lecmd_str("Fixed"), LnkDriveType::Fixed);
+        assert_eq!(LnkDriveType::from_lecmd_str("Fixed"), LnkDriveType::Fixed);
     }
 
     #[test]
     fn from_lecmd_str_removable() {
-        asseissen_eq!(
+        assert_eq!(
             LnkDriveType::from_lecmd_str("Removable"),
             LnkDriveType::Removable
         );
@@ -108,7 +108,7 @@ mod tests {
 
     #[test]
     fn from_lecmd_str_network() {
-        asseissen_eq!(
+        assert_eq!(
             LnkDriveType::from_lecmd_str("Network"),
             LnkDriveType::Network
         );
@@ -116,22 +116,22 @@ mod tests {
 
     #[test]
     fn from_lecmd_str_case_insensitive() {
-        asseissen_eq!(LnkDriveType::from_lecmd_str("FIXED"), LnkDriveType::Fixed);
+        assert_eq!(LnkDriveType::from_lecmd_str("FIXED"), LnkDriveType::Fixed);
     }
 
     #[test]
     fn as_tag_removable() {
-        asseissen_eq!(LnkDriveType::Removable.as_tag(), "drive_type:removable");
+        assert_eq!(LnkDriveType::Removable.as_tag(), "drive_type:removable");
     }
 
     #[test]
     fn as_tag_fixed() {
-        asseissen_eq!(LnkDriveType::Fixed.as_tag(), "drive_type:fixed");
+        assert_eq!(LnkDriveType::Fixed.as_tag(), "drive_type:fixed");
     }
 
     #[test]
     fn as_tag_network() {
-        asseissen_eq!(LnkDriveType::Network.as_tag(), "drive_type:network");
+        assert_eq!(LnkDriveType::Network.as_tag(), "drive_type:network");
     }
 
     #[test]

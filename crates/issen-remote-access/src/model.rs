@@ -104,15 +104,15 @@ mod tests {
 
     #[test]
     fn test_category_display() {
-        asseissen_eq!(
+        assert_eq!(
             format!("{}", RemoteAccessCategory::CommercialRmm),
             "Commercial RMM"
         );
-        asseissen_eq!(
+        assert_eq!(
             format!("{}", RemoteAccessCategory::LateralMovement),
             "Lateral Movement"
         );
-        asseissen_eq!(format!("{}", RemoteAccessCategory::VpnZtna), "VPN/ZTNA");
+        assert_eq!(format!("{}", RemoteAccessCategory::VpnZtna), "VPN/ZTNA");
     }
 
     #[test]
@@ -132,9 +132,9 @@ mod tests {
             last_seen: None,
             detection_source: DetectionSource::LolrmmRule("teamviewer.yaml".into()),
         };
-        asseissen_eq!(finding.tool_name, "TeamViewer");
-        asseissen_eq!(finding.category, RemoteAccessCategory::CommercialRmm);
-        asseissen_eq!(finding.artifacts.len(), 1);
+        assert_eq!(finding.tool_name, "TeamViewer");
+        assert_eq!(finding.category, RemoteAccessCategory::CommercialRmm);
+        assert_eq!(finding.artifacts.len(), 1);
     }
 
     #[test]
@@ -157,9 +157,9 @@ mod tests {
 
         let json = serde_json::to_string(&finding).expect("serialize");
         let deserialized: Finding = serde_json::from_str(&json).expect("deserialize");
-        asseissen_eq!(deserialized.tool_name, "AnyDesk");
-        asseissen_eq!(deserialized.artifacts.len(), 1);
-        asseissen_eq!(deserialized.first_seen, Some(1_700_000_000_000_000_000));
+        assert_eq!(deserialized.tool_name, "AnyDesk");
+        assert_eq!(deserialized.artifacts.len(), 1);
+        assert_eq!(deserialized.first_seen, Some(1_700_000_000_000_000_000));
     }
 
     #[test]
@@ -176,8 +176,8 @@ mod tests {
                 ("source_ip".into(), "10.0.0.5".into()),
             ]),
         };
-        asseissen_eq!(hit.context.get("event_id"), Some(&"21".to_string()));
-        asseissen_eq!(hit.context.get("source_ip"), Some(&"10.0.0.5".to_string()));
+        assert_eq!(hit.context.get("event_id"), Some(&"21".to_string()));
+        assert_eq!(hit.context.get("source_ip"), Some(&"10.0.0.5".to_string()));
     }
 
     #[test]
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     fn test_hit_artifact_type_equality() {
-        asseissen_eq!(HitArtifactType::RegistryKey, HitArtifactType::RegistryKey);
-        asseissen_ne!(HitArtifactType::RegistryKey, HitArtifactType::FilePresence);
+        assert_eq!(HitArtifactType::RegistryKey, HitArtifactType::RegistryKey);
+        assert_ne!(HitArtifactType::RegistryKey, HitArtifactType::FilePresence);
     }
 }

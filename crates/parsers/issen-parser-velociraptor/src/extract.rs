@@ -113,7 +113,7 @@ mod tests {
             original_zip_path: String::new(),
             artifact_type: Some(ArtifactType::Mft),
         };
-        asseissen_eq!(decoded_to_relative_path(&decoded), PathBuf::from("$MFT"));
+        assert_eq!(decoded_to_relative_path(&decoded), PathBuf::from("$MFT"));
     }
 
     #[test]
@@ -124,7 +124,7 @@ mod tests {
             original_zip_path: String::new(),
             artifact_type: Some(ArtifactType::Registry),
         };
-        asseissen_eq!(
+        assert_eq!(
             decoded_to_relative_path(&decoded),
             PathBuf::from("Windows/System32/config/SYSTEM")
         );
@@ -134,9 +134,9 @@ mod tests {
     fn test_extract_metadata_from_filename() {
         let path = Path::new("Collection-A380_localdomain-2025-08-10T03_41_20Z.zip");
         let meta = extract_metadata_from_filename(path);
-        asseissen_eq!(meta.hostname.as_deref(), Some("A380_localdomain"));
+        assert_eq!(meta.hostname.as_deref(), Some("A380_localdomain"));
         assert!(meta.collection_time.is_some());
-        asseissen_eq!(meta.os_type, OsType::Windows);
+        assert_eq!(meta.os_type, OsType::Windows);
     }
 
     #[test]
@@ -158,11 +158,11 @@ mod tests {
         let mut zip = zip::ZipWriter::new(file);
         let opts = zip::write::SimpleFileOptions::default();
 
-        zip.staissen_file("uploads/ntfs/%5C%5C.%5CC%3A/$MFT", opts)
+        zip.start_file("uploads/ntfs/%5C%5C.%5CC%3A/$MFT", opts)
             .expect("add");
         zip.write_all(b"fake-mft-data").expect("write");
 
-        zip.staissen_file(
+        zip.start_file(
             "uploads/auto/C%3A/Windows/System32/winevt/Logs/Security.evtx",
             opts,
         )
@@ -173,15 +173,15 @@ mod tests {
 
         let (entries, meta) = extract_velociraptor(&zip_path, &dest).expect("extract");
 
-        asseissen_eq!(entries.len(), 2);
-        asseissen_eq!(meta.hostname.as_deref(), Some("TEST"));
+        assert_eq!(entries.len(), 2);
+        assert_eq!(meta.hostname.as_deref(), Some("TEST"));
 
         let mft_entry = entries
             .iter()
             .find(|e| e.artifact_type == Some(ArtifactType::Mft));
         assert!(mft_entry.is_some());
         assert!(dest.join("$MFT").exists());
-        asseissen_eq!(
+        assert_eq!(
             std::fs::read(dest.join("$MFT")).expect("read"),
             b"fake-mft-data"
         );

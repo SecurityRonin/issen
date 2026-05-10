@@ -256,11 +256,11 @@ mod tests {
 
         // Verify source identity on whatever events come back.
         for event in &events {
-            asseissen_eq!(
+            assert_eq!(
                 event.evidence_source_id, "shellbags",
                 "all shellbag events must carry the provided source_id"
             );
-            asseissen_eq!(
+            assert_eq!(
                 event.source,
                 ArtifactType::Shellbags,
                 "all shellbag events must use ArtifactType::Shellbags"

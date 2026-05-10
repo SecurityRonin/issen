@@ -84,12 +84,12 @@ mod tests {
         // Unix timestamp: 1_577_836_800 s = 1_577_836_800_000_000_000 ns
         let filetime: u64 = 132_223_104_000_000_000;
         let unix_ns = filetime_to_unix_ns(filetime);
-        asseissen_eq!(unix_ns, 1_577_836_800_000_000_000i64);
+        assert_eq!(unix_ns, 1_577_836_800_000_000_000i64);
     }
 
     #[test]
     fn install_date_to_ns_converts_seconds() {
-        asseissen_eq!(install_date_to_ns(1), 1_000_000_000i64);
-        asseissen_eq!(install_date_to_ns(0), 0i64);
+        assert_eq!(install_date_to_ns(1), 1_000_000_000i64);
+        assert_eq!(install_date_to_ns(0), 0i64);
     }
 }

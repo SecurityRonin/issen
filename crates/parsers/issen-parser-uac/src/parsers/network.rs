@@ -192,12 +192,12 @@ mod tests {
                         LISTEN  0       128     0.0.0.0:22         0.0.0.0:*          users:((\"sshd\",pid=1234,fd=3))\n\
                         ESTAB   0       0       10.0.0.1:22        10.0.0.2:54321\n";
         let conns = parse_ss_output(content);
-        asseissen_eq!(conns.len(), 2);
-        asseissen_eq!(conns[0].state, "LISTEN");
-        asseissen_eq!(conns[0].local_addr, "0.0.0.0:22");
-        asseissen_eq!(conns[0].pid, Some(1234));
-        asseissen_eq!(conns[0].program.as_deref(), Some("sshd"));
-        asseissen_eq!(conns[1].state, "ESTAB");
+        assert_eq!(conns.len(), 2);
+        assert_eq!(conns[0].state, "LISTEN");
+        assert_eq!(conns[0].local_addr, "0.0.0.0:22");
+        assert_eq!(conns[0].pid, Some(1234));
+        assert_eq!(conns[0].program.as_deref(), Some("sshd"));
+        assert_eq!(conns[1].state, "ESTAB");
         assert!(conns[1].pid.is_none());
     }
 
@@ -208,24 +208,24 @@ mod tests {
                         tcp   0      0      0.0.0.0:22        0.0.0.0:*         LISTEN      1234/sshd\n\
                         tcp   0      0      10.0.0.1:22       10.0.0.2:54321    ESTABLISHED -\n";
         let conns = parse_netstat_output(content);
-        asseissen_eq!(conns.len(), 2);
-        asseissen_eq!(conns[0].protocol, "tcp");
-        asseissen_eq!(conns[0].pid, Some(1234));
-        asseissen_eq!(conns[0].program.as_deref(), Some("sshd"));
+        assert_eq!(conns.len(), 2);
+        assert_eq!(conns[0].protocol, "tcp");
+        assert_eq!(conns[0].pid, Some(1234));
+        assert_eq!(conns[0].program.as_deref(), Some("sshd"));
     }
 
     #[test]
     fn test_parse_pid_program_netstat() {
         let (pid, prog) = parse_pid_program("1234/nginx");
-        asseissen_eq!(pid, Some(1234));
-        asseissen_eq!(prog.as_deref(), Some("nginx"));
+        assert_eq!(pid, Some(1234));
+        assert_eq!(prog.as_deref(), Some("nginx"));
     }
 
     #[test]
     fn test_parse_pid_program_ss() {
         let (pid, prog) = parse_pid_program("users:((\"sshd\",pid=1234,fd=3))");
-        asseissen_eq!(pid, Some(1234));
-        asseissen_eq!(prog.as_deref(), Some("sshd"));
+        assert_eq!(pid, Some(1234));
+        assert_eq!(prog.as_deref(), Some("sshd"));
     }
 
     #[test]
@@ -250,7 +250,7 @@ mod tests {
             !conns.is_empty(),
             "parse_network_dir should find ss_-anp.txt and ss_-tlnp.txt (UAC underscore naming)"
         );
-        asseissen_eq!(
+        assert_eq!(
             conns.len(),
             2,
             "expected one connection from each of the two ss files"
@@ -280,7 +280,7 @@ mod tests {
         std::fs::write(dir.path().join("ss-tlnp.txt"), ss_content).unwrap();
 
         let conns = parse_network_dir(dir.path());
-        asseissen_eq!(
+        assert_eq!(
             conns.len(),
             2,
             "legacy ss.txt and ss-tlnp.txt should still be found"

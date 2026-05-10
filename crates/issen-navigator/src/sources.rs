@@ -146,7 +146,7 @@ mod tests {
         let mft_path = touch(tmp.path(), "my_mft");
 
         let sources = ArtifactSources::resolve_path(&mft_path).unwrap();
-        asseissen_eq!(sources.mft, mft_path);
+        assert_eq!(sources.mft, mft_path);
         assert!(sources.mft_mirror.is_none());
         assert!(sources.logfile.is_none());
         assert!(sources.usn_journal.is_none());
@@ -166,7 +166,7 @@ mod tests {
         touch(tmp.path(), "$MFT");
 
         let sources = ArtifactSources::resolve_path(tmp.path()).unwrap();
-        asseissen_eq!(sources.mft.file_name().unwrap(), "$MFT");
+        assert_eq!(sources.mft.file_name().unwrap(), "$MFT");
     }
 
     #[test]
@@ -209,7 +209,7 @@ mod tests {
         touch(tmp.path(), "MFT"); // alternate name
 
         let sources = ArtifactSources::resolve_path(tmp.path()).unwrap();
-        asseissen_eq!(sources.mft.file_name().unwrap(), "MFT");
+        assert_eq!(sources.mft.file_name().unwrap(), "MFT");
     }
 
     // -- Explicit override tests ---------------------------------------------
@@ -223,8 +223,8 @@ mod tests {
         let sources =
             ArtifactSources::from_explicit(&custom_mft, None, None, Some(&custom_usnj)).unwrap();
 
-        asseissen_eq!(sources.mft, custom_mft);
-        asseissen_eq!(sources.usn_journal.as_ref().unwrap(), &custom_usnj);
+        assert_eq!(sources.mft, custom_mft);
+        assert_eq!(sources.usn_journal.as_ref().unwrap(), &custom_usnj);
         assert!(sources.mft_mirror.is_none());
         assert!(sources.logfile.is_none());
     }
@@ -243,7 +243,7 @@ mod tests {
         touch(tmp.path(), "$MFT");
 
         let sources = ArtifactSources::resolve_path(tmp.path()).unwrap();
-        asseissen_eq!(
+        assert_eq!(
             sources.volume_root.as_deref(),
             Some(tmp.path()),
             "scan_folder should set volume_root to the scanned directory"

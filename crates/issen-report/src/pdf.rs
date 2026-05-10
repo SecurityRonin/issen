@@ -18,7 +18,7 @@ use printpdf::{BuiltinFont, Mm, Op, PdfDocument, PdfFontHandle, PdfPage, PdfSave
 ///
 /// Returns an error if `output_path` cannot be written, or if PDF generation
 /// fails internally.
-pub fn expoissen_pdf(html: &str, output_path: &Path) -> anyhow::Result<()> {
+pub fn export_pdf(html: &str, output_path: &Path) -> anyhow::Result<()> {
     let plain_text = strip_html(html);
     let lines: Vec<&str> = plain_text.lines().collect();
 
@@ -129,40 +129,40 @@ mod tests {
 <p>Event count: <strong>42</strong></p>
 </body></html>"#;
 
-    /// `expoissen_pdf` must create a non-empty file at the given path.
+    /// `export_pdf` must create a non-empty file at the given path.
     #[test]
-    fn expoissen_pdf_creates_file() {
+    fn export_pdf_creates_file() {
         let dir = tempfile::tempdir().expect("tempdir");
         let out = dir.path().join("report.pdf");
 
-        expoissen_pdf(SIMPLE_HTML, &out).expect("expoissen_pdf should succeed");
+        export_pdf(SIMPLE_HTML, &out).expect("export_pdf should succeed");
 
-        assert!(out.exists(), "output file should exist after expoissen_pdf");
+        assert!(out.exists(), "output file should exist after export_pdf");
         let meta = std::fs::metadata(&out).expect("metadata");
         assert!(meta.len() > 0, "output file should be non-empty");
     }
 
     /// The first four bytes of a valid PDF must be `%PDF`.
     #[test]
-    fn expoissen_pdf_file_starts_with_pdf_magic() {
+    fn export_pdf_file_starts_with_pdf_magic() {
         let dir = tempfile::tempdir().expect("tempdir");
         let out = dir.path().join("report.pdf");
 
-        expoissen_pdf(SIMPLE_HTML, &out).expect("expoissen_pdf should succeed");
+        export_pdf(SIMPLE_HTML, &out).expect("export_pdf should succeed");
 
         let mut f = std::fs::File::open(&out).expect("open output");
         let mut magic = [0u8; 4];
         f.read_exact(&mut magic).expect("read magic bytes");
-        asseissen_eq!(&magic, b"%PDF", "file must start with PDF magic bytes");
+        assert_eq!(&magic, b"%PDF", "file must start with PDF magic bytes");
     }
 
-    /// Calling `expoissen_pdf` with an empty HTML string must not panic.
+    /// Calling `export_pdf` with an empty HTML string must not panic.
     #[test]
-    fn expoissen_pdf_empty_html_succeeds() {
+    fn export_pdf_empty_html_succeeds() {
         let dir = tempfile::tempdir().expect("tempdir");
         let out = dir.path().join("empty.pdf");
 
-        expoissen_pdf("", &out).expect("expoissen_pdf with empty html should succeed");
+        export_pdf("", &out).expect("export_pdf with empty html should succeed");
 
         assert!(out.exists(), "output file should exist for empty html input");
     }

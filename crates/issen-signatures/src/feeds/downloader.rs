@@ -240,12 +240,12 @@ mod tests {
         let config = test_feed_config("no-url", None, true, false);
 
         let result = download_feed(&config, &cache);
-        asseissen_eq!(result.feed_id, "no-url");
-        asseissen_eq!(
+        assert_eq!(result.feed_id, "no-url");
+        assert_eq!(
             result.status,
             DownloadStatus::Skipped("no URL configured".into())
         );
-        asseissen_eq!(result.bytes_downloaded, 0);
+        assert_eq!(result.bytes_downloaded, 0);
     }
 
     #[test]
@@ -260,12 +260,12 @@ mod tests {
         );
 
         let result = download_feed(&config, &cache);
-        asseissen_eq!(result.feed_id, "disabled");
-        asseissen_eq!(
+        assert_eq!(result.feed_id, "disabled");
+        assert_eq!(
             result.status,
             DownloadStatus::Skipped("feed disabled".into())
         );
-        asseissen_eq!(result.bytes_downloaded, 0);
+        assert_eq!(result.bytes_downloaded, 0);
     }
 
     #[test]
@@ -275,28 +275,28 @@ mod tests {
         let config = test_feed_config("api-feed", Some("https://example.com/feed.txt"), true, true);
 
         let result = download_feed(&config, &cache);
-        asseissen_eq!(result.feed_id, "api-feed");
-        asseissen_eq!(
+        assert_eq!(result.feed_id, "api-feed");
+        assert_eq!(
             result.status,
             DownloadStatus::Skipped("requires API key".into())
         );
-        asseissen_eq!(result.bytes_downloaded, 0);
+        assert_eq!(result.bytes_downloaded, 0);
     }
 
     #[test]
     fn test_download_status_equality() {
-        asseissen_eq!(DownloadStatus::Downloaded, DownloadStatus::Downloaded);
-        asseissen_eq!(DownloadStatus::NotModified, DownloadStatus::NotModified);
-        asseissen_eq!(
+        assert_eq!(DownloadStatus::Downloaded, DownloadStatus::Downloaded);
+        assert_eq!(DownloadStatus::NotModified, DownloadStatus::NotModified);
+        assert_eq!(
             DownloadStatus::Skipped("reason".into()),
             DownloadStatus::Skipped("reason".into())
         );
-        asseissen_eq!(
+        assert_eq!(
             DownloadStatus::Failed("err".into()),
             DownloadStatus::Failed("err".into())
         );
-        asseissen_ne!(DownloadStatus::Downloaded, DownloadStatus::NotModified);
-        asseissen_ne!(
+        assert_ne!(DownloadStatus::Downloaded, DownloadStatus::NotModified);
+        assert_ne!(
             DownloadStatus::Skipped("a".into()),
             DownloadStatus::Skipped("b".into())
         );
@@ -309,9 +309,9 @@ mod tests {
             status: DownloadStatus::Downloaded,
             bytes_downloaded: 1024,
         };
-        asseissen_eq!(result.feed_id, "test-feed");
-        asseissen_eq!(result.status, DownloadStatus::Downloaded);
-        asseissen_eq!(result.bytes_downloaded, 1024);
+        assert_eq!(result.feed_id, "test-feed");
+        assert_eq!(result.status, DownloadStatus::Downloaded);
+        assert_eq!(result.bytes_downloaded, 1024);
     }
 
     #[test]
@@ -335,9 +335,9 @@ mod tests {
         registry.add_feed(test_feed_config("feed-b", None, true, false));
 
         let results = download_all_feeds(&registry, &cache);
-        asseissen_eq!(results.len(), 2);
+        assert_eq!(results.len(), 2);
         for r in &results {
-            asseissen_eq!(
+            assert_eq!(
                 r.status,
                 DownloadStatus::Skipped("no URL configured".into())
             );
@@ -356,7 +356,7 @@ mod tests {
         );
 
         let result = download_feed(&config, &cache);
-        asseissen_eq!(result.feed_id, "bad-url");
+        assert_eq!(result.feed_id, "bad-url");
         match &result.status {
             DownloadStatus::Failed(msg) => {
                 assert!(
@@ -366,7 +366,7 @@ mod tests {
             }
             other => panic!("Expected Failed status, got: {other:?}"),
         }
-        asseissen_eq!(result.bytes_downloaded, 0);
+        assert_eq!(result.bytes_downloaded, 0);
     }
 
     #[test]
@@ -393,11 +393,11 @@ mod tests {
         // Only enabled feeds are returned by enabled_feeds(), so disabled won't appear.
         let results = download_all_feeds(&registry, &cache);
         // enabled_feeds filters out disabled, so we get 2 (no-url and api-key).
-        asseissen_eq!(results.len(), 2);
+        assert_eq!(results.len(), 2);
 
         // Check feed-no-url is skipped.
         let no_url = results.iter().find(|r| r.feed_id == "feed-no-url").unwrap();
-        asseissen_eq!(
+        assert_eq!(
             no_url.status,
             DownloadStatus::Skipped("no URL configured".into())
         );
@@ -407,7 +407,7 @@ mod tests {
             .iter()
             .find(|r| r.feed_id == "feed-api-key")
             .unwrap();
-        asseissen_eq!(
+        assert_eq!(
             api.status,
             DownloadStatus::Skipped("requires API key".into())
         );
@@ -438,8 +438,8 @@ mod tests {
         };
 
         let result = download_feed(&config, &cache);
-        asseissen_eq!(result.feed_id, "cisa-kev");
-        asseissen_eq!(result.status, DownloadStatus::Downloaded);
+        assert_eq!(result.feed_id, "cisa-kev");
+        assert_eq!(result.status, DownloadStatus::Downloaded);
         assert!(
             result.bytes_downloaded > 1000,
             "CISA KEV should be at least 1KB, got {} bytes",
@@ -449,7 +449,7 @@ mod tests {
         // Verify data is in cache.
         assert!(cache.is_cached("cisa-kev"));
         let data = cache.load_data("cisa-kev").expect("load cached data");
-        asseissen_eq!(data.len() as u64, result.bytes_downloaded);
+        assert_eq!(data.len() as u64, result.bytes_downloaded);
 
         // Verify it looks like JSON.
         let text = String::from_utf8_lossy(&data);

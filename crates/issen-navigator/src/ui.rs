@@ -153,7 +153,7 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
             ),
             Span::raw("  "),
             Span::styled(
-                format!("[Sort: {}]", app.soissen_mode.label()),
+                format!("[Sort: {}]", app.sort_mode.label()),
                 Style::default().fg(Color::DarkGray),
             ),
         ]),
@@ -828,77 +828,77 @@ mod tests {
     fn age_color_just_modified() {
         let modified = ref_time(); // 0 hours ago
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(255, 60, 60));
+        assert_eq!(color, Color::Rgb(255, 60, 60));
     }
 
     #[test]
     fn age_color_few_hours_ago() {
         let modified = ref_time() - chrono::Duration::hours(3);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(255, 120, 50));
+        assert_eq!(color, Color::Rgb(255, 120, 50));
     }
 
     #[test]
     fn age_color_one_day_ago() {
         let modified = ref_time() - chrono::Duration::hours(12);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(255, 170, 50));
+        assert_eq!(color, Color::Rgb(255, 170, 50));
     }
 
     #[test]
     fn age_color_few_days_ago() {
         let modified = ref_time() - chrono::Duration::days(2);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(255, 220, 60));
+        assert_eq!(color, Color::Rgb(255, 220, 60));
     }
 
     #[test]
     fn age_color_one_week_ago() {
         let modified = ref_time() - chrono::Duration::days(5);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(200, 230, 80));
+        assert_eq!(color, Color::Rgb(200, 230, 80));
     }
 
     #[test]
     fn age_color_two_weeks_ago() {
         let modified = ref_time() - chrono::Duration::days(10);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(130, 210, 100));
+        assert_eq!(color, Color::Rgb(130, 210, 100));
     }
 
     #[test]
     fn age_color_one_month_ago() {
         let modified = ref_time() - chrono::Duration::days(20);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(80, 200, 180));
+        assert_eq!(color, Color::Rgb(80, 200, 180));
     }
 
     #[test]
     fn age_color_three_months_ago() {
         let modified = ref_time() - chrono::Duration::days(60);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(80, 170, 210));
+        assert_eq!(color, Color::Rgb(80, 170, 210));
     }
 
     #[test]
     fn age_color_six_months_ago() {
         let modified = ref_time() - chrono::Duration::days(120);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(100, 140, 200));
+        assert_eq!(color, Color::Rgb(100, 140, 200));
     }
 
     #[test]
     fn age_color_one_year_ago() {
         let modified = ref_time() - chrono::Duration::days(300);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(130, 130, 180));
+        assert_eq!(color, Color::Rgb(130, 130, 180));
     }
 
     #[test]
     fn age_color_ancient() {
         let modified = ref_time() - chrono::Duration::days(500);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(140, 140, 140));
+        assert_eq!(color, Color::Rgb(140, 140, 140));
     }
 
     #[test]
@@ -906,6 +906,6 @@ mod tests {
         // Modified in the future (clock skew) — treat as hottest
         let modified = ref_time() + chrono::Duration::hours(5);
         let color = age_color(modified, ref_time());
-        asseissen_eq!(color, Color::Rgb(255, 60, 60));
+        assert_eq!(color, Color::Rgb(255, 60, 60));
     }
 }

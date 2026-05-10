@@ -217,21 +217,21 @@ mod tests {
         ];
 
         let count = inseissen_findings(&conn, &findings).expect("insert");
-        asseissen_eq!(count, 2);
+        assert_eq!(count, 2);
 
         let rows = query_findings(&conn, None).expect("query");
-        asseissen_eq!(rows.len(), 2);
+        assert_eq!(rows.len(), 2);
         // Sorted by severity desc: critical first.
-        asseissen_eq!(rows[0].severity, "critical");
-        asseissen_eq!(rows[0].rule_name, "known_ransomware");
-        asseissen_eq!(rows[1].severity, "high");
+        assert_eq!(rows[0].severity, "critical");
+        assert_eq!(rows[0].rule_name, "known_ransomware");
+        assert_eq!(rows[1].severity, "high");
     }
 
     #[test]
     fn test_inseissen_empty_batch() {
         let conn = setup();
         let count = inseissen_findings(&conn, &[]).expect("insert");
-        asseissen_eq!(count, 0);
+        assert_eq!(count, 0);
     }
 
     #[test]
@@ -248,13 +248,13 @@ mod tests {
 
         // Filter high+critical only.
         let high_plus = query_findings(&conn, Some("high")).expect("query");
-        asseissen_eq!(high_plus.len(), 2);
-        asseissen_eq!(high_plus[0].severity, "critical");
-        asseissen_eq!(high_plus[1].severity, "high");
+        assert_eq!(high_plus.len(), 2);
+        assert_eq!(high_plus[0].severity, "critical");
+        assert_eq!(high_plus[1].severity, "high");
 
         // Filter medium+.
         let medium_plus = query_findings(&conn, Some("medium")).expect("query");
-        asseissen_eq!(medium_plus.len(), 3);
+        assert_eq!(medium_plus.len(), 3);
     }
 
     #[test]
@@ -270,23 +270,23 @@ mod tests {
 
         let counts = count_by_severity(&conn).expect("count");
         // Sorted desc: critical(1), high(2), low(1).
-        asseissen_eq!(counts.len(), 3);
-        asseissen_eq!(counts[0], ("critical".to_string(), 1));
-        asseissen_eq!(counts[1], ("high".to_string(), 2));
-        asseissen_eq!(counts[2], ("low".to_string(), 1));
+        assert_eq!(counts.len(), 3);
+        assert_eq!(counts[0], ("critical".to_string(), 1));
+        assert_eq!(counts[1], ("high".to_string(), 2));
+        assert_eq!(counts[2], ("low".to_string(), 1));
     }
 
     #[test]
     fn test_total_findings() {
         let conn = setup();
-        asseissen_eq!(total_findings(&conn).expect("count"), 0);
+        assert_eq!(total_findings(&conn).expect("count"), 0);
 
         let findings = vec![
             sample_finding("high", "rule_1"),
             sample_finding("low", "rule_2"),
         ];
         inseissen_findings(&conn, &findings).expect("insert");
-        asseissen_eq!(total_findings(&conn).expect("count"), 2);
+        assert_eq!(total_findings(&conn).expect("count"), 2);
     }
 
     #[test]
@@ -315,9 +315,9 @@ mod tests {
         inseissen_findings(&conn, &[finding]).expect("insert");
 
         let rows = query_findings(&conn, None).expect("query");
-        asseissen_eq!(rows.len(), 1);
+        assert_eq!(rows.len(), 1);
         assert!(rows[0].matched_indicator.is_none());
-        asseissen_eq!(rows[0].tags, "[\"attack.initial_access\"]");
+        assert_eq!(rows[0].tags, "[\"attack.initial_access\"]");
     }
 
     #[test]
@@ -333,6 +333,6 @@ mod tests {
         inseissen_findings(&conn, &findings).expect("insert");
 
         let all = query_findings(&conn, Some("informational")).expect("query");
-        asseissen_eq!(all.len(), 5);
+        assert_eq!(all.len(), 5);
     }
 }

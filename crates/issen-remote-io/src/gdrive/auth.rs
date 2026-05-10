@@ -209,7 +209,7 @@ pub fn initiate_browser_auth() -> anyhow::Result<String> {
     let port = listener.local_addr()?.port();
     let redirect_uri = format!("http://localhost:{port}/callback");
     let state = format!(
-        "rt-{}",
+        "issen-{}",
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -310,19 +310,19 @@ mod tests {
     fn parse_code_extracts_value() {
         let url = "http://localhost:9876/callback?code=4%2F0AfJohXm&state=rt-123";
         let code = parse_auth_code_from_redirect(url);
-        asseissen_eq!(code, Some("4%2F0AfJohXm".to_string()));
+        assert_eq!(code, Some("4%2F0AfJohXm".to_string()));
     }
 
     #[test]
     fn parse_code_missing_returns_none() {
         let url = "http://localhost:9876/callback?state=rt-123&error=access_denied";
-        asseissen_eq!(parse_auth_code_from_redirect(url), None);
+        assert_eq!(parse_auth_code_from_redirect(url), None);
     }
 
     #[test]
     fn parse_code_empty_value_returns_none() {
         let url = "http://localhost:9876/callback?code=&state=rt-123";
-        asseissen_eq!(parse_auth_code_from_redirect(url), None);
+        assert_eq!(parse_auth_code_from_redirect(url), None);
     }
 
     #[test]
@@ -338,7 +338,7 @@ mod tests {
     #[test]
     fn token_cache_path_ends_with_gdrive_token_json() {
         let path = token_cache_path();
-        asseissen_eq!(path.file_name().and_then(|n| n.to_str()), Some("gdrive_token.json"));
+        assert_eq!(path.file_name().and_then(|n| n.to_str()), Some("gdrive_token.json"));
     }
 
     #[test]
@@ -351,9 +351,9 @@ mod tests {
         };
         save_token(&token, tmp.path()).expect("save_token");
         let loaded = load_token_from(tmp.path()).expect("load_token_from");
-        asseissen_eq!(loaded.access_token, token.access_token);
-        asseissen_eq!(loaded.refresh_token, token.refresh_token);
-        asseissen_eq!(loaded.expires_in, token.expires_in);
+        assert_eq!(loaded.access_token, token.access_token);
+        assert_eq!(loaded.refresh_token, token.refresh_token);
+        assert_eq!(loaded.expires_in, token.expires_in);
     }
 
     #[test]

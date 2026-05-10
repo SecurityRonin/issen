@@ -231,10 +231,10 @@ mod tests {
 
         let scanner = C2Scanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "Suspicious Service");
-        asseissen_eq!(findings[0].category, RemoteAccessCategory::C2Framework);
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "Suspicious Service");
+        assert_eq!(findings[0].category, RemoteAccessCategory::C2Framework);
+        assert_eq!(
             findings[0].detection_source,
             DetectionSource::CategoryScanner("c2".into())
         );
@@ -303,8 +303,8 @@ mod tests {
 
         let scanner = C2Scanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "C2 Named Pipe");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "C2 Named Pipe");
         assert!(findings[0].artifacts[0].value.contains("postex_"));
     }
 }

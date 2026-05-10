@@ -96,7 +96,7 @@ pub fn analyze(alerts: &[Alert], input: &AlertInput<'_>) -> Vec<AnalysisResult> 
     results.push(analyze_evidence_tampering(alerts, input));
     results.push(analyze_attack_timeline(alerts, input));
 
-    results.soissen_by(|a, b| {
+    results.sort_by(|a, b| {
         a.tier.cmp(&b.tier).then(
             b.confidence
                 .partial_cmp(&a.confidence)
@@ -1080,7 +1080,7 @@ mod tests {
 
     #[test]
     fn confidence_empty_findings_is_zero() {
-        asseissen_eq!(compute_confidence(&[]), 0.0);
+        assert_eq!(compute_confidence(&[]), 0.0);
     }
 
     #[test]
@@ -1137,13 +1137,13 @@ mod tests {
 
     #[test]
     fn classify_answer_thresholds() {
-        asseissen_eq!(classify_answer(0.0), Answer::No);
-        asseissen_eq!(classify_answer(0.29), Answer::No);
-        asseissen_eq!(classify_answer(0.3), Answer::Inconclusive);
-        asseissen_eq!(classify_answer(0.5), Answer::Inconclusive);
-        asseissen_eq!(classify_answer(0.69), Answer::Inconclusive);
-        asseissen_eq!(classify_answer(0.7), Answer::Yes);
-        asseissen_eq!(classify_answer(1.0), Answer::Yes);
+        assert_eq!(classify_answer(0.0), Answer::No);
+        assert_eq!(classify_answer(0.29), Answer::No);
+        assert_eq!(classify_answer(0.3), Answer::Inconclusive);
+        assert_eq!(classify_answer(0.5), Answer::Inconclusive);
+        assert_eq!(classify_answer(0.69), Answer::Inconclusive);
+        assert_eq!(classify_answer(0.7), Answer::Yes);
+        assert_eq!(classify_answer(1.0), Answer::Yes);
     }
 
     // ── Empty input tests ───────────────────────────────────────
@@ -1151,15 +1151,15 @@ mod tests {
     #[test]
     fn empty_input_produces_all_no_answers() {
         let results = analyze(&[], &empty_input());
-        asseissen_eq!(results.len(), 11);
+        assert_eq!(results.len(), 11);
         for result in &results {
-            asseissen_eq!(
+            assert_eq!(
                 result.answer,
                 Answer::No,
                 "question '{}' should be No on empty input",
                 result.question_id
             );
-            asseissen_eq!(result.confidence, 0.0);
+            assert_eq!(result.confidence, 0.0);
             assert!(result.findings.is_empty());
         }
     }
@@ -1191,7 +1191,7 @@ mod tests {
             ),
         ];
         let result = analyze_system_compromised(&alerts);
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.confidence >= 0.7);
         assert!(result
             .interpretation
@@ -1207,7 +1207,7 @@ mod tests {
             "details",
         )];
         let result = analyze_system_compromised(&alerts);
-        asseissen_eq!(result.answer, Answer::Inconclusive);
+        assert_eq!(result.answer, Answer::Inconclusive);
     }
 
     // ── Initial access tests ────────────────────────────────────
@@ -1221,7 +1221,7 @@ mod tests {
             "pid=999 user=worker cmd=python3 -c import pty; pty.spawn(\"/bin/bash\")",
         )];
         let result = analyze_initial_access(&alerts, &empty_input());
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.interpretation.contains("reverse shell"));
         assert!(result.mitre_techniques.contains(&"T1059.004"));
     }
@@ -1229,7 +1229,7 @@ mod tests {
     #[test]
     fn initial_access_no_on_empty() {
         let result = analyze_initial_access(&[], &empty_input());
-        asseissen_eq!(result.answer, Answer::No);
+        assert_eq!(result.answer, Answer::No);
     }
 
     // ── Malware tools tests ─────────────────────────────────────
@@ -1251,7 +1251,7 @@ mod tests {
             ),
         ];
         let result = analyze_malware_tools(&alerts, &empty_input());
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(!result.findings.is_empty());
     }
 
@@ -1264,7 +1264,7 @@ mod tests {
             "mode=100755",
         )];
         let result = analyze_malware_tools(&alerts, &empty_input());
-        asseissen_eq!(result.answer, Answer::Inconclusive);
+        assert_eq!(result.answer, Answer::Inconclusive);
         assert!(!result.findings.is_empty());
     }
 
@@ -1279,7 +1279,7 @@ mod tests {
             "diamorphine found",
         )];
         let result = analyze_rootkit_present(&alerts);
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.confidence >= 0.9);
         assert!(result.interpretation.contains("diamorphine"));
         assert!(result.mitre_techniques.contains(&"T1014"));
@@ -1294,7 +1294,7 @@ mod tests {
             "proto=tcp local=0.0.0.0:4444",
         )];
         let result = analyze_rootkit_present(&alerts);
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.interpretation.contains("process hiding"));
     }
 
@@ -1307,14 +1307,14 @@ mod tests {
             "/usr/lib/libprocesshider.so",
         )];
         let result = analyze_rootkit_present(&alerts);
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
     }
 
     #[test]
     fn rootkit_no_on_empty() {
         let result = analyze_rootkit_present(&[]);
-        asseissen_eq!(result.answer, Answer::No);
-        asseissen_eq!(result.confidence, 0.0);
+        assert_eq!(result.answer, Answer::No);
+        assert_eq!(result.confidence, 0.0);
     }
 
     // ── Resource abuse tests ────────────────────────────────────
@@ -1336,7 +1336,7 @@ mod tests {
             ),
         ];
         let result = analyze_resource_abuse(&alerts, &empty_input());
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.interpretation.contains("cryptominer"));
     }
 
@@ -1350,7 +1350,7 @@ mod tests {
         )];
         let result = analyze_resource_abuse(&alerts, &empty_input());
         // Just an external connection without rootkit is inconclusive at best
-        asseissen_ne!(result.answer, Answer::Yes);
+        assert_ne!(result.answer, Answer::Yes);
     }
 
     // ── Persistence tests ───────────────────────────────────────
@@ -1377,7 +1377,7 @@ mod tests {
             "/usr/lib/libhide.so",
         )];
         let result = analyze_persistence(&alerts, &empty_input());
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.interpretation.contains("persistence"));
     }
 
@@ -1404,7 +1404,7 @@ mod tests {
             "pid=999",
         )];
         let result = analyze_active_access(&alerts, &empty_input());
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.interpretation.contains("active reverse shell"));
         assert!(result.interpretation.contains("immediate containment"));
     }
@@ -1412,7 +1412,7 @@ mod tests {
     #[test]
     fn active_access_no_on_empty() {
         let result = analyze_active_access(&[], &empty_input());
-        asseissen_eq!(result.answer, Answer::No);
+        assert_eq!(result.answer, Answer::No);
     }
 
     // ── Hidden processes tests ──────────────────────────────────
@@ -1426,7 +1426,7 @@ mod tests {
             "proto=tcp local=0.0.0.0:4444",
         )];
         let result = analyze_hidden_processes(&alerts);
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.interpretation.contains("kernel-level rootkit"));
     }
 
@@ -1439,7 +1439,7 @@ mod tests {
             "details",
         )];
         let result = analyze_hidden_processes(&alerts);
-        asseissen_eq!(result.answer, Answer::No);
+        assert_eq!(result.answer, Answer::No);
     }
 
     // ── Evidence tampering tests ────────────────────────────────
@@ -1453,7 +1453,7 @@ mod tests {
             "details",
         )];
         let result = analyze_evidence_tampering(&alerts, &empty_input());
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.interpretation.contains("anti-forensic"));
     }
 
@@ -1494,7 +1494,7 @@ mod tests {
             ),
         ];
         let result = analyze_attack_timeline(&alerts, &empty_input());
-        asseissen_eq!(result.answer, Answer::Yes);
+        assert_eq!(result.answer, Answer::Yes);
         assert!(result.interpretation.contains("3 significant findings"));
     }
 
@@ -1550,14 +1550,14 @@ mod tests {
         let results = analyze(&alerts, &empty_input());
 
         // Should answer all 11 questions
-        asseissen_eq!(results.len(), 11);
+        assert_eq!(results.len(), 11);
 
         // System compromised: YES
         let compromised = results
             .iter()
             .find(|r| r.question_id == "system_compromised")
             .unwrap();
-        asseissen_eq!(compromised.answer, Answer::Yes);
+        assert_eq!(compromised.answer, Answer::Yes);
         assert!(compromised.confidence >= 0.9);
 
         // Rootkit present: YES with diamorphine name
@@ -1565,7 +1565,7 @@ mod tests {
             .iter()
             .find(|r| r.question_id == "rootkit_present")
             .unwrap();
-        asseissen_eq!(rootkit.answer, Answer::Yes);
+        assert_eq!(rootkit.answer, Answer::Yes);
         assert!(rootkit.interpretation.contains("diamorphine"));
 
         // Active access: YES (reverse shell)
@@ -1573,7 +1573,7 @@ mod tests {
             .iter()
             .find(|r| r.question_id == "active_access")
             .unwrap();
-        asseissen_eq!(access.answer, Answer::Yes);
+        assert_eq!(access.answer, Answer::Yes);
         assert!(access.interpretation.contains("reverse shell"));
 
         // Hidden processes: YES
@@ -1581,14 +1581,14 @@ mod tests {
             .iter()
             .find(|r| r.question_id == "hidden_processes")
             .unwrap();
-        asseissen_eq!(hidden.answer, Answer::Yes);
+        assert_eq!(hidden.answer, Answer::Yes);
 
         // Resource abuse: YES (rootkit + hidden processes = cryptominer pattern)
         let abuse = results
             .iter()
             .find(|r| r.question_id == "resource_abuse")
             .unwrap();
-        asseissen_eq!(abuse.answer, Answer::Yes);
+        assert_eq!(abuse.answer, Answer::Yes);
         assert!(abuse.interpretation.contains("cryptominer"));
 
         // Persistence: YES
@@ -1596,14 +1596,14 @@ mod tests {
             .iter()
             .find(|r| r.question_id == "persistence_established")
             .unwrap();
-        asseissen_eq!(persist.answer, Answer::Yes);
+        assert_eq!(persist.answer, Answer::Yes);
 
         // Timeline: YES (has significant alerts)
         let timeline = results
             .iter()
             .find(|r| r.question_id == "attack_timeline")
             .unwrap();
-        asseissen_eq!(timeline.answer, Answer::Yes);
+        assert_eq!(timeline.answer, Answer::Yes);
 
         // Results should be sorted by tier
         for window in results.windows(2) {

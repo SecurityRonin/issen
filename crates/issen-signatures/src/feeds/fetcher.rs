@@ -205,13 +205,13 @@ mod tests {
     #[test]
     fn test_feed_cache_new() {
         let cache = FeedCache::new("/tmp/test-feeds");
-        asseissen_eq!(cache.cache_dir(), Path::new("/tmp/test-feeds"));
+        assert_eq!(cache.cache_dir(), Path::new("/tmp/test-feeds"));
     }
 
     #[test]
     fn test_data_path() {
         let cache = FeedCache::new("/tmp/feeds");
-        asseissen_eq!(
+        assert_eq!(
             cache.data_path("my-feed"),
             PathBuf::from("/tmp/feeds/my-feed/data")
         );
@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn test_metadata_path() {
         let cache = FeedCache::new("/tmp/feeds");
-        asseissen_eq!(
+        assert_eq!(
             cache.metadata_path("my-feed"),
             PathBuf::from("/tmp/feeds/my-feed/metadata.json")
         );
@@ -237,7 +237,7 @@ mod tests {
         assert!(cache.is_cached("test-feed"));
 
         let loaded = cache.load_data("test-feed").expect("load");
-        asseissen_eq!(loaded, data);
+        assert_eq!(loaded, data);
     }
 
     #[test]
@@ -249,7 +249,7 @@ mod tests {
             .store_data("string-feed", b"hello world", 1)
             .expect("store");
         let s = cache.load_data_string("string-feed").expect("load");
-        asseissen_eq!(s, "hello world");
+        assert_eq!(s, "hello world");
     }
 
     #[test]
@@ -260,9 +260,9 @@ mod tests {
         cache.store_data("meta-feed", b"data", 42).expect("store");
 
         let meta = cache.load_metadata("meta-feed").expect("load meta");
-        asseissen_eq!(meta.feed_id, "meta-feed");
-        asseissen_eq!(meta.indicator_count, 42);
-        asseissen_eq!(meta.file_size, 4);
+        assert_eq!(meta.feed_id, "meta-feed");
+        assert_eq!(meta.indicator_count, 42);
+        assert_eq!(meta.file_size, 4);
         assert!(!meta.last_fetched.is_empty());
     }
 
@@ -291,7 +291,7 @@ mod tests {
         cache.store_data("feed-c", b"data", 3).expect("store");
 
         let feeds = cache.list_cached_feeds().expect("list");
-        asseissen_eq!(feeds, vec!["feed-a", "feed-b", "feed-c"]); // sorted
+        assert_eq!(feeds, vec!["feed-a", "feed-b", "feed-c"]); // sorted
     }
 
     #[test]
@@ -330,7 +330,7 @@ mod tests {
 
         assert!(cache.is_cached("file-feed"));
         let data = cache.load_data_string("file-feed").expect("load");
-        asseissen_eq!(data, "some feed data");
+        assert_eq!(data, "some feed data");
     }
 
     #[test]
@@ -357,7 +357,7 @@ mod tests {
         };
 
         let data = load_feed_data(&cache, &config).expect("load");
-        asseissen_eq!(data, b"cached data");
+        assert_eq!(data, b"cached data");
     }
 
     #[test]
@@ -395,9 +395,9 @@ mod tests {
             .expect("store new");
 
         let data = cache.load_data_string("overwrite-test").expect("load");
-        asseissen_eq!(data, "new data");
+        assert_eq!(data, "new data");
 
         let meta = cache.load_metadata("overwrite-test").expect("meta");
-        asseissen_eq!(meta.indicator_count, 2);
+        assert_eq!(meta.indicator_count, 2);
     }
 }

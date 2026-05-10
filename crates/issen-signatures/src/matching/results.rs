@@ -152,8 +152,8 @@ mod tests {
     #[test]
     fn test_empty_report() {
         let report = ScanReport::new("/tmp/test.bin");
-        asseissen_eq!(report.target, "/tmp/test.bin");
-        asseissen_eq!(report.finding_count(), 0);
+        assert_eq!(report.target, "/tmp/test.bin");
+        assert_eq!(report.finding_count(), 0);
         assert!(!report.has_findings());
         assert!(report.max_severity().is_none());
     }
@@ -162,7 +162,7 @@ mod tests {
     fn test_add_finding() {
         let mut report = ScanReport::new("test");
         report.add_finding(sample_finding(MatchSource::Yara, Severity::High, "rule1"));
-        asseissen_eq!(report.finding_count(), 1);
+        assert_eq!(report.finding_count(), 1);
         assert!(report.has_findings());
     }
 
@@ -172,7 +172,7 @@ mod tests {
         report.add_finding(sample_finding(MatchSource::Yara, Severity::Low, "r1"));
         report.add_finding(sample_finding(MatchSource::Sigma, Severity::Critical, "r2"));
         report.add_finding(sample_finding(MatchSource::HashIoc, Severity::Medium, "r3"));
-        asseissen_eq!(report.max_severity(), Some(Severity::Critical));
+        assert_eq!(report.max_severity(), Some(Severity::Critical));
     }
 
     #[test]
@@ -183,13 +183,13 @@ mod tests {
         report.add_finding(sample_finding(MatchSource::Yara, Severity::Medium, "yara2"));
 
         let yara_findings = report.findings_by_source(MatchSource::Yara);
-        asseissen_eq!(yara_findings.len(), 2);
+        assert_eq!(yara_findings.len(), 2);
 
         let sigma_findings = report.findings_by_source(MatchSource::Sigma);
-        asseissen_eq!(sigma_findings.len(), 1);
+        assert_eq!(sigma_findings.len(), 1);
 
         let hash_findings = report.findings_by_source(MatchSource::HashIoc);
-        asseissen_eq!(hash_findings.len(), 0);
+        assert_eq!(hash_findings.len(), 0);
     }
 
     #[test]
@@ -210,10 +210,10 @@ mod tests {
         report.add_finding(sample_finding(MatchSource::Stix, Severity::Medium, "r5"));
 
         let high_plus = report.findings_at_or_above(Severity::High);
-        asseissen_eq!(high_plus.len(), 2); // High + Critical
+        assert_eq!(high_plus.len(), 2); // High + Critical
 
         let all = report.findings_at_or_above(Severity::Informational);
-        asseissen_eq!(all.len(), 5);
+        assert_eq!(all.len(), 5);
     }
 
     #[test]
@@ -226,30 +226,30 @@ mod tests {
 
     #[test]
     fn test_severity_from_str_lossy() {
-        asseissen_eq!(Severity::from_str_lossy("critical"), Severity::Critical);
-        asseissen_eq!(Severity::from_str_lossy("HIGH"), Severity::High);
-        asseissen_eq!(Severity::from_str_lossy("Medium"), Severity::Medium);
-        asseissen_eq!(Severity::from_str_lossy("low"), Severity::Low);
-        asseissen_eq!(
+        assert_eq!(Severity::from_str_lossy("critical"), Severity::Critical);
+        assert_eq!(Severity::from_str_lossy("HIGH"), Severity::High);
+        assert_eq!(Severity::from_str_lossy("Medium"), Severity::Medium);
+        assert_eq!(Severity::from_str_lossy("low"), Severity::Low);
+        assert_eq!(
             Severity::from_str_lossy("informational"),
             Severity::Informational
         );
-        asseissen_eq!(Severity::from_str_lossy("unknown"), Severity::Informational);
+        assert_eq!(Severity::from_str_lossy("unknown"), Severity::Informational);
     }
 
     #[test]
     fn test_severity_display() {
-        asseissen_eq!(format!("{}", Severity::Critical), "critical");
-        asseissen_eq!(format!("{}", Severity::Informational), "informational");
+        assert_eq!(format!("{}", Severity::Critical), "critical");
+        assert_eq!(format!("{}", Severity::Informational), "informational");
     }
 
     #[test]
     fn test_match_source_display() {
-        asseissen_eq!(format!("{}", MatchSource::Yara), "YARA");
-        asseissen_eq!(format!("{}", MatchSource::Sigma), "Sigma");
-        asseissen_eq!(format!("{}", MatchSource::HashIoc), "Hash IOC");
-        asseissen_eq!(format!("{}", MatchSource::NetworkIoc), "Network IOC");
-        asseissen_eq!(format!("{}", MatchSource::Stix), "STIX");
+        assert_eq!(format!("{}", MatchSource::Yara), "YARA");
+        assert_eq!(format!("{}", MatchSource::Sigma), "Sigma");
+        assert_eq!(format!("{}", MatchSource::HashIoc), "Hash IOC");
+        assert_eq!(format!("{}", MatchSource::NetworkIoc), "Network IOC");
+        assert_eq!(format!("{}", MatchSource::Stix), "STIX");
     }
 
     #[test]
@@ -262,10 +262,10 @@ mod tests {
             matched_indicator: Some("e3b0c44298fc1c14".to_string()),
             tags: vec!["malware".to_string(), "emotet".to_string()],
         };
-        asseissen_eq!(
+        assert_eq!(
             finding.matched_indicator.as_deref(),
             Some("e3b0c44298fc1c14")
         );
-        asseissen_eq!(finding.tags.len(), 2);
+        assert_eq!(finding.tags.len(), 2);
     }
 }

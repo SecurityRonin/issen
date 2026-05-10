@@ -74,7 +74,7 @@ mod tests {
         let mut out = Vec::<u8>::new();
         let count =
             walk_remote_prefix(&op, "artifacts/", &mut out).expect("walk should succeed");
-        asseissen_eq!(count, 1, "expected exactly one file");
+        assert_eq!(count, 1, "expected exactly one file");
         let text = String::from_utf8(out).expect("valid utf-8");
         // Line format: "<path>\t<size>\n"
         assert!(

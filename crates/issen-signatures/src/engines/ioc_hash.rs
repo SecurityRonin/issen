@@ -276,10 +276,10 @@ mod tests {
 
     #[test]
     fn test_hash_algorithm_detection() {
-        asseissen_eq!(HashAlgorithm::from_hex_len(32), Some(HashAlgorithm::Md5));
-        asseissen_eq!(HashAlgorithm::from_hex_len(40), Some(HashAlgorithm::Sha1));
-        asseissen_eq!(HashAlgorithm::from_hex_len(64), Some(HashAlgorithm::Sha256));
-        asseissen_eq!(HashAlgorithm::from_hex_len(10), None);
+        assert_eq!(HashAlgorithm::from_hex_len(32), Some(HashAlgorithm::Md5));
+        assert_eq!(HashAlgorithm::from_hex_len(40), Some(HashAlgorithm::Sha1));
+        assert_eq!(HashAlgorithm::from_hex_len(64), Some(HashAlgorithm::Sha256));
+        assert_eq!(HashAlgorithm::from_hex_len(10), None);
     }
 
     #[test]
@@ -289,8 +289,8 @@ mod tests {
         store.inseissen_bad(&hash).expect("insert");
 
         let m = store.lookup_bad(&hash).expect("should match");
-        asseissen_eq!(m.algorithm, HashAlgorithm::Sha256);
-        asseissen_eq!(m.source, "test");
+        assert_eq!(m.algorithm, HashAlgorithm::Sha256);
+        assert_eq!(m.source, "test");
     }
 
     #[test]
@@ -300,8 +300,8 @@ mod tests {
         store.inseissen_bad(hash).expect("insert");
 
         let m = store.lookup_bad(hash).expect("should match");
-        asseissen_eq!(m.algorithm, HashAlgorithm::Md5);
-        asseissen_eq!(m.source, "malware-hashes");
+        assert_eq!(m.algorithm, HashAlgorithm::Md5);
+        assert_eq!(m.source, "malware-hashes");
     }
 
     #[test]
@@ -322,7 +322,7 @@ mod tests {
         let m = store
             .lookup_bad("aabbccdd11223344aabbccdd11223344")
             .expect("should match");
-        asseissen_eq!(m.algorithm, HashAlgorithm::Md5);
+        assert_eq!(m.algorithm, HashAlgorithm::Md5);
     }
 
     #[test]
@@ -367,8 +367,8 @@ mod tests {
         let mut store = HashIocStore::new("file-test");
         let count = store.load_bad_from_file(&path).expect("load");
 
-        asseissen_eq!(count, 3);
-        asseissen_eq!(store.bad_count(), 3);
+        assert_eq!(count, 3);
+        assert_eq!(store.bad_count(), 3);
         assert!(store
             .lookup_bad("d41d8cd98f00b204e9800998ecf8427e")
             .is_some());
@@ -395,7 +395,7 @@ mod tests {
         let mut store = HashIocStore::new("csv-test");
         let count = store.load_bad_from_file(&path).expect("load");
 
-        asseissen_eq!(count, 2);
+        assert_eq!(count, 2);
         assert!(store
             .lookup_bad("d41d8cd98f00b204e9800998ecf8427e")
             .is_some());
@@ -405,7 +405,7 @@ mod tests {
     fn test_sha256_hex_computation() {
         // SHA-256 of empty string
         let hash = sha256_hex(b"");
-        asseissen_eq!(
+        assert_eq!(
             hash,
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         );
@@ -415,28 +415,28 @@ mod tests {
     fn test_md5_hex_computation() {
         // MD5 of empty string
         let hash = md5_hex(b"");
-        asseissen_eq!(hash, "d41d8cd98f00b204e9800998ecf8427e");
+        assert_eq!(hash, "d41d8cd98f00b204e9800998ecf8427e");
     }
 
     #[test]
     fn test_bad_count() {
         let mut store = HashIocStore::new("test");
-        asseissen_eq!(store.bad_count(), 0);
+        assert_eq!(store.bad_count(), 0);
 
         store.inseissen_bad(&"a".repeat(32)).expect("md5");
         store.inseissen_bad(&"b".repeat(40)).expect("sha1");
         store.inseissen_bad(&"c".repeat(64)).expect("sha256");
 
-        asseissen_eq!(store.bad_count(), 3);
+        assert_eq!(store.bad_count(), 3);
     }
 
     #[test]
     fn test_good_count() {
         let mut store = HashIocStore::new("test");
-        asseissen_eq!(store.good_count(), 0);
+        assert_eq!(store.good_count(), 0);
 
         store.inseissen_good(&"a".repeat(64)).expect("sha256");
-        asseissen_eq!(store.good_count(), 1);
+        assert_eq!(store.good_count(), 1);
     }
 
     #[test]

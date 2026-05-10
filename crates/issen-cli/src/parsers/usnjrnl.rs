@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn reason_to_event_type_file_create() {
-        asseissen_eq!(
+        assert_eq!(
             reason_to_event_type(UsnReason::FILE_CREATE),
             EventType::FileCreate
         );
@@ -189,7 +189,7 @@ mod tests {
 
     #[test]
     fn reason_to_event_type_file_delete() {
-        asseissen_eq!(
+        assert_eq!(
             reason_to_event_type(UsnReason::FILE_DELETE),
             EventType::FileDelete
         );
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     fn reason_to_event_type_rename() {
-        asseissen_eq!(
+        assert_eq!(
             reason_to_event_type(UsnReason::RENAME_NEW_NAME),
             EventType::FileRename
         );
@@ -205,7 +205,7 @@ mod tests {
 
     #[test]
     fn reason_to_event_type_data_overwrite() {
-        asseissen_eq!(
+        assert_eq!(
             reason_to_event_type(UsnReason::DATA_OVERWRITE),
             EventType::FileModify
         );
@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn reason_to_event_type_fallback() {
-        asseissen_eq!(
+        assert_eq!(
             reason_to_event_type(UsnReason::SECURITY_CHANGE),
             EventType::Other("MetadataChange".to_string())
         );
@@ -221,13 +221,13 @@ mod tests {
 
     #[test]
     fn record_length_from_slice_too_short() {
-        asseissen_eq!(record_length_from_slice(&[]), 8);
-        asseissen_eq!(record_length_from_slice(&[0, 1]), 8);
+        assert_eq!(record_length_from_slice(&[]), 8);
+        assert_eq!(record_length_from_slice(&[0, 1]), 8);
     }
 
     #[test]
     fn record_length_from_slice_valid() {
         let bytes = 80u32.to_le_bytes();
-        asseissen_eq!(record_length_from_slice(&bytes), 80);
+        assert_eq!(record_length_from_slice(&bytes), 80);
     }
 }

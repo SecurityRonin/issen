@@ -30,7 +30,7 @@ pub fn empty_app() -> WorkbenchApp {
 ///
 /// The `draw_fn` receives `(&mut Frame, &WorkbenchApp, Rect)` — the standard
 /// signature used by all view `draw()` functions.
-pub fn asseissen_renders(app: &WorkbenchApp, draw_fn: impl FnOnce(&mut Frame, &WorkbenchApp, Rect)) {
+pub fn assert_renders(app: &WorkbenchApp, draw_fn: impl FnOnce(&mut Frame, &WorkbenchApp, Rect)) {
     let backend = TestBackend::new(120, 30);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal

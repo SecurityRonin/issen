@@ -224,20 +224,20 @@ mod tests {
     #[test]
     fn afb_schema_is_attack_flow_v2() {
         let doc = findings_to_afb(&[], "Test Flow");
-        asseissen_eq!(doc.schema, "attack_flow_v2");
+        assert_eq!(doc.schema, "attack_flow_v2");
     }
 
     #[test]
     fn afb_has_dark_theme() {
         let doc = findings_to_afb(&[], "Test Flow");
-        asseissen_eq!(doc.theme, "dark_theme");
+        assert_eq!(doc.theme, "dark_theme");
     }
 
     #[test]
     fn auto_layout_single_node_at_origin() {
         let coords = auto_layout_dag(&["A"], &[], 300.0, 200.0);
         let pos = coords.get("A").expect("node A must be in layout");
-        asseissen_eq!(*pos, [0.0, 0.0], "single node must be at origin");
+        assert_eq!(*pos, [0.0, 0.0], "single node must be at origin");
     }
 
     #[test]
@@ -246,9 +246,9 @@ mod tests {
         let xa = coords.get("A").expect("node A")[0];
         let xb = coords.get("B").expect("node B")[0];
         let xc = coords.get("C").expect("node C")[0];
-        asseissen_eq!(xa, 0.0, "root node A must have x=0");
-        asseissen_eq!(xb, 300.0, "node B must have x=300");
-        asseissen_eq!(xc, 600.0, "node C must have x=600");
+        assert_eq!(xa, 0.0, "root node A must have x=0");
+        assert_eq!(xb, 300.0, "node B must have x=300");
+        assert_eq!(xc, 600.0, "node C must have x=600");
     }
 
     #[test]
@@ -260,8 +260,8 @@ mod tests {
         let yc = coords.get("C").expect("node C")[1];
         let xb = coords.get("B").expect("node B")[0];
         let xc = coords.get("C").expect("node C")[0];
-        asseissen_eq!(xb, xc, "parallel nodes B and C must have the same x");
-        asseissen_ne!(yb, yc, "parallel nodes B and C must have different y");
+        assert_eq!(xb, xc, "parallel nodes B and C must have the same x");
+        assert_ne!(yb, yc, "parallel nodes B and C must have different y");
     }
 
     #[test]

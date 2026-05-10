@@ -240,15 +240,15 @@ mod tests {
 
         let scanner = LateralMovementScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "PsExec");
-        asseissen_eq!(findings[0].category, RemoteAccessCategory::LateralMovement);
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "PsExec");
+        assert_eq!(findings[0].category, RemoteAccessCategory::LateralMovement);
+        assert_eq!(
             findings[0].detection_source,
             DetectionSource::CategoryScanner("lateral_movement".into())
         );
         assert!(!findings[0].artifacts.is_empty());
-        asseissen_eq!(
+        assert_eq!(
             findings[0].artifacts[0].artifact_type,
             HitArtifactType::EventLog
         );
@@ -287,8 +287,8 @@ mod tests {
 
         let scanner = LateralMovementScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "WMI");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "WMI");
         assert!(findings[0].artifacts[0].value.contains("WmiPerfClass"));
     }
 
@@ -312,8 +312,8 @@ mod tests {
 
         let scanner = LateralMovementScanner::new();
         let findings = scanner.scan(&mock).expect("scan should succeed");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].tool_name, "Kerberoasting");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].tool_name, "Kerberoasting");
         assert!(findings[0].artifacts[0].value.contains("svc_sql"));
     }
 

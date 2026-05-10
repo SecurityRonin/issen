@@ -45,7 +45,7 @@ mod tests {
     #[test]
     fn single_pid() {
         let result = parse_hidden_pids("42\n");
-        asseissen_eq!(result, vec![42]);
+        assert_eq!(result, vec![42]);
     }
 
     #[test]
@@ -53,14 +53,14 @@ mod tests {
         // Actual PIDs from the CTF UAC collection hidden_pids file.
         let content = "43168\n939\n940\n941\n975\n977\n";
         let result = parse_hidden_pids(content);
-        asseissen_eq!(result, vec![43168, 939, 940, 941, 975, 977]);
+        assert_eq!(result, vec![43168, 939, 940, 941, 975, 977]);
     }
 
     #[test]
     fn invalid_lines_skipped() {
         let content = "123\nnot-a-pid\n456\n\n";
         let result = parse_hidden_pids(content);
-        asseissen_eq!(result, vec![123, 456]);
+        assert_eq!(result, vec![123, 456]);
     }
 
     #[test]
@@ -82,6 +82,6 @@ mod tests {
         .expect("write");
 
         let result = read_hidden_pids(dir.path());
-        asseissen_eq!(result, vec![939, 940, 977]);
+        assert_eq!(result, vec![939, 940, 977]);
     }
 }

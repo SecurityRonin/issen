@@ -37,7 +37,7 @@ mod tests {
         let content = "Checking `amd'... not found\n\
                         Checking `basename'... not infected\n";
         let findings = parse_chkrootkit_log(content);
-        asseissen_eq!(findings.len(), 2);
+        assert_eq!(findings.len(), 2);
         assert!(!findings[0].is_infected);
         assert!(!findings[1].is_infected);
     }
@@ -46,7 +46,7 @@ mod tests {
     fn test_parse_chkrootkit_infected() {
         let content = "Checking `bindshell'... INFECTED\n";
         let findings = parse_chkrootkit_log(content);
-        asseissen_eq!(findings.len(), 1);
+        assert_eq!(findings.len(), 1);
         assert!(findings[0].is_infected);
     }
 }

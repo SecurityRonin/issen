@@ -57,7 +57,7 @@ fn process_detail(app: &WorkbenchApp) -> Vec<Line<'static>> {
             detail_line("PPID", &proc_info.ppid.to_string()),
             detail_line("CPU%", proc_info.cpu_pct.as_deref().unwrap_or("-")),
             detail_line("MEM%", proc_info.mem_pct.as_deref().unwrap_or("-")),
-            detail_line("Start", proc_info.staissen_time.as_deref().unwrap_or("-")),
+            detail_line("Start", proc_info.start_time.as_deref().unwrap_or("-")),
             Line::from(""),
             detail_line("Command", &proc_info.command),
         ]
@@ -126,7 +126,7 @@ mod tests {
     #[test]
     fn detail_line_formats_label_and_value() {
         let line = detail_line("Protocol", "tcp");
-        asseissen_eq!(line.spans.len(), 2);
+        assert_eq!(line.spans.len(), 2);
     }
 
     #[test]
@@ -141,14 +141,14 @@ mod tests {
         };
         let app = make_workbench(vec![conn], Vec::new(), Vec::new(), Vec::new());
         let lines = network_detail(&app);
-        asseissen_eq!(lines.len(), 6); // Protocol, Local, Remote, State, PID, Program
+        assert_eq!(lines.len(), 6); // Protocol, Local, Remote, State, PID, Program
     }
 
     #[test]
     fn network_detail_no_selection() {
         let app = make_workbench(Vec::new(), Vec::new(), Vec::new(), Vec::new());
         let lines = network_detail(&app);
-        asseissen_eq!(lines.len(), 1); // "No selection"
+        assert_eq!(lines.len(), 1); // "No selection"
     }
 
     #[test]
@@ -160,7 +160,7 @@ mod tests {
             command: "/usr/sbin/sshd".to_string(),
             cpu_pct: Some("1.5".to_string()),
             mem_pct: None,
-            staissen_time: None,
+            start_time: None,
         };
         let mut app = make_workbench(Vec::new(), vec![proc], Vec::new(), Vec::new());
         // Find the Processes view index and switch to it
@@ -197,6 +197,6 @@ mod tests {
     fn login_detail_no_selection() {
         let app = make_workbench(Vec::new(), Vec::new(), Vec::new(), Vec::new());
         let lines = login_detail(&app);
-        asseissen_eq!(lines.len(), 1);
+        assert_eq!(lines.len(), 1);
     }
 }

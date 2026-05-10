@@ -402,8 +402,8 @@ mod tests {
         let events = vec![anchor, create, far];
         let findings = evaluate_temporal(&rule, &events);
 
-        asseissen_eq!(findings.len(), 1, "one anchor event should produce one finding");
-        asseissen_eq!(findings[0].rule_id, "test.sequence");
+        assert_eq!(findings.len(), 1, "one anchor event should produce one finding");
+        assert_eq!(findings[0].rule_id, "test.sequence");
         assert!(!findings[0].matched_record_hashes.is_empty());
     }
 
@@ -467,12 +467,12 @@ mod tests {
         let events = vec![exec, other_create];
         let findings = evaluate_temporal(&rule, &events);
 
-        asseissen_eq!(
+        assert_eq!(
             findings.len(),
             1,
             "absent Prefetch FileModify should produce a finding"
         );
-        asseissen_eq!(findings[0].rule_id, "temporal.hollow-process");
+        assert_eq!(findings[0].rule_id, "temporal.hollow-process");
     }
 
     #[test]
@@ -519,7 +519,7 @@ mod tests {
         let events = vec![log_event, mft_born];
         let findings = evaluate_temporal(&rule, &events);
 
-        asseissen_eq!(
+        assert_eq!(
             findings.len(),
             1,
             "log timestamp before MFT born time should produce a discrepancy finding"
@@ -574,8 +574,8 @@ mod tests {
         let events = vec![boot_log, mft_create];
         let findings = evaluate_temporal(&rule, &events);
 
-        asseissen_eq!(findings.len(), 1, "boot log predating MFT born time is a critical finding");
-        asseissen_eq!(findings[0].severity, "critical");
+        assert_eq!(findings.len(), 1, "boot log predating MFT born time is a critical finding");
+        assert_eq!(findings[0].severity, "critical");
         let detail = findings[0].discrepancy.as_ref().expect("discrepancy detail must be set");
         assert!(
             detail.delta_ns >= 8 * 60 * NS,
@@ -613,7 +613,7 @@ mod tests {
         let events = vec![boot, rootkit_file];
         let findings = evaluate_temporal(&rule, &events);
 
-        asseissen_eq!(
+        assert_eq!(
             findings.len(),
             1,
             "FileCreate with gid:7823 near boot should fire Father rootkit rule"
@@ -649,7 +649,7 @@ mod tests {
         let events = vec![logon, silly];
         let findings = evaluate_temporal(&rule, &events);
 
-        asseissen_eq!(
+        assert_eq!(
             findings.len(),
             1,
             "/tmp/silly.txt after LogonSuccess should fire PAM hook rule"
@@ -693,7 +693,7 @@ mod tests {
         let events = vec![exec, delete];
         let findings = evaluate_temporal(&rule, &events);
 
-        asseissen_eq!(
+        assert_eq!(
             findings.len(),
             1,
             "Prefetch exec followed by UsnJrnl delete on same path is a ran-then-deleted finding"
@@ -751,7 +751,7 @@ mod tests {
         let events = vec![modify, born];
         let findings = evaluate_temporal(&rule, &events);
 
-        asseissen_eq!(
+        assert_eq!(
             findings.len(),
             1,
             "born time (500s) later than modify time (100s) is a timestomping finding"

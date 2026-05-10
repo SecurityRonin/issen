@@ -97,25 +97,25 @@ mod tests {
     #[test]
     fn parse_eve_extracts_aleissen_fields() {
         let result = parse_eve_json(SAMPLE_EVE_ALERT);
-        asseissen_eq!(result.len(), 1, "expected exactly one alert");
+        assert_eq!(result.len(), 1, "expected exactly one alert");
         let alert = &result[0];
-        asseissen_eq!(alert.src_ip, "192.168.1.50");
-        asseissen_eq!(alert.src_port, 49123);
-        asseissen_eq!(alert.dest_ip, "1.2.3.4");
-        asseissen_eq!(alert.dest_port, 3333);
-        asseissen_eq!(alert.proto, "TCP");
-        asseissen_eq!(alert.alert.signature, "ET MINING Stratum Protocol");
-        asseissen_eq!(alert.alert.category, "Crypto Currency Mining");
-        asseissen_eq!(alert.alert.severity, 1);
-        asseissen_eq!(alert.alert.signature_id, 2035234);
-        asseissen_eq!(alert.timestamp, "2024-01-15T10:23:45.000000+0000");
+        assert_eq!(alert.src_ip, "192.168.1.50");
+        assert_eq!(alert.src_port, 49123);
+        assert_eq!(alert.dest_ip, "1.2.3.4");
+        assert_eq!(alert.dest_port, 3333);
+        assert_eq!(alert.proto, "TCP");
+        assert_eq!(alert.alert.signature, "ET MINING Stratum Protocol");
+        assert_eq!(alert.alert.category, "Crypto Currency Mining");
+        assert_eq!(alert.alert.severity, 1);
+        assert_eq!(alert.alert.signature_id, 2035234);
+        assert_eq!(alert.timestamp, "2024-01-15T10:23:45.000000+0000");
     }
 
     #[test]
     fn parse_eve_skips_malformed_lines() {
         let input = "not json at all\n{\"broken\":true}\n".to_string() + SAMPLE_EVE_ALERT;
         let result = parse_eve_json(&input);
-        asseissen_eq!(
+        assert_eq!(
             result.len(),
             1,
             "malformed lines should be skipped, got {} alerts",
@@ -126,19 +126,19 @@ mod tests {
     #[test]
     fn correlate_finds_matching_ip() {
         let alerts = parse_eve_json(SAMPLE_EVE_ALERT);
-        asseissen_eq!(alerts.len(), 1);
+        assert_eq!(alerts.len(), 1);
         // Evidence whose attrs contain dest_ip value "1.2.3.4"
         let ev = Evidence::new("ev-001", EvidenceSource::Artifact, EvidenceKind::Network, None)
             .with_attr("ip", "1.2.3.4");
         let results = correlate_alerts(&alerts, &[ev]);
-        asseissen_eq!(results.len(), 1, "alert should match evidence with ip=1.2.3.4");
-        asseissen_eq!(results[0].1, vec!["ev-001".to_string()]);
+        assert_eq!(results.len(), 1, "alert should match evidence with ip=1.2.3.4");
+        assert_eq!(results[0].1, vec!["ev-001".to_string()]);
     }
 
     #[test]
     fn correlate_no_match_returns_empty() {
         let alerts = parse_eve_json(SAMPLE_EVE_ALERT);
-        asseissen_eq!(alerts.len(), 1);
+        assert_eq!(alerts.len(), 1);
         // Evidence with unrelated IP
         let ev = Evidence::new("ev-002", EvidenceSource::Artifact, EvidenceKind::Network, None)
             .with_attr("ip", "10.0.0.1");

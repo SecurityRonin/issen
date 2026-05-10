@@ -522,7 +522,7 @@ mod tests {
     }
 
     #[test]
-    fn session_shoissen_duration_info() {
+    fn session_short_duration_info() {
         // Duration < 1 min
         let logins = vec![login("analyst", "pts/0", Some("(00:05)"))];
         let input = AlertInput {
@@ -556,7 +556,7 @@ mod tests {
     }
 
     #[test]
-    fn session_reboot_user_no_shoissen_session_alert() {
+    fn session_reboot_user_no_short_session_alert() {
         // "reboot" user with duration should NOT get short session alert
         let logins = vec![login("reboot", "system boot", Some("(00:01)"))];
         let input = AlertInput {

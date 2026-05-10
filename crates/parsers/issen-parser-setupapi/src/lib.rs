@@ -294,8 +294,8 @@ mod tests {
         );
 
         let ev = &events[0];
-        asseissen_eq!(ev.evidence_source_id, "setupapi-test");
-        asseissen_eq!(
+        assert_eq!(ev.evidence_source_id, "setupapi-test");
+        assert_eq!(
             ev.event_type,
             EventType::Other("DeviceInstall".to_string()),
             "event type must be DeviceInstall"
@@ -305,7 +305,7 @@ mod tests {
             "description must contain the device install text, got: {}",
             ev.description
         );
-        asseissen_eq!(
+        assert_eq!(
             ev.metadata.get("log_format").and_then(|v| v.as_str()),
             Some("vista"),
             "log_format metadata must be 'vista'"
@@ -343,7 +343,7 @@ mod tests {
             !events.is_empty(),
             "XP-format setupapi.log lines must produce events"
         );
-        asseissen_eq!(
+        assert_eq!(
             events[0].metadata.get("log_format").and_then(|v| v.as_str()),
             Some("xp"),
             "XP-format events must have log_format == 'xp'"

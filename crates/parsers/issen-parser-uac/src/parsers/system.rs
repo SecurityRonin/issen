@@ -115,7 +115,7 @@ pub fn parse_last_output(content: &str) -> Vec<LoginRecord> {
         let user = fields[0].to_string();
         let terminal = fields[1].to_string();
 
-        let (source, time_staissen_idx) = if fields.len() > 4
+        let (source, time_start_idx) = if fields.len() > 4
             && (fields[2].contains('.') || fields[2].contains(':') || fields[2] == "0.0.0.0")
         {
             (fields[2].to_string(), 3)
@@ -123,8 +123,8 @@ pub fn parse_last_output(content: &str) -> Vec<LoginRecord> {
             (String::new(), 2)
         };
 
-        let login_time = if time_staissen_idx + 2 <= fields.len() {
-            Some(fields[time_staissen_idx..time_staissen_idx + 2].join(" "))
+        let login_time = if time_start_idx + 2 <= fields.len() {
+            Some(fields[time_start_idx..time_start_idx + 2].join(" "))
         } else {
             None
         };
@@ -1539,7 +1539,7 @@ Swap:        1127420        3352     1124068";
     // --- User locale override tests ---
 
     #[test]
-    fn test_parse_user_locale_overrides_expoissen_lang() {
+    fn test_parse_user_locale_overrides_export_lang() {
         let content = "# some config\nexport LANG=ja_JP.UTF-8\nexport PATH=/usr/bin\n";
         let locales = parse_shell_locale_overrides(content);
         assert_eq!(locales, vec!["ja_JP.UTF-8".to_string()]);

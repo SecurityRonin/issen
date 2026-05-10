@@ -6,9 +6,48 @@
 
 use std::path::Path;
 
-use issen_parser_uac::parsers::{self, rootkit::RootkitSeverity};
+use issen_parser_uac::parsers::{self, rootkit::{RootkitFinding, RootkitSeverity}, HiddenProcessAnalysis};
 use issen_unpack::CollectionProvider as _;
 use issen_evtx;
+
+/// Triage verdict for a host.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Verdict {
+    /// No indicators of compromise found.
+    Clean,
+    /// Low-confidence indicators (e.g. unknown library in ld.so.preload).
+    Suspicious,
+    /// High-confidence indicators — one strong signal or hidden process.
+    LikelyCompromised,
+    /// Multiple independent critical signals confirm compromise.
+    Confirmed,
+}
+
+/// Compute a triage-level verdict from available findings.
+///
+/// Not a replacement for the forensicnomicon scoring engine — this is
+/// a quick "is this host compromised?" call for the analyst banner.
+pub fn compute_verdict(
+    rootkit_findings: &[RootkitFinding],
+    hidden: &HiddenProcessAnalysis,
+    _correlation_findings: &[issen_correlation::model::Finding],
+) -> Verdict {
+    let critical_count = rootkit_findings
+        .iter()
+        .filter(|f| f.severity == RootkitSeverity::Critical)
+        .count();
+    let has_hidden = !hidden.hidden_pids.is_empty();
+
+    if critical_count >= 2 || (critical_count >= 1 && has_hidden) {
+        Verdict::Confirmed
+    } else if critical_count >= 1 || has_hidden {
+        Verdict::LikelyCompromised
+    } else if !rootkit_findings.is_empty() {
+        Verdict::Suspicious
+    } else {
+        Verdict::Clean
+    }
+}
 
 /// Run the analyse command against `collection_path`.
 ///
@@ -40,8 +79,9 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
     println!("  Format     : {}", manifest.format_name);
     println!();
 
-    // ── 2. Rootkit indicators ─────────────────────────────────────────────
+    // ── 2. Rootkit indicators + 3. Hidden processes (computed once) ───────
     let rootkit_findings = parsers::rootkit::scan_rootkit_indicators(root);
+    let hidden = parsers::analyze_hidden_processes(root);
     let critical_rk: Vec<_> = rootkit_findings
         .iter()
         .filter(|f| f.severity == RootkitSeverity::Critical)
@@ -50,6 +90,20 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
         .iter()
         .filter(|f| f.severity == RootkitSeverity::Warning)
         .collect();
+
+    // Verdict banner — shown before section details
+    {
+        let verdict = compute_verdict(&rootkit_findings, &hidden, &[]);
+        let (label, banner) = match verdict {
+            Verdict::Clean => ("CLEAN", "No indicators of compromise detected."),
+            Verdict::Suspicious => ("SUSPICIOUS", "Low-confidence indicators — warrant investigation."),
+            Verdict::LikelyCompromised => ("LIKELY COMPROMISED", "High-confidence indicators of active compromise."),
+            Verdict::Confirmed => ("CONFIRMED COMPROMISE", "Multiple independent critical signals confirm compromise."),
+        };
+        println!("┌─ VERDICT ─────────────────────────────────────────────");
+        println!("│  [{label}] {banner}");
+        println!();
+    }
 
     println!("┌─ ROOTKIT INDICATORS ──────────────────────────────────");
     if rootkit_findings.is_empty() {
@@ -70,9 +124,6 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
         }
     }
     println!();
-
-    // ── 3. Hidden process analysis ────────────────────────────────────────
-    let hidden = parsers::analyze_hidden_processes(root);
 
     println!("┌─ HIDDEN PROCESSES (ps/top blind-spot) ─────────────────");
     if hidden.hidden_pids.is_empty() {
@@ -117,6 +168,21 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
             }
             println!("│");
         }
+
+        // Gap 2: shell upgrade chain detection
+        let chains = parsers::detect_shell_upgrade_chain(&hidden);
+        if !chains.is_empty() {
+            println!("│");
+            println!("│  [!] SHELL UPGRADE CHAIN(S) DETECTED:");
+            for chain in &chains {
+                println!(
+                    "│      PIDs {} on {} — {}",
+                    chain.pids.iter().map(|p| p.to_string()).collect::<Vec<_>>().join("+"),
+                    chain.shared_endpoint,
+                    chain.process_names.join(" → "),
+                );
+            }
+        }
     }
     println!();
 
@@ -144,8 +210,8 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
         for c in &established {
             let key = format!(
                 "{}|{}|{:?}",
-                normalize_poissen_names(&c.local_addr),
-                normalize_poissen_names(&c.remote_addr),
+                normalize_port_names(&c.local_addr),
+                normalize_port_names(&c.remote_addr),
                 c.pid,
             );
             if !seen_net.insert(key) {
@@ -219,38 +285,48 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
     build_narrative(&correlation_findings);
     println!();
 
-    // ── 7. Hashed executables suspicious check ────────────────────────────
+    // ── 7. Preloaded library provenance check ─────────────────────────────
+    // Read ld.so.preload paths and flag any library not in a standard system
+    // library directory — provenance-based detection replaces name matching.
+    let ld_preload_content_path = root.join("chkrootkit/etc_ld_so_preload.txt");
+    let preloaded_paths: Vec<String> = std::fs::read_to_string(&ld_preload_content_path)
+        .map(|c| parsers::rootkit::ld_so_preload_paths(&c))
+        .unwrap_or_default();
+
     let hash_dir = root.join("hash_executables");
-    if hash_dir.is_dir() {
-        let hashes = parsers::hash_execs::parse_hash_dir(&hash_dir);
-        // Flag any library in lib path that is NOT from a known package.
-        // Deduplicate by path, preferring SHA1 (40 hex chars) over MD5/SHA256.
-        let mut best: std::collections::HashMap<String, &parsers::hash_execs::HashedExecutable> =
-            std::collections::HashMap::new();
-        for h in &hashes {
-            let p = h.path.to_lowercase();
-            if p.contains(".so")
-                && (p.contains("libymv") || p.contains("libhide") || p.contains("libproc"))
-            {
-                let entry = best.entry(h.path.clone()).or_insert(h);
-                // Prefer SHA1 (40 chars) over MD5 (32) or SHA256 (64).
-                if h.hash.len() == 40 && entry.hash.len() != 40 {
-                    *entry = h;
-                }
-            }
-        }
-        if !best.is_empty() {
-            let mut suspicious_libs: Vec<_> = best.values().collect();
-            suspicious_libs.soissen_by_key(|h| &h.path);
-            println!("┌─ SUSPICIOUS EXECUTABLES ───────────────────────────────");
-            for h in &suspicious_libs {
+    if hash_dir.is_dir() || !preloaded_paths.is_empty() {
+        let hashes = if hash_dir.is_dir() {
+            parsers::hash_execs::parse_hash_dir(&hash_dir)
+        } else {
+            vec![]
+        };
+        let preloaded_hashes =
+            parsers::hash_execs::find_preloaded_executables(&preloaded_paths, &hashes);
+        let unpackaged_paths = parsers::packages::find_unpackaged_paths(&preloaded_paths);
+
+        if !preloaded_hashes.is_empty() || !unpackaged_paths.is_empty() {
+            println!("┌─ SUSPICIOUS PRELOADED LIBRARIES ───────────────────────");
+            for h in &preloaded_hashes {
                 let algo = match h.hash.len() {
                     32 => "MD5",
                     40 => "SHA1",
                     64 => "SHA256",
                     _ => "hash",
                 };
-                println!("│  {} — {}: {}", h.path, algo, h.hash);
+                let provenance = if parsers::packages::find_unpackaged_paths(
+                    &[h.path.clone()],
+                ).is_empty() {
+                    "system path"
+                } else {
+                    "UNPACKAGED"
+                };
+                println!("│  [{}] {} — {}: {}", provenance, h.path, algo, h.hash);
+            }
+            // Preloaded paths with no hash entry (not in hash_executables)
+            for p in &unpackaged_paths {
+                if !preloaded_hashes.iter().any(|h| &h.path == p) {
+                    println!("│  [UNPACKAGED, no hash] {p}");
+                }
             }
             println!();
         }
@@ -307,6 +383,82 @@ fn build_narrative(findings: &[issen_correlation::model::Finding]) {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use issen_parser_uac::parsers::{
+        rootkit::{RootkitFinding, RootkitSeverity},
+        HiddenProcessAnalysis,
+    };
+
+    fn critical_rk(check: &str) -> RootkitFinding {
+        RootkitFinding {
+            severity: RootkitSeverity::Critical,
+            check: check.to_string(),
+            description: "test".to_string(),
+            evidence: "test".to_string(),
+        }
+    }
+
+    fn warning_rk() -> RootkitFinding {
+        RootkitFinding {
+            severity: RootkitSeverity::Warning,
+            check: "ld_preload".to_string(),
+            description: "test".to_string(),
+            evidence: "/usr/lib/libunknown.so".to_string(),
+        }
+    }
+
+    fn hidden_with_pids(pids: &[u32]) -> HiddenProcessAnalysis {
+        HiddenProcessAnalysis {
+            hidden_pids: pids.to_vec(),
+            findings: vec![],
+        }
+    }
+
+    // ── Gap 4 RED: compute_verdict ──────────────────────────────────────────
+
+    #[test]
+    fn verdict_clean_when_no_findings() {
+        let v = compute_verdict(&[], &HiddenProcessAnalysis::default(), &[]);
+        assert_eq!(v, Verdict::Clean);
+    }
+
+    #[test]
+    fn verdict_suspicious_with_warning_rootkit_only() {
+        let v = compute_verdict(&[warning_rk()], &HiddenProcessAnalysis::default(), &[]);
+        assert_eq!(v, Verdict::Suspicious);
+    }
+
+    #[test]
+    fn verdict_likely_compromised_with_critical_rootkit() {
+        let v = compute_verdict(&[critical_rk("ld_preload")], &HiddenProcessAnalysis::default(), &[]);
+        assert_eq!(v, Verdict::LikelyCompromised);
+    }
+
+    #[test]
+    fn verdict_confirmed_with_critical_rootkit_and_hidden_processes() {
+        let rk = vec![critical_rk("ld_preload")];
+        let hidden = hidden_with_pids(&[977]);
+        let v = compute_verdict(&rk, &hidden, &[]);
+        assert_eq!(v, Verdict::Confirmed);
+    }
+
+    #[test]
+    fn verdict_confirmed_with_multiple_critical_rootkit_signals() {
+        let rk = vec![critical_rk("ld_preload"), critical_rk("kernel_module")];
+        let v = compute_verdict(&rk, &HiddenProcessAnalysis::default(), &[]);
+        assert_eq!(v, Verdict::Confirmed);
+    }
+
+    #[test]
+    fn verdict_likely_compromised_with_hidden_pids_only() {
+        let hidden = hidden_with_pids(&[939]);
+        let v = compute_verdict(&[], &hidden, &[]);
+        assert_eq!(v, Verdict::LikelyCompromised);
+    }
+}
+
 fn wrap_text(text: &str, width: usize) -> Vec<String> {
     let mut lines = Vec::new();
     let mut current = String::new();
@@ -329,7 +481,7 @@ fn wrap_text(text: &str, width: usize) -> Vec<String> {
 
 /// Replace well-known service names in an addr string with port numbers
 /// so `:ssh` and `:22` produce the same dedup key.
-fn normalize_poissen_names(addr: &str) -> String {
+fn normalize_port_names(addr: &str) -> String {
     const MAP: &[(&str, &str)] = &[
         (":ssh", ":22"),
         (":http", ":80"),

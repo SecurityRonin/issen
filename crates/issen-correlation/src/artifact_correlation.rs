@@ -237,8 +237,8 @@ mod tests {
         let rule = all_rule(&["userassist_exe", "prefetch_file", "shimcache"]);
         let present = &["userassist_exe", "prefetch_file", "shimcache"];
         let findings = evaluate_artifacts(&[rule], present);
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].rule_id, "test.all");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].rule_id, "test.all");
     }
 
     #[test]
@@ -263,7 +263,7 @@ mod tests {
         let rule = at_least_n_rule(&["userassist_exe", "prefetch_file", "shimcache"], 2);
         let present = &["userassist_exe", "prefetch_file"]; // exactly 2 of 3
         let findings = evaluate_artifacts(&[rule], present);
-        asseissen_eq!(findings.len(), 1);
+        assert_eq!(findings.len(), 1);
     }
 
     #[test]
@@ -271,7 +271,7 @@ mod tests {
         let rule = at_least_n_rule(&["userassist_exe", "prefetch_file", "shimcache"], 2);
         let present = &["userassist_exe", "prefetch_file", "shimcache"]; // all 3
         let findings = evaluate_artifacts(&[rule], present);
-        asseissen_eq!(findings.len(), 1);
+        assert_eq!(findings.len(), 1);
     }
 
     #[test]
@@ -290,7 +290,7 @@ mod tests {
         assert!(findings.is_empty());
         // All present → fires
         let findings = evaluate_artifacts(&[rule], &["userassist_exe", "prefetch_file"]);
-        asseissen_eq!(findings.len(), 1);
+        assert_eq!(findings.len(), 1);
     }
 
     // ── Finding contents ──────────────────────────────────────────────────────
@@ -302,7 +302,7 @@ mod tests {
         let rule_n = at_least_n_rule(&["userassist_exe", "prefetch_file", "shimcache"], 2);
         let present = &["userassist_exe", "prefetch_file"]; // shimcache absent
         let findings = evaluate_artifacts(&[rule_n], present);
-        asseissen_eq!(findings.len(), 1);
+        assert_eq!(findings.len(), 1);
         let f = &findings[0];
         assert!(f.matched_artifacts.contains(&"userassist_exe".to_string()));
         assert!(f.matched_artifacts.contains(&"prefetch_file".to_string()));
@@ -321,12 +321,12 @@ mod tests {
         let present = &["userassist_exe", "prefetch_file"];
         let findings = evaluate_artifacts(&[rule], present);
         let f = &findings[0];
-        asseissen_eq!(f.rule_id, "artifact.execution.test");
-        asseissen_eq!(f.title, "Execution test");
-        asseissen_eq!(f.severity, "critical");
-        asseissen_eq!(f.description.as_deref(), Some("Test description"));
-        asseissen_eq!(f.absence_note.as_deref(), Some("Absence note"));
-        asseissen_eq!(f.mitre_techniques, vec!["T1059"]);
+        assert_eq!(f.rule_id, "artifact.execution.test");
+        assert_eq!(f.title, "Execution test");
+        assert_eq!(f.severity, "critical");
+        assert_eq!(f.description.as_deref(), Some("Test description"));
+        assert_eq!(f.absence_note.as_deref(), Some("Absence note"));
+        assert_eq!(f.mitre_techniques, vec!["T1059"]);
     }
 
     // ── Multi-rule ────────────────────────────────────────────────────────────
@@ -343,7 +343,7 @@ mod tests {
             "scheduled_tasks_dir",
         ];
         let findings = evaluate_artifacts(&[rule_a, rule_b], present);
-        asseissen_eq!(findings.len(), 2);
+        assert_eq!(findings.len(), 2);
     }
 
     #[test]
@@ -358,7 +358,7 @@ mod tests {
             "chrome_history",
         ];
         let findings = evaluate_artifacts(&[rule], present);
-        asseissen_eq!(findings.len(), 1);
+        assert_eq!(findings.len(), 1);
     }
 
     // ── Bundled rules ─────────────────────────────────────────────────────────
@@ -447,7 +447,7 @@ mod tests {
             .expect("rule exists");
         let present = &["userassist_exe", "prefetch_file", "shimcache"];
         let findings = evaluate_artifacts(std::slice::from_ref(triple), present);
-        asseissen_eq!(
+        assert_eq!(
             findings.len(),
             1,
             "execution triple rule should fire when all three present"

@@ -41,9 +41,9 @@ pub struct RestartPageInfo {
 #[derive(Debug, Clone)]
 pub struct LogFileValidation {
     /// First restart page (at offset 0).
-    pub restaissen_page_1: Option<RestartPageInfo>,
+    pub restart_page_1: Option<RestartPageInfo>,
     /// Second restart page (at offset = `system_page_size` from page 1).
-    pub restaissen_page_2: Option<RestartPageInfo>,
+    pub restart_page_2: Option<RestartPageInfo>,
 }
 
 impl LogFileValidation {
@@ -51,11 +51,11 @@ impl LogFileValidation {
     #[must_use]
     pub fn has_valid_header(&self) -> bool {
         let p1_valid = self
-            .restaissen_page_1
+            .restart_page_1
             .as_ref()
             .is_some_and(|p| p.valid_magic || p.chkd_magic);
         let p2_valid = self
-            .restaissen_page_2
+            .restart_page_2
             .as_ref()
             .is_some_and(|p| p.valid_magic || p.chkd_magic);
         p1_valid || p2_valid
@@ -64,7 +64,7 @@ impl LogFileValidation {
     /// Summary string for display.
     #[must_use]
     pub fn summary(&self) -> String {
-        match (&self.restaissen_page_1, &self.restaissen_page_2) {
+        match (&self.restart_page_1, &self.restart_page_2) {
             (Some(p1), Some(_p2)) => {
                 let magic_label = if p1.chkd_magic { "CHKD" } else { "RSTR" };
                 format!(
@@ -94,7 +94,7 @@ impl LogFileValidation {
 ///
 /// Returns `None` if the magic signature is not recognized or the data
 /// is too short to contain a valid header.
-fn parse_restaissen_page(data: &[u8]) -> Option<RestartPageInfo> {
+fn parse_restart_page(data: &[u8]) -> Option<RestartPageInfo> {
     if data.len() < MIN_HEADER_SIZE {
         return None;
     }
@@ -109,13 +109,13 @@ fn parse_restaissen_page(data: &[u8]) -> Option<RestartPageInfo> {
 
     let system_page_size = u32::from_le_bytes(data[16..20].try_into().ok()?);
     let log_page_size = u32::from_le_bytes(data[20..24].try_into().ok()?);
-    let restaissen_area_offset = u16::from_le_bytes(data[24..26].try_into().ok()?) as usize;
+    let restart_area_offset = u16::from_le_bytes(data[24..26].try_into().ok()?) as usize;
     let checkpoint_lsn = u64::from_le_bytes(data[8..16].try_into().ok()?);
 
     // Parse restart area fields if we have enough data.
     let (major_version, minor_version, flags) =
-        if restaissen_area_offset > 0 && restaissen_area_offset + 20 <= data.len() {
-            let ra = &data[restaissen_area_offset..];
+        if restart_area_offset > 0 && restart_area_offset + 20 <= data.len() {
+            let ra = &data[restart_area_offset..];
             // Restart area layout:
             //   +0  u64 current_lsn
             //   +8  u16 log_clients
@@ -162,20 +162,20 @@ fn parse_restaissen_page(data: &[u8]) -> Option<RestartPageInfo> {
 /// at offset `system_page_size`.
 #[must_use]
 pub fn validate_logfile_from_bytes(data: &[u8]) -> LogFileValidation {
-    let page1 = parse_restaissen_page(data);
+    let page1 = parse_restart_page(data);
 
     let page2 = page1.as_ref().and_then(|p1| {
         let offset = p1.system_page_size as usize;
         if offset > 0 && offset < data.len() {
-            parse_restaissen_page(&data[offset..])
+            parse_restart_page(&data[offset..])
         } else {
             None
         }
     });
 
     LogFileValidation {
-        restaissen_page_1: page1,
-        restaissen_page_2: page2,
+        restart_page_1: page1,
+        restart_page_2: page2,
     }
 }
 
@@ -213,7 +213,7 @@ mod tests {
     const TEST_RA_OFFSET: u16 = 32;
 
     /// Build a minimal restart page with the given magic and field values.
-    fn build_restaissen_page(
+    fn build_restart_page(
         magic: &[u8; 4],
         system_page_size: u32,
         log_page_size: u32,
@@ -270,7 +270,7 @@ mod tests {
 
     /// Build a default RSTR restart page with typical NTFS 3.1 values.
     fn default_rstr_page() -> Vec<u8> {
-        build_restaissen_page(
+        build_restart_page(
             b"RSTR",
             TEST_PAGE_SIZE,
             TEST_PAGE_SIZE,
@@ -291,27 +291,27 @@ mod tests {
     }
 
     // -------------------------------------------------------------------
-    // Pure-logic tests (via parse_restaissen_page / validate_logfile_from_bytes)
+    // Pure-logic tests (via parse_restart_page / validate_logfile_from_bytes)
     // -------------------------------------------------------------------
 
     #[test]
-    fn test_valid_restaissen_page() {
+    fn test_valid_restart_page() {
         let page = default_rstr_page();
-        let info = parse_restaissen_page(&page).unwrap();
+        let info = parse_restart_page(&page).unwrap();
 
         assert!(info.valid_magic);
         assert!(!info.chkd_magic);
-        asseissen_eq!(info.system_page_size, TEST_PAGE_SIZE);
-        asseissen_eq!(info.log_page_size, TEST_PAGE_SIZE);
-        asseissen_eq!(info.major_version, 1);
-        asseissen_eq!(info.minor_version, 1);
-        asseissen_eq!(info.flags, 0x0000);
-        asseissen_eq!(info.checkpoint_lsn, 0x0000_0001_0000_0042);
+        assert_eq!(info.system_page_size, TEST_PAGE_SIZE);
+        assert_eq!(info.log_page_size, TEST_PAGE_SIZE);
+        assert_eq!(info.major_version, 1);
+        assert_eq!(info.minor_version, 1);
+        assert_eq!(info.flags, 0x0000);
+        assert_eq!(info.checkpoint_lsn, 0x0000_0001_0000_0042);
     }
 
     #[test]
     fn test_chkd_magic() {
-        let page = build_restaissen_page(
+        let page = build_restart_page(
             b"CHKD",
             TEST_PAGE_SIZE,
             TEST_PAGE_SIZE,
@@ -321,11 +321,11 @@ mod tests {
             1,
             1,
         );
-        let info = parse_restaissen_page(&page).unwrap();
+        let info = parse_restart_page(&page).unwrap();
 
         assert!(!info.valid_magic);
         assert!(info.chkd_magic);
-        asseissen_eq!(info.flags, 0x0002);
+        assert_eq!(info.flags, 0x0002);
     }
 
     #[test]
@@ -333,24 +333,24 @@ mod tests {
         let mut page = default_rstr_page();
         page[0..4].copy_from_slice(b"JUNK");
 
-        assert!(parse_restaissen_page(&page).is_none());
+        assert!(parse_restart_page(&page).is_none());
     }
 
     #[test]
     fn test_truncated_data() {
         // Fewer than MIN_HEADER_SIZE bytes.
         let tiny = vec![0x52, 0x53, 0x54, 0x52]; // "RSTR" but only 4 bytes
-        assert!(parse_restaissen_page(&tiny).is_none());
+        assert!(parse_restart_page(&tiny).is_none());
 
         // Exactly at the boundary.
         let short = vec![0u8; MIN_HEADER_SIZE - 1];
-        assert!(parse_restaissen_page(&short).is_none());
+        assert!(parse_restart_page(&short).is_none());
     }
 
     #[test]
-    fn test_two_restaissen_pages() {
+    fn test_two_restart_pages() {
         let page1 = default_rstr_page();
-        let page2 = build_restaissen_page(
+        let page2 = build_restart_page(
             b"RSTR",
             TEST_PAGE_SIZE,
             TEST_PAGE_SIZE,
@@ -367,14 +367,14 @@ mod tests {
 
         let validation = validate_logfile_from_bytes(&data);
 
-        assert!(validation.restaissen_page_1.is_some());
-        assert!(validation.restaissen_page_2.is_some());
+        assert!(validation.restart_page_1.is_some());
+        assert!(validation.restart_page_2.is_some());
 
-        let p1 = validation.restaissen_page_1.unwrap();
-        asseissen_eq!(p1.checkpoint_lsn, 0x0000_0001_0000_0042);
+        let p1 = validation.restart_page_1.unwrap();
+        assert_eq!(p1.checkpoint_lsn, 0x0000_0001_0000_0042);
 
-        let p2 = validation.restaissen_page_2.unwrap();
-        asseissen_eq!(p2.checkpoint_lsn, 0x0000_0001_0000_0099);
+        let p2 = validation.restart_page_2.unwrap();
+        assert_eq!(p2.checkpoint_lsn, 0x0000_0001_0000_0099);
     }
 
     #[test]
@@ -394,8 +394,8 @@ mod tests {
         let v = validate_logfile_from_bytes(&page);
 
         assert!(v.has_valid_header());
-        assert!(v.restaissen_page_1.is_some());
-        assert!(v.restaissen_page_2.is_none());
+        assert!(v.restart_page_1.is_some());
+        assert!(v.restart_page_2.is_none());
     }
 
     #[test]
@@ -404,13 +404,13 @@ mod tests {
         let v = validate_logfile_from_bytes(&data);
 
         assert!(!v.has_valid_header());
-        assert!(v.restaissen_page_1.is_none());
-        assert!(v.restaissen_page_2.is_none());
+        assert!(v.restart_page_1.is_none());
+        assert!(v.restart_page_2.is_none());
     }
 
     #[test]
     fn test_has_valid_header_chkd() {
-        let page = build_restaissen_page(
+        let page = build_restart_page(
             b"CHKD",
             TEST_PAGE_SIZE,
             TEST_PAGE_SIZE,
@@ -440,7 +440,7 @@ mod tests {
 
     #[test]
     fn test_summary_chkd() {
-        let page = build_restaissen_page(
+        let page = build_restart_page(
             b"CHKD",
             TEST_PAGE_SIZE,
             TEST_PAGE_SIZE,
@@ -476,7 +476,7 @@ mod tests {
 
     #[test]
     fn test_nonzero_flags() {
-        let page = build_restaissen_page(
+        let page = build_restart_page(
             b"RSTR",
             TEST_PAGE_SIZE,
             TEST_PAGE_SIZE,
@@ -486,13 +486,13 @@ mod tests {
             1,
             1,
         );
-        let info = parse_restaissen_page(&page).unwrap();
-        asseissen_eq!(info.flags, 0x0002);
+        let info = parse_restart_page(&page).unwrap();
+        assert_eq!(info.flags, 0x0002);
     }
 
     #[test]
     fn test_version_2_0() {
-        let page = build_restaissen_page(
+        let page = build_restart_page(
             b"RSTR",
             TEST_PAGE_SIZE,
             TEST_PAGE_SIZE,
@@ -502,13 +502,13 @@ mod tests {
             2, // major version 2
             0, // minor version 0
         );
-        let info = parse_restaissen_page(&page).unwrap();
-        asseissen_eq!(info.major_version, 2);
-        asseissen_eq!(info.minor_version, 0);
+        let info = parse_restart_page(&page).unwrap();
+        assert_eq!(info.major_version, 2);
+        assert_eq!(info.minor_version, 0);
     }
 
     #[test]
-    fn test_restaissen_area_offset_beyond_data() {
+    fn test_restart_area_offset_beyond_data() {
         // Valid magic but restart area offset points beyond the data.
         let mut page = vec![0u8; 64];
         page[0..4].copy_from_slice(b"RSTR");
@@ -517,12 +517,12 @@ mod tests {
         // Restart area offset = 200, but buffer is only 64 bytes.
         page[24..26].copy_from_slice(&200u16.to_le_bytes());
 
-        let info = parse_restaissen_page(&page).unwrap();
+        let info = parse_restart_page(&page).unwrap();
         // Should still parse but with zeroed version/flags.
         assert!(info.valid_magic);
-        asseissen_eq!(info.major_version, 0);
-        asseissen_eq!(info.minor_version, 0);
-        asseissen_eq!(info.flags, 0);
+        assert_eq!(info.major_version, 0);
+        assert_eq!(info.minor_version, 0);
+        assert_eq!(info.flags, 0);
     }
 
     // -------------------------------------------------------------------
@@ -539,8 +539,8 @@ mod tests {
         let result = validate_logfile(tmp.path()).unwrap();
 
         assert!(result.has_valid_header());
-        assert!(result.restaissen_page_1.is_some());
-        assert!(result.restaissen_page_2.is_some());
+        assert!(result.restart_page_1.is_some());
+        assert!(result.restart_page_2.is_some());
     }
 
     #[test]

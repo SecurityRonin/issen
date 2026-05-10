@@ -129,7 +129,7 @@ impl InvestigationData {
             .filter(|(_label, count)| *count > 0)
             .collect();
 
-        counts.soissen_by(|a, b| b.1.cmp(&a.1));
+        counts.sort_by(|a, b| b.1.cmp(&a.1));
         counts
     }
 }
@@ -179,7 +179,7 @@ pub fn load_uac_collection(
     let mut timeline = bodyfile_to_events(&bodyfile_entries);
     timeline.extend(logins_to_events(&logins, metadata.acquisition_time));
     timeline.extend(processes_to_events(&processes));
-    timeline.soissen_by_key(|ev| ev.timestamp);
+    timeline.sort_by_key(|ev| ev.timestamp);
 
     // ----- Run alert detection -----
 
@@ -512,8 +512,8 @@ mod tests {
     fn parse_uac_metadata_valid_dirname() {
         let path = Path::new("/evidence/uac-webserver01-20260315143000");
         let meta = parse_uac_metadata(path);
-        asseissen_eq!(meta.hostname, "webserver01");
-        asseissen_eq!(meta.collection_tool, "UAC");
+        assert_eq!(meta.hostname, "webserver01");
+        assert_eq!(meta.collection_tool, "UAC");
         assert!(meta.acquisition_time > 0, "should have parsed timestamp");
     }
 
@@ -521,7 +521,7 @@ mod tests {
     fn parse_uac_metadata_multi_paissen_hostname() {
         let path = Path::new("/evidence/uac-vbox-linux-20260101120000");
         let meta = parse_uac_metadata(path);
-        asseissen_eq!(meta.hostname, "vbox-linux");
+        assert_eq!(meta.hostname, "vbox-linux");
         assert!(meta.acquisition_time > 0);
     }
 
@@ -530,7 +530,7 @@ mod tests {
         let path = Path::new("/evidence/some-random-dir");
         let meta = parse_uac_metadata(path);
         assert!(meta.hostname.is_empty());
-        asseissen_eq!(meta.acquisition_time, 0);
+        assert_eq!(meta.acquisition_time, 0);
     }
 
     #[test]
@@ -570,9 +570,9 @@ mod tests {
 
         let data = load_velociraptor_collection(dir.path(), &artifacts, &meta);
 
-        asseissen_eq!(data.metadata.hostname, "WORKSTATION01");
-        asseissen_eq!(data.metadata.os, "Windows");
-        asseissen_eq!(data.metadata.collection_tool, "Velociraptor");
+        assert_eq!(data.metadata.hostname, "WORKSTATION01");
+        assert_eq!(data.metadata.os, "Windows");
+        assert_eq!(data.metadata.collection_tool, "Velociraptor");
         assert!(data.metadata.acquisition_time > 0);
     }
 
@@ -624,11 +624,11 @@ mod tests {
 
         // Should report artifact counts in summary
         let counts = data.artifact_counts;
-        asseissen_eq!(*counts.get("EventLog").unwrap_or(&0), 2);
-        asseissen_eq!(*counts.get("Registry").unwrap_or(&0), 1);
-        asseissen_eq!(*counts.get("Prefetch").unwrap_or(&0), 1);
-        asseissen_eq!(*counts.get("Lnk").unwrap_or(&0), 1);
-        asseissen_eq!(*counts.get("Mft").unwrap_or(&0), 1);
+        assert_eq!(*counts.get("EventLog").unwrap_or(&0), 2);
+        assert_eq!(*counts.get("Registry").unwrap_or(&0), 1);
+        assert_eq!(*counts.get("Prefetch").unwrap_or(&0), 1);
+        assert_eq!(*counts.get("Lnk").unwrap_or(&0), 1);
+        assert_eq!(*counts.get("Mft").unwrap_or(&0), 1);
     }
 
     #[test]
@@ -718,14 +718,14 @@ mod tests {
             .iter()
             .find(|(l, _)| l.contains("bodyfile"))
             .map(|(_, c)| *c);
-        asseissen_eq!(bodyfile_count, Some(2));
+        assert_eq!(bodyfile_count, Some(2));
     }
 
     #[test]
     fn collection_metadata_default() {
         let meta = CollectionMetadata::default();
         assert!(meta.hostname.is_empty());
-        asseissen_eq!(meta.acquisition_time, 0);
+        assert_eq!(meta.acquisition_time, 0);
     }
 
     #[test]

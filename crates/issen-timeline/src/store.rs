@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn test_create_in_memory_store() {
         let store = TimelineStore::in_memory().expect("create store");
-        asseissen_eq!(store.event_count().expect("count"), 0);
+        assert_eq!(store.event_count().expect("count"), 0);
     }
 
     #[test]
@@ -110,7 +110,7 @@ mod tests {
         let dir = tempfile::tempdir().expect("tmpdir");
         let path = dir.path().join("test.duckdb");
         let store = TimelineStore::open(&path).expect("create store");
-        asseissen_eq!(store.event_count().expect("count"), 0);
+        assert_eq!(store.event_count().expect("count"), 0);
         assert!(path.exists());
     }
 
@@ -119,7 +119,7 @@ mod tests {
         let store = TimelineStore::in_memory().expect("create store");
         // Calling initialize_schema again should not fail.
         store.initialize_schema().expect("re-initialize");
-        asseissen_eq!(store.event_count().expect("count"), 0);
+        assert_eq!(store.event_count().expect("count"), 0);
     }
 
     #[test]

@@ -80,6 +80,6 @@ mod tests {
 
     #[test]
     fn test_uac_provider_name() {
-        asseissen_eq!(UacProvider.name(), "UAC");
+        assert_eq!(UacProvider.name(), "UAC");
     }
 }

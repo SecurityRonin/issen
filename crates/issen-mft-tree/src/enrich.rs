@@ -108,7 +108,7 @@ mod tests {
         ];
         tree.enrich_usn(&usn_records);
         let idx = *tree.entry_to_idx(100).unwrap();
-        asseissen_eq!(tree.node(idx).usn_change_count, 3);
+        assert_eq!(tree.node(idx).usn_change_count, 3);
     }
 
     #[test]
@@ -128,15 +128,15 @@ mod tests {
             (200, "report.docx".to_string()),
         ];
         tree.enrich_usn(&usn_records);
-        asseissen_eq!(
+        assert_eq!(
             tree.node(*tree.entry_to_idx(100).unwrap()).usn_change_count,
             1
         );
-        asseissen_eq!(
+        assert_eq!(
             tree.node(*tree.entry_to_idx(101).unwrap()).usn_change_count,
             2
         );
-        asseissen_eq!(
+        assert_eq!(
             tree.node(*tree.entry_to_idx(200).unwrap()).usn_change_count,
             1
         );
@@ -148,6 +148,6 @@ mod tests {
         let usn_records = vec![(100_u64, "cmd.exe".to_string())];
         tree.enrich_usn(&usn_records);
         let idx = *tree.entry_to_idx(101).unwrap();
-        asseissen_eq!(tree.node(idx).usn_change_count, 0);
+        assert_eq!(tree.node(idx).usn_change_count, 0);
     }
 }

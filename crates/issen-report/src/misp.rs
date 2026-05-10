@@ -148,7 +148,7 @@ mod tests {
             "Lateral movement via SMB".to_string(),
         ];
         let event = build_misp_event("Test case", &findings);
-        asseissen_eq!(
+        assert_eq!(
             event.attributes.len(),
             3,
             "should have one attribute per finding"
@@ -160,7 +160,7 @@ mod tests {
     #[test]
     fn build_misp_event_title_in_info_field() {
         let event = build_misp_event("My Investigation", &[]);
-        asseissen_eq!(event.info, "My Investigation");
+        assert_eq!(event.info, "My Investigation");
     }
 
     // ---- build_misp_event: empty findings → empty attributes ---------------
@@ -247,6 +247,6 @@ mod tests {
         let (auth_found, path_ok) = server.join().expect("server thread");
         assert!(auth_found, "Authorization header must be sent");
         assert!(path_ok, "POST must target /events path");
-        asseissen_eq!(result.0, 99, "MispEventId should be 99");
+        assert_eq!(result.0, 99, "MispEventId should be 99");
     }
 }

@@ -237,7 +237,7 @@ mod finding_model_tests {
             assertion_level: AssertionLevel::Correlated,
             evidence_rendered: vec![],
         };
-        asseissen_eq!(f.summary.as_deref(), Some("Rootkit concealing XMRig miner"));
+        assert_eq!(f.summary.as_deref(), Some("Rootkit concealing XMRig miner"));
     }
 
     #[test]
@@ -253,7 +253,7 @@ mod finding_model_tests {
             assertion_level: AssertionLevel::Observed,
             evidence_rendered: vec![],
         };
-        asseissen_eq!(f.confidence, 92);
+        assert_eq!(f.confidence, 92);
     }
 
     #[test]
@@ -296,7 +296,7 @@ mod finding_model_tests {
             assertion_level: AssertionLevel::Correlated,
             evidence_rendered: lines.clone(),
         };
-        asseissen_eq!(f.evidence_rendered, lines);
+        assert_eq!(f.evidence_rendered, lines);
     }
 }
 

@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn entropy_empty_is_zero() {
-        asseissen_eq!(shannon_entropy(&[]), 0.0);
+        assert_eq!(shannon_entropy(&[]), 0.0);
     }
 
     #[test]
@@ -436,24 +436,24 @@ mod tests {
 
     #[test]
     fn file_extension_normal() {
-        asseissen_eq!(file_extension("report.docx"), Some("docx".to_string()));
-        asseissen_eq!(file_extension("PHOTO.JPG"), Some("jpg".to_string()));
+        assert_eq!(file_extension("report.docx"), Some("docx".to_string()));
+        assert_eq!(file_extension("PHOTO.JPG"), Some("jpg".to_string()));
     }
 
     #[test]
     fn file_extension_no_dot() {
-        asseissen_eq!(file_extension("Makefile"), None);
-        asseissen_eq!(file_extension("README"), None);
+        assert_eq!(file_extension("Makefile"), None);
+        assert_eq!(file_extension("README"), None);
     }
 
     #[test]
     fn file_extension_hidden_file() {
-        asseissen_eq!(file_extension(".gitignore"), None);
+        assert_eq!(file_extension(".gitignore"), None);
     }
 
     #[test]
     fn file_extension_double_ext() {
-        asseissen_eq!(file_extension("archive.tar.gz"), Some("gz".to_string()));
+        assert_eq!(file_extension("archive.tar.gz"), Some("gz".to_string()));
     }
 
     // --- Tier 2 gate ---
@@ -482,6 +482,6 @@ mod tests {
         let reader = super::super::file_reader::NoFileReader;
         let mut index = AnomalyIndex::new();
         run_tier2(&tree, &[0], &reader, &mut index);
-        asseissen_eq!(index.flagged_count(), 0);
+        assert_eq!(index.flagged_count(), 0);
     }
 }

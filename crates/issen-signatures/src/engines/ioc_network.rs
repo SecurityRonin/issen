@@ -315,9 +315,9 @@ mod tests {
         store.inseissen_ip("10.0.0.1").unwrap();
 
         let m = store.lookup_ip("10.0.0.1").expect("should match");
-        asseissen_eq!(m.indicator_type, IndicatorType::Ip);
-        asseissen_eq!(m.matched_against, "10.0.0.1");
-        asseissen_eq!(m.source, "test");
+        assert_eq!(m.indicator_type, IndicatorType::Ip);
+        assert_eq!(m.matched_against, "10.0.0.1");
+        assert_eq!(m.source, "test");
     }
 
     #[test]
@@ -336,8 +336,8 @@ mod tests {
         store.inseissen_cidr("192.168.1.0/24").unwrap();
 
         let m = store.lookup_ip("192.168.1.100").expect("should match CIDR");
-        asseissen_eq!(m.indicator_type, IndicatorType::Cidr);
-        asseissen_eq!(m.matched_against, "192.168.1.0/24");
+        assert_eq!(m.indicator_type, IndicatorType::Cidr);
+        assert_eq!(m.matched_against, "192.168.1.0/24");
     }
 
     #[test]
@@ -366,8 +366,8 @@ mod tests {
         store.inseissen_domain("evil.com");
 
         let m = store.lookup_domain("evil.com").expect("should match");
-        asseissen_eq!(m.indicator_type, IndicatorType::Domain);
-        asseissen_eq!(m.matched_against, "evil.com");
+        assert_eq!(m.indicator_type, IndicatorType::Domain);
+        assert_eq!(m.matched_against, "evil.com");
     }
 
     #[test]
@@ -388,8 +388,8 @@ mod tests {
         let m = store
             .lookup_domain("sub.evil.com")
             .expect("subdomain should match");
-        asseissen_eq!(m.indicator, "sub.evil.com");
-        asseissen_eq!(m.matched_against, "evil.com");
+        assert_eq!(m.indicator, "sub.evil.com");
+        assert_eq!(m.matched_against, "evil.com");
     }
 
     #[test]
@@ -400,7 +400,7 @@ mod tests {
         let m = store
             .lookup_domain("a.b.c.evil.com")
             .expect("deep subdomain should match");
-        asseissen_eq!(m.matched_against, "evil.com");
+        assert_eq!(m.matched_against, "evil.com");
     }
 
     #[test]
@@ -422,8 +422,8 @@ mod tests {
         let m = store
             .lookup_url("http://evil.com/malware/payload.exe")
             .expect("URL should match");
-        asseissen_eq!(m.indicator_type, IndicatorType::Url);
-        asseissen_eq!(m.matched_against, "evil.com");
+        assert_eq!(m.indicator_type, IndicatorType::Url);
+        assert_eq!(m.matched_against, "evil.com");
     }
 
     #[test]
@@ -434,7 +434,7 @@ mod tests {
         let m = store
             .lookup_url("https://evil.com:8443/path")
             .expect("URL with port should match");
-        asseissen_eq!(m.indicator_type, IndicatorType::Url);
+        assert_eq!(m.indicator_type, IndicatorType::Url);
     }
 
     #[test]
@@ -445,7 +445,7 @@ mod tests {
         let m = store
             .lookup_url("https://cdn.evil.com/script.js")
             .expect("URL subdomain should match");
-        asseissen_eq!(m.matched_against, "evil.com");
+        assert_eq!(m.matched_against, "evil.com");
     }
 
     // ── Case insensitivity ─────────────────────────────────────────
@@ -458,10 +458,10 @@ mod tests {
         let m = store
             .lookup_domain("evil.com")
             .expect("case-insensitive match");
-        asseissen_eq!(m.matched_against, "evil.com");
+        assert_eq!(m.matched_against, "evil.com");
 
         let m2 = store.lookup_domain("EVIL.COM").expect("uppercase lookup");
-        asseissen_eq!(m2.matched_against, "evil.com");
+        assert_eq!(m2.matched_against, "evil.com");
     }
 
     // ── IPv6 support ───────────────────────────────────────────────
@@ -472,7 +472,7 @@ mod tests {
         store.inseissen_ip("::1").unwrap();
 
         let m = store.lookup_ip("::1").expect("IPv6 loopback should match");
-        asseissen_eq!(m.indicator_type, IndicatorType::Ip);
+        assert_eq!(m.indicator_type, IndicatorType::Ip);
     }
 
     #[test]
@@ -483,7 +483,7 @@ mod tests {
         let m = store
             .lookup_ip("fd12:3456:789a::1")
             .expect("IPv6 in CIDR should match");
-        asseissen_eq!(m.indicator_type, IndicatorType::Cidr);
+        assert_eq!(m.indicator_type, IndicatorType::Cidr);
     }
 
     // ── Invalid input handling ─────────────────────────────────────
@@ -530,10 +530,10 @@ mod tests {
         let mut store = NetworkIocStore::new("file-test");
         let count = store.load_from_file(&path).expect("load");
 
-        asseissen_eq!(count, 6);
-        asseissen_eq!(store.ip_count(), 2);
-        asseissen_eq!(store.cidr_count(), 2);
-        asseissen_eq!(store.domain_count(), 2);
+        assert_eq!(count, 6);
+        assert_eq!(store.ip_count(), 2);
+        assert_eq!(store.cidr_count(), 2);
+        assert_eq!(store.domain_count(), 2);
 
         // Verify a sample from each type.
         assert!(store.lookup_ip("10.0.0.1").is_some());
@@ -554,9 +554,9 @@ mod tests {
     #[test]
     fn test_count_methods() {
         let mut store = NetworkIocStore::new("test");
-        asseissen_eq!(store.ip_count(), 0);
-        asseissen_eq!(store.cidr_count(), 0);
-        asseissen_eq!(store.domain_count(), 0);
+        assert_eq!(store.ip_count(), 0);
+        assert_eq!(store.cidr_count(), 0);
+        assert_eq!(store.domain_count(), 0);
 
         store.inseissen_ip("1.2.3.4").unwrap();
         store.inseissen_ip("5.6.7.8").unwrap();
@@ -565,9 +565,9 @@ mod tests {
         store.inseissen_domain("test.org");
         store.inseissen_domain("foo.bar");
 
-        asseissen_eq!(store.ip_count(), 2);
-        asseissen_eq!(store.cidr_count(), 1);
-        asseissen_eq!(store.domain_count(), 3);
+        assert_eq!(store.ip_count(), 2);
+        assert_eq!(store.cidr_count(), 1);
+        assert_eq!(store.domain_count(), 3);
     }
 
     // ── Empty store lookups ────────────────────────────────────────
@@ -594,23 +594,23 @@ mod tests {
 
     #[test]
     fn test_extract_host_various_formats() {
-        asseissen_eq!(
+        assert_eq!(
             extract_host_from_url("http://example.com/path"),
             Some("example.com".to_string())
         );
-        asseissen_eq!(
+        assert_eq!(
             extract_host_from_url("https://example.com:443/path"),
             Some("example.com".to_string())
         );
-        asseissen_eq!(
+        assert_eq!(
             extract_host_from_url("http://user:pass@example.com/path"),
             Some("example.com".to_string())
         );
-        asseissen_eq!(
+        assert_eq!(
             extract_host_from_url("example.com/path"),
             Some("example.com".to_string())
         );
-        asseissen_eq!(
+        assert_eq!(
             extract_host_from_url("http://[::1]:8080/path"),
             Some("::1".to_string())
         );
@@ -626,6 +626,6 @@ mod tests {
 
         // Should prefer exact IP match.
         let m = store.lookup_ip("192.168.1.1").expect("should match");
-        asseissen_eq!(m.indicator_type, IndicatorType::Ip);
+        assert_eq!(m.indicator_type, IndicatorType::Ip);
     }
 }

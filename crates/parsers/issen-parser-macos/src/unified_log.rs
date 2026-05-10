@@ -259,9 +259,9 @@ mod tests {
 
         let events =
             parse_unified_log(tmp.path(), "test-source").expect("must not Err on well-formed line");
-        asseissen_eq!(events.len(), 1, "expected exactly 1 event");
+        assert_eq!(events.len(), 1, "expected exactly 1 event");
         let ev = &events[0];
-        asseissen_eq!(
+        assert_eq!(
             ev.metadata.get("process").and_then(|v| v.as_str()),
             Some("kernel"),
             "process metadata should be 'kernel'"
@@ -281,8 +281,8 @@ mod tests {
         tmp.flush().expect("flush");
 
         let events = parse_unified_log(tmp.path(), "test-source").expect("must not Err");
-        asseissen_eq!(events.len(), 1);
-        asseissen_eq!(
+        assert_eq!(events.len(), 1);
+        assert_eq!(
             events[0].event_type,
             issen_core::timeline::event::EventType::ProcessExec,
             "launchd Service exited should map to ProcessExec"
@@ -292,7 +292,7 @@ mod tests {
     // ── Test 4: sshd "Accepted publickey" → ProcessExec + process="sshd" ────
 
     #[test]
-    fn sshd_accepted_publickey_yields_process_staissen_with_sshd_process() {
+    fn sshd_accepted_publickey_yields_process_start_with_sshd_process() {
         let mut tmp = tempfile::NamedTempFile::new().expect("tempfile");
         writeln!(
             tmp,
@@ -302,14 +302,14 @@ mod tests {
         tmp.flush().expect("flush");
 
         let events = parse_unified_log(tmp.path(), "test-source").expect("must not Err");
-        asseissen_eq!(events.len(), 1);
+        assert_eq!(events.len(), 1);
         let ev = &events[0];
-        asseissen_eq!(
+        assert_eq!(
             ev.event_type,
             issen_core::timeline::event::EventType::ProcessExec,
             "sshd Accepted publickey should map to ProcessExec"
         );
-        asseissen_eq!(
+        assert_eq!(
             ev.metadata.get("process").and_then(|v| v.as_str()),
             Some("sshd"),
             "process metadata should be 'sshd'"
@@ -349,14 +349,14 @@ mod tests {
         tmp.flush().expect("flush");
 
         let events = parse_unified_log(tmp.path(), "test-source").expect("must not Err");
-        asseissen_eq!(events.len(), 1);
-        asseissen_ne!(
+        assert_eq!(events.len(), 1);
+        assert_ne!(
             events[0].timestamp_ns, 0,
             "timestamp_ns must be non-zero for a valid timestamp"
         );
         // 2026-04-15 10:23:01 UTC = 1776248581 seconds since epoch
         let expected_ns: i64 = 1_776_248_581_000_000_000;
-        asseissen_eq!(
+        assert_eq!(
             events[0].timestamp_ns, expected_ns,
             "timestamp_ns mismatch for 2026-04-15 10:23:01 UTC"
         );

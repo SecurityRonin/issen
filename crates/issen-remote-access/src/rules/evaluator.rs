@@ -333,14 +333,14 @@ mod tests {
         assert!(result.is_some(), "should produce a finding");
 
         let finding = result.expect("already checked");
-        asseissen_eq!(finding.tool_name, "TeamViewer");
-        asseissen_eq!(finding.category, RemoteAccessCategory::CommercialRmm);
-        asseissen_eq!(finding.artifacts.len(), 1);
-        asseissen_eq!(
+        assert_eq!(finding.tool_name, "TeamViewer");
+        assert_eq!(finding.category, RemoteAccessCategory::CommercialRmm);
+        assert_eq!(finding.artifacts.len(), 1);
+        assert_eq!(
             finding.artifacts[0].artifact_type,
             HitArtifactType::RegistryKey
         );
-        asseissen_eq!(
+        assert_eq!(
             finding.detection_source,
             DetectionSource::LolrmmRule("teamviewer.yaml".into())
         );
@@ -372,11 +372,11 @@ mod tests {
         assert!(result.is_some(), "should produce a finding");
 
         let finding = result.expect("already checked");
-        asseissen_eq!(finding.artifacts.len(), 2);
+        assert_eq!(finding.artifacts.len(), 2);
 
         // first_seen should come from the file's created timestamp.
-        asseissen_eq!(finding.first_seen, Some(1_700_000_000));
-        asseissen_eq!(finding.last_seen, Some(1_700_000_000));
+        assert_eq!(finding.first_seen, Some(1_700_000_000));
+        assert_eq!(finding.last_seen, Some(1_700_000_000));
     }
 
     #[test]
@@ -394,8 +394,8 @@ mod tests {
 
         let finding = result.expect("already checked");
         // Only registry hit — file and prefetch were skipped.
-        asseissen_eq!(finding.artifacts.len(), 1);
-        asseissen_eq!(
+        assert_eq!(finding.artifacts.len(), 1);
+        assert_eq!(
             finding.artifacts[0].artifact_type,
             HitArtifactType::RegistryKey
         );
@@ -422,7 +422,7 @@ mod tests {
         mock.add_registry_key(r"HKLM\SOFTWARE\TeamViewer", true);
 
         let findings = evaluate_all(&[tv_rule, anydesk_rule], &mock);
-        asseissen_eq!(findings.len(), 1, "only TeamViewer should match");
-        asseissen_eq!(findings[0].tool_name, "TeamViewer");
+        assert_eq!(findings.len(), 1, "only TeamViewer should match");
+        assert_eq!(findings[0].tool_name, "TeamViewer");
     }
 }

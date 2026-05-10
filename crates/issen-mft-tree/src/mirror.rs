@@ -136,9 +136,9 @@ mod tests {
         let result = validate_mirror_from_bytes(&data, &data);
 
         assert!(result.is_valid());
-        asseissen_eq!(result.mismatch_count(), 0);
+        assert_eq!(result.mismatch_count(), 0);
         for entry in &result.entries {
-            asseissen_eq!(*entry, EntryMatch::Match);
+            assert_eq!(*entry, EntryMatch::Match);
         }
     }
 
@@ -153,15 +153,15 @@ mod tests {
         let result = validate_mirror_from_bytes(&mft, &mirror);
 
         assert!(!result.is_valid());
-        asseissen_eq!(result.entries[0], EntryMatch::Match);
-        asseissen_eq!(result.entries[1], EntryMatch::Match);
-        asseissen_eq!(
+        assert_eq!(result.entries[0], EntryMatch::Match);
+        assert_eq!(result.entries[1], EntryMatch::Match);
+        assert_eq!(
             result.entries[2],
             EntryMatch::Mismatch {
                 first_diff_offset: 42
             }
         );
-        asseissen_eq!(result.entries[3], EntryMatch::Match);
+        assert_eq!(result.entries[3], EntryMatch::Match);
     }
 
     #[test]
@@ -172,11 +172,11 @@ mod tests {
 
         let result = validate_mirror_from_bytes(&mft, &mirror);
 
-        asseissen_eq!(result.entries[0], EntryMatch::Match);
-        asseissen_eq!(result.entries[1], EntryMatch::Match);
-        asseissen_eq!(result.entries[2], EntryMatch::MirrorTruncated);
-        asseissen_eq!(result.entries[3], EntryMatch::MirrorTruncated);
-        asseissen_eq!(result.mismatch_count(), 2);
+        assert_eq!(result.entries[0], EntryMatch::Match);
+        assert_eq!(result.entries[1], EntryMatch::Match);
+        assert_eq!(result.entries[2], EntryMatch::MirrorTruncated);
+        assert_eq!(result.entries[3], EntryMatch::MirrorTruncated);
+        assert_eq!(result.mismatch_count(), 2);
     }
 
     #[test]
@@ -187,11 +187,11 @@ mod tests {
 
         let result = validate_mirror_from_bytes(&mft, &mirror);
 
-        asseissen_eq!(result.entries[0], EntryMatch::Match);
-        asseissen_eq!(result.entries[1], EntryMatch::MftTruncated);
-        asseissen_eq!(result.entries[2], EntryMatch::MftTruncated);
-        asseissen_eq!(result.entries[3], EntryMatch::MftTruncated);
-        asseissen_eq!(result.mismatch_count(), 3);
+        assert_eq!(result.entries[0], EntryMatch::Match);
+        assert_eq!(result.entries[1], EntryMatch::MftTruncated);
+        assert_eq!(result.entries[2], EntryMatch::MftTruncated);
+        assert_eq!(result.entries[3], EntryMatch::MftTruncated);
+        assert_eq!(result.mismatch_count(), 3);
     }
 
     #[test]
@@ -205,7 +205,7 @@ mod tests {
 
         let result = validate_mirror_from_bytes(&mft, &mirror);
 
-        asseissen_eq!(result.mismatch_count(), 2);
+        assert_eq!(result.mismatch_count(), 2);
         assert!(!result.is_valid());
     }
 
@@ -216,10 +216,10 @@ mod tests {
 
         let result = validate_mirror_from_bytes(&mft, &mirror);
 
-        asseissen_eq!(result.mismatch_count(), 4);
+        assert_eq!(result.mismatch_count(), 4);
         assert!(!result.is_valid());
         for entry in &result.entries {
-            asseissen_eq!(
+            assert_eq!(
                 *entry,
                 EntryMatch::Mismatch {
                     first_diff_offset: 0

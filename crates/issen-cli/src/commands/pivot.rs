@@ -242,9 +242,9 @@ mod tests {
             severity: RootkitSeverity::Warning,
         }];
         let ev = build_evidence(&rk, &HiddenProcessAnalysis::default(), &[], None);
-        asseissen_eq!(ev.len(), 1);
+        assert_eq!(ev.len(), 1);
         assert!(ev[0].tags.contains(&"rootkit_indicator".to_string()));
-        asseissen_eq!(
+        assert_eq!(
             ev[0].attrs.get("check").map(String::as_str),
             Some("ld_preload")
         );
@@ -263,9 +263,9 @@ mod tests {
             }],
         };
         let ev = build_evidence(&[], &hidden, &[], None);
-        asseissen_eq!(ev.len(), 1);
+        assert_eq!(ev.len(), 1);
         assert!(ev[0].tags.contains(&"hidden_process".to_string()));
-        asseissen_eq!(
+        assert_eq!(
             ev[0].attrs.get("process_name").map(String::as_str),
             Some("top")
         );
@@ -315,7 +315,7 @@ mod tests {
             .iter()
             .find(|e| e.tags.contains(&"cpu_anomaly".to_string()));
         assert!(cpu_ev.is_some(), "expected cpu_anomaly evidence");
-        asseissen_eq!(
+        assert_eq!(
             cpu_ev
                 .unwrap()
                 .attrs

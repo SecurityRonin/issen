@@ -18,7 +18,7 @@ use crate::model::{Evidence, EvidenceKind};
 ///     .with_attr("evidence", "/lib/x86_64-linux-gnu/libymv.so.3")
 ///     .with_tag("rootkit_indicator");
 /// let line = render_evidence_line(&ev);
-/// asseissen_eq!(line, "LD_PRELOAD: /lib/x86_64-linux-gnu/libymv.so.3");
+/// assert_eq!(line, "LD_PRELOAD: /lib/x86_64-linux-gnu/libymv.so.3");
 /// ```
 #[must_use]
 pub fn render_evidence_line(ev: &Evidence) -> String {
@@ -109,7 +109,7 @@ mod tests {
         .with_attr("check", "ld_preload")
         .with_attr("evidence", "/lib/x86_64-linux-gnu/libymv.so.3")
         .with_tag("rootkit_indicator");
-        asseissen_eq!(
+        assert_eq!(
             render_evidence_line(&ev),
             "LD_PRELOAD: /lib/x86_64-linux-gnu/libymv.so.3"
         );
@@ -126,7 +126,7 @@ mod tests {
         .with_attr("process_name", "top")
         .with_attr("pid", "977")
         .with_tag("hidden_process");
-        asseissen_eq!(render_evidence_line(&ev), r#"PID 977 "top""#);
+        assert_eq!(render_evidence_line(&ev), r#"PID 977 "top""#);
     }
 
     #[test]
@@ -141,7 +141,7 @@ mod tests {
         .with_attr("pid", "977")
         .with_tag("hidden_process")
         .with_tag("miner_thread");
-        asseissen_eq!(
+        assert_eq!(
             render_evidence_line(&ev),
             r#"PID 977 "top" [thread: libuv-worker]"#
         );
@@ -155,7 +155,7 @@ mod tests {
             .with_attr("dst_addr", "127.0.0.1")
             .with_attr("dst_port", "3333")
             .with_attr("state", "ESTABLISHED");
-        asseissen_eq!(
+        assert_eq!(
             render_evidence_line(&ev),
             "127.0.0.1:59182 → 127.0.0.1:3333 [ESTABLISHED]"
         );
@@ -185,8 +185,8 @@ mod tests {
             .with_tag("miner_thread"),
         ];
         let lines = render_evidence_lines(&evidence);
-        asseissen_eq!(lines.len(), 2);
-        asseissen_eq!(lines[0], "LD_PRELOAD: /lib/x86_64-linux-gnu/libymv.so.3");
-        asseissen_eq!(lines[1], r#"PID 977 "top" [thread: libuv-worker]"#);
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0], "LD_PRELOAD: /lib/x86_64-linux-gnu/libymv.so.3");
+        assert_eq!(lines[1], r#"PID 977 "top" [thread: libuv-worker]"#);
     }
 }

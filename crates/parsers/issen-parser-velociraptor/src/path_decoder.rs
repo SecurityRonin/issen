@@ -140,49 +140,49 @@ mod tests {
     fn test_decode_ntfs_mft() {
         let path = "uploads/ntfs/%5C%5C.%5CC%3A/$MFT";
         let decoded = decode_velociraptor_path(path).expect("should decode");
-        asseissen_eq!(decoded.accessor, AccessorType::Ntfs);
-        asseissen_eq!(decoded.windows_path, "C:\\$MFT");
-        asseissen_eq!(decoded.artifact_type, Some(ArtifactType::Mft));
-        asseissen_eq!(decoded.original_zip_path, path);
+        assert_eq!(decoded.accessor, AccessorType::Ntfs);
+        assert_eq!(decoded.windows_path, "C:\\$MFT");
+        assert_eq!(decoded.artifact_type, Some(ArtifactType::Mft));
+        assert_eq!(decoded.original_zip_path, path);
     }
 
     #[test]
     fn test_decode_ntfs_usnjrnl() {
         let path = "uploads/ntfs/%5C%5C.%5CC%3A/$Extend/$UsnJrnl%3A$J";
         let decoded = decode_velociraptor_path(path).expect("should decode");
-        asseissen_eq!(decoded.accessor, AccessorType::Ntfs);
+        assert_eq!(decoded.accessor, AccessorType::Ntfs);
         assert!(decoded.windows_path.contains("$UsnJrnl"));
-        asseissen_eq!(decoded.artifact_type, Some(ArtifactType::UsnJournal));
+        assert_eq!(decoded.artifact_type, Some(ArtifactType::UsnJournal));
     }
 
     #[test]
     fn test_decode_auto_evtx() {
         let path = "uploads/auto/C%3A/Windows/System32/winevt/Logs/Security.evtx";
         let decoded = decode_velociraptor_path(path).expect("should decode");
-        asseissen_eq!(decoded.accessor, AccessorType::Auto);
+        assert_eq!(decoded.accessor, AccessorType::Auto);
         assert!(decoded.windows_path.ends_with("Security.evtx"));
-        asseissen_eq!(decoded.artifact_type, Some(ArtifactType::EventLog));
+        assert_eq!(decoded.artifact_type, Some(ArtifactType::EventLog));
     }
 
     #[test]
     fn test_decode_auto_registry() {
         let path = "uploads/auto/C%3A/Windows/System32/config/SYSTEM";
         let decoded = decode_velociraptor_path(path).expect("should decode");
-        asseissen_eq!(decoded.artifact_type, Some(ArtifactType::Registry));
+        assert_eq!(decoded.artifact_type, Some(ArtifactType::Registry));
     }
 
     #[test]
     fn test_decode_auto_ntuser() {
         let path = "uploads/auto/C%3A/Users/admin/NTUSER.DAT";
         let decoded = decode_velociraptor_path(path).expect("should decode");
-        asseissen_eq!(decoded.artifact_type, Some(ArtifactType::Registry));
+        assert_eq!(decoded.artifact_type, Some(ArtifactType::Registry));
     }
 
     #[test]
     fn test_decode_auto_lnk() {
         let path = "uploads/auto/C%3A/Users/admin/AppData/Roaming/Microsoft/Windows/Recent/foo.lnk";
         let decoded = decode_velociraptor_path(path).expect("should decode");
-        asseissen_eq!(decoded.artifact_type, Some(ArtifactType::Lnk));
+        assert_eq!(decoded.artifact_type, Some(ArtifactType::Lnk));
     }
 
     #[test]
@@ -208,8 +208,8 @@ mod tests {
         let path =
             "uploads/auto/%5C%5C.%5CC%3A/Windows/System32/LogFiles/WMI/RtBackup/EtwRTDiagLog.etl";
         let decoded = decode_velociraptor_path(path).expect("should decode");
-        asseissen_eq!(decoded.accessor, AccessorType::Auto);
-        asseissen_eq!(
+        assert_eq!(decoded.accessor, AccessorType::Auto);
+        assert_eq!(
             decoded.windows_path,
             "C:\\Windows\\System32\\LogFiles\\WMI\\RtBackup\\EtwRTDiagLog.etl",
             "device-path \\\\.\\.\\C: prefix should be stripped, not doubled"
@@ -221,7 +221,7 @@ mod tests {
     fn test_decode_auto_device_path_windows_old() {
         let path = "uploads/auto/%5C%5C.%5CC%3A/Windows.old/WINDOWS/System32/LogFiles/WMI/RtBackup/EtwRTDiagLog.etl";
         let decoded = decode_velociraptor_path(path).expect("should decode");
-        asseissen_eq!(decoded.accessor, AccessorType::Auto);
+        assert_eq!(decoded.accessor, AccessorType::Auto);
         assert!(
             decoded.windows_path.starts_with("C:\\Windows.old"),
             "should normalize to C:\\ prefix, got: {}",
@@ -233,7 +233,7 @@ mod tests {
     /// journal data. Only $UsnJrnl:$J should be classified as UsnJournal.
     #[test]
     fn test_classify_usnjrnl_max_is_not_usn_journal() {
-        asseissen_eq!(
+        assert_eq!(
             classify_artifact("C:\\$Extend\\$UsnJrnl:$Max"),
             None,
             "$Max stream should NOT be classified as UsnJournal"
@@ -243,7 +243,7 @@ mod tests {
     /// Velociraptor creates a .idx index file alongside $J — don't classify it.
     #[test]
     fn test_classify_usnjrnl_idx_is_not_usn_journal() {
-        asseissen_eq!(
+        assert_eq!(
             classify_artifact("C:\\$Extend\\$UsnJrnl:$J.idx"),
             None,
             ".idx index file should NOT be classified as UsnJournal"
@@ -252,7 +252,7 @@ mod tests {
 
     #[test]
     fn test_classify_usnjrnl_j_is_usn_journal() {
-        asseissen_eq!(
+        assert_eq!(
             classify_artifact("C:\\$Extend\\$UsnJrnl:$J"),
             Some(ArtifactType::UsnJournal)
         );
@@ -260,7 +260,7 @@ mod tests {
 
     #[test]
     fn test_classify_amcache() {
-        asseissen_eq!(
+        assert_eq!(
             classify_artifact("C:\\Windows\\AppCompat\\Programs\\Amcache.hve"),
             Some(ArtifactType::Amcache)
         );
@@ -268,7 +268,7 @@ mod tests {
 
     #[test]
     fn test_classify_srum() {
-        asseissen_eq!(
+        assert_eq!(
             classify_artifact("C:\\Windows\\System32\\SRU\\SRUDB.dat"),
             Some(ArtifactType::Srum)
         );

@@ -131,17 +131,17 @@ mod tests {
             header()
         );
         let entries = parse_mem_sockstat(&content);
-        asseissen_eq!(entries.len(), 1);
+        assert_eq!(entries.len(), 1);
         let e = &entries[0];
-        asseissen_eq!(e.process_name, "sh");
-        asseissen_eq!(e.pid, 939);
-        asseissen_eq!(e.tid, 939);
-        asseissen_eq!(e.proto, "TCP");
-        asseissen_eq!(e.src_addr, "192.168.4.22");
-        asseissen_eq!(e.src_port, Some(22));
-        asseissen_eq!(e.dst_addr, "192.168.4.35");
-        asseissen_eq!(e.dst_port, Some(48411));
-        asseissen_eq!(e.state, "ESTABLISHED");
+        assert_eq!(e.process_name, "sh");
+        assert_eq!(e.pid, 939);
+        assert_eq!(e.tid, 939);
+        assert_eq!(e.proto, "TCP");
+        assert_eq!(e.src_addr, "192.168.4.22");
+        assert_eq!(e.src_port, Some(22));
+        assert_eq!(e.dst_addr, "192.168.4.35");
+        assert_eq!(e.dst_port, Some(48411));
+        assert_eq!(e.state, "ESTABLISHED");
     }
 
     #[test]
@@ -152,12 +152,12 @@ mod tests {
             header()
         );
         let entries = parse_mem_sockstat(&content);
-        asseissen_eq!(entries.len(), 1);
+        assert_eq!(entries.len(), 1);
         let e = &entries[0];
-        asseissen_eq!(e.process_name, "ssh");
-        asseissen_eq!(e.pid, 975);
-        asseissen_eq!(e.src_port, Some(3333));
-        asseissen_eq!(e.state, "LISTEN");
+        assert_eq!(e.process_name, "ssh");
+        assert_eq!(e.pid, 975);
+        assert_eq!(e.src_port, Some(3333));
+        assert_eq!(e.state, "LISTEN");
     }
 
     #[test]
@@ -170,12 +170,12 @@ mod tests {
             header()
         );
         let entries = parse_mem_sockstat(&content);
-        asseissen_eq!(entries.len(), 2);
-        asseissen_eq!(entries[0].process_name, "top");
-        asseissen_eq!(entries[0].pid, 977);
-        asseissen_eq!(entries[0].dst_port, Some(3333));
-        asseissen_eq!(entries[1].process_name, "libuv-worker");
-        asseissen_eq!(entries[1].pid, 977);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].process_name, "top");
+        assert_eq!(entries[0].pid, 977);
+        assert_eq!(entries[0].dst_port, Some(3333));
+        assert_eq!(entries[1].process_name, "libuv-worker");
+        assert_eq!(entries[1].pid, 977);
     }
 
     #[test]
@@ -203,7 +203,7 @@ mod tests {
         );
         std::fs::write(mem_dir.join("output-sockstat"), content).expect("write");
         let result = read_mem_sockstat(dir.path());
-        asseissen_eq!(result.len(), 1);
-        asseissen_eq!(result[0].pid, 977);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].pid, 977);
     }
 }

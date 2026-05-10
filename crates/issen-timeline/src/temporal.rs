@@ -162,8 +162,8 @@ mod tests {
         let events = vec![anchor.clone(), near.clone(), far.clone()];
         let joined = temporal_join(&anchor, &events, 60 * NS);
 
-        asseissen_eq!(joined.len(), 1, "only the near event should be returned");
-        asseissen_eq!(joined[0].description, "near event");
+        assert_eq!(joined.len(), 1, "only the near event should be returned");
+        assert_eq!(joined[0].description, "near event");
     }
 
     #[test]
@@ -192,7 +192,7 @@ mod tests {
         let key = EntityIndex::entity_key(&EntityRef::FilePath(path));
         let indices = idx.get(&key);
 
-        asseissen_eq!(indices.len(), 2, "two events share the same file path");
+        assert_eq!(indices.len(), 2, "two events share the same file path");
         assert!(indices.contains(&0));
         assert!(indices.contains(&1));
     }
@@ -211,7 +211,7 @@ mod tests {
         let key = EntityIndex::entity_key(&EntityRef::Process("xmrig".to_string()));
         let indices = idx.get(&key);
 
-        asseissen_eq!(indices.len(), 2);
+        assert_eq!(indices.len(), 2);
     }
 
     #[test]
@@ -226,10 +226,10 @@ mod tests {
         let events = vec![ev1, ev2, ev3];
         let idx = EntityIndex::build(&events);
         let alice_key = EntityIndex::entity_key(&EntityRef::User("alice".to_string()));
-        asseissen_eq!(idx.get(&alice_key).len(), 2);
+        assert_eq!(idx.get(&alice_key).len(), 2);
 
         let bob_key = EntityIndex::entity_key(&EntityRef::User("bob".to_string()));
-        asseissen_eq!(idx.get(&bob_key).len(), 1);
+        assert_eq!(idx.get(&bob_key).len(), 1);
     }
 
     #[test]
@@ -239,12 +239,12 @@ mod tests {
         let ev2 = make_event(100 * NS, EventType::FileCreate, "same file created");
 
         // Verify they have the same hash (test our assumption)
-        asseissen_eq!(ev1.record_hash, ev2.record_hash, "hashes must match for the test to be valid");
+        assert_eq!(ev1.record_hash, ev2.record_hash, "hashes must match for the test to be valid");
 
         let events = vec![ev1, ev2];
         let deduped = deduplicate(events);
 
-        asseissen_eq!(deduped.len(), 1, "duplicate event must be removed");
+        assert_eq!(deduped.len(), 1, "duplicate event must be removed");
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod tests {
         let filetime: u64 = 133_444_736_000_000_000;
         let expected_ns: i64 = 1_700_000_000_000_000_000;
 
-        asseissen_eq!(filetime_to_utc_ns(filetime), Some(expected_ns));
+        assert_eq!(filetime_to_utc_ns(filetime), Some(expected_ns));
     }
 
     #[test]

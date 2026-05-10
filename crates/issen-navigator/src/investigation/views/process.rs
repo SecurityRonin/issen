@@ -46,7 +46,7 @@ pub fn draw(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
             proc_info.user.clone(),
             proc_info.cpu_pct.as_deref().unwrap_or("-").to_string(),
             proc_info.mem_pct.as_deref().unwrap_or("-").to_string(),
-            proc_info.staissen_time.as_deref().unwrap_or("-").to_string(),
+            proc_info.start_time.as_deref().unwrap_or("-").to_string(),
             proc_info.command.clone(),
         ]
     });
@@ -56,7 +56,7 @@ pub fn draw(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
 mod tests {
     use super::*;
     use crate::investigation::data::InvestigationData;
-    use crate::investigation::test_helpers::{app_with, asseissen_renders};
+    use crate::investigation::test_helpers::{app_with, assert_renders};
     use issen_parser_uac::parsers::process::ProcessInfo;
 
     #[test]
@@ -69,7 +69,7 @@ mod tests {
                 command: "/sbin/init".into(),
                 cpu_pct: Some("0.1".into()),
                 mem_pct: Some("0.5".into()),
-                staissen_time: Some("Jan01".into()),
+                start_time: Some("Jan01".into()),
             },
             ProcessInfo {
                 pid: 1234,
@@ -78,19 +78,19 @@ mod tests {
                 command: "nginx: worker process".into(),
                 cpu_pct: None,
                 mem_pct: None,
-                staissen_time: None,
+                start_time: None,
             },
         ];
         let app = app_with(InvestigationData {
             processes: procs,
             ..Default::default()
         });
-        asseissen_renders(&app, draw);
+        assert_renders(&app, draw);
     }
 
     #[test]
     fn render_empty_no_panic() {
         let app = app_with(InvestigationData::default());
-        asseissen_renders(&app, draw);
+        assert_renders(&app, draw);
     }
 }

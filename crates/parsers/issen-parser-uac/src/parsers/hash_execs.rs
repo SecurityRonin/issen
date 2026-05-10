@@ -34,6 +34,34 @@ pub fn parse_hash_file(content: &str, algorithm: &str) -> Vec<HashedExecutable> 
         .collect()
 }
 
+/// Return hashed executables whose paths appear in the preload list.
+///
+/// Deduplicates by path, preferring the SHA1 hash (40 hex chars) over MD5 (32)
+/// or SHA256 (64) so callers get the most useful hash for VirusTotal lookups.
+#[must_use]
+pub fn find_preloaded_executables(
+    preload_paths: &[String],
+    hashes: &[HashedExecutable],
+) -> Vec<HashedExecutable> {
+    use std::collections::HashMap;
+    let preload_set: std::collections::HashSet<&str> =
+        preload_paths.iter().map(|s| s.as_str()).collect();
+
+    let mut best: HashMap<String, HashedExecutable> = HashMap::new();
+    for h in hashes {
+        if !preload_set.contains(h.path.as_str()) {
+            continue;
+        }
+        let entry = best.entry(h.path.clone()).or_insert_with(|| h.clone());
+        if h.hash.len() == 40 && entry.hash.len() != 40 {
+            *entry = h.clone();
+        }
+    }
+    let mut result: Vec<HashedExecutable> = best.into_values().collect();
+    result.sort_by(|a, b| a.path.cmp(&b.path));
+    result
+}
+
 /// Parse all hash files in a UAC hash_executables directory.
 #[must_use]
 pub fn parse_hash_dir(dir: &std::path::Path) -> Vec<HashedExecutable> {
@@ -62,6 +90,82 @@ pub fn parse_hash_dir(dir: &std::path::Path) -> Vec<HashedExecutable> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── Gap 5A RED: find_preloaded_executables ──────────────────────────────
+
+    #[test]
+    fn find_preloaded_executables_empty_hashes_returns_empty() {
+        let result = find_preloaded_executables(&["/tmp/evil.so".to_string()], &[]);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn find_preloaded_executables_empty_preload_returns_empty() {
+        let hashes = vec![HashedExecutable {
+            hash: "abc".to_string(),
+            path: "/usr/lib/liblegit.so".to_string(),
+            algorithm: "sha1".to_string(),
+        }];
+        let result = find_preloaded_executables(&[], &hashes);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn find_preloaded_executables_match_returns_matching_hash() {
+        let hashes = vec![
+            HashedExecutable {
+                hash: "deadbeef".to_string(),
+                path: "/tmp/evil.so".to_string(),
+                algorithm: "sha1".to_string(),
+            },
+            HashedExecutable {
+                hash: "cafebabe".to_string(),
+                path: "/usr/lib/liblegit.so".to_string(),
+                algorithm: "sha1".to_string(),
+            },
+        ];
+        let preload = vec!["/tmp/evil.so".to_string()];
+        let result = find_preloaded_executables(&preload, &hashes);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "/tmp/evil.so");
+        assert_eq!(result[0].hash, "deadbeef");
+    }
+
+    #[test]
+    fn find_preloaded_executables_no_match_returns_empty() {
+        let hashes = vec![HashedExecutable {
+            hash: "cafebabe".to_string(),
+            path: "/usr/lib/liblegit.so".to_string(),
+            algorithm: "sha1".to_string(),
+        }];
+        let preload = vec!["/tmp/evil.so".to_string()];
+        let result = find_preloaded_executables(&preload, &hashes);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn find_preloaded_executables_deduplicates_by_path() {
+        // Same path with different algorithms — only one entry per path (prefer sha1)
+        let hashes = vec![
+            HashedExecutable {
+                hash: "aabbcc".to_string(),
+                path: "/tmp/evil.so".to_string(),
+                algorithm: "md5".to_string(),
+            },
+            HashedExecutable {
+                hash: "deadbeef1234567890abcdef0123456789abcdef".to_string(),
+                path: "/tmp/evil.so".to_string(),
+                algorithm: "sha1".to_string(),
+            },
+        ];
+        let preload = vec!["/tmp/evil.so".to_string()];
+        let result = find_preloaded_executables(&preload, &hashes);
+        // dedup: prefer sha1 (40 chars)
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].algorithm, "sha1");
+    }
+
+    // ── existing tests ──────────────────────────────────────────────────────
 
     #[test]
     fn test_parse_hash_file() {

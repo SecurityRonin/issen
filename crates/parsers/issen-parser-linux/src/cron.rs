@@ -125,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    fn cron_cmd_line_emits_process_staissen_with_user_and_command() {
+    fn cron_cmd_line_emits_process_start_with_user_and_command() {
         let mut tmp = tempfile::NamedTempFile::new().expect("tempfile");
         writeln!(
             tmp,

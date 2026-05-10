@@ -178,15 +178,15 @@ mod tests {
 
         let (engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 0);
-        asseissen_eq!(summary.feeds_skipped, 0);
-        asseissen_eq!(summary.hash_indicators, 0);
-        asseissen_eq!(summary.network_indicators, 0);
-        asseissen_eq!(summary.kev_vulnerabilities, 0);
+        assert_eq!(summary.feeds_loaded, 0);
+        assert_eq!(summary.feeds_skipped, 0);
+        assert_eq!(summary.hash_indicators, 0);
+        assert_eq!(summary.network_indicators, 0);
+        assert_eq!(summary.kev_vulnerabilities, 0);
 
         let stats = engine.stats();
-        asseissen_eq!(stats.hash_stores, 0);
-        asseissen_eq!(stats.network_stores, 0);
+        assert_eq!(stats.hash_stores, 0);
+        assert_eq!(stats.network_stores, 0);
     }
 
     // ── 2. Uncached feeds skipped ────────────────────────────────────
@@ -213,8 +213,8 @@ mod tests {
 
         let (_engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 0);
-        asseissen_eq!(summary.feeds_skipped, 2);
+        assert_eq!(summary.feeds_loaded, 0);
+        assert_eq!(summary.feeds_skipped, 2);
     }
 
     // ── 3. Load plaintext hash feed ──────────────────────────────────
@@ -241,12 +241,12 @@ mod tests {
 
         let (engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 1);
-        asseissen_eq!(summary.hash_indicators, 2);
+        assert_eq!(summary.feeds_loaded, 1);
+        assert_eq!(summary.hash_indicators, 2);
 
         let stats = engine.stats();
-        asseissen_eq!(stats.hash_stores, 1);
-        asseissen_eq!(stats.total_bad_hashes, 2);
+        assert_eq!(stats.hash_stores, 1);
+        assert_eq!(stats.total_bad_hashes, 2);
     }
 
     // ── 4. Load plaintext network feed ───────────────────────────────
@@ -271,11 +271,11 @@ mod tests {
 
         let (engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 1);
-        asseissen_eq!(summary.network_indicators, 3);
+        assert_eq!(summary.feeds_loaded, 1);
+        assert_eq!(summary.network_indicators, 3);
 
         let stats = engine.stats();
-        asseissen_eq!(stats.network_stores, 1);
+        assert_eq!(stats.network_stores, 1);
     }
 
     // ── 5. Load ThreatFox CSV feed ───────────────────────────────────
@@ -303,13 +303,13 @@ mod tests {
 
         let (engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 1);
-        asseissen_eq!(summary.hash_indicators, 1);
-        asseissen_eq!(summary.network_indicators, 2);
+        assert_eq!(summary.feeds_loaded, 1);
+        assert_eq!(summary.hash_indicators, 1);
+        assert_eq!(summary.network_indicators, 2);
 
         let stats = engine.stats();
-        asseissen_eq!(stats.hash_stores, 1);
-        asseissen_eq!(stats.network_stores, 1);
+        assert_eq!(stats.hash_stores, 1);
+        assert_eq!(stats.network_stores, 1);
     }
 
     // ── 6. Load CISA KEV JSON feed ───────────────────────────────────
@@ -354,8 +354,8 @@ mod tests {
 
         let (_engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 1);
-        asseissen_eq!(summary.kev_vulnerabilities, 2);
+        assert_eq!(summary.feeds_loaded, 1);
+        assert_eq!(summary.kev_vulnerabilities, 2);
     }
 
     // ── 7. Mixed cached and uncached ─────────────────────────────────
@@ -387,10 +387,10 @@ mod tests {
 
         let (_engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 1);
-        asseissen_eq!(summary.feeds_skipped, 1);
-        asseissen_eq!(summary.hash_indicators, 1);
-        asseissen_eq!(summary.network_indicators, 0);
+        assert_eq!(summary.feeds_loaded, 1);
+        assert_eq!(summary.feeds_skipped, 1);
+        assert_eq!(summary.hash_indicators, 1);
+        assert_eq!(summary.network_indicators, 0);
     }
 
     // ── 8. Summary counts correct ────────────────────────────────────
@@ -470,16 +470,16 @@ mod tests {
 
         let (engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 3);
-        asseissen_eq!(summary.feeds_skipped, 2); // yara + uncached
-        asseissen_eq!(summary.hash_indicators, 2);
-        asseissen_eq!(summary.network_indicators, 3);
-        asseissen_eq!(summary.kev_vulnerabilities, 1);
+        assert_eq!(summary.feeds_loaded, 3);
+        assert_eq!(summary.feeds_skipped, 2); // yara + uncached
+        assert_eq!(summary.hash_indicators, 2);
+        assert_eq!(summary.network_indicators, 3);
+        assert_eq!(summary.kev_vulnerabilities, 1);
 
         let stats = engine.stats();
-        asseissen_eq!(stats.hash_stores, 1);
-        asseissen_eq!(stats.network_stores, 1);
-        asseissen_eq!(stats.total_bad_hashes, 2);
+        assert_eq!(stats.hash_stores, 1);
+        assert_eq!(stats.network_stores, 1);
+        assert_eq!(stats.total_bad_hashes, 2);
     }
 
     // ── 9. Disabled feeds skipped ────────────────────────────────────
@@ -515,8 +515,8 @@ mod tests {
         let (_engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
         // Only the enabled feed should be loaded.
-        asseissen_eq!(summary.feeds_loaded, 1);
-        asseissen_eq!(summary.hash_indicators, 1);
+        assert_eq!(summary.feeds_loaded, 1);
+        assert_eq!(summary.hash_indicators, 1);
     }
 
     // ── 10. Domain feeds use network parser ──────────────────────────
@@ -541,11 +541,11 @@ mod tests {
 
         let (engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 1);
-        asseissen_eq!(summary.network_indicators, 2);
+        assert_eq!(summary.feeds_loaded, 1);
+        assert_eq!(summary.network_indicators, 2);
 
         let stats = engine.stats();
-        asseissen_eq!(stats.network_stores, 1);
+        assert_eq!(stats.network_stores, 1);
     }
 
     // ── 11. Unsupported formats are skipped ──────────────────────────
@@ -577,8 +577,8 @@ mod tests {
 
         let (_engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 0);
-        asseissen_eq!(summary.feeds_skipped, 2);
+        assert_eq!(summary.feeds_loaded, 0);
+        assert_eq!(summary.feeds_skipped, 2);
     }
 
     // ── 12. Engine has correct stores after loading ──────────────────
@@ -625,11 +625,11 @@ mod tests {
 
         let (engine, summary) = load_cached_feeds(&registry, &cache).expect("load");
 
-        asseissen_eq!(summary.feeds_loaded, 3);
+        assert_eq!(summary.feeds_loaded, 3);
 
         let stats = engine.stats();
-        asseissen_eq!(stats.hash_stores, 2);
-        asseissen_eq!(stats.network_stores, 1);
-        asseissen_eq!(stats.total_bad_hashes, 2);
+        assert_eq!(stats.hash_stores, 2);
+        assert_eq!(stats.network_stores, 1);
+        assert_eq!(stats.total_bad_hashes, 2);
     }
 }

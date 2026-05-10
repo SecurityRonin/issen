@@ -258,9 +258,9 @@ mod tests {
         let event = sample_event(EventType::LogonFailure, "Failed logon attempt");
         let map = event_to_map(&event);
 
-        asseissen_eq!(map.get("EventType").unwrap(), "LogonFailure");
-        asseissen_eq!(map.get("Source").unwrap(), "Event Log");
-        asseissen_eq!(map.get("Description").unwrap(), "Failed logon attempt");
+        assert_eq!(map.get("EventType").unwrap(), "LogonFailure");
+        assert_eq!(map.get("Source").unwrap(), "Event Log");
+        assert_eq!(map.get("Description").unwrap(), "Failed logon attempt");
         assert!(map.get("User").is_none());
     }
 
@@ -271,8 +271,8 @@ mod tests {
             .with_hostname("DC01");
         let map = event_to_map(&event);
 
-        asseissen_eq!(map.get("User").unwrap(), "DOMAIN\\admin");
-        asseissen_eq!(map.get("Hostname").unwrap(), "DC01");
+        assert_eq!(map.get("User").unwrap(), "DOMAIN\\admin");
+        assert_eq!(map.get("Hostname").unwrap(), "DC01");
     }
 
     #[test]
@@ -281,12 +281,12 @@ mod tests {
             .with_metadata("CommandLine", serde_json::json!("powershell.exe -enc ABC"));
         let map = event_to_map(&event);
 
-        asseissen_eq!(
+        assert_eq!(
             map.get("CommandLine").unwrap(),
             &serde_json::json!("powershell.exe -enc ABC")
         );
         // Standard fields are also present.
-        asseissen_eq!(map.get("EventType").unwrap(), "ProcessExec");
+        assert_eq!(map.get("EventType").unwrap(), "ProcessExec");
     }
 
     #[test]
@@ -301,12 +301,12 @@ mod tests {
         };
 
         let row = finding_to_row(&finding, "case-001", "/logs/Security.evtx");
-        asseissen_eq!(row.evidence_source_id, "case-001");
-        asseissen_eq!(row.artifact_path, "/logs/Security.evtx");
-        asseissen_eq!(row.engine, "Sigma");
-        asseissen_eq!(row.severity, "high");
-        asseissen_eq!(row.rule_name, "suspicious_login");
-        asseissen_eq!(row.matched_indicator, Some("rule-001".to_string()));
+        assert_eq!(row.evidence_source_id, "case-001");
+        assert_eq!(row.artifact_path, "/logs/Security.evtx");
+        assert_eq!(row.engine, "Sigma");
+        assert_eq!(row.severity, "high");
+        assert_eq!(row.rule_name, "suspicious_login");
+        assert_eq!(row.matched_indicator, Some("rule-001".to_string()));
         assert!(row.tags.contains("attack.initial_access"));
     }
 
@@ -317,9 +317,9 @@ mod tests {
         let (findings, summary) = run_scan_phase(&[], &engine, dir.path());
 
         assert!(findings.is_empty());
-        asseissen_eq!(summary.events_evaluated, 0);
-        asseissen_eq!(summary.files_scanned, 0);
-        asseissen_eq!(summary.total_findings, 0);
+        assert_eq!(summary.events_evaluated, 0);
+        assert_eq!(summary.files_scanned, 0);
+        assert_eq!(summary.total_findings, 0);
     }
 
     #[test]
@@ -331,8 +331,8 @@ mod tests {
         let (findings, summary) = run_scan_phase(&events, &engine, dir.path());
 
         assert!(findings.is_empty());
-        asseissen_eq!(summary.events_evaluated, 1);
-        asseissen_eq!(summary.sigma_findings, 0);
+        assert_eq!(summary.events_evaluated, 1);
+        assert_eq!(summary.sigma_findings, 0);
     }
 
     #[test]
@@ -358,13 +358,13 @@ detection:
 
         let (findings, summary) = run_scan_phase(&events, &engine, dir.path());
 
-        asseissen_eq!(summary.sigma_findings, 1);
-        asseissen_eq!(summary.total_findings, 1);
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].engine, "Sigma");
-        asseissen_eq!(findings[0].severity, "high");
-        asseissen_eq!(findings[0].rule_name, "Failed Logon Detected");
-        asseissen_eq!(findings[0].evidence_source_id, "case-001");
+        assert_eq!(summary.sigma_findings, 1);
+        assert_eq!(summary.total_findings, 1);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].engine, "Sigma");
+        assert_eq!(findings[0].severity, "high");
+        assert_eq!(findings[0].rule_name, "Failed Logon Detected");
+        assert_eq!(findings[0].evidence_source_id, "case-001");
     }
 
     #[test]
@@ -390,7 +390,7 @@ detection:
 
         let (findings, summary) = run_scan_phase(&events, &engine, dir.path());
 
-        asseissen_eq!(summary.sigma_findings, 0);
+        assert_eq!(summary.sigma_findings, 0);
         assert!(findings.is_empty());
     }
 
@@ -425,12 +425,12 @@ detection:
 
         let (findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
-        asseissen_eq!(summary.files_scanned, 1);
-        asseissen_eq!(summary.file_findings, 1);
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].engine, "YARA");
-        asseissen_eq!(findings[0].rule_name, "detect_payload");
-        asseissen_eq!(findings[0].artifact_path, artifact_name);
+        assert_eq!(summary.files_scanned, 1);
+        assert_eq!(summary.file_findings, 1);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].engine, "YARA");
+        assert_eq!(findings[0].rule_name, "detect_payload");
+        assert_eq!(findings[0].artifact_path, artifact_name);
     }
 
     #[test]
@@ -459,10 +459,10 @@ detection:
 
         let (findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
-        asseissen_eq!(summary.files_scanned, 1);
+        assert_eq!(summary.files_scanned, 1);
         assert!(summary.file_findings >= 1);
         let hash_finding = findings.iter().find(|f| f.engine == "Hash IOC").unwrap();
-        asseissen_eq!(hash_finding.severity, "critical");
+        assert_eq!(hash_finding.severity, "critical");
     }
 
     #[test]
@@ -505,10 +505,10 @@ detection:
 
         let (findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
-        asseissen_eq!(summary.sigma_findings, 1);
-        asseissen_eq!(summary.file_findings, 1);
-        asseissen_eq!(summary.total_findings, 2);
-        asseissen_eq!(findings.len(), 2);
+        assert_eq!(summary.sigma_findings, 1);
+        assert_eq!(summary.file_findings, 1);
+        assert_eq!(summary.total_findings, 2);
+        assert_eq!(findings.len(), 2);
 
         // Verify both engines produced findings.
         let engines: Vec<&str> = findings.iter().map(|f| f.engine.as_str()).collect();
@@ -551,8 +551,8 @@ detection:
         let (_findings, summary) = run_scan_phase(&[event1, event2], &engine, dir.path());
 
         // File should only be scanned once despite two events.
-        asseissen_eq!(summary.files_scanned, 1);
-        asseissen_eq!(summary.file_findings, 1);
+        assert_eq!(summary.files_scanned, 1);
+        assert_eq!(summary.file_findings, 1);
     }
 
     #[test]
@@ -576,19 +576,19 @@ detection:
 
         let (findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
-        asseissen_eq!(summary.files_scanned, 0);
+        assert_eq!(summary.files_scanned, 0);
         assert!(findings.is_empty());
     }
 
     #[test]
     fn test_scan_phase_summary_counts() {
         let summary = ScanPhaseSummary::default();
-        asseissen_eq!(summary.events_evaluated, 0);
-        asseissen_eq!(summary.files_scanned, 0);
-        asseissen_eq!(summary.sigma_findings, 0);
-        asseissen_eq!(summary.file_findings, 0);
-        asseissen_eq!(summary.network_findings, 0);
-        asseissen_eq!(summary.total_findings, 0);
+        assert_eq!(summary.events_evaluated, 0);
+        assert_eq!(summary.files_scanned, 0);
+        assert_eq!(summary.sigma_findings, 0);
+        assert_eq!(summary.file_findings, 0);
+        assert_eq!(summary.network_findings, 0);
+        assert_eq!(summary.total_findings, 0);
     }
 
     // ── Event enrichment tests ───────────────────────────────────────
@@ -642,7 +642,7 @@ detection:
 
         enrich_events(&mut events, &findings);
 
-        asseissen_eq!(events[0].tags.len(), 2);
+        assert_eq!(events[0].tags.len(), 2);
         assert!(events[0].tags.contains(&"sig:YARA:rule_a".to_string()));
         assert!(events[0].tags.contains(&"sig:Sigma:rule_b".to_string()));
     }
@@ -654,7 +654,7 @@ detection:
 
         enrich_events(&mut events, &[]);
 
-        asseissen_eq!(events[0].tags, vec!["existing_tag".to_string()]);
+        assert_eq!(events[0].tags, vec!["existing_tag".to_string()]);
     }
 
     #[test]
@@ -711,7 +711,7 @@ detection:
             .iter()
             .filter(|t| t.starts_with("sig:"))
             .collect();
-        asseissen_eq!(sig_tags.len(), 1);
+        assert_eq!(sig_tags.len(), 1);
     }
 
     // ── Network IOC extraction tests ─────────────────────────────────
@@ -730,10 +730,10 @@ detection:
 
         let (findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
-        asseissen_eq!(summary.network_findings, 1);
+        assert_eq!(summary.network_findings, 1);
         assert!(summary.total_findings >= 1);
         let net_finding = findings.iter().find(|f| f.engine == "Network IOC").unwrap();
-        asseissen_eq!(net_finding.severity, "high");
+        assert_eq!(net_finding.severity, "high");
     }
 
     #[test]
@@ -749,7 +749,7 @@ detection:
 
         let (findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
-        asseissen_eq!(summary.network_findings, 1);
+        assert_eq!(summary.network_findings, 1);
         let net_finding = findings.iter().find(|f| f.engine == "Network IOC").unwrap();
         assert!(net_finding.description.contains("evil.com"));
     }
@@ -768,7 +768,7 @@ detection:
 
         let (findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
-        asseissen_eq!(summary.network_findings, 0);
+        assert_eq!(summary.network_findings, 0);
         assert!(findings.is_empty());
     }
 
@@ -789,7 +789,7 @@ detection:
         let (_findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
         // Both IPs should match.
-        asseissen_eq!(summary.network_findings, 2);
+        assert_eq!(summary.network_findings, 2);
     }
 
     #[test]
@@ -806,7 +806,7 @@ detection:
 
         let (findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
-        asseissen_eq!(summary.network_findings, 0);
+        assert_eq!(summary.network_findings, 0);
         assert!(findings.is_empty());
     }
 
@@ -840,8 +840,8 @@ detection:
         let (_findings, summary) = run_scan_phase(&[event], &engine, dir.path());
 
         // Both Sigma and network IOC should fire.
-        asseissen_eq!(summary.sigma_findings, 1);
-        asseissen_eq!(summary.network_findings, 1);
-        asseissen_eq!(summary.total_findings, 2);
+        assert_eq!(summary.sigma_findings, 1);
+        assert_eq!(summary.network_findings, 1);
+        assert_eq!(summary.total_findings, 2);
     }
 }

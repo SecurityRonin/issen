@@ -368,17 +368,17 @@ mod tests {
     fn test_new_engine_is_empty() {
         let engine = ScanEngine::new();
         let stats = engine.stats();
-        asseissen_eq!(stats.yara_rules, 0);
-        asseissen_eq!(stats.sigma_rules, 0);
-        asseissen_eq!(stats.hash_stores, 0);
-        asseissen_eq!(stats.network_stores, 0);
+        assert_eq!(stats.yara_rules, 0);
+        assert_eq!(stats.sigma_rules, 0);
+        assert_eq!(stats.hash_stores, 0);
+        assert_eq!(stats.network_stores, 0);
     }
 
     #[test]
     fn test_scan_bytes_no_engines() {
         let engine = ScanEngine::new();
         let report = engine.scan_bytes("test", b"hello world").unwrap();
-        asseissen_eq!(report.finding_count(), 0);
+        assert_eq!(report.finding_count(), 0);
         assert!(!report.has_findings());
     }
 
@@ -396,11 +396,11 @@ mod tests {
             .scan_bytes("test.bin", b"this is malicious content")
             .unwrap();
 
-        asseissen_eq!(report.finding_count(), 1);
+        assert_eq!(report.finding_count(), 1);
         let f = &report.findings[0];
-        asseissen_eq!(f.source, MatchSource::Yara);
-        asseissen_eq!(f.rule_name, "test_malware");
-        asseissen_eq!(f.severity, Severity::High);
+        assert_eq!(f.source, MatchSource::Yara);
+        assert_eq!(f.rule_name, "test_malware");
+        assert_eq!(f.severity, Severity::High);
     }
 
     #[test]
@@ -414,7 +414,7 @@ mod tests {
         let report = engine
             .scan_bytes("test.bin", b"totally benign content")
             .unwrap();
-        asseissen_eq!(report.finding_count(), 0);
+        assert_eq!(report.finding_count(), 0);
     }
 
     #[test]
@@ -430,8 +430,8 @@ mod tests {
         let engine = ScanEngine::new().with_yara(yara);
         let report = engine.scan_file(tmp.path()).unwrap();
 
-        asseissen_eq!(report.finding_count(), 1);
-        asseissen_eq!(report.findings[0].rule_name, "file_test");
+        assert_eq!(report.finding_count(), 1);
+        assert_eq!(report.findings[0].rule_name, "file_test");
     }
 
     // ── Hash IOC integration ──────────────────────────────────────
@@ -450,7 +450,7 @@ mod tests {
         assert!(report.has_findings());
         let hash_findings = report.findings_by_source(MatchSource::HashIoc);
         assert!(!hash_findings.is_empty());
-        asseissen_eq!(hash_findings[0].severity, Severity::Critical);
+        assert_eq!(hash_findings[0].severity, Severity::Critical);
         assert!(hash_findings[0].rule_name.contains("sha256_match"));
     }
 
@@ -513,10 +513,10 @@ detection:
                 .collect();
 
         let findings = engine.evaluate_event(&event);
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].source, MatchSource::Sigma);
-        asseissen_eq!(findings[0].rule_name, "Suspicious Login");
-        asseissen_eq!(findings[0].severity, Severity::High);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].source, MatchSource::Sigma);
+        assert_eq!(findings[0].rule_name, "Suspicious Login");
+        assert_eq!(findings[0].severity, Severity::High);
     }
 
     #[test]
@@ -563,9 +563,9 @@ detection:
 
         let engine = ScanEngine::new().with_network_store(store);
         let findings = engine.check_ip("10.0.0.1");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].source, MatchSource::NetworkIoc);
-        asseissen_eq!(findings[0].severity, Severity::High);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].source, MatchSource::NetworkIoc);
+        assert_eq!(findings[0].severity, Severity::High);
         assert!(findings[0].matched_indicator.as_deref() == Some("10.0.0.1"));
     }
 
@@ -576,8 +576,8 @@ detection:
 
         let engine = ScanEngine::new().with_network_store(store);
         let findings = engine.check_ip("192.168.1.100");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].severity, Severity::Medium); // CIDR = Medium
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].severity, Severity::Medium); // CIDR = Medium
     }
 
     #[test]
@@ -597,8 +597,8 @@ detection:
 
         let engine = ScanEngine::new().with_network_store(store);
         let findings = engine.check_domain("evil.com");
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].source, MatchSource::NetworkIoc);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].source, MatchSource::NetworkIoc);
         assert!(findings[0].matched_indicator.as_deref() == Some("evil.com"));
     }
 
@@ -609,7 +609,7 @@ detection:
 
         let engine = ScanEngine::new().with_network_store(store);
         let findings = engine.check_domain("malware.evil.com");
-        asseissen_eq!(findings.len(), 1);
+        assert_eq!(findings.len(), 1);
     }
 
     #[test]
@@ -648,7 +648,7 @@ detection:
         assert!(report.finding_count() >= 2);
         assert!(!report.findings_by_source(MatchSource::Yara).is_empty());
         assert!(!report.findings_by_source(MatchSource::HashIoc).is_empty());
-        asseissen_eq!(report.max_severity(), Some(Severity::Critical));
+        assert_eq!(report.max_severity(), Some(Severity::Critical));
     }
 
     #[test]
@@ -686,7 +686,7 @@ detection:
             .with_network_store(store_b);
 
         let findings = engine.check_ip("10.0.0.1");
-        asseissen_eq!(findings.len(), 2);
+        assert_eq!(findings.len(), 2);
     }
 
     // ── Stats ─────────────────────────────────────────────────────
@@ -724,10 +724,10 @@ detection:
             .with_hash_store(hash_store);
 
         let stats = engine.stats();
-        asseissen_eq!(stats.yara_rules, 2);
-        asseissen_eq!(stats.sigma_rules, 1);
-        asseissen_eq!(stats.hash_stores, 1);
-        asseissen_eq!(stats.total_bad_hashes, 1);
+        assert_eq!(stats.yara_rules, 2);
+        assert_eq!(stats.sigma_rules, 1);
+        assert_eq!(stats.hash_stores, 1);
+        assert_eq!(stats.total_bad_hashes, 1);
     }
 
     // ── Builder pattern ───────────────────────────────────────────
@@ -740,8 +740,8 @@ detection:
             .with_network_store(NetworkIocStore::new("c"));
 
         let stats = engine.stats();
-        asseissen_eq!(stats.hash_stores, 2);
-        asseissen_eq!(stats.network_stores, 1);
+        assert_eq!(stats.hash_stores, 2);
+        assert_eq!(stats.network_stores, 1);
     }
 
     #[test]
@@ -751,8 +751,8 @@ detection:
         engine.add_network_store(NetworkIocStore::new("b"));
 
         let stats = engine.stats();
-        asseissen_eq!(stats.hash_stores, 1);
-        asseissen_eq!(stats.network_stores, 1);
+        assert_eq!(stats.hash_stores, 1);
+        assert_eq!(stats.network_stores, 1);
     }
 
     #[test]

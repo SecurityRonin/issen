@@ -63,6 +63,26 @@ const KNOWN_ROOTKIT_MODULES: &[&str] = &[
 /// Sources: chkrootkit chk_ldsopreload, known rootkit IOCs.
 const KNOWN_ROOTKIT_LIBS: &[&str] = &["jynx", "azazel", "bdvl", "libshow.so", "libproc.a"];
 
+/// Extract raw library paths from `/etc/ld.so.preload` content.
+///
+/// Returns one path per non-empty, non-comment line.
+/// Unlike `parse_ld_preload`, does not classify severity — just extracts paths
+/// for cross-referencing with hash and package databases (Gap 5A).
+#[must_use]
+pub fn ld_so_preload_paths(content: &str) -> Vec<String> {
+    content
+        .lines()
+        .filter_map(|line| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        })
+        .collect()
+}
+
 /// Parse `/etc/ld.so.preload` content for suspicious library injection.
 ///
 /// Any non-empty, non-comment line in this file causes the dynamic linker
@@ -788,5 +808,47 @@ mod tests {
             findings.iter().any(|f| f.check == "pam_credential_staging"),
             "scan_rootkit_indicators must include PAM staging findings"
         );
+    }
+
+    // =====================================================================
+    // ld_so_preload_paths — contract (Gap 5A):
+    //   Input: content of /etc/ld.so.preload
+    //   Output: Vec<String> — one path per non-comment line
+    //   Distinct from parse_ld_preload: returns raw paths, not findings
+    // =====================================================================
+
+    #[test]
+    fn ld_so_preload_paths_empty_returns_empty() {
+        assert!(ld_so_preload_paths("").is_empty());
+        assert!(ld_so_preload_paths("  \n\n").is_empty());
+    }
+
+    #[test]
+    fn ld_so_preload_paths_comment_only_returns_empty() {
+        let content = "# managed by libfaketime\n";
+        assert!(ld_so_preload_paths(content).is_empty());
+    }
+
+    #[test]
+    fn ld_so_preload_paths_extracts_single_path() {
+        let content = "/tmp/evil.so\n";
+        let paths = ld_so_preload_paths(content);
+        assert_eq!(paths, vec!["/tmp/evil.so"]);
+    }
+
+    #[test]
+    fn ld_so_preload_paths_extracts_multiple_paths() {
+        let content = "/tmp/evil.so\n/dev/shm/rootkit.so\n";
+        let paths = ld_so_preload_paths(content);
+        assert_eq!(paths.len(), 2);
+        assert!(paths.contains(&"/tmp/evil.so".to_string()));
+        assert!(paths.contains(&"/dev/shm/rootkit.so".to_string()));
+    }
+
+    #[test]
+    fn ld_so_preload_paths_skips_comments_and_blanks() {
+        let content = "# comment\n/tmp/evil.so\n\n# another comment\n/lib/legit.so\n";
+        let paths = ld_so_preload_paths(content);
+        assert_eq!(paths.len(), 2);
     }
 }

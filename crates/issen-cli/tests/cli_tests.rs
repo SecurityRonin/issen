@@ -1,4 +1,4 @@
-use asseissen_cmd::Command;
+use assert_cmd::Command;
 use predicates::prelude::*;
 use tempfile::TempDir;
 
@@ -213,7 +213,7 @@ fn test_ingest_usnjrnl_and_query() {
 }
 
 #[test]
-fn test_ingest_and_expoissen_sqlite() {
+fn test_ingest_and_export_sqlite() {
     let evidence_dir = TempDir::new().expect("tmpdir");
     let db_dir = TempDir::new().expect("tmpdir for db");
     let db_path = db_dir.path().join("timeline.duckdb");
@@ -645,9 +645,9 @@ fn test_timeline_flagged_json_empty() {
     let parsed: serde_json::Value =
         serde_json::from_str(&stdout).expect("stdout should be valid JSON");
 
-    asseissen_eq!(parsed["total"], 0);
+    assert_eq!(parsed["total"], 0);
     assert!(parsed["findings"].is_array());
-    asseissen_eq!(parsed["findings"].as_array().unwrap().len(), 0);
+    assert_eq!(parsed["findings"].as_array().unwrap().len(), 0);
     assert!(parsed["by_severity"].is_object());
 }
 
@@ -1757,7 +1757,7 @@ fn timeline_format_json_empty_db_produces_empty_array() {
     let parsed: serde_json::Value =
         serde_json::from_str(&stdout).expect("should be valid JSON even when empty");
     assert!(parsed.is_array());
-    asseissen_eq!(parsed.as_array().unwrap().len(), 0);
+    assert_eq!(parsed.as_array().unwrap().len(), 0);
 }
 
 // ── NEW: timeline nonexistent db error text ───────────────────────────
@@ -2510,8 +2510,8 @@ mod drive_breakdown_tests {
             make_event(&["drive_type:fixed"]),
         ];
         let bd = drive_breakdown(&events);
-        asseissen_eq!(bd.removable, 2);
-        asseissen_eq!(bd.fixed, 1);
+        assert_eq!(bd.removable, 2);
+        assert_eq!(bd.fixed, 1);
     }
 
     #[test]
@@ -2523,7 +2523,7 @@ mod drive_breakdown_tests {
             make_event(&[]),
         ];
         let bd = drive_breakdown(&events);
-        asseissen_eq!(bd.total(), 4);
+        assert_eq!(bd.total(), 4);
     }
 
     #[test]
@@ -2565,7 +2565,7 @@ mod drive_breakdown_tests {
             make_event(&[]),
         ];
         let bd = drive_breakdown(&events);
-        asseissen_eq!(bd.unknown, 2);
+        assert_eq!(bd.unknown, 2);
     }
 
     #[test]

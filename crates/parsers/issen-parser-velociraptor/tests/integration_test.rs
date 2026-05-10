@@ -12,7 +12,7 @@ fn test_probe_real_velociraptor_collection() {
 
     let provider = issen_parser_velociraptor::VelociraptorProvider;
     let confidence = provider.probe(path).expect("probe should succeed");
-    asseissen_eq!(
+    assert_eq!(
         confidence,
         Confidence::High,
         "Should detect Velociraptor zip"
@@ -30,8 +30,8 @@ fn test_open_real_velociraptor_collection() {
     let provider = issen_parser_velociraptor::VelociraptorProvider;
     let manifest = provider.open(path).expect("open should succeed");
 
-    asseissen_eq!(manifest.format_name, "Velociraptor");
-    asseissen_eq!(
+    assert_eq!(manifest.format_name, "Velociraptor");
+    assert_eq!(
         manifest.metadata.hostname.as_deref(),
         Some("A380_localdomain")
     );

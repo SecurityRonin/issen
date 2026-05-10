@@ -12,7 +12,7 @@ name = "issen"
 path = "src/main.rs"
 
 [lib]
-name = "rt_cli"
+name = "issen_cli"
 path = "src/lib.rs"
 
 [dependencies]

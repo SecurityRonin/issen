@@ -322,8 +322,8 @@ mod tests {
     #[test]
     fn test_parser_trait_contract() {
         let parser = MftFileParser;
-        asseissen_eq!(parser.name(), "MFT Parser");
-        asseissen_eq!(parser.supported_artifacts(), &[ArtifactType::Mft]);
+        assert_eq!(parser.name(), "MFT Parser");
+        assert_eq!(parser.supported_artifacts(), &[ArtifactType::Mft]);
         let caps = parser.capabilities();
         assert!(!caps.streaming);
         assert!(caps.deterministic);
@@ -335,7 +335,7 @@ mod tests {
         let dt = DateTime::parse_from_rfc3339("2023-11-14T22:13:20Z")
             .expect("valid")
             .with_timezone(&Utc);
-        asseissen_eq!(datetime_to_ns(&dt), 1_700_000_000_i64 * 1_000_000_000);
+        assert_eq!(datetime_to_ns(&dt), 1_700_000_000_i64 * 1_000_000_000);
     }
 
     #[test]
@@ -359,7 +359,7 @@ mod tests {
             false,
             "ev-1",
         );
-        asseissen_eq!(ev.event_type, EventType::FileCreate);
+        assert_eq!(ev.event_type, EventType::FileCreate);
         assert!(ev.description.contains("report.docx"));
         assert!(ev.description.contains("MFT entry 42"));
         assert!(ev.description.contains("file"));
@@ -386,7 +386,7 @@ mod tests {
         let source = SliceSource(vec![]);
         let emitter = CollectingEmitter::new();
         let stats = MftFileParser.parse(&source, &emitter).expect("parse");
-        asseissen_eq!(stats.events_emitted, 0);
+        assert_eq!(stats.events_emitted, 0);
         assert!(emitter.into_events().is_empty());
     }
 
@@ -395,7 +395,7 @@ mod tests {
         let source = SliceSource(vec![0x46, 0x49, 0x4C, 0x45]);
         let emitter = CollectingEmitter::new();
         let stats = MftFileParser.parse(&source, &emitter).expect("parse");
-        asseissen_eq!(stats.events_emitted, 0);
+        assert_eq!(stats.events_emitted, 0);
     }
 
     #[test]
@@ -404,6 +404,6 @@ mod tests {
         let source = SliceSource(garbage);
         let emitter = CollectingEmitter::new();
         let stats = MftFileParser.parse(&source, &emitter).expect("parse");
-        asseissen_eq!(emitter.into_events().len(), stats.events_emitted as usize);
+        assert_eq!(emitter.into_events().len(), stats.events_emitted as usize);
     }
 }

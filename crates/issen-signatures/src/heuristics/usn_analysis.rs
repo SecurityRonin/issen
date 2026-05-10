@@ -121,7 +121,7 @@ fn check_usn_002(records: &[UsnRecord], tree: Option<&FileTree>, index: &mut Ano
         .iter()
         .filter(|r| r.reason.contains(UsnReason::RENAME_NEW_NAME))
         .collect();
-    renames.soissen_by_key(|r| r.timestamp);
+    renames.sort_by_key(|r| r.timestamp);
 
     if renames.len() <= 50 {
         return;
@@ -467,7 +467,7 @@ mod tests {
             ),
         ];
         let index = check_usn_stream(&records, None);
-        asseissen_eq!(index.flagged_count(), 0);
+        assert_eq!(index.flagged_count(), 0);
     }
 
     // --- HEUR-USN-002 ---
@@ -623,7 +623,7 @@ mod tests {
             1000,
         )];
         let index = check_usn_stream(&records, None);
-        asseissen_eq!(index.flagged_count(), 0);
+        assert_eq!(index.flagged_count(), 0);
     }
 
     // --- FRN masking (sequence number in upper 16 bits) ---
@@ -675,7 +675,7 @@ mod tests {
             major_version: 2,
         };
         let index = check_usn_stream(&[record], None);
-        asseissen_eq!(index.flagged_count(), 0);
+        assert_eq!(index.flagged_count(), 0);
     }
 
     #[test]

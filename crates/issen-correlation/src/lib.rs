@@ -66,7 +66,7 @@ mod tests {
 
         let enriched = enrich_evidence(vec![command, network]);
 
-        asseissen_eq!(enriched.len(), 2);
+        assert_eq!(enriched.len(), 2);
         assert!(enriched[0].tags.contains(&"reverse_shell".to_string()));
         assert!(enriched[1].tags.contains(&"suspicious_port".to_string()));
     }
@@ -111,9 +111,9 @@ mod tests {
 
         let findings = CorrelationEngine::default().evaluate(&[rule], &[command, network]);
 
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].rule_id, "pivot.reverse-shell");
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].rule_id, "pivot.reverse-shell");
+        assert_eq!(
             findings[0].evidence_ids,
             vec!["cmd-1".to_string(), "net-1".to_string()]
         );
@@ -152,7 +152,7 @@ mod tests {
             },
         );
 
-        asseissen_eq!(
+        assert_eq!(
             rendered,
             "https://rules.emergingthreats.net/open/suricata-8.0/emerging.rules.tar.gz"
         );
@@ -165,7 +165,7 @@ mod tests {
         let mut writer =
             zip::ZipWriter::new(std::fs::File::create(&archive_path).expect("create zip archive"));
         writer
-            .staissen_file("sigma-master/rules/test.yml", SimpleFileOptions::default())
+            .start_file("sigma-master/rules/test.yml", SimpleFileOptions::default())
             .expect("start zip entry");
         std::io::Write::write_all(&mut writer, b"title: Test Rule\n").expect("write zip entry");
         writer.finish().expect("finish zip archive");
@@ -244,10 +244,10 @@ clauses:
 
         let rule = load_rule_file(&rule_path).expect("load rule");
 
-        asseissen_eq!(rule.id, "correlation.reverse-shell");
-        asseissen_eq!(rule.references.len(), 1);
-        asseissen_eq!(rule.clauses.len(), 2);
-        asseissen_eq!(
+        assert_eq!(rule.id, "correlation.reverse-shell");
+        assert_eq!(rule.references.len(), 1);
+        assert_eq!(rule.clauses.len(), 2);
+        assert_eq!(
             rule.clauses[0],
             RuleClause::tagged(EvidenceSource::Artifact, "reverse_shell")
         );
@@ -306,9 +306,9 @@ clauses:
 
         let findings = CorrelationEngine::default().evaluate(&[rule], &[rootkit, hidden, network]);
 
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].rule_id, "correlation.miner.rootkit-concealment");
-        asseissen_eq!(
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].rule_id, "correlation.miner.rootkit-concealment");
+        assert_eq!(
             findings[0].evidence_ids,
             vec![
                 "rootkit-1".to_string(),
@@ -346,7 +346,7 @@ clauses:
             .iter()
             .filter(|rule| rule.id == "correlation.miner.rootkit-concealment")
             .count();
-        asseissen_eq!(bundled_count, 1);
+        assert_eq!(bundled_count, 1);
     }
 
     #[test]
@@ -362,7 +362,7 @@ clauses:
         persist_sync_manifest(tmp.path(), &records).expect("persist manifest");
         let loaded = load_sync_manifest(tmp.path()).expect("load manifest");
 
-        asseissen_eq!(loaded, records);
+        assert_eq!(loaded, records);
     }
 
     #[test]
@@ -419,8 +419,8 @@ clauses:
 
         let findings = CorrelationEngine::default().evaluate(&[rule], &[process, network]);
 
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].rule_id, "correlation.miner.attr-driven");
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].rule_id, "correlation.miner.attr-driven");
     }
 
     #[test]
@@ -520,10 +520,10 @@ clauses:
 
         let json = serde_json::to_string(&manifest).expect("serialize");
         let restored: FeedManifest = serde_json::from_str(&json).expect("deserialize");
-        asseissen_eq!(restored.source_id, "sigmahq/sigma");
-        asseissen_eq!(restored.version, Some("abc123".into()));
+        assert_eq!(restored.source_id, "sigmahq/sigma");
+        assert_eq!(restored.version, Some("abc123".into()));
         match restored.parse_status {
-            ParseStatus::Ok { rule_count } => asseissen_eq!(rule_count, 42),
+            ParseStatus::Ok { rule_count } => assert_eq!(rule_count, 42),
             other => panic!("unexpected parse_status: {other:?}"),
         }
     }
@@ -539,8 +539,8 @@ clauses:
         let restored: ParseStatus = serde_json::from_str(&json).expect("deserialize");
         match restored {
             ParseStatus::PartialError { rule_count, errors } => {
-                asseissen_eq!(rule_count, 10);
-                asseissen_eq!(errors[0], "parse failure on line 3");
+                assert_eq!(rule_count, 10);
+                assert_eq!(errors[0], "parse failure on line 3");
             }
             other => panic!("unexpected: {other:?}"),
         }
@@ -575,8 +575,8 @@ clauses:
         let wl =
             parse_warninglist(r#"{"name":"Top Domains","type":"hostname","list":["example.com"]}"#)
                 .expect("parse warninglist");
-        asseissen_eq!(wl.name, "Top Domains");
-        asseissen_eq!(wl.list_type, "hostname");
+        assert_eq!(wl.name, "Top Domains");
+        assert_eq!(wl.list_type, "hostname");
     }
 
     // ── Zeek intel importer ───────────────────────────────────────────────────
@@ -587,8 +587,8 @@ clauses:
         let tsv =
             "#fields\tindicator\tindicator_type\tmeta.source\nevil.com\tIntel::DOMAIN\ttest_feed\n";
         let indicators = parse_zeek_intel(tsv).expect("parse zeek intel");
-        asseissen_eq!(indicators.len(), 1);
-        asseissen_eq!(indicators[0].value, "evil.com");
+        assert_eq!(indicators.len(), 1);
+        assert_eq!(indicators[0].value, "evil.com");
     }
 
     #[test]
@@ -597,8 +597,8 @@ clauses:
         use crate::zeek_intel::parse_zeek_intel;
         let tsv = "#fields\tindicator\tindicator_type\tmeta.source\n1.2.3.4\tIntel::ADDR\tfeed1\n";
         let indicators = parse_zeek_intel(tsv).expect("parse zeek intel");
-        asseissen_eq!(indicators.len(), 1);
-        asseissen_eq!(indicators[0].value, "1.2.3.4");
+        assert_eq!(indicators.len(), 1);
+        assert_eq!(indicators[0].value, "1.2.3.4");
         assert!(matches!(
             indicators[0].indicator_type,
             IndicatorType::IpAddr
@@ -614,7 +614,7 @@ clauses:
             "#fields\tindicator\tindicator_type\tmeta.source\n{hash}\tIntel::SHA256\tfeed1\n"
         );
         let indicators = parse_zeek_intel(&tsv).expect("parse zeek intel");
-        asseissen_eq!(indicators.len(), 1);
+        assert_eq!(indicators.len(), 1);
         assert!(matches!(
             indicators[0].indicator_type,
             IndicatorType::FileHash
@@ -626,7 +626,7 @@ clauses:
         use crate::zeek_intel::parse_zeek_intel;
         let tsv = "#separator \\t\n#fields\tindicator\tindicator_type\tmeta.source\n\nevil.com\tIntel::DOMAIN\tfeed1\n";
         let indicators = parse_zeek_intel(tsv).expect("parse zeek intel");
-        asseissen_eq!(indicators.len(), 1);
+        assert_eq!(indicators.len(), 1);
     }
 
     #[test]
@@ -635,7 +635,7 @@ clauses:
         let tsv =
             "#fields\tindicator\tindicator_type\tmeta.source\nevil.com\tIntel::DOMAIN\tmy_feed\n";
         let indicators = parse_zeek_intel(tsv).expect("parse zeek intel");
-        asseissen_eq!(indicators[0].source, "my_feed");
+        assert_eq!(indicators[0].source, "my_feed");
     }
 
     // ── Bundled rule: SSH tunnel stratum ──────────────────────────────────────
@@ -691,9 +691,9 @@ clauses:
 "#;
         use crate::model::AssertionLevel;
         let rule: CorrelationRule = serde_yaml::from_str(yaml).expect("parse");
-        asseissen_eq!(rule.summary_template.as_deref(), Some("Summary from template"));
-        asseissen_eq!(rule.explanation_template.as_deref(), Some("Explanation from template"));
-        asseissen_eq!(rule.default_confidence, 75);
+        assert_eq!(rule.summary_template.as_deref(), Some("Summary from template"));
+        assert_eq!(rule.explanation_template.as_deref(), Some("Explanation from template"));
+        assert_eq!(rule.default_confidence, 75);
         assert!(matches!(rule.assertion_level, AssertionLevel::Inferred));
     }
 
@@ -710,7 +710,7 @@ clauses:
         use crate::model::AssertionLevel;
         let rule: CorrelationRule = serde_yaml::from_str(yaml).expect("parse");
         assert!(rule.summary_template.is_none());
-        asseissen_eq!(rule.default_confidence, 0);
+        assert_eq!(rule.default_confidence, 0);
         assert!(matches!(rule.assertion_level, AssertionLevel::Correlated));
     }
 
@@ -742,10 +742,10 @@ clauses:
         }];
         let engine = CorrelationEngine::default();
         let findings = engine.evaluate(&[rule], &evidence);
-        asseissen_eq!(findings.len(), 1);
-        asseissen_eq!(findings[0].summary.as_deref(), Some("Templated summary"));
-        asseissen_eq!(findings[0].explanation.as_deref(), Some("Templated explanation"));
-        asseissen_eq!(findings[0].confidence, 82);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].summary.as_deref(), Some("Templated summary"));
+        assert_eq!(findings[0].explanation.as_deref(), Some("Templated explanation"));
+        assert_eq!(findings[0].confidence, 82);
     }
 
     #[test]
@@ -878,7 +878,7 @@ clauses:
         }];
         let engine = CorrelationEngine;
         let findings = engine.evaluate(&[confirmed_rule], &evidence);
-        asseissen_eq!(findings.len(), 1,
+        assert_eq!(findings.len(), 1,
             "confirmed-xmrig rule must fire on confirmed_xmrig tag");
         assert!(matches!(findings[0].assertion_level, AssertionLevel::Observed),
             "confirmed finding must be Observed assertion level");
@@ -914,7 +914,7 @@ clauses:
         let rule = rules.iter()
             .find(|r| r.id == "srum.exfil-candidate")
             .expect("srum.exfil-candidate rule must exist");
-        asseissen_eq!(rule.severity, "high", "srum.exfil-candidate must have high severity");
+        assert_eq!(rule.severity, "high", "srum.exfil-candidate must have high severity");
         assert!(
             matches!(rule.assertion_level, AssertionLevel::Inferred),
             "srum.exfil-candidate must use Inferred assertion level"
@@ -938,7 +938,7 @@ clauses:
         let rule = rules.iter()
             .find(|r| r.id == "srum.c2-beacon")
             .expect("srum.c2-beacon rule must exist");
-        asseissen_eq!(rule.severity, "high", "srum.c2-beacon must have high severity");
+        assert_eq!(rule.severity, "high", "srum.c2-beacon must have high severity");
         assert!(
             matches!(rule.assertion_level, AssertionLevel::Correlated),
             "srum.c2-beacon must use Correlated assertion level"
@@ -962,7 +962,7 @@ clauses:
         let rule = rules.iter()
             .find(|r| r.id == "srum.background-miner")
             .expect("srum.background-miner rule must exist");
-        asseissen_eq!(rule.severity, "high", "srum.background-miner must have high severity");
+        assert_eq!(rule.severity, "high", "srum.background-miner must have high severity");
         assert!(
             matches!(rule.assertion_level, AssertionLevel::Correlated),
             "srum.background-miner must use Correlated assertion level"
@@ -986,7 +986,7 @@ clauses:
         let rule = rules.iter()
             .find(|r| r.id == "srum.stealth-process")
             .expect("srum.stealth-process rule must exist");
-        asseissen_eq!(rule.severity, "critical", "srum.stealth-process must have critical severity");
+        assert_eq!(rule.severity, "critical", "srum.stealth-process must have critical severity");
         assert!(
             matches!(rule.assertion_level, AssertionLevel::Correlated),
             "srum.stealth-process must use Correlated assertion level"
@@ -996,7 +996,7 @@ clauses:
     // ── Father rootkit temporal correlation rules ─────────────────────────────
 
     #[test]
-    fn sshd_restaissen_after_preload_rule_is_bundled() {
+    fn sshd_restart_after_preload_rule_is_bundled() {
         let dir = bundled_rule_dir();
         let rules = load_rule_pack(&dir).expect("load bundled rules");
         assert!(
@@ -1006,13 +1006,13 @@ clauses:
     }
 
     #[test]
-    fn sshd_restaissen_after_preload_rule_has_critical_severity_and_high_confidence() {
+    fn sshd_restart_after_preload_rule_has_critical_severity_and_high_confidence() {
         let dir = bundled_rule_dir();
         let rules = load_rule_pack(&dir).expect("load bundled rules");
         let rule = rules.iter()
             .find(|r| r.id == "temporal.sshd-restart-after-preload")
             .expect("temporal.sshd-restart-after-preload must exist");
-        asseissen_eq!(rule.severity, "critical",
+        assert_eq!(rule.severity, "critical",
             "sshd-restart-after-preload must have critical severity");
         assert!(rule.default_confidence >= 80,
             "sshd-restart-after-preload must have confidence >= 80, got {}",
@@ -1036,7 +1036,7 @@ clauses:
         let rule = rules.iter()
             .find(|r| r.id == "temporal.kit-deleted-after-deployment")
             .expect("temporal.kit-deleted-after-deployment must exist");
-        asseissen_eq!(rule.severity, "high",
+        assert_eq!(rule.severity, "high",
             "kit-deleted-after-deployment must have high severity");
     }
 
@@ -1106,7 +1106,7 @@ clauses:
     #[test]
     fn hour_of_day_friday_2pm() {
         use crate::time_of_day::hour_of_day;
-        asseissen_eq!(hour_of_day(FRIDAY_2PM_NS), 14);
+        assert_eq!(hour_of_day(FRIDAY_2PM_NS), 14);
     }
 
     #[test]
@@ -1127,7 +1127,7 @@ clauses:
     #[test]
     fn classify_working_hours_returns_none() {
         use crate::time_of_day::{TimeAnomaly, classify_time_anomaly};
-        asseissen_eq!(classify_time_anomaly(FRIDAY_2PM_NS), TimeAnomaly::None);
+        assert_eq!(classify_time_anomaly(FRIDAY_2PM_NS), TimeAnomaly::None);
     }
 
     #[test]

@@ -110,9 +110,9 @@ fn parse_line(
             let (user, ip, port) = if parts.first().copied() == Some("authenticating") {
                 // skip "authenticating user"
                 let rest2 = parts[2..].join(" ");
-                parse_from_ip_poissen_str(&rest2)
+                parse_from_ip_port_str(&rest2)
             } else {
-                parse_from_ip_poissen_str(&parts.join(" "))
+                parse_from_ip_port_str(&parts.join(" "))
             };
             let entry = make_entry(timestamp, hostname, service, "disconnect", &user, ip, port);
             return Some(entry);
@@ -147,10 +147,10 @@ fn parse_line(
 
 /// Parse "USER from IP port PORT ..." returning (user, Option<ip>, Option<port>).
 fn parse_from_ip_port(s: &str) -> (String, Option<String>, Option<u16>) {
-    parse_from_ip_poissen_str(s)
+    parse_from_ip_port_str(s)
 }
 
-fn parse_from_ip_poissen_str(s: &str) -> (String, Option<String>, Option<u16>) {
+fn parse_from_ip_port_str(s: &str) -> (String, Option<String>, Option<u16>) {
     // Pattern: USER from IP port PORT [rest]
     let parts: Vec<&str> = s.split_whitespace().collect();
     // Find "from" keyword
@@ -254,31 +254,31 @@ mod tests {
     fn parse_ssh_accepted_login() {
         let line = "Apr  3 02:15:44 myhost sshd[1234]: Accepted password for alice from 10.0.0.5 port 54321 ssh2\n";
         let entries = parse_auth_log(line);
-        asseissen_eq!(entries.len(), 1);
-        asseissen_eq!(entries[0].event_type, "accepted");
-        asseissen_eq!(entries[0].user, "alice");
-        asseissen_eq!(entries[0].source_ip.as_deref(), Some("10.0.0.5"));
-        asseissen_eq!(entries[0].source_port, Some(54321));
-        asseissen_eq!(entries[0].service, "sshd");
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].event_type, "accepted");
+        assert_eq!(entries[0].user, "alice");
+        assert_eq!(entries[0].source_ip.as_deref(), Some("10.0.0.5"));
+        assert_eq!(entries[0].source_port, Some(54321));
+        assert_eq!(entries[0].service, "sshd");
     }
 
     #[test]
     fn parse_ssh_failed_login() {
         let line = "Apr  3 02:16:00 myhost sshd[1234]: Failed password for bob from 203.0.113.1 port 22222 ssh2\n";
         let entries = parse_auth_log(line);
-        asseissen_eq!(entries.len(), 1);
-        asseissen_eq!(entries[0].event_type, "failed");
-        asseissen_eq!(entries[0].user, "bob");
-        asseissen_eq!(entries[0].source_ip.as_deref(), Some("203.0.113.1"));
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].event_type, "failed");
+        assert_eq!(entries[0].user, "bob");
+        assert_eq!(entries[0].source_ip.as_deref(), Some("203.0.113.1"));
     }
 
     #[test]
     fn parse_sudo_command() {
         let line = "Apr  3 03:00:00 myhost sudo: alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/id\n";
         let entries = parse_auth_log(line);
-        asseissen_eq!(entries.len(), 1);
-        asseissen_eq!(entries[0].user, "alice");
-        asseissen_eq!(entries[0].service, "sudo");
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].user, "alice");
+        assert_eq!(entries[0].service, "sudo");
         assert!(entries[0].event_type.starts_with("sudo"));
     }
 
@@ -286,10 +286,10 @@ mod tests {
     fn parse_invalid_user() {
         let line = "Apr  3 02:20:00 myhost sshd[9999]: Invalid user hacker from 1.2.3.4\n";
         let entries = parse_auth_log(line);
-        asseissen_eq!(entries.len(), 1);
-        asseissen_eq!(entries[0].event_type, "invalid_user");
-        asseissen_eq!(entries[0].user, "hacker");
-        asseissen_eq!(entries[0].source_ip.as_deref(), Some("1.2.3.4"));
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].event_type, "invalid_user");
+        assert_eq!(entries[0].user, "hacker");
+        assert_eq!(entries[0].source_ip.as_deref(), Some("1.2.3.4"));
     }
 
     #[test]

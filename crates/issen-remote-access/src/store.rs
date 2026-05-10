@@ -160,7 +160,7 @@ mod tests {
         let finding = sample_finding();
         inseissen_finding(&store, &finding, "evidence-001").expect("insert");
 
-        asseissen_eq!(finding_count(&store).expect("count"), 1);
+        assert_eq!(finding_count(&store).expect("count"), 1);
     }
 
     #[test]
@@ -172,7 +172,7 @@ mod tests {
         inseissen_finding(&store, &finding, "evidence-001").expect("first insert");
         inseissen_finding(&store, &finding, "evidence-001").expect("second insert (upsert)");
 
-        asseissen_eq!(finding_count(&store).expect("count"), 1);
+        assert_eq!(finding_count(&store).expect("count"), 1);
     }
 
     #[test]
@@ -183,7 +183,7 @@ mod tests {
         let finding = sample_finding();
         emit_cross_reference_event(&store, &finding, "evidence-001").expect("emit");
 
-        asseissen_eq!(store.event_count().expect("event count"), 1);
+        assert_eq!(store.event_count().expect("event count"), 1);
     }
 
     #[test]
@@ -196,6 +196,6 @@ mod tests {
 
         emit_cross_reference_event(&store, &finding, "evidence-001").expect("emit");
 
-        asseissen_eq!(store.event_count().expect("event count"), 0);
+        assert_eq!(store.event_count().expect("event count"), 0);
     }
 }

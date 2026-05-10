@@ -177,20 +177,20 @@ mod tests {
         let content =
             "root:x:0:0:root:/root:/bin/bash\nalice:x:1000:1000:Alice:/home/alice:/bin/bash\n";
         let entries = parse_passwd(content);
-        asseissen_eq!(entries.len(), 2);
-        asseissen_eq!(entries[0].username, "root");
-        asseissen_eq!(entries[0].uid, 0);
-        asseissen_eq!(entries[0].shell, "/bin/bash");
-        asseissen_eq!(entries[1].username, "alice");
-        asseissen_eq!(entries[1].uid, 1000);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].username, "root");
+        assert_eq!(entries[0].uid, 0);
+        assert_eq!(entries[0].shell, "/bin/bash");
+        assert_eq!(entries[1].username, "alice");
+        assert_eq!(entries[1].uid, 1000);
     }
 
     #[test]
     fn parse_passwd_skips_comments() {
         let content = "# /etc/passwd\nroot:x:0:0:root:/root:/bin/bash\n";
         let entries = parse_passwd(content);
-        asseissen_eq!(entries.len(), 1);
-        asseissen_eq!(entries[0].username, "root");
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].username, "root");
     }
 
     #[test]
@@ -225,11 +225,11 @@ mod tests {
     fn parse_shadow_line_sha512() {
         let content = "root:$6$rounds=5000$saltsalt$hashhash:18000:0:99999:7:::\nalice:!:18001:0:99999:7:::\n";
         let entries = parse_shadow(content);
-        asseissen_eq!(entries.len(), 2);
-        asseissen_eq!(entries[0].username, "root");
-        asseissen_eq!(entries[0].hash_algorithm, "$6$");
-        asseissen_eq!(entries[0].last_changed_days, Some(18000));
-        asseissen_eq!(entries[1].hash_algorithm, "!");
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].username, "root");
+        assert_eq!(entries[0].hash_algorithm, "$6$");
+        assert_eq!(entries[0].last_changed_days, Some(18000));
+        assert_eq!(entries[1].hash_algorithm, "!");
     }
 
     #[test]

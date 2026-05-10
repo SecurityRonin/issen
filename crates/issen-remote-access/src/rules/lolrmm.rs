@@ -474,8 +474,8 @@ mod tests {
         }
 
         let def = load_lolrmm_file(&path).expect("should parse anydesk.yaml");
-        asseissen_eq!(def.name, "AnyDesk");
-        asseissen_eq!(def.category, "RMM");
+        assert_eq!(def.name, "AnyDesk");
+        assert_eq!(def.category, "RMM");
 
         // Must have artifacts with disk or registry entries.
         let artifacts = def.artifacts.expect("should have artifacts");
@@ -505,8 +505,8 @@ mod tests {
         }
 
         let def = load_lolrmm_file(&path).expect("should parse teamviewer.yaml");
-        asseissen_eq!(def.name, "TeamViewer");
-        asseissen_eq!(def.category, "RMM");
+        assert_eq!(def.name, "TeamViewer");
+        assert_eq!(def.category, "RMM");
 
         // TeamViewer has network artifacts with domains.
         let artifacts = def.artifacts.expect("should have artifacts");
@@ -523,12 +523,12 @@ mod tests {
         }
 
         let def = load_lolrmm_file(&path).expect("should parse splashtop.yaml");
-        asseissen_eq!(def.name, "Splashtop");
+        assert_eq!(def.name, "Splashtop");
 
         // Splashtop has empty-string Free/Verification — should parse as None.
         let details = def.details.expect("should have details");
-        asseissen_eq!(details.free, None);
-        asseissen_eq!(details.verification, None);
+        assert_eq!(details.free, None);
+        assert_eq!(details.verification, None);
 
         // Ports contain "N/A" — should still parse.
         let artifacts = def.artifacts.expect("should have artifacts");
@@ -611,7 +611,7 @@ mod tests {
             return;
         }
         let defs = load_lolrmm_directory(&dir).expect("load custom");
-        asseissen_eq!(
+        assert_eq!(
             defs.len(),
             3,
             "Expected 3 custom VPN/ZTNA definitions, got {}",
@@ -625,7 +625,7 @@ mod tests {
 
         // Verify VPN category
         for (_, def) in &defs {
-            asseissen_eq!(def.category, "VPN", "{} should have VPN category", def.name);
+            assert_eq!(def.category, "VPN", "{} should have VPN category", def.name);
         }
     }
 }

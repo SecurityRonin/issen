@@ -108,12 +108,12 @@ mod tests {
 
     #[test]
     fn staging_label_dev_shm() {
-        asseissen_eq!(staging_area_label("/dev/shm/kit/xmrig"), "/dev/shm");
+        assert_eq!(staging_area_label("/dev/shm/kit/xmrig"), "/dev/shm");
     }
 
     #[test]
     fn staging_label_run_shm() {
-        asseissen_eq!(staging_area_label("/run/shm/evil.so"), "/run/shm");
+        assert_eq!(staging_area_label("/run/shm/evil.so"), "/run/shm");
     }
 
     // ── check_utmp_present ────────────────────────────────────────────────

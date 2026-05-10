@@ -197,7 +197,7 @@ Apr 15 10:01:10 myhost systemd[1]: Restarting OpenBSD Secure Shell server sshd\n
     }
 
     #[test]
-    fn extract_preload_path_handles_shoissen_path() {
+    fn extract_preload_path_handles_short_path() {
         let line = "ERROR: ld.so: object '/lib/evil.so' from /etc/ld.so.preload cannot be preloaded";
         assert_eq!(extract_preload_path(line), Some("/lib/evil.so"));
     }
@@ -205,33 +205,33 @@ Apr 15 10:01:10 myhost systemd[1]: Restarting OpenBSD Secure Shell server sshd\n
     // ── is_sshd_restart ───────────────────────────────────────────────────
 
     #[test]
-    fn sshd_restaissen_detected_restarting() {
+    fn sshd_restart_detected_restarting() {
         assert!(is_sshd_restart(
             "Restarting OpenBSD Secure Shell server sshd"
         ));
     }
 
     #[test]
-    fn sshd_restaissen_detected_starting() {
+    fn sshd_restart_detected_starting() {
         assert!(is_sshd_restart(
             "Starting OpenBSD Secure Shell server sshd"
         ));
     }
 
     #[test]
-    fn sshd_restaissen_detected_stopping() {
+    fn sshd_restart_detected_stopping() {
         assert!(is_sshd_restart(
             "Stopping OpenBSD Secure Shell server sshd"
         ));
     }
 
     #[test]
-    fn sshd_restaissen_not_triggered_for_nginx() {
+    fn sshd_restart_not_triggered_for_nginx() {
         assert!(!is_sshd_restart("Starting nginx web server"));
     }
 
     #[test]
-    fn sshd_restaissen_not_triggered_for_empty() {
+    fn sshd_restart_not_triggered_for_empty() {
         assert!(!is_sshd_restart(""));
     }
 
@@ -279,7 +279,7 @@ Apr 15 10:01:10 myhost systemd[1]: Restarting OpenBSD Secure Shell server sshd\n
     }
 
     #[test]
-    fn parse_boot_log_emits_sshd_restaissen_event() {
+    fn parse_boot_log_emits_sshd_restart_event() {
         let events = parse_boot_log(SAMPLE_BOOT_LOG, "boot_log", None);
         let sshd_events: Vec<_> = events
             .iter()

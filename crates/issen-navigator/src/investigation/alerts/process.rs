@@ -148,7 +148,7 @@ mod tests {
             command: "/tmp/beacon".into(),
             cpu_pct: None,
             mem_pct: None,
-            staissen_time: None,
+            start_time: None,
         }];
         let conns = vec![NetworkConnection {
             protocol: "tcp".into(),
@@ -181,7 +181,7 @@ mod tests {
             command: "/dev/shm/.hidden".into(),
             cpu_pct: None,
             mem_pct: None,
-            staissen_time: None,
+            start_time: None,
         }];
         let conns = vec![NetworkConnection {
             protocol: "tcp".into(),
@@ -224,7 +224,7 @@ mod tests {
             command: "/sbin/init".into(),
             cpu_pct: None,
             mem_pct: None,
-            staissen_time: None,
+            start_time: None,
         }];
         let conns = vec![NetworkConnection {
             protocol: "tcp".into(),
@@ -257,7 +257,7 @@ mod tests {
             command: "/usr/sbin/sshd".into(),
             cpu_pct: None,
             mem_pct: None,
-            staissen_time: None,
+            start_time: None,
         }];
         let conns = vec![NetworkConnection {
             protocol: "tcp".into(),

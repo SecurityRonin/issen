@@ -59,7 +59,7 @@ pub fn draw(frame: &mut Frame, app: &WorkbenchApp, area: Rect) {
 mod tests {
     use super::*;
     use crate::investigation::data::InvestigationData;
-    use crate::investigation::test_helpers::{app_with, asseissen_renders};
+    use crate::investigation::test_helpers::{app_with, assert_renders};
     use issen_parser_uac::parsers::system::LoginRecord;
 
     #[test]
@@ -86,12 +86,12 @@ mod tests {
             logins,
             ..Default::default()
         });
-        asseissen_renders(&app, draw);
+        assert_renders(&app, draw);
     }
 
     #[test]
     fn render_empty_no_panic() {
         let app = app_with(InvestigationData::default());
-        asseissen_renders(&app, draw);
+        assert_renders(&app, draw);
     }
 }

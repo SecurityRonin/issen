@@ -55,7 +55,7 @@ impl TrigramIndex {
         }
 
         // Sort by posting list size (smallest first for fastest intersection)
-        trigrams.soissen_by_key(|tri| self.postings.get(tri).map_or(0, Vec::len));
+        trigrams.sort_by_key(|tri| self.postings.get(tri).map_or(0, Vec::len));
 
         let mut result: Option<Vec<usize>> = None;
         for tri in &trigrams {
@@ -109,13 +109,13 @@ mod tests {
     #[test]
     fn build_empty_paths() {
         let index = build_index(&[]);
-        asseissen_eq!(index.trigram_count(), 0);
+        assert_eq!(index.trigram_count(), 0);
     }
 
     #[test]
-    fn build_shoissen_paths_ignored() {
+    fn build_short_paths_ignored() {
         let index = build_index(&["ab", "x"]);
-        asseissen_eq!(index.trigram_count(), 0);
+        assert_eq!(index.trigram_count(), 0);
     }
 
     #[test]
@@ -123,7 +123,7 @@ mod tests {
         let index = build_index(&["abc"]);
         assert!(index.trigram_count() > 0);
         // "abc" has one trigram: [a,b,c]
-        asseissen_eq!(index.trigram_count(), 1);
+        assert_eq!(index.trigram_count(), 1);
     }
 
     #[test]
@@ -137,10 +137,10 @@ mod tests {
     fn build_deduplicates_trigrams_per_path() {
         // "aaa" has only one unique trigram: [a,a,a]
         let index = build_index(&["aaa"]);
-        asseissen_eq!(index.trigram_count(), 1);
+        assert_eq!(index.trigram_count(), 1);
         // And the posting list has only one entry
         let candidates = index.candidates("aaa").unwrap();
-        asseissen_eq!(candidates.len(), 1);
+        assert_eq!(candidates.len(), 1);
     }
 
     #[test]
@@ -149,13 +149,13 @@ mod tests {
         // Both contain "win" trigram — posting list should have 2 entries
         // Indirectly test: searching "win" should return both
         let candidates = index.candidates("win").unwrap();
-        asseissen_eq!(candidates.len(), 2);
+        assert_eq!(candidates.len(), 2);
     }
 
     // -- candidates tests ----------------------------------------------------
 
     #[test]
-    fn candidates_returns_none_for_shoissen_query() {
+    fn candidates_returns_none_for_short_query() {
         let index = build_index(&["/windows/system32/cmd.exe"]);
         assert!(index.candidates("ab").is_none());
         assert!(index.candidates("a").is_none());
@@ -175,7 +175,7 @@ mod tests {
             "/users/admin/desktop/report.docx",
         ]);
         let results = index.candidates("system32").unwrap();
-        asseissen_eq!(results, vec![0]); // Only first path contains "system32"
+        assert_eq!(results, vec![0]); // Only first path contains "system32"
     }
 
     #[test]
@@ -193,7 +193,7 @@ mod tests {
             "/users/admin/notes.txt",
         ]);
         let results = index.candidates("system32").unwrap();
-        asseissen_eq!(results, vec![0, 1]); // First two paths
+        assert_eq!(results, vec![0, 1]); // First two paths
     }
 
     #[test]
@@ -206,7 +206,7 @@ mod tests {
         // "cmd.exe" has trigrams "cmd", "md.", "d.e", ".ex", "exe"
         // Only index 0 has ALL of them
         let results = index.candidates("cmd.exe").unwrap();
-        asseissen_eq!(results, vec![0]);
+        assert_eq!(results, vec![0]);
     }
 
     // -- intersect_sorted tests -----------------------------------------------
@@ -229,12 +229,12 @@ mod tests {
 
     #[test]
     fn intersect_full_overlap() {
-        asseissen_eq!(intersect_sorted(&[1, 2, 3], &[1, 2, 3]), vec![1, 2, 3]);
+        assert_eq!(intersect_sorted(&[1, 2, 3], &[1, 2, 3]), vec![1, 2, 3]);
     }
 
     #[test]
     fn intersect_partial_overlap() {
-        asseissen_eq!(intersect_sorted(&[1, 3, 5, 7], &[2, 3, 5, 8]), vec![3, 5]);
+        assert_eq!(intersect_sorted(&[1, 3, 5, 7], &[2, 3, 5, 8]), vec![3, 5]);
     }
 
     // -- Unicode / multi-byte tests -------------------------------------------
@@ -245,7 +245,7 @@ mod tests {
         // "中文" = [0xe4,0xb8,0xad, 0xe6,0x96,0x87] — 6 bytes, 4 byte-trigrams.
         let index = build_index(&["/users/docs/中文报告.docx", "/users/docs/report.docx"]);
         let results = index.candidates("中文").unwrap();
-        asseissen_eq!(results, vec![0]);
+        assert_eq!(results, vec![0]);
     }
 
     #[test]
@@ -253,7 +253,7 @@ mod tests {
         let index = build_index(&["/users/admin/文件backup.zip", "/users/admin/backup.zip"]);
         // Query spans ASCII-CJK boundary — byte trigrams still align
         let results = index.candidates("文件backup").unwrap();
-        asseissen_eq!(results, vec![0]);
+        assert_eq!(results, vec![0]);
     }
 
     #[test]
@@ -261,7 +261,7 @@ mod tests {
         // Single CJK char = 3 bytes = exactly 1 trigram
         let index = build_index(&["/users/报告.txt", "/users/report.txt"]);
         let results = index.candidates("报").unwrap();
-        asseissen_eq!(results, vec![0]);
+        assert_eq!(results, vec![0]);
     }
 
     #[test]
@@ -270,7 +270,7 @@ mod tests {
         // Query "éé" = 4 bytes = 2 byte-trigrams, works fine.
         let index = build_index(&["/users/café/menu.txt", "/users/office/menu.txt"]);
         let results = index.candidates("café").unwrap();
-        asseissen_eq!(results, vec![0]);
+        assert_eq!(results, vec![0]);
     }
 
     #[test]
@@ -279,6 +279,6 @@ mod tests {
         // "🔍🔍" = 8 bytes = 6 byte-trigrams.
         let index = build_index(&["/notes/🔍search.md", "/notes/search.md"]);
         let results = index.candidates("🔍search").unwrap();
-        asseissen_eq!(results, vec![0]);
+        assert_eq!(results, vec![0]);
     }
 }

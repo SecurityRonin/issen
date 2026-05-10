@@ -375,8 +375,8 @@ mod tests {
     #[test]
     fn test_parser_trait_contract() {
         let parser = EvtxFileParser;
-        asseissen_eq!(parser.name(), "EVTX Parser");
-        asseissen_eq!(parser.supported_artifacts(), &[ArtifactType::EventLog]);
+        assert_eq!(parser.name(), "EVTX Parser");
+        assert_eq!(parser.supported_artifacts(), &[ArtifactType::EventLog]);
         let caps = parser.capabilities();
         assert!(
             !caps.streaming,
@@ -421,7 +421,7 @@ mod tests {
         ];
         for (id, expected) in cases {
             let got = event_id_to_event_type(*id);
-            asseissen_eq!(
+            assert_eq!(
                 got, *expected,
                 "event_id_to_event_type({id}) expected {expected:?} but got {got:?}"
             );
@@ -436,7 +436,7 @@ mod tests {
         let data = serde_json::json!({
             "Event": { "System": { "EventID": 4624 } }
         });
-        asseissen_eq!(extract_event_id(&data), Some(4624));
+        assert_eq!(extract_event_id(&data), Some(4624));
     }
 
     #[test]
@@ -445,7 +445,7 @@ mod tests {
         let data = serde_json::json!({
             "Event": { "System": { "EventID": "4625" } }
         });
-        asseissen_eq!(extract_event_id(&data), Some(4625));
+        assert_eq!(extract_event_id(&data), Some(4625));
     }
 
     #[test]
@@ -454,7 +454,7 @@ mod tests {
         let data = serde_json::json!({
             "Event": { "System": { "EventID": { "#text": 4688_u64 } } }
         });
-        asseissen_eq!(extract_event_id(&data), Some(4688));
+        assert_eq!(extract_event_id(&data), Some(4688));
     }
 
     #[test]
@@ -463,7 +463,7 @@ mod tests {
         let data = serde_json::json!({
             "Event": { "System": { "EventID": true } }
         });
-        asseissen_eq!(extract_event_id(&data), None);
+        assert_eq!(extract_event_id(&data), None);
     }
 
     #[test]
@@ -471,7 +471,7 @@ mod tests {
         let data = serde_json::json!({
             "Event": { "System": { "EventID": null } }
         });
-        asseissen_eq!(extract_event_id(&data), None);
+        assert_eq!(extract_event_id(&data), None);
     }
 
     #[test]
@@ -480,7 +480,7 @@ mod tests {
         let data = serde_json::json!({
             "Event": { "System": { "EventID": { "#text": "7045" } } }
         });
-        asseissen_eq!(extract_event_id(&data), Some(7045));
+        assert_eq!(extract_event_id(&data), Some(7045));
     }
 
     // -- Accuracy: record_to_event field extraction ------------------------
@@ -502,11 +502,11 @@ mod tests {
 
         let event = record_to_event(55, ts_ns, "2023-11-14T22:13:20Z", &data, "evtx-src");
 
-        asseissen_eq!(event.event_type, EventType::ProcessExec);
-        asseissen_eq!(event.source, ArtifactType::EventLog);
-        asseissen_eq!(event.metadata["event_id"], serde_json::json!(4688));
-        asseissen_eq!(event.metadata["record_id"], serde_json::json!(55));
-        asseissen_eq!(event.hostname.as_deref(), Some("DC01.corp.local"));
+        assert_eq!(event.event_type, EventType::ProcessExec);
+        assert_eq!(event.source, ArtifactType::EventLog);
+        assert_eq!(event.metadata["event_id"], serde_json::json!(4688));
+        assert_eq!(event.metadata["record_id"], serde_json::json!(55));
+        assert_eq!(event.hostname.as_deref(), Some("DC01.corp.local"));
         assert!(event.description.contains("EventID:4688"));
         assert!(event.description.contains("Record 55"));
     }
@@ -527,10 +527,10 @@ mod tests {
 
         let event = record_to_event(200, 0, "2023-01-01T00:00:00Z", &data, "evtx-src");
 
-        asseissen_eq!(event.event_type, EventType::ServiceInstall);
-        asseissen_eq!(event.metadata["event_id"], serde_json::json!(7045));
-        asseissen_eq!(event.metadata["channel"], serde_json::json!("System"));
-        asseissen_eq!(
+        assert_eq!(event.event_type, EventType::ServiceInstall);
+        assert_eq!(event.metadata["event_id"], serde_json::json!(7045));
+        assert_eq!(event.metadata["channel"], serde_json::json!("System"));
+        assert_eq!(
             event.metadata["provider"],
             serde_json::json!("Service Control Manager")
         );
@@ -543,7 +543,7 @@ mod tests {
             "Event": { "System": { "EventID": 4624 } }
         });
         let event = record_to_event(1, 0, "2023-01-01T00:00:00Z", &data, "src");
-        asseissen_eq!(event.artifact_path, "EventLog");
+        assert_eq!(event.artifact_path, "EventLog");
     }
 
     #[test]
@@ -557,7 +557,7 @@ mod tests {
             }
         });
         let event = record_to_event(2, 0, "2023-01-01T00:00:00Z", &data, "src");
-        asseissen_eq!(
+        assert_eq!(
             event.artifact_path,
             "Microsoft-Windows-Security-Auditing/Operational"
         );
@@ -567,62 +567,62 @@ mod tests {
 
     #[test]
     fn test_event_id_mapping_logon() {
-        asseissen_eq!(event_id_to_event_type(4624), EventType::LogonSuccess);
-        asseissen_eq!(event_id_to_event_type(4625), EventType::LogonFailure);
+        assert_eq!(event_id_to_event_type(4624), EventType::LogonSuccess);
+        assert_eq!(event_id_to_event_type(4625), EventType::LogonFailure);
     }
 
     #[test]
     fn test_event_id_mapping_logoff() {
-        asseissen_eq!(event_id_to_event_type(4634), EventType::Logoff);
-        asseissen_eq!(event_id_to_event_type(4647), EventType::Logoff);
+        assert_eq!(event_id_to_event_type(4634), EventType::Logoff);
+        assert_eq!(event_id_to_event_type(4647), EventType::Logoff);
     }
 
     #[test]
     fn test_event_id_mapping_process() {
-        asseissen_eq!(event_id_to_event_type(4688), EventType::ProcessExec);
-        asseissen_eq!(event_id_to_event_type(4689), EventType::ProcessExit);
+        assert_eq!(event_id_to_event_type(4688), EventType::ProcessExec);
+        assert_eq!(event_id_to_event_type(4689), EventType::ProcessExit);
     }
 
     #[test]
     fn test_event_id_mapping_service() {
-        asseissen_eq!(event_id_to_event_type(7045), EventType::ServiceInstall);
-        asseissen_eq!(event_id_to_event_type(7036), EventType::ServiceStart);
+        assert_eq!(event_id_to_event_type(7045), EventType::ServiceInstall);
+        assert_eq!(event_id_to_event_type(7036), EventType::ServiceStart);
     }
 
     #[test]
     fn test_event_id_mapping_scheduled_task() {
-        asseissen_eq!(event_id_to_event_type(4698), EventType::ScheduledTaskCreate);
-        asseissen_eq!(event_id_to_event_type(4702), EventType::ScheduledTaskRun);
-        asseissen_eq!(event_id_to_event_type(106), EventType::ScheduledTaskRun);
+        assert_eq!(event_id_to_event_type(4698), EventType::ScheduledTaskCreate);
+        assert_eq!(event_id_to_event_type(4702), EventType::ScheduledTaskRun);
+        assert_eq!(event_id_to_event_type(106), EventType::ScheduledTaskRun);
     }
 
     #[test]
     fn test_event_id_mapping_account_and_policy() {
-        asseissen_eq!(event_id_to_event_type(4720), EventType::UserAccountChange);
-        asseissen_eq!(event_id_to_event_type(4722), EventType::UserAccountChange);
-        asseissen_eq!(event_id_to_event_type(4725), EventType::UserAccountChange);
-        asseissen_eq!(event_id_to_event_type(4726), EventType::UserAccountChange);
-        asseissen_eq!(event_id_to_event_type(4738), EventType::UserAccountChange);
-        asseissen_eq!(event_id_to_event_type(4719), EventType::PolicyChange);
+        assert_eq!(event_id_to_event_type(4720), EventType::UserAccountChange);
+        assert_eq!(event_id_to_event_type(4722), EventType::UserAccountChange);
+        assert_eq!(event_id_to_event_type(4725), EventType::UserAccountChange);
+        assert_eq!(event_id_to_event_type(4726), EventType::UserAccountChange);
+        assert_eq!(event_id_to_event_type(4738), EventType::UserAccountChange);
+        assert_eq!(event_id_to_event_type(4719), EventType::PolicyChange);
     }
 
     #[test]
     fn test_event_id_mapping_system() {
-        asseissen_eq!(event_id_to_event_type(6005), EventType::SystemBoot);
-        asseissen_eq!(event_id_to_event_type(6009), EventType::SystemBoot);
-        asseissen_eq!(event_id_to_event_type(6006), EventType::SystemShutdown);
-        asseissen_eq!(event_id_to_event_type(6008), EventType::SystemShutdown);
+        assert_eq!(event_id_to_event_type(6005), EventType::SystemBoot);
+        assert_eq!(event_id_to_event_type(6009), EventType::SystemBoot);
+        assert_eq!(event_id_to_event_type(6006), EventType::SystemShutdown);
+        assert_eq!(event_id_to_event_type(6008), EventType::SystemShutdown);
     }
 
     #[test]
     fn test_event_id_mapping_network() {
-        asseissen_eq!(event_id_to_event_type(5156), EventType::NetworkConnect);
-        asseissen_eq!(event_id_to_event_type(5157), EventType::NetworkConnect);
+        assert_eq!(event_id_to_event_type(5156), EventType::NetworkConnect);
+        assert_eq!(event_id_to_event_type(5157), EventType::NetworkConnect);
     }
 
     #[test]
     fn test_event_id_mapping_unknown() {
-        asseissen_eq!(
+        assert_eq!(
             event_id_to_event_type(9999),
             EventType::Other("EventID:9999".to_string())
         );
@@ -639,7 +639,7 @@ mod tests {
                 }
             }
         });
-        asseissen_eq!(extract_event_id(&data), Some(4624));
+        assert_eq!(extract_event_id(&data), Some(4624));
     }
 
     #[test]
@@ -654,7 +654,7 @@ mod tests {
                 }
             }
         });
-        asseissen_eq!(extract_event_id(&data), Some(4624));
+        assert_eq!(extract_event_id(&data), Some(4624));
     }
 
     #[test]
@@ -668,7 +668,7 @@ mod tests {
                 }
             }
         });
-        asseissen_eq!(extract_event_id(&data), Some(4625));
+        assert_eq!(extract_event_id(&data), Some(4625));
     }
 
     #[test]
@@ -680,19 +680,19 @@ mod tests {
                 }
             }
         });
-        asseissen_eq!(extract_event_id(&data), Some(7045));
+        assert_eq!(extract_event_id(&data), Some(7045));
     }
 
     #[test]
     fn test_extract_event_id_missing() {
         let data = serde_json::json!({ "Event": { "System": {} } });
-        asseissen_eq!(extract_event_id(&data), None);
+        assert_eq!(extract_event_id(&data), None);
     }
 
     #[test]
     fn test_extract_event_id_no_event() {
         let data = serde_json::json!({});
-        asseissen_eq!(extract_event_id(&data), None);
+        assert_eq!(extract_event_id(&data), None);
     }
 
     // -- timestamp_to_ns tests ----------------------------------------------
@@ -702,18 +702,18 @@ mod tests {
         // 2023-11-14T22:13:20Z = 1_700_000_000 seconds
         let ns = timestamp_to_ns(1_700_000_000, 0);
         let expected = 1_700_000_000_i64 * 1_000_000_000;
-        asseissen_eq!(ns, expected);
+        assert_eq!(ns, expected);
     }
 
     #[test]
     fn test_timestamp_to_ns_with_subsec() {
         let ns = timestamp_to_ns(100, 500_000_000);
-        asseissen_eq!(ns, 100_500_000_000);
+        assert_eq!(ns, 100_500_000_000);
     }
 
     #[test]
     fn test_timestamp_to_ns_zero() {
-        asseissen_eq!(timestamp_to_ns(0, 0), 0);
+        assert_eq!(timestamp_to_ns(0, 0), 0);
     }
 
     // -- record_to_event tests ----------------------------------------------
@@ -742,17 +742,17 @@ mod tests {
 
         let event = record_to_event(42, ts_ns, ts_display, &data, "evidence-001");
 
-        asseissen_eq!(event.event_type, EventType::LogonSuccess);
-        asseissen_eq!(event.source, ArtifactType::EventLog);
-        asseissen_eq!(event.evidence_source_id, "evidence-001");
+        assert_eq!(event.event_type, EventType::LogonSuccess);
+        assert_eq!(event.source, ArtifactType::EventLog);
+        assert_eq!(event.evidence_source_id, "evidence-001");
         assert!(event.description.contains("EventID:4624"));
         assert!(event.description.contains("Security"));
         assert!(event.description.contains("Record 42"));
-        asseissen_eq!(event.hostname.as_deref(), Some("WORKSTATION01"));
-        asseissen_eq!(event.metadata["event_id"], serde_json::json!(4624));
-        asseissen_eq!(event.metadata["record_id"], serde_json::json!(42));
-        asseissen_eq!(event.metadata["channel"], serde_json::json!("Security"));
-        asseissen_eq!(
+        assert_eq!(event.hostname.as_deref(), Some("WORKSTATION01"));
+        assert_eq!(event.metadata["event_id"], serde_json::json!(4624));
+        assert_eq!(event.metadata["record_id"], serde_json::json!(42));
+        assert_eq!(event.metadata["channel"], serde_json::json!("Security"));
+        assert_eq!(
             event.metadata["provider"],
             serde_json::json!("Microsoft-Windows-Security-Auditing")
         );
@@ -777,7 +777,7 @@ mod tests {
 
         let event = record_to_event(100, 0, "2023-06-15T10:30:00Z", &data, "src-1");
 
-        asseissen_eq!(
+        assert_eq!(
             event.event_type,
             EventType::Other("EventID:1234".to_string())
         );
@@ -795,8 +795,8 @@ mod tests {
         let event = record_to_event(1, 0, "2023-01-01T00:00:00Z", &data, "test");
 
         // event_id defaults to 0 when missing
-        asseissen_eq!(event.metadata["event_id"], serde_json::json!(0));
-        asseissen_eq!(event.event_type, EventType::Other("EventID:0".to_string()));
+        assert_eq!(event.metadata["event_id"], serde_json::json!(0));
+        assert_eq!(event.event_type, EventType::Other("EventID:0".to_string()));
         assert!(event.hostname.is_none());
     }
 
@@ -809,8 +809,8 @@ mod tests {
         let parser = EvtxFileParser;
 
         let stats = parser.parse(&source, &emitter).expect("parse empty input");
-        asseissen_eq!(stats.events_emitted, 0);
-        asseissen_eq!(stats.bytes_processed, 0);
+        assert_eq!(stats.events_emitted, 0);
+        assert_eq!(stats.bytes_processed, 0);
 
         let events = emitter.into_events();
         assert!(events.is_empty());
@@ -824,7 +824,7 @@ mod tests {
         let parser = EvtxFileParser;
 
         let stats = parser.parse(&source, &emitter).expect("parse tiny input");
-        asseissen_eq!(stats.events_emitted, 0);
+        assert_eq!(stats.events_emitted, 0);
 
         let events = emitter.into_events();
         assert!(events.is_empty());
@@ -841,7 +841,7 @@ mod tests {
         let stats = parser
             .parse(&source, &emitter)
             .expect("parse garbage gracefully");
-        asseissen_eq!(stats.events_emitted, 0);
+        assert_eq!(stats.events_emitted, 0);
 
         let events = emitter.into_events();
         assert!(events.is_empty());

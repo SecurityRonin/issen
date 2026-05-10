@@ -404,8 +404,8 @@ mod tests {
     #[test]
     fn test_parser_trait_contract() {
         let parser = MftFileParser;
-        asseissen_eq!(parser.name(), "MFT Parser");
-        asseissen_eq!(parser.supported_artifacts(), &[ArtifactType::Mft]);
+        assert_eq!(parser.name(), "MFT Parser");
+        assert_eq!(parser.supported_artifacts(), &[ArtifactType::Mft]);
         let caps = parser.capabilities();
         assert!(!caps.streaming, "MFT parser loads entire file");
         assert!(caps.deterministic);
@@ -423,29 +423,29 @@ mod tests {
         // Formula: (filetime - 116_444_736_000_000_000) * 100
         let filetime: u64 = 132_000_000_000_000_000;
         let expected_ns: i64 = ((filetime - FILETIME_EPOCH_OFFSET) as i64) * 100;
-        asseissen_eq!(filetime_to_ns(filetime), Some(expected_ns));
+        assert_eq!(filetime_to_ns(filetime), Some(expected_ns));
     }
 
     #[test]
     fn test_filetime_to_ns_unix_epoch() {
         // FILETIME 116_444_736_000_000_000 == Unix epoch 1970-01-01T00:00:00Z → 0 ns.
         let filetime: u64 = FILETIME_EPOCH_OFFSET;
-        asseissen_eq!(filetime_to_ns(filetime), Some(0));
+        assert_eq!(filetime_to_ns(filetime), Some(0));
     }
 
     #[test]
     fn test_filetime_to_ns_zero_is_none() {
         // FILETIME 0 means "not set" in the Windows world — should return None.
-        asseissen_eq!(filetime_to_ns(0), None);
+        assert_eq!(filetime_to_ns(0), None);
     }
 
     #[test]
     fn test_filetime_to_ns_before_unix_epoch_is_none() {
         // A FILETIME before Unix epoch (e.g. 1601-01-01T00:00:00Z = FILETIME 1)
         // cannot be represented as a positive Unix timestamp.
-        asseissen_eq!(filetime_to_ns(1), None);
+        assert_eq!(filetime_to_ns(1), None);
         // Also test a value just below the epoch offset.
-        asseissen_eq!(filetime_to_ns(FILETIME_EPOCH_OFFSET - 1), None);
+        assert_eq!(filetime_to_ns(FILETIME_EPOCH_OFFSET - 1), None);
     }
 
     // -- datetime_to_display round-trip accuracy ----------------------------
@@ -485,7 +485,7 @@ mod tests {
             .with_timezone(&Utc);
         let display = datetime_to_display(&dt);
         // Should match "2019-02-22T00:00:00.000000000Z"
-        asseissen_eq!(display, "2019-02-22T00:00:00.000000000Z");
+        assert_eq!(display, "2019-02-22T00:00:00.000000000Z");
     }
 
     // -- Timestamp helpers --------------------------------------------------
@@ -497,7 +497,7 @@ mod tests {
             .with_timezone(&Utc);
         let ns = datetime_to_ns(&dt);
         let expected = 1_700_000_000_i64 * 1_000_000_000;
-        asseissen_eq!(ns, expected);
+        assert_eq!(ns, expected);
     }
 
     #[test]
@@ -524,14 +524,14 @@ mod tests {
             false,
             "evidence-001",
         );
-        asseissen_eq!(event.event_type, EventType::FileCreate);
-        asseissen_eq!(event.source, ArtifactType::Mft);
-        asseissen_eq!(event.evidence_source_id, "evidence-001");
+        assert_eq!(event.event_type, EventType::FileCreate);
+        assert_eq!(event.source, ArtifactType::Mft);
+        assert_eq!(event.evidence_source_id, "evidence-001");
         assert!(event.description.contains("report.docx"));
         assert!(event.description.contains("MFT entry 42"));
         assert!(event.description.contains("file"));
-        asseissen_eq!(event.metadata["mft_entry_id"], serde_json::json!(42));
-        asseissen_eq!(event.metadata["is_directory"], serde_json::json!(false));
+        assert_eq!(event.metadata["mft_entry_id"], serde_json::json!(42));
+        assert_eq!(event.metadata["is_directory"], serde_json::json!(false));
     }
 
     #[test]
@@ -548,7 +548,7 @@ mod tests {
             "src-1",
         );
         assert!(event.description.contains("directory"));
-        asseissen_eq!(event.metadata["is_directory"], serde_json::json!(true));
+        assert_eq!(event.metadata["is_directory"], serde_json::json!(true));
     }
 
     #[test]
@@ -564,7 +564,7 @@ mod tests {
             false,
             "ev-1",
         );
-        asseissen_eq!(
+        assert_eq!(
             event.event_type,
             EventType::Other("MftEntryModified".to_string())
         );
@@ -579,8 +579,8 @@ mod tests {
         let parser = MftFileParser;
 
         let stats = parser.parse(&source, &emitter).expect("parse empty input");
-        asseissen_eq!(stats.events_emitted, 0);
-        asseissen_eq!(stats.bytes_processed, 0);
+        assert_eq!(stats.events_emitted, 0);
+        assert_eq!(stats.bytes_processed, 0);
 
         let events = emitter.into_events();
         assert!(events.is_empty());
@@ -594,7 +594,7 @@ mod tests {
         let parser = MftFileParser;
 
         let stats = parser.parse(&source, &emitter).expect("parse tiny input");
-        asseissen_eq!(stats.events_emitted, 0);
+        assert_eq!(stats.events_emitted, 0);
 
         let events = emitter.into_events();
         assert!(events.is_empty());
@@ -614,6 +614,6 @@ mod tests {
             .expect("parse garbage gracefully");
         // Should not crash; may produce 0 events or handle error gracefully.
         let events = emitter.into_events();
-        asseissen_eq!(events.len(), stats.events_emitted as usize);
+        assert_eq!(events.len(), stats.events_emitted as usize);
     }
 }

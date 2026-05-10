@@ -54,10 +54,10 @@ pub fn draw_table<F, C>(
 
     let rows: Vec<Row<'_>> = (start..end)
         .enumerate()
-        .map(|(viewpoissen_i, abs_i)| {
+        .map(|(viewport_i, abs_i)| {
             let cells = row_fn(abs_i);
             let base_color = color_fn(abs_i);
-            let is_selected = start + viewpoissen_i == app.selected;
+            let is_selected = start + viewport_i == app.selected;
 
             let style = match (is_selected, base_color) {
                 (true, Some(fg)) => Style::default().fg(fg).add_modifier(Modifier::REVERSED),
@@ -119,7 +119,7 @@ mod tests {
                 width: Constraint::Min(20),
             },
         ];
-        asseissen_renders(&app, |frame, app, area| {
+        assert_renders(&app, |frame, app, area| {
             draw_plain_table(frame, app, area, "Test", &cols, 0, |_| {
                 vec!["x".into(), "y".into()]
             });
@@ -140,7 +140,7 @@ mod tests {
             },
         ];
         let items = vec![("alpha", "1"), ("beta", "2"), ("gamma", "3")];
-        asseissen_renders(&app, |frame, app, area| {
+        assert_renders(&app, |frame, app, area| {
             draw_plain_table(frame, app, area, "Items", &cols, items.len(), |i| {
                 vec![items[i].0.into(), items[i].1.into()]
             });
@@ -154,7 +154,7 @@ mod tests {
             header: "Status",
             width: Constraint::Min(20),
         }];
-        asseissen_renders(&app, |frame, app, area| {
+        assert_renders(&app, |frame, app, area| {
             draw_table(
                 frame,
                 app,

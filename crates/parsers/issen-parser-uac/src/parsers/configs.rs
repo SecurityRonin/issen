@@ -54,6 +54,6 @@ mod tests {
         std::fs::write(etc.join("hostname"), "testhost\n").expect("write");
 
         let configs = collect_configs(dir.path());
-        asseissen_eq!(configs.len(), 2);
+        assert_eq!(configs.len(), 2);
     }
 }

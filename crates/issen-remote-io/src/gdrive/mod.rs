@@ -50,12 +50,12 @@ mod tests {
 
     #[test]
     fn empty_returns_none() {
-        asseissen_eq!(parse_file_id(""), None);
+        assert_eq!(parse_file_id(""), None);
     }
 
     #[test]
     fn gdrive_scheme_prefix() {
-        asseissen_eq!(
+        assert_eq!(
             parse_file_id("gdrive://1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"),
             Some("1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms".to_string())
         );
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn drive_google_com_file_d_url() {
-        asseissen_eq!(
+        assert_eq!(
             parse_file_id(
                 "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/view"
             ),
@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn drive_google_com_open_id_url() {
-        asseissen_eq!(
+        assert_eq!(
             parse_file_id(
                 "https://drive.google.com/open?id=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
             ),
@@ -83,7 +83,7 @@ mod tests {
 
     #[test]
     fn bare_id_without_slash_is_some() {
-        asseissen_eq!(
+        assert_eq!(
             parse_file_id("1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"),
             Some("1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms".to_string())
         );
@@ -91,12 +91,12 @@ mod tests {
 
     #[test]
     fn bare_id_with_slash_is_none() {
-        asseissen_eq!(parse_file_id("some/path/with/slashes"), None);
+        assert_eq!(parse_file_id("some/path/with/slashes"), None);
     }
 
     #[test]
     fn unrecognised_url_with_scheme_is_none() {
-        asseissen_eq!(parse_file_id("ftp://example.com/file"), None);
-        asseissen_eq!(parse_file_id("s3://bucket/key"), None);
+        assert_eq!(parse_file_id("ftp://example.com/file"), None);
+        assert_eq!(parse_file_id("s3://bucket/key"), None);
     }
 }
