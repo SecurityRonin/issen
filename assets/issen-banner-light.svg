@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Light-mode banner: transparent bg, dark icon + dark text -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 2560 640" width="2560" height="640">
+
+  <!-- Icon (original dark palette) -->
+  <image href="issen-icon.svg" x="64" y="64" width="512" height="512"
+         preserveAspectRatio="xMidYMid meet"/>
+
+  <!-- Vertical rule -->
+  <line x1="630" y1="80" x2="630" y2="560"
+        stroke="#C0C0C0" stroke-width="2"/>
+
+  <!-- "Issen" wordmark — dark navy -->
+  <text x="690" y="286"
+        font-family="Helvetica Neue, Helvetica, Arial, Liberation Sans, sans-serif"
+        font-size="192" font-weight="700" letter-spacing="-4"
+        fill="#000217">Issen</text>
+
+  <!-- Tagline -->
+  <text x="695" y="390"
+        font-family="Helvetica Neue, Helvetica, Arial, Liberation Sans, sans-serif"
+        font-size="60" font-weight="400"
+        fill="#303441">One command. One output. The full attack narrative.</text>
+
+  <!-- Sub-tagline -->
+  <text x="697" y="470"
+        font-family="Helvetica Neue, Helvetica, Arial, Liberation Sans, sans-serif"
+        font-size="48" font-weight="400"
+        fill="#9d9da3">Fast forensic triage for incident responders.</text>
+
+</svg>

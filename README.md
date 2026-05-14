@@ -1,8 +1,8 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/issen-banner.png">
-    <img src="assets/issen-banner.png" alt="Issen — fast forensic triage for incident responders" width="640" />
-  </picture>
+  <img src="assets/issen-banner.png#gh-dark-mode-only"
+       alt="Issen — fast forensic triage for incident responders" width="640" />
+  <img src="assets/issen-banner-light.png#gh-light-mode-only"
+       alt="Issen — fast forensic triage for incident responders" width="640" />
 </p>
 
 <p align="center">
