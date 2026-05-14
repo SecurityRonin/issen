@@ -52,6 +52,8 @@ jobs:
           mkdir -p target/doc/docs
           cp -r docs/*.md target/doc/docs/ 2>/dev/null || true
           cp README.md target/doc/docs/README.md 2>/dev/null || true
+          # Copy standalone HTML pages to site root
+          cp docs/architecture-diagram.html target/doc/architecture-diagram.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d231e97723741e312 # v4
