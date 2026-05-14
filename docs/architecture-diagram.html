@@ -18,29 +18,13 @@
       padding: 40px 20px 60px;
     }
     .header { text-align: center; margin-bottom: 32px; }
-    .header-line {
-      display: flex; align-items: center; justify-content: center;
-      gap: 12px; margin-bottom: 8px;
-    }
-    .pulse-dot {
-      width: 10px; height: 10px; background: #34d399;
-      border-radius: 50%; animation: pulse 2s infinite; flex-shrink: 0;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.4; transform: scale(0.8); }
-    }
+    .header-line { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; }
+    .pulse-dot { width: 10px; height: 10px; background: #34d399; border-radius: 50%; animation: pulse 2s infinite; flex-shrink: 0; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
     h1 { font-size: 26px; font-weight: 700; color: #f8fafc; letter-spacing: -0.5px; }
     .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
-    .diagram-card {
-      background: #0f172a; border: 1px solid #1e293b;
-      border-radius: 12px; padding: 20px;
-      width: 100%; max-width: 1160px; overflow-x: auto;
-    }
-    .cards-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 16px; margin-top: 20px; width: 100%; max-width: 1160px;
-    }
+    .diagram-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 24px; width: 100%; max-width: 1160px; overflow-x: auto; }
+    .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; width: 100%; max-width: 1160px; }
     .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; }
     .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
     .card-dot { width: 8px; height: 8px; border-radius: 50%; }
@@ -59,29 +43,17 @@
     <div class="pulse-dot"></div>
     <h1>Issen — System Architecture</h1>
   </div>
-  <p class="subtitle">Rust &nbsp;·&nbsp; 5 navigation primitives &nbsp;·&nbsp; [H] state-history functor &nbsp;·&nbsp; forensicnomicon knowledge base</p>
+  <p class="subtitle">5 navigation primitives &nbsp;·&nbsp; layered forensic stack &nbsp;·&nbsp; [H] state-history functor</p>
 </div>
 
 <div class="diagram-card">
 <!--
-  Column layout (width=210, gap=14):
-    [P] x=18  cx=123
-    [M] x=236 cx=341
-    [L] x=454 cx=559
-    [Q] x=672 cx=777
-    [C] x=890 cx=995
-
-  Row layout (top→bottom = high→low level):
-    ORCHESTRATION boundary:  y=12,  h=96,  bottom=108
-    PARSER row:              y=126, h=82,  bottom=208
-    NAVIGATION row:          y=216, h=92,  bottom=308
-    CONTAINER row:           y=316, h=70,  bottom=386
-    [H] STATE-HISTORY strip: y=394, h=54,  bottom=448
-    KNOWLEDGE:               y=460, h=64,  bottom=524
-    Legend separator:        y=536
-    Legend:                  y=540..567
+  5 columns × 6 rows
+  Columns (w=208, gap=14): [P]=18 [M]=236 [L]=454 [Q]=672 [C]=890  cx: 122 340 558 776 994
+  Rows: ORCH(12-84) · PARSER(102-154) · NAVIGATION(162-220) · CONTAINER(228-274) · [H](282-332) · KNOWLEDGE(340-394)
+  Legend: 408+
 -->
-<svg viewBox="0 0 1120 578" xmlns="http://www.w3.org/2000/svg"
+<svg viewBox="0 0 1120 438" xmlns="http://www.w3.org/2000/svg"
      style="width:100%;height:auto;font-family:'JetBrains Mono',monospace;">
   <defs>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -95,359 +67,193 @@
     </marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="1120" height="578" fill="#020617"/>
-  <rect width="1120" height="578" fill="url(#grid)"/>
+  <rect width="1120" height="438" fill="#020617"/>
+  <rect width="1120" height="438" fill="url(#grid)"/>
 
-  <!-- ════════════════════════════════════════════════════════
-       ARROWS — drawn first so boxes render on top
-       ════════════════════════════════════════════════════════ -->
+  <!-- ════ ARROWS (behind all boxes) ════ -->
 
-  <!-- ORCHESTRATION → PARSER (5 column centers) -->
-  <line x1="123" y1="108" x2="123" y2="124" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="341" y1="108" x2="341" y2="124" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="559" y1="108" x2="559" y2="124" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="777" y1="108" x2="777" y2="124" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="995" y1="108" x2="995" y2="124" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- ORCHESTRATION → PARSER -->
+  <line x1="122" y1="84" x2="122" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="340" y1="84" x2="340" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="558" y1="84" x2="558" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="776" y1="84" x2="776" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="994" y1="84" x2="994" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
 
   <!-- PARSER → NAVIGATION -->
-  <line x1="123" y1="208" x2="123" y2="214" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="341" y1="208" x2="341" y2="214" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="559" y1="208" x2="559" y2="214" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="777" y1="208" x2="777" y2="214" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="995" y1="208" x2="995" y2="214" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="122" y1="154" x2="122" y2="160" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="340" y1="154" x2="340" y2="160" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="558" y1="154" x2="558" y2="160" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="776" y1="154" x2="776" y2="160" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="994" y1="154" x2="994" y2="160" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
 
-  <!-- NAVIGATION → CONTAINER ([P] [M] only) -->
-  <line x1="123" y1="308" x2="123" y2="314" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="341" y1="308" x2="341" y2="314" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- NAVIGATION → CONTAINER ([P] [M]) -->
+  <line x1="122" y1="220" x2="122" y2="226" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="340" y1="220" x2="340" y2="226" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
 
-  <!-- NAVIGATION → [H] ([L] [Q] [C] skip container — dashed) -->
-  <line x1="559" y1="308" x2="559" y2="392" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
-  <line x1="777" y1="308" x2="777" y2="392" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
-  <line x1="995" y1="308" x2="995" y2="392" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+  <!-- NAVIGATION → [H] ([L] [Q] [C] — no container) -->
+  <line x1="558" y1="220" x2="558" y2="280" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+  <line x1="776" y1="220" x2="776" y2="280" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+  <line x1="994" y1="220" x2="994" y2="280" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
 
   <!-- CONTAINER → [H] ([P] [M]) -->
-  <line x1="123" y1="386" x2="123" y2="392" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="341" y1="386" x2="341" y2="392" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="122" y1="274" x2="122" y2="280" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="340" y1="274" x2="340" y2="280" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
 
-  <!-- [H] → KNOWLEDGE (orange — functor depends on knowledge traits) -->
-  <line x1="560" y1="448" x2="560" y2="458" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arr-orange)"/>
+  <!-- [H] → KNOWLEDGE -->
+  <line x1="560" y1="332" x2="560" y2="338" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arr-orange)"/>
 
-  <!-- ════════════════════════════════════════════════════════
-       ORCHESTRATION boundary + 5 boxes
-       ════════════════════════════════════════════════════════ -->
+  <!-- ════ ORCHESTRATION ════ -->
 
-  <rect x="12" y="12" width="1096" height="96" rx="8" fill="#0f172a"/>
-  <rect x="12" y="12" width="1096" height="96" rx="8"
-        fill="rgba(136,19,55,0.12)" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="12" y="12" width="1096" height="72" rx="8" fill="#0f172a"/>
+  <rect x="12" y="12" width="1096" height="72" rx="8"
+        fill="rgba(136,19,55,0.15)" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="6,3"/>
   <text x="20" y="10" fill="#fb7185" font-size="8" font-weight="600">ORCHESTRATION</text>
 
-  <!-- issen-core -->
-  <rect x="18"  y="18" width="210" height="84" rx="6" fill="#0f172a"/>
-  <rect x="18"  y="18" width="210" height="84" rx="6"
-        fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
-  <text x="123" y="37" fill="white"   font-size="11" font-weight="600" text-anchor="middle">issen-core</text>
-  <text x="123" y="51" fill="#34d399" font-size="8"  text-anchor="middle">TimelineEvent · Evidence</text>
-  <text x="123" y="64" fill="#64748b" font-size="7"  text-anchor="middle">ArtifactTypes · PluginRegistry</text>
-  <text x="123" y="77" fill="#64748b" font-size="7"  text-anchor="middle">inventory compile-time plugins</text>
-  <text x="123" y="90" fill="#64748b" font-size="7"  text-anchor="middle">plugin traits · dispatch</text>
+  <rect x="18" y="16" width="1090" height="64" rx="6" fill="#0f172a"/>
+  <rect x="18" y="16" width="1090" height="64" rx="6"
+        fill="rgba(136,19,55,0.35)" stroke="#fb7185" stroke-width="1.5"/>
+  <text x="563" y="40" fill="white"   font-size="18" font-weight="700" text-anchor="middle">Issen</text>
+  <text x="563" y="57" fill="#fb7185" font-size="9"  text-anchor="middle">issen-core · issen-correlation · forensic-pivot · issen-cli · issen-{artifact} wrappers</text>
+  <text x="563" y="72" fill="#64748b" font-size="8"  text-anchor="middle">TimelineEvent · Evidence · plugin registry · YAML correlation rules · attack flow · Sigma/Suricata adapters</text>
 
-  <!-- issen-correlation -->
-  <rect x="236" y="18" width="210" height="84" rx="6" fill="#0f172a"/>
-  <rect x="236" y="18" width="210" height="84" rx="6"
-        fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1.5"/>
-  <text x="341" y="37" fill="white"   font-size="11" font-weight="600" text-anchor="middle">issen-correlation</text>
-  <text x="341" y="51" fill="#fb7185" font-size="8"  text-anchor="middle">temporal rules · attack flow</text>
-  <text x="341" y="64" fill="#64748b" font-size="7"  text-anchor="middle">cluster · skew · MITRE ATT&amp;CK</text>
-  <text x="341" y="77" fill="#64748b" font-size="7"  text-anchor="middle">artifact_correlation · model</text>
-  <text x="341" y="90" fill="#64748b" font-size="7"  text-anchor="middle">YAML rule engine · render</text>
+  <!-- ════ COLUMN LABELS ════ -->
 
-  <!-- forensic-pivot -->
-  <rect x="454" y="18" width="210" height="84" rx="6" fill="#0f172a"/>
-  <rect x="454" y="18" width="210" height="84" rx="6"
-        fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1.5"/>
-  <text x="559" y="37" fill="white"   font-size="11" font-weight="600" text-anchor="middle">forensic-pivot</text>
-  <text x="559" y="51" fill="#fb7185" font-size="8"  text-anchor="middle">Sigma · Suricata adapters</text>
-  <text x="559" y="64" fill="#64748b" font-size="7"  text-anchor="middle">IOC pivot · phase2 feeds</text>
-  <text x="559" y="77" fill="#64748b" font-size="7"  text-anchor="middle">CISA KEV · MISP · STIX 2.1</text>
-  <text x="559" y="90" fill="#64748b" font-size="7"  text-anchor="middle">feed sync · enrichment</text>
+  <text x="122" y="94" fill="#fbbf24" font-size="10" font-weight="600" text-anchor="middle">[P] Persistent</text>
+  <text x="340" y="94" fill="#fbbf24" font-size="10" font-weight="600" text-anchor="middle">[M] Memory</text>
+  <text x="558" y="94" fill="#fbbf24" font-size="10" font-weight="600" text-anchor="middle">[L] Log</text>
+  <text x="776" y="94" fill="#fbbf24" font-size="10" font-weight="600" text-anchor="middle">[Q] Live Query</text>
+  <text x="994" y="94" fill="#fbbf24" font-size="10" font-weight="600" text-anchor="middle">[C] Content-Addr</text>
 
-  <!-- issen-{artifact} wrappers -->
-  <rect x="672" y="18" width="210" height="84" rx="6" fill="#0f172a"/>
-  <rect x="672" y="18" width="210" height="84" rx="6"
-        fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
-  <text x="777" y="34" fill="white"   font-size="10" font-weight="600" text-anchor="middle">issen-{artifact} wrappers</text>
-  <text x="777" y="48" fill="#94a3b8" font-size="8"  text-anchor="middle">issen-evtx · issen-ewf</text>
-  <text x="777" y="61" fill="#64748b" font-size="7"  text-anchor="middle">issen-browser · issen-srum</text>
-  <text x="777" y="74" fill="#64748b" font-size="7"  text-anchor="middle">issen-mem · issen-mft-tree</text>
-  <text x="777" y="87" fill="#64748b" font-size="7"  text-anchor="middle">parser output → TimelineEvent</text>
+  <!-- ════ PARSER ROW  y=102, h=52, bottom=154 ════ -->
 
-  <!-- issen-cli -->
-  <rect x="890" y="18" width="210" height="84" rx="6" fill="#0f172a"/>
-  <rect x="890" y="18" width="210" height="84" rx="6"
-        fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
-  <text x="995" y="37" fill="white"   font-size="11" font-weight="600" text-anchor="middle">issen-cli</text>
-  <text x="995" y="51" fill="#22d3ee" font-size="8"  text-anchor="middle">analyse · scan · pivot</text>
-  <text x="995" y="64" fill="#64748b" font-size="7"  text-anchor="middle">report · timeline · memf</text>
-  <text x="995" y="77" fill="#64748b" font-size="7"  text-anchor="middle">ingest · feed · remote-access</text>
-  <text x="995" y="90" fill="#64748b" font-size="7"  text-anchor="middle">human-readable incident output</text>
+  <rect x="18"  y="102" width="208" height="52" rx="6" fill="#0f172a"/>
+  <rect x="18"  y="102" width="208" height="52" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="122" y="120" fill="white"   font-size="10" font-weight="600" text-anchor="middle">PARSER  [P]</text>
+  <text x="122" y="136" fill="#a78bfa" font-size="8"  text-anchor="middle">browser · srum · mft-forensic</text>
 
-  <!-- ════════════════════════════════════════════════════════
-       COLUMN PRIMITIVE LABELS
-       ════════════════════════════════════════════════════════ -->
+  <rect x="236" y="102" width="208" height="52" rx="6" fill="#0f172a"/>
+  <rect x="236" y="102" width="208" height="52" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="340" y="120" fill="white"   font-size="10" font-weight="600" text-anchor="middle">OS STRUCTURE  [M]</text>
+  <text x="340" y="136" fill="#a78bfa" font-size="8"  text-anchor="middle">memf-windows · memf-linux</text>
 
-  <text x="123" y="118" fill="#fbbf24" font-size="9" font-weight="600" text-anchor="middle">[P] Persistent</text>
-  <text x="341" y="118" fill="#fbbf24" font-size="9" font-weight="600" text-anchor="middle">[M] Memory</text>
-  <text x="559" y="118" fill="#fbbf24" font-size="9" font-weight="600" text-anchor="middle">[L] Log</text>
-  <text x="777" y="118" fill="#fbbf24" font-size="9" font-weight="600" text-anchor="middle">[Q] Live Query</text>
-  <text x="995" y="118" fill="#fbbf24" font-size="9" font-weight="600" text-anchor="middle">[C] Content-Addr</text>
+  <rect x="454" y="102" width="208" height="52" rx="6" fill="#0f172a"/>
+  <rect x="454" y="102" width="208" height="52" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="558" y="120" fill="white"   font-size="10" font-weight="600" text-anchor="middle">PARSER  [L]</text>
+  <text x="558" y="136" fill="#a78bfa" font-size="8"  text-anchor="middle">winevt-forensic</text>
 
-  <!-- ════════════════════════════════════════════════════════
-       PARSER ROW  y=126, h=82, bottom=208
-       ════════════════════════════════════════════════════════ -->
+  <rect x="672" y="102" width="208" height="52" rx="6" fill="#0f172a"/>
+  <rect x="672" y="102" width="208" height="52" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="776" y="120" fill="white"   font-size="10" font-weight="600" text-anchor="middle">PARSER  [Q]</text>
+  <text x="776" y="136" fill="#a78bfa" font-size="8"  text-anchor="middle">velociraptor-parser</text>
 
-  <!-- [P] PARSER -->
-  <rect x="18"  y="126" width="210" height="82" rx="6" fill="#0f172a"/>
-  <rect x="18"  y="126" width="210" height="82" rx="6"
-        fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-  <text x="123" y="143" fill="white"   font-size="9" font-weight="600" text-anchor="middle">PARSER  [P]</text>
-  <text x="123" y="156" fill="#a78bfa" font-size="8"  text-anchor="middle">browser-forensic · srum-forensic</text>
-  <text x="123" y="169" fill="#64748b" font-size="7"  text-anchor="middle">mft-forensic · usnjrnl-forensic</text>
-  <text x="123" y="182" fill="#64748b" font-size="7"  text-anchor="middle">reg · prefetch [planned]</text>
-  <text x="123" y="201" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">Path or &amp;[u8] — medium-agnostic</text>
+  <rect x="890" y="102" width="208" height="52" rx="6" fill="#0f172a"/>
+  <rect x="890" y="102" width="208" height="52" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="994" y="120" fill="white"   font-size="10" font-weight="600" text-anchor="middle">PARSER  [C]</text>
+  <text x="994" y="136" fill="#a78bfa" font-size="8"  text-anchor="middle">git-forensic · sigstore-forensic</text>
 
-  <!-- [M] OS STRUCTURE -->
-  <rect x="236" y="126" width="210" height="82" rx="6" fill="#0f172a"/>
-  <rect x="236" y="126" width="210" height="82" rx="6"
-        fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-  <text x="341" y="143" fill="white"   font-size="9" font-weight="600" text-anchor="middle">OS STRUCTURE  [M]</text>
-  <text x="341" y="156" fill="#a78bfa" font-size="8"  text-anchor="middle">memf-windows</text>
-  <text x="341" y="169" fill="#64748b" font-size="7"  text-anchor="middle">EPROCESS · VAD · DPAPI · ETW</text>
-  <text x="341" y="182" fill="#64748b" font-size="7"  text-anchor="middle">DKOM · memf-linux [planned]</text>
-  <text x="341" y="201" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">kernel objects → calls PARSER on bytes</text>
+  <!-- ════ NAVIGATION ROW  y=162, h=58, bottom=220 ════ -->
 
-  <!-- [L] PARSER -->
-  <rect x="454" y="126" width="210" height="82" rx="6" fill="#0f172a"/>
-  <rect x="454" y="126" width="210" height="82" rx="6"
-        fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-  <text x="559" y="143" fill="white"   font-size="9" font-weight="600" text-anchor="middle">PARSER  [L]</text>
-  <text x="559" y="156" fill="#a78bfa" font-size="8"  text-anchor="middle">winevt-forensic (EventRecord)</text>
-  <text x="559" y="169" fill="#64748b" font-size="7"  text-anchor="middle">BinXML field decode</text>
-  <text x="559" y="182" fill="#64748b" font-size="7"  text-anchor="middle">journal-forensic [planned]</text>
-  <text x="559" y="201" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">same crate as LOG FORMAT below</text>
+  <rect x="18"  y="162" width="208" height="58" rx="6" fill="#0f172a"/>
+  <rect x="18"  y="162" width="208" height="58" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="122" y="181" fill="white"   font-size="10" font-weight="600" text-anchor="middle">FILESYSTEM  [P]</text>
+  <text x="122" y="196" fill="#34d399" font-size="8"  text-anchor="middle">ext4fs-forensic · 4n6mount</text>
+  <text x="122" y="211" fill="#64748b" font-size="7"  text-anchor="middle">name → inode → block</text>
 
-  <!-- [Q] PARSER -->
-  <rect x="672" y="126" width="210" height="82" rx="6" fill="#0f172a"/>
-  <rect x="672" y="126" width="210" height="82" rx="6"
-        fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-  <text x="777" y="143" fill="white"   font-size="9" font-weight="600" text-anchor="middle">PARSER  [Q]</text>
-  <text x="777" y="156" fill="#a78bfa" font-size="8"  text-anchor="middle">velociraptor-parser</text>
-  <text x="777" y="169" fill="#64748b" font-size="7"  text-anchor="middle">VQL result rows → typed evidence</text>
-  <text x="777" y="182" fill="#64748b" font-size="7"  text-anchor="middle">WQL / OSQuery [planned]</text>
-  <text x="777" y="201" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">result rows from QUERY ENGINE below</text>
+  <rect x="236" y="162" width="208" height="58" rx="6" fill="#0f172a"/>
+  <rect x="236" y="162" width="208" height="58" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="340" y="181" fill="white"   font-size="10" font-weight="600" text-anchor="middle">PAGING  [M]</text>
+  <text x="340" y="196" fill="#34d399" font-size="8"  text-anchor="middle">memf-hw</text>
+  <text x="340" y="211" fill="#64748b" font-size="7"  text-anchor="middle">PID → EPROCESS → VA → PA</text>
 
-  <!-- [C] PARSER -->
-  <rect x="890" y="126" width="210" height="82" rx="6" fill="#0f172a"/>
-  <rect x="890" y="126" width="210" height="82" rx="6"
-        fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-  <text x="995" y="143" fill="white"   font-size="9" font-weight="600" text-anchor="middle">PARSER  [C]</text>
-  <text x="995" y="156" fill="#a78bfa" font-size="8"  text-anchor="middle">git-forensic · sigstore-forensic</text>
-  <text x="995" y="169" fill="#64748b" font-size="7"  text-anchor="middle">commit/blob/tree provenance</text>
-  <text x="995" y="182" fill="#64748b" font-size="7"  text-anchor="middle">transparency log entries</text>
-  <text x="995" y="201" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">cas-forensic [planned]</text>
+  <rect x="454" y="162" width="208" height="58" rx="6" fill="#0f172a"/>
+  <rect x="454" y="162" width="208" height="58" rx="6" fill="rgba(251,146,60,0.3)" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="558" y="181" fill="white"   font-size="10" font-weight="600" text-anchor="middle">LOG FORMAT  [L]</text>
+  <text x="558" y="196" fill="#fb923c" font-size="8"  text-anchor="middle">winevt-forensic</text>
+  <text x="558" y="211" fill="#64748b" font-size="7"  text-anchor="middle">timestamp → record → field</text>
 
-  <!-- ════════════════════════════════════════════════════════
-       NAVIGATION ROW  y=216, h=92, bottom=308
-       ════════════════════════════════════════════════════════ -->
+  <rect x="672" y="162" width="208" height="58" rx="6" fill="#0f172a"/>
+  <rect x="672" y="162" width="208" height="58" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+  <text x="776" y="181" fill="white"   font-size="10" font-weight="600" text-anchor="middle">QUERY ENGINE  [Q]</text>
+  <text x="776" y="196" fill="#22d3ee" font-size="8"  text-anchor="middle">issen-remote-access</text>
+  <text x="776" y="211" fill="#64748b" font-size="7"  text-anchor="middle">(endpoint, query) → rows</text>
 
-  <!-- [P] FILESYSTEM -->
-  <rect x="18"  y="216" width="210" height="92" rx="6" fill="#0f172a"/>
-  <rect x="18"  y="216" width="210" height="92" rx="6"
-        fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
-  <text x="123" y="233" fill="white"   font-size="9" font-weight="600" text-anchor="middle">FILESYSTEM  [P]</text>
-  <text x="123" y="246" fill="#34d399" font-size="8"  text-anchor="middle">ext4fs-forensic · 4n6mount</text>
-  <text x="123" y="259" fill="#34d399" font-size="8"  text-anchor="middle">FUSE bridge — transparent path</text>
-  <text x="123" y="272" fill="#64748b" font-size="7"  text-anchor="middle">ntfs-forensic [planned]</text>
-  <text x="123" y="285" fill="#64748b" font-size="7"  text-anchor="middle">apfs-forensic [planned]</text>
-  <text x="123" y="303" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">name → inode → block → bytes</text>
+  <rect x="890" y="162" width="208" height="58" rx="6" fill="#0f172a"/>
+  <rect x="890" y="162" width="208" height="58" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+  <text x="994" y="181" fill="white"   font-size="10" font-weight="600" text-anchor="middle">GRAPH NAV  [C]</text>
+  <text x="994" y="196" fill="#22d3ee" font-size="8"  text-anchor="middle">cas-forensic · git-forensic</text>
+  <text x="994" y="211" fill="#64748b" font-size="7"  text-anchor="middle">hash → blob → content graph</text>
 
-  <!-- [M] PAGING -->
-  <rect x="236" y="216" width="210" height="92" rx="6" fill="#0f172a"/>
-  <rect x="236" y="216" width="210" height="92" rx="6"
-        fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
-  <text x="341" y="233" fill="white"   font-size="9" font-weight="600" text-anchor="middle">PAGING  [M]</text>
-  <text x="341" y="246" fill="#34d399" font-size="8"  text-anchor="middle">memf-hw</text>
-  <text x="341" y="259" fill="#34d399" font-size="8"  text-anchor="middle">x86_64 PML4/PAE · AArch64</text>
-  <text x="341" y="272" fill="#64748b" font-size="7"  text-anchor="middle">page-table walk · ObjectReader</text>
-  <text x="341" y="285" fill="#64748b" font-size="7"  text-anchor="middle">symbol-based kernel struct access</text>
-  <text x="341" y="303" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">PID → EPROCESS → VA → PA</text>
-
-  <!-- [L] LOG FORMAT -->
-  <rect x="454" y="216" width="210" height="92" rx="6" fill="#0f172a"/>
-  <rect x="454" y="216" width="210" height="92" rx="6"
-        fill="rgba(251,146,60,0.3)" stroke="#fb923c" stroke-width="1.5"/>
-  <text x="559" y="233" fill="white"   font-size="9" font-weight="600" text-anchor="middle">LOG FORMAT  [L]</text>
-  <text x="559" y="246" fill="#fb923c" font-size="8"  text-anchor="middle">winevt-forensic (EVTX nav)</text>
-  <text x="559" y="259" fill="#fb923c" font-size="8"  text-anchor="middle">EVTX chunk seek by record ID</text>
-  <text x="559" y="272" fill="#64748b" font-size="7"  text-anchor="middle">journal-forensic [planned]</text>
-  <text x="559" y="285" fill="#64748b" font-size="7"  text-anchor="middle">zeek · tracev3 [planned]</text>
-  <text x="559" y="303" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">timestamp → boundary → field</text>
-
-  <!-- [Q] QUERY ENGINE -->
-  <rect x="672" y="216" width="210" height="92" rx="6" fill="#0f172a"/>
-  <rect x="672" y="216" width="210" height="92" rx="6"
-        fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
-  <text x="777" y="233" fill="white"   font-size="9" font-weight="600" text-anchor="middle">QUERY ENGINE  [Q]</text>
-  <text x="777" y="246" fill="#22d3ee" font-size="8"  text-anchor="middle">issen-remote-access</text>
-  <text x="777" y="259" fill="#22d3ee" font-size="8"  text-anchor="middle">Velociraptor VQL dispatch</text>
-  <text x="777" y="272" fill="#64748b" font-size="7"  text-anchor="middle">WQL · OSQuery [planned]</text>
-  <text x="777" y="285" fill="#64748b" font-size="7"  text-anchor="middle">LOLRMM 400+ tool definitions</text>
-  <text x="777" y="303" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">(endpoint, query, cursor) → rows</text>
-
-  <!-- [C] GRAPH NAV -->
-  <rect x="890" y="216" width="210" height="92" rx="6" fill="#0f172a"/>
-  <rect x="890" y="216" width="210" height="92" rx="6"
-        fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
-  <text x="995" y="233" fill="white"   font-size="9" font-weight="600" text-anchor="middle">GRAPH NAV  [C]</text>
-  <text x="995" y="246" fill="#22d3ee" font-size="8"  text-anchor="middle">cas-forensic [planned]</text>
-  <text x="995" y="259" fill="#22d3ee" font-size="8"  text-anchor="middle">git-forensic · sigstore-forensic</text>
-  <text x="995" y="272" fill="#64748b" font-size="7"  text-anchor="middle">Merkle DAG hash traversal</text>
-  <text x="995" y="285" fill="#64748b" font-size="7"  text-anchor="middle">OCI · IPFS [planned]</text>
-  <text x="995" y="303" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">hash → blob → content graph</text>
-
-  <!-- ════════════════════════════════════════════════════════
-       CONTAINER ROW  y=316, h=70, bottom=386
-       ════════════════════════════════════════════════════════ -->
+  <!-- ════ CONTAINER ROW  y=228, h=46, bottom=274 ════ -->
 
   <!-- [P] ewf -->
-  <rect x="18"  y="316" width="210" height="70" rx="6" fill="#0f172a"/>
-  <rect x="18"  y="316" width="210" height="70" rx="6"
-        fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
-  <text x="123" y="333" fill="white"   font-size="9" font-weight="600" text-anchor="middle">CONTAINER  [P]</text>
-  <text x="123" y="346" fill="#94a3b8" font-size="8"  text-anchor="middle">ewf  —  E01 / EWF</text>
-  <text x="123" y="359" fill="#64748b" font-size="7"  text-anchor="middle">segments → raw sector stream</text>
-  <text x="123" y="378" fill="#64748b" font-size="7"  text-anchor="middle">hash verify · aff4 [planned]</text>
+  <rect x="18"  y="228" width="208" height="46" rx="6" fill="#0f172a"/>
+  <rect x="18"  y="228" width="208" height="46" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="122" y="246" fill="white"   font-size="10" font-weight="600" text-anchor="middle">CONTAINER  [P]</text>
+  <text x="122" y="261" fill="#94a3b8" font-size="8"  text-anchor="middle">ewf  (E01 / EWF)</text>
 
   <!-- [M] memf-format -->
-  <rect x="236" y="316" width="210" height="70" rx="6" fill="#0f172a"/>
-  <rect x="236" y="316" width="210" height="70" rx="6"
-        fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
-  <text x="341" y="333" fill="white"   font-size="9" font-weight="600" text-anchor="middle">CONTAINER  [M]</text>
-  <text x="341" y="346" fill="#94a3b8" font-size="8"  text-anchor="middle">memf-format</text>
-  <text x="341" y="359" fill="#64748b" font-size="7"  text-anchor="middle">WinPMEM · raw · hiberfil.sys</text>
-  <text x="341" y="378" fill="#64748b" font-size="7"  text-anchor="middle">ELF core → raw page stream</text>
+  <rect x="236" y="228" width="208" height="46" rx="6" fill="#0f172a"/>
+  <rect x="236" y="228" width="208" height="46" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="340" y="246" fill="white"   font-size="10" font-weight="600" text-anchor="middle">CONTAINER  [M]</text>
+  <text x="340" y="261" fill="#94a3b8" font-size="8"  text-anchor="middle">memf-format</text>
 
-  <!-- [L] no outer container -->
-  <rect x="454" y="316" width="210" height="70" rx="6" fill="#0f172a"/>
-  <rect x="454" y="316" width="210" height="70" rx="6"
-        fill="rgba(30,41,59,0.08)" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="559" y="344" fill="#475569" font-size="8"  font-style="italic" text-anchor="middle">no outer container</text>
-  <text x="559" y="358" fill="#475569" font-size="7"  text-anchor="middle">LOG FORMAT handles its own</text>
-  <text x="559" y="372" fill="#475569" font-size="7"  text-anchor="middle">binary framing internally</text>
+  <!-- [L][Q][C] merged — no outer container -->
+  <rect x="454" y="228" width="644" height="46" rx="6" fill="#0f172a"/>
+  <rect x="454" y="228" width="644" height="46" rx="6"
+        fill="rgba(30,41,59,0.08)" stroke="#475569" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="776" y="248" fill="#475569" font-size="9"  font-style="italic" text-anchor="middle">no outer container</text>
+  <text x="776" y="264" fill="#475569" font-size="7"  text-anchor="middle">[L] [Q] [C] — LOG FORMAT / QUERY ENGINE / GRAPH NAV are the entry points</text>
 
-  <!-- [Q] no outer container -->
-  <rect x="672" y="316" width="210" height="70" rx="6" fill="#0f172a"/>
-  <rect x="672" y="316" width="210" height="70" rx="6"
-        fill="rgba(30,41,59,0.08)" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="777" y="344" fill="#475569" font-size="8"  font-style="italic" text-anchor="middle">no outer container</text>
-  <text x="777" y="358" fill="#475569" font-size="7"  text-anchor="middle">endpoint IS the entry point</text>
-  <text x="777" y="372" fill="#475569" font-size="7"  text-anchor="middle">query produces; not retrieved</text>
+  <!-- ════ [H] STATE-HISTORY STRIP  y=282, h=50, bottom=332 ════ -->
 
-  <!-- [C] no outer container -->
-  <rect x="890" y="316" width="210" height="70" rx="6" fill="#0f172a"/>
-  <rect x="890" y="316" width="210" height="70" rx="6"
-        fill="rgba(30,41,59,0.08)" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="995" y="344" fill="#475569" font-size="8"  font-style="italic" text-anchor="middle">no outer container</text>
-  <text x="995" y="358" fill="#475569" font-size="7"  text-anchor="middle">hash IS the entry point</text>
-  <text x="995" y="372" fill="#475569" font-size="7"  text-anchor="middle">[C^H] ≅ [C]: CAS is fixed point</text>
-
-  <!-- ════════════════════════════════════════════════════════
-       [H] STATE-HISTORY STRIP  y=394, h=54, bottom=448
-       ════════════════════════════════════════════════════════ -->
-
-  <rect x="12" y="394" width="1096" height="54" rx="6" fill="#0f172a"/>
-  <rect x="12" y="394" width="1096" height="54" rx="6"
+  <rect x="12" y="282" width="1096" height="50" rx="6" fill="#0f172a"/>
+  <rect x="12" y="282" width="1096" height="50" rx="6"
         fill="rgba(251,146,60,0.12)" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="5,3"/>
-  <text x="20" y="392" fill="#fb923c" font-size="8" font-weight="600">[H] STATE-HISTORY — cross-cutting functor: lifts each primitive to a time-indexed variant</text>
+  <text x="20" y="280" fill="#fb923c" font-size="8" font-weight="600">[H] STATE-HISTORY FUNCTOR — cross-cutting: not a 6th primitive, but a time-indexed lift of each existing one</text>
 
-  <!-- Per-column [H] entries -->
-  <text x="123" y="412" fill="#fb923c" font-size="8"  font-weight="600" text-anchor="middle">[P^H]  vss-history</text>
-  <text x="123" y="426" fill="#64748b" font-size="7"  text-anchor="middle">VSS · APFS snapshots</text>
-  <text x="123" y="440" fill="#64748b" font-size="7"  text-anchor="middle">[planned]</text>
+  <text x="560" y="304" fill="#fb923c" font-size="11" font-weight="600" text-anchor="middle">[P^H]  ·  [M^H]  ·  [L^H]  ·  [Q^H]  ·  [C^H] ≅ [C]</text>
+  <text x="560" y="322" fill="#64748b" font-size="8"  text-anchor="middle">vss-history · mem-history · log-history · query-history · CAS is the fixed point</text>
 
-  <text x="341" y="412" fill="#fb923c" font-size="8"  font-weight="600" text-anchor="middle">[M^H]  mem-history</text>
-  <text x="341" y="426" fill="#64748b" font-size="7"  text-anchor="middle">hiberfil chain</text>
-  <text x="341" y="440" fill="#64748b" font-size="7"  text-anchor="middle">VMware snapshots [planned]</text>
+  <!-- ════ KNOWLEDGE  y=340, h=54, bottom=394 ════ -->
 
-  <text x="559" y="412" fill="#fb923c" font-size="8"  font-weight="600" text-anchor="middle">[L^H]  log-history</text>
-  <text x="559" y="426" fill="#64748b" font-size="7"  text-anchor="middle">journald sealed epochs</text>
-  <text x="559" y="440" fill="#64748b" font-size="7"  text-anchor="middle">rotated logs [planned]</text>
-
-  <text x="777" y="412" fill="#fb923c" font-size="8"  font-weight="600" text-anchor="middle">[Q^H]  query-history</text>
-  <text x="777" y="426" fill="#64748b" font-size="7"  text-anchor="middle">point-in-time osquery</text>
-  <text x="777" y="440" fill="#64748b" font-size="7"  text-anchor="middle">exports [planned]</text>
-
-  <text x="995" y="412" fill="#fb923c" font-size="8"  font-weight="600" text-anchor="middle">[C^H] ≅ [C]</text>
-  <text x="995" y="426" fill="#fb923c" font-size="7"  text-anchor="middle">CAS is the fixed point</text>
-  <text x="995" y="440" fill="#64748b" font-size="7"  text-anchor="middle">git already encodes history</text>
-
-  <!-- ════════════════════════════════════════════════════════
-       KNOWLEDGE  y=460, h=64, bottom=524
-       ════════════════════════════════════════════════════════ -->
-
-  <!-- forensicnomicon (left half) -->
-  <rect x="12"  y="460" width="544" height="64" rx="6" fill="#0f172a"/>
-  <rect x="12"  y="460" width="544" height="64" rx="6"
+  <!-- forensicnomicon -->
+  <rect x="12"  y="340" width="544" height="54" rx="6" fill="#0f172a"/>
+  <rect x="12"  y="340" width="544" height="54" rx="6"
         fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="284" y="478" fill="white"   font-size="11" font-weight="600" text-anchor="middle">forensicnomicon</text>
-  <text x="284" y="491" fill="#fbbf24" font-size="8"  text-anchor="middle">magic bytes · format offsets · ESE/EVTX/NTFS field schemas</text>
-  <text x="284" y="503" fill="#64748b" font-size="7"  text-anchor="middle">zero-dep · zero-I/O · compile-time artifact specs</text>
-  <text x="284" y="517" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">KNOWLEDGE: format constants for all layers above</text>
+  <text x="284" y="359" fill="white"   font-size="11" font-weight="600" text-anchor="middle">forensicnomicon</text>
+  <text x="284" y="374" fill="#fbbf24" font-size="8"  text-anchor="middle">magic bytes · format offsets · field schemas</text>
+  <text x="284" y="387" fill="#64748b" font-size="7"  text-anchor="middle">zero-dep · zero-I/O · compile-time format constants for all layers above</text>
 
-  <!-- state-history-forensic (right half) -->
-  <rect x="564" y="460" width="544" height="64" rx="6" fill="#0f172a"/>
-  <rect x="564" y="460" width="544" height="64" rx="6"
+  <!-- state-history-forensic -->
+  <rect x="564" y="340" width="544" height="54" rx="6" fill="#0f172a"/>
+  <rect x="564" y="340" width="544" height="54" rx="6"
         fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="836" y="478" fill="white"   font-size="11" font-weight="600" text-anchor="middle">state-history-forensic</text>
-  <text x="836" y="491" fill="#fbbf24" font-size="8"  text-anchor="middle">HistoricalSource · TemporalCohort&lt;H&gt; · ClockProvenance · ArtifactRef</text>
-  <text x="836" y="503" fill="#64748b" font-size="7"  text-anchor="middle">EpochTag · LsnKind · MaterializationSafety · IdentityDiscipline</text>
-  <text x="836" y="517" fill="#64748b" font-size="6"  font-style="italic" text-anchor="middle">KNOWLEDGE: zero-dep type/trait definitions for [H] functor</text>
+  <text x="836" y="359" fill="white"   font-size="11" font-weight="600" text-anchor="middle">state-history-forensic</text>
+  <text x="836" y="374" fill="#fbbf24" font-size="8"  text-anchor="middle">HistoricalSource · TemporalCohort&lt;H&gt; · ClockProvenance · ArtifactRef</text>
+  <text x="836" y="387" fill="#64748b" font-size="7"  text-anchor="middle">zero-dep · type/trait definitions shared by all [H] implementations</text>
 
-  <!-- ════════════════════════════════════════════════════════
-       LEGEND — outside all boundaries (KNOWLEDGE ends y=524)
-       ════════════════════════════════════════════════════════ -->
+  <!-- ════ LEGEND  (below KNOWLEDGE which ends at y=394) ════ -->
 
-  <line x1="12" y1="536" x2="1108" y2="536" stroke="#1e293b" stroke-width="1"/>
-  <text x="12" y="549" fill="#64748b" font-size="8">LEGEND:</text>
+  <line x1="12" y1="406" x2="1108" y2="406" stroke="#1e293b" stroke-width="1"/>
+  <text x="12" y="420" fill="#64748b" font-size="8">LEGEND:</text>
 
-  <!-- Row 1 -->
-  <rect x="74"  y="540" width="11" height="11" rx="2" fill="rgba(136,19,55,0.4)"  stroke="#fb7185"  stroke-width="1"/>
-  <text x="91"  y="549" fill="#94a3b8" font-size="8">Orchestration / Security</text>
+  <rect x="74"  y="411" width="11" height="11" rx="2" fill="rgba(136,19,55,0.4)"  stroke="#fb7185"  stroke-width="1"/>
+  <text x="91"  y="420" fill="#94a3b8" font-size="8">Orchestration</text>
 
-  <rect x="256" y="540" width="11" height="11" rx="2" fill="rgba(76,29,149,0.4)"  stroke="#a78bfa"  stroke-width="1"/>
-  <text x="273" y="549" fill="#94a3b8" font-size="8">Parser / OS Structure</text>
+  <rect x="196" y="411" width="11" height="11" rx="2" fill="rgba(76,29,149,0.4)"  stroke="#a78bfa"  stroke-width="1"/>
+  <text x="213" y="420" fill="#94a3b8" font-size="8">Parser / OS Structure</text>
 
-  <rect x="424" y="540" width="11" height="11" rx="2" fill="rgba(6,78,59,0.4)"    stroke="#34d399"  stroke-width="1"/>
-  <text x="441" y="549" fill="#94a3b8" font-size="8">Filesystem / Paging</text>
+  <rect x="370" y="411" width="11" height="11" rx="2" fill="rgba(6,78,59,0.4)"    stroke="#34d399"  stroke-width="1"/>
+  <text x="387" y="420" fill="#94a3b8" font-size="8">Filesystem / Paging</text>
 
-  <rect x="582" y="540" width="11" height="11" rx="2" fill="rgba(251,146,60,0.3)" stroke="#fb923c"  stroke-width="1"/>
-  <text x="599" y="549" fill="#94a3b8" font-size="8">Log Format / [H] State-History</text>
+  <rect x="538" y="411" width="11" height="11" rx="2" fill="rgba(251,146,60,0.3)" stroke="#fb923c"  stroke-width="1"/>
+  <text x="555" y="420" fill="#94a3b8" font-size="8">Log Format / [H] State-History</text>
 
-  <rect x="798" y="540" width="11" height="11" rx="2" fill="rgba(8,51,68,0.4)"    stroke="#22d3ee"  stroke-width="1"/>
-  <text x="815" y="549" fill="#94a3b8" font-size="8">Query Engine / Graph Nav / CLI</text>
+  <rect x="738" y="411" width="11" height="11" rx="2" fill="rgba(8,51,68,0.4)"    stroke="#22d3ee"  stroke-width="1"/>
+  <text x="755" y="420" fill="#94a3b8" font-size="8">Query Engine / Graph Nav</text>
 
-  <!-- Row 2 -->
-  <rect x="74"  y="558" width="11" height="11" rx="2" fill="rgba(30,41,59,0.5)"   stroke="#94a3b8"  stroke-width="1"/>
-  <text x="91"  y="567" fill="#94a3b8" font-size="8">Container / Wrappers</text>
-
-  <rect x="256" y="558" width="11" height="11" rx="2" fill="rgba(120,53,15,0.3)"  stroke="#fbbf24"  stroke-width="1"/>
-  <text x="273" y="567" fill="#94a3b8" font-size="8">Knowledge (zero-dep)</text>
-
-  <rect x="424" y="558" width="11" height="11" rx="2" fill="rgba(30,41,59,0.08)"  stroke="#475569"  stroke-width="1" stroke-dasharray="3,2"/>
-  <text x="441" y="567" fill="#94a3b8" font-size="8">No outer container</text>
-
-  <line x1="582" y1="563" x2="610" y2="563" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arr)"/>
-  <text x="616" y="567" fill="#94a3b8" font-size="8">Calls / depends-on (↓ = higher depends on lower)</text>
+  <rect x="912" y="411" width="11" height="11" rx="2" fill="rgba(120,53,15,0.3)"  stroke="#fbbf24"  stroke-width="1"/>
+  <text x="929" y="420" fill="#94a3b8" font-size="8">Knowledge (zero-dep)</text>
 
 </svg>
 </div>
@@ -461,10 +267,9 @@
     <ul>
       <li>• [P] Persistent: name → inode → block</li>
       <li>• [M] Memory: PID → EPROCESS → VA → PA</li>
-      <li>• [L] Log: timestamp → boundary → field</li>
+      <li>• [L] Log: timestamp → record → field</li>
       <li>• [Q] Query: endpoint + cursor → result_set</li>
       <li>• [C] CAS: hash → blob → content graph</li>
-      <li>• PARSER is medium-agnostic (Path or &amp;[u8])</li>
     </ul>
   </div>
   <div class="card">
@@ -473,12 +278,11 @@
       <h3>[H] State-History Functor</h3>
     </div>
     <ul>
-      <li>• Cross-cutting operator — not a 6th primitive</li>
-      <li>• Lifts each [X] to a time-indexed [X^H] variant</li>
+      <li>• Cross-cutting — not a 6th primitive</li>
+      <li>• Lifts each [X] to a time-indexed [X^H]</li>
       <li>• [C^H] ≅ [C]: CAS is the fixed point</li>
-      <li>• TemporalCohort&lt;H&gt; generic — no trait-object cost</li>
-      <li>• Destructive safety uses &amp;mut WorkingCopy (type-safe)</li>
-      <li>• ClockProvenance: 4-axis trust model</li>
+      <li>• TemporalCohort&lt;H&gt; generic — no overhead</li>
+      <li>• Shared traits from state-history-forensic</li>
     </ul>
   </div>
   <div class="card">
@@ -487,18 +291,17 @@
       <h3>KNOWLEDGE Layer</h3>
     </div>
     <ul>
-      <li>• forensicnomicon: format specs — zero I/O</li>
-      <li>• state-history-forensic: [H] type/trait defs</li>
-      <li>• Zero external dependencies (compile-time only)</li>
-      <li>• CONTAINER depends on KNOWLEDGE only</li>
-      <li>• PARSER depends on KNOWLEDGE only</li>
+      <li>• forensicnomicon: format constants, zero I/O</li>
+      <li>• state-history-forensic: [H] trait defs</li>
+      <li>• Zero external dependencies</li>
+      <li>• CONTAINER and PARSER depend on it</li>
       <li>• ORCHESTRATION wires all five paths</li>
     </ul>
   </div>
 </div>
 
 <footer>
-  Issen &nbsp;·&nbsp; Rust forensic triage &nbsp;·&nbsp; 30+ crate ecosystem &nbsp;·&nbsp; forensicnomicon &nbsp;·&nbsp; state-history-forensic &nbsp;·&nbsp; 2026-05-14
+  Issen &nbsp;·&nbsp; Rust forensic triage &nbsp;·&nbsp; 2026-05-14
 </footer>
 
 </body>
