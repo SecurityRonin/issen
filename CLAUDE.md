@@ -21,6 +21,9 @@ multiple layers. Repos are noted in brackets.
 KNOWLEDGE
   forensicnomicon          zero-dep, compile-time artifact specs, format constants
   [repo: forensicnomicon]
+  state-history-forensic   zero-dep, [H] functor traits: HistoricalSource,
+                           TemporalCohort<H>, ClockProvenance, ArtifactRef, …
+  [repo: state-history-forensic]
 
 CONTAINER                  decode a raw source format → addressable data stream
   ewf                      E01/EWF → raw sector stream          [repo: ewf]
@@ -63,6 +66,16 @@ CONTAINER                  decode a raw source format → addressable data strea
   [Q] and [C] have no container in the traditional sense: the endpoint or hash
   store IS the entry point.
 
+  [H] State-History (cross-cutting functor — NOT a vertical tier)
+    [H] lifts each base primitive to a time-indexed variant:
+    [P^H] disk-history     VSS, APFS snapshots, Time Machine, btrfs
+                           [vss-history, apfs-snapshot-history — planned]
+    [M^H] mem-history      hiberfil chain, VMware memory snapshots [planned]
+    [L^H] log-history      journald sealed epochs, rotated logs [planned]
+    [Q^H] query-history    point-in-time osquery exports [planned]
+    [C^H] ≅ [C]            CAS is the fixed point: git already encodes history
+    Shared traits:         state-history-forensic [repo: state-history-forensic]
+
 PARSER                     interpret artifact records → forensic meaning
   browser-forensic         browser artifact files / SQLite pages → BrowserEvent
   winevt-forensic          EVTX records → EventRecord  (also in LOG FORMAT above)
@@ -86,6 +99,9 @@ ORCHESTRATION
   and produce result-row types that feed into PARSER or directly into ORCHESTRATION
 - GRAPH NAVIGATION crates (cas-forensic, git-forensic) depend on KNOWLEDGE and
   produce CAS event types that feed into PARSER or directly into ORCHESTRATION
+- `[H]` crates depend on state-history-forensic (KNOWLEDGE) plus whichever layer they
+  observe (FILESYSTEM for vss-history, PARSER for wal-history, etc.) — they may depend
+  on any layer below ORCHESTRATION as needed, and export `TemporalCohort<H>` upward
 - ORCHESTRATION is the primary wiring point between all layers
 
 **The five navigation primitives:**
@@ -118,6 +134,14 @@ located the artifact.
 - Magic bytes, record markers, format header offsets (ESE page, EVTX chunk, etc.)
 - Field schemas and invariants for application-level formats
 - NO parsing algorithms, NO file I/O, NO binary deserialization
+
+**state-history-forensic:**
+- `HistoricalSource` trait, `TemporalCohort<H>`, `TemporalState<H>` generics
+- `ArtifactRef` + `IdentityClaim` multi-facet identity; `IdentityDiscipline` selector
+- `ClockProvenance` with 4 orthogonal axes (source / trust_grade / tamper_resistance / ordering_only)
+- `EpochTag`, `LsnKind`, `CohortTopology`, `MaterializationSafety`
+- `AcquisitionProtocol` and `StateMaterializer` trait boundaries
+- NO parsing, NO file I/O; zero external deps; pure type/trait definitions
 
 **CONTAINER crates** (ewf, memf-format):
 - Decode the outer container/dump format to expose a raw addressable stream
@@ -193,3 +217,4 @@ tracev3-forensic [planned], zeek-forensic [planned], cloudtrail-src [planned]):
 8. **"Does this correlate findings or drive the UX?"** → `Issen`
 9. **"Does this execute a live query against an endpoint and capture the result?"** → QUERY ENGINE (`issen-remote-access`, `velociraptor-parser`)
 10. **"Does this navigate a content-addressed store by hash (Merkle DAG)?"** → GRAPH NAVIGATION (`cas-forensic`, `git-forensic`, `sigstore-forensic`)
+11. **"Does this enumerate the temporal cohort of states for an artifact?"** → `[H]` state-history layer (`vss-history`, `wal-history`, `git-history`, etc.) sharing types from `state-history-forensic`

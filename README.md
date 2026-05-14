@@ -165,6 +165,7 @@ Issen is the thin correlation layer on top of a family of deep forensic librarie
 | Crate | Source | Layer | Description |
 |---|---|---|---|
 | [forensicnomicon](https://github.com/SecurityRonin/forensicnomicon) | all | Knowledge | Zero-dep compile-time artifact specs, magic bytes, format constants |
+| [state-history-forensic](https://github.com/SecurityRonin/state-history-forensic) | `[H]` | Knowledge | Zero-dep `[H]` functor traits: `HistoricalSource`, `TemporalCohort<H>`, `ClockProvenance`, multi-facet `ArtifactRef` |
 | [ewf](https://github.com/SecurityRonin/ewf) | [P] | Container | E01/EWF → raw sector stream with hash verification |
 | [ext4fs-forensic](https://github.com/SecurityRonin/ext4fs-forensic) | [P] | Filesystem | ext4 sector stream → files by path (name → inode → block) |
 | [4n6mount](https://github.com/SecurityRonin/4n6mount) | [P] | Filesystem | FUSE bridge — makes any container+filesystem pair look like a normal path |
@@ -183,6 +184,8 @@ Issen is the thin correlation layer on top of a family of deep forensic librarie
 ```
 KNOWLEDGE
   forensicnomicon        zero-dep, compile-time artifact specs, format constants
+  state-history-forensic zero-dep, [H] functor traits: HistoricalSource,
+                         TemporalCohort<H>, ClockProvenance, ArtifactRef, …
 
 CONTAINER              decode a raw source format → addressable data stream
   ewf                  E01/EWF → raw sector stream
@@ -215,6 +218,14 @@ and navigation primitive:
     issen-remote-access           cas-forensic
     velociraptor-parser           git-forensic [planned]
     WQL / OSQuery [planned]       sigstore-forensic [planned]
+
+[H] State-History (cross-cutting functor — shared traits in state-history-forensic)
+  [P^H] vss-history [planned]            VSS shadow copies, Time Machine, btrfs
+  [P^H] apfs-snapshot-history [planned]  APFS snapshots
+  [M^H] mem-history [planned]            hiberfil chain, VMware memory snapshots
+  [L^H] log-history [planned]            journald sealed epochs, rotated logs
+  [Q^H] query-history [planned]          point-in-time osquery exports
+  [C^H] ≅ [C]                            git already encodes its own history (identity functor)
 
 PARSER                   interpret artifact records → forensic meaning
   browser-forensic       browser artifact files / SQLite pages → BrowserEvent
