@@ -37,6 +37,9 @@ jobs:
           git clone --depth 1 https://github.com/SecurityRonin/srum-forensic.git srum-forensic
           git clone --depth 1 https://github.com/SecurityRonin/usnjrnl-forensic.git usnjrnl-forensic
 
+      - name: Install system dependencies
+        run: sudo apt-get install -y protobuf-compiler
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
