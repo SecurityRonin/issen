@@ -17,9 +17,9 @@
   <rect width="1120" height="570" fill="url(#grid)"/>
 
   <!-- INGESTION LAYER — outer dashed boundary (Parser + Navigation + Container rows) -->
-  <rect x="12" y="96" width="1096" height="228" rx="8"
+  <rect x="12" y="108" width="1096" height="216" rx="8"
         fill="rgba(30,41,59,0.08)" stroke="#94a3b8" stroke-width="1" stroke-dasharray="6,3"/>
-  <text x="20" y="93" fill="#94a3b8" font-size="9" font-weight="600" letter-spacing="0.5">INGESTION LAYER</text>
+  <text x="20" y="105" fill="#94a3b8" font-size="9" font-weight="600" letter-spacing="0.5">INGESTION LAYER</text>
 
   <!-- ════ ARROWS (drawn first, behind all boxes) ════ -->
 
@@ -160,19 +160,14 @@
         fill="rgba(251,146,60,0.1)" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="6,3"/>
   <text x="20" y="346" fill="#fb923c" font-size="9" font-weight="600" letter-spacing="0.5">HISTORY LAYER</text>
 
-  <!-- Implementations -->
-  <text x="560" y="372" fill="#fb923c" font-size="13" font-weight="600" text-anchor="middle">[P^H]  ·  [M^H]  ·  [L^H]  ·  [Q^H]  ·  [C^H] ≅ [C]</text>
-  <text x="560" y="391" fill="#fb923c" font-size="9"  text-anchor="middle">[H] cross-cutting functor — a time-indexed lift of each primitive</text>
-
-  <!-- Separator -->
-  <line x1="28" y1="404" x2="1092" y2="404" stroke="#fb923c" stroke-width="0.5" opacity="0.35"/>
-
-  <!-- state-history-forensic sub-box -->
-  <rect x="18" y="410" width="1090" height="44" rx="6" fill="#0f172a"/>
-  <rect x="18" y="410" width="1090" height="44" rx="6"
+  <!-- state-history-forensic sub-box (fills the full strip interior) -->
+  <rect x="18" y="358" width="1090" height="90" rx="6" fill="#0f172a"/>
+  <rect x="18" y="358" width="1090" height="90" rx="6"
         fill="rgba(120,53,15,0.25)" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="563" y="429" fill="white"   font-size="11" font-weight="600" text-anchor="middle">state-history-forensic</text>
-  <text x="563" y="446" fill="#fbbf24" font-size="9"  text-anchor="middle">HistoricalSource · TemporalCohort&lt;H&gt; · ClockProvenance · ArtifactRef · EpochTag · MaterializationSafety</text>
+  <text x="563" y="374" fill="white"   font-size="11" font-weight="600" text-anchor="middle">state-history-forensic</text>
+  <text x="563" y="390" fill="#fbbf24" font-size="9"  text-anchor="middle">HistoricalSource · TemporalCohort&lt;H&gt; · ClockProvenance · ArtifactRef · EpochTag · MaterializationSafety</text>
+  <text x="563" y="404" fill="#94a3b8" font-size="9"  text-anchor="middle">[P^H]  ·  [M^H]  ·  [L^H]  ·  [Q^H]  ·  [C^H] ≅ [C]</text>
+  <text x="563" y="417" fill="#64748b" font-size="8"  text-anchor="middle">[H] cross-cutting functor — a time-indexed lift of each primitive</text>
 
   <!-- ════ KNOWLEDGE  y=484, h=46, bottom=530 ════ -->
 
