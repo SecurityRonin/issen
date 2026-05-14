@@ -25,6 +25,37 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      # Check out sibling repos that Cargo path-deps reference as "../<repo>"
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: SecurityRonin/forensicnomicon
+          path: ../forensicnomicon
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: SecurityRonin/winevt-forensic
+          path: ../winevt-forensic
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: SecurityRonin/memory-forensic
+          path: ../memory-forensic
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: SecurityRonin/browser-forensic
+          path: ../browser-forensic
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: SecurityRonin/srum-forensic
+          path: ../srum-forensic
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: SecurityRonin/usnjrnl-forensic
+          path: ../usnjrnl-forensic
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
