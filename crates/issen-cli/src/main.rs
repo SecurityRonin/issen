@@ -266,6 +266,25 @@ pub enum Commands {
         format: String,
     },
 
+    /// List process creation events from one or more EVTX files.
+    Processes {
+        /// Directory to search recursively for .evtx files.
+        #[arg(long, value_name = "PATH", num_args = 1..)]
+        evtx_dir: Vec<PathBuf>,
+
+        /// Explicit .evtx file path (can be given multiple times).
+        #[arg(long, value_name = "FILE", num_args = 1..)]
+        evtx_file: Vec<PathBuf>,
+
+        /// Enrich process entries with logon session context.
+        #[arg(long)]
+        link_sessions: bool,
+
+        /// Output JSON instead of a summary table.
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Correlate Windows logon sessions from one or more EVTX files.
     Session {
         /// Directory to search recursively for .evtx files.
@@ -455,6 +474,9 @@ fn main() -> ExitCode {
         ),
         Commands::Srum { srudb_path, format } => {
             commands::srum::run(&srudb_path, &format)
+        }
+        Commands::Processes { evtx_dir, evtx_file, json, link_sessions } => {
+            commands::processes::run(&evtx_dir, &evtx_file, json, link_sessions)
         }
         Commands::Session { evtx_dir, evtx_file, json } => {
             commands::session::run(&evtx_dir, &evtx_file, json)
