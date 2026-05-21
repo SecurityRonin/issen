@@ -2576,6 +2576,59 @@ mod drive_breakdown_tests {
     }
 }
 
+// ── issen processes CLI tests (Step B RED) ───────────────────────────────────
+
+#[test]
+fn processes_subcommand_appears_in_main_help() {
+    issen_cmd()
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("processes"));
+}
+
+#[test]
+fn processes_help_shows_evtx_dir_and_link_sessions() {
+    issen_cmd()
+        .args(["processes", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("evtx-dir"))
+        .stdout(predicate::str::contains("link-sessions"));
+}
+
+#[test]
+fn processes_empty_dir_exits_success_with_json() {
+    let dir = TempDir::new().expect("tmpdir");
+    issen_cmd()
+        .args(["processes", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("processes"));
+}
+
+#[test]
+fn processes_json_output_has_processes_array_and_total_count() {
+    let dir = TempDir::new().expect("tmpdir");
+    let output = issen_cmd()
+        .args(["processes", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .output()
+        .expect("failed to run issen processes");
+
+    assert!(output.status.success(), "exit code must be 0");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout)
+        .expect("stdout must be valid JSON");
+    assert!(
+        parsed.get("processes").and_then(|v| v.as_array()).is_some(),
+        "JSON must have 'processes' array, got: {stdout}"
+    );
+    assert!(
+        parsed.get("total_count").is_some(),
+        "JSON must have 'total_count' field, got: {stdout}"
+    );
+}
+
 // ── issen session CLI tests (Step 4 RED) ─────────────────────────────────────
 
 #[test]
