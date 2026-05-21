@@ -7,6 +7,7 @@
 use std::io::{Seek, SeekFrom};
 use std::path::Path;
 use std::sync::Mutex;
+use std::io::Read;
 
 use issen_core::error::RtError;
 use issen_core::plugin::traits::DataSource;
@@ -43,7 +44,10 @@ impl std::fmt::Debug for DdDataSource {
 impl DdDataSource {
     /// Open a raw disk image file.
     pub fn open(path: &Path) -> Result<Self, DdError> {
-        todo!("implement DdDataSource::open")
+        let reader = dd::DdReader::open(path)
+            .map_err(|dd::DdError::Io(io)| DdError::Io(io))?;
+        let size = reader.virtual_disk_size();
+        Ok(Self { reader: Mutex::new(reader), size })
     }
 }
 
@@ -53,7 +57,17 @@ impl DataSource for DdDataSource {
     }
 
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> Result<usize, RtError> {
-        todo!("implement DdDataSource::read_at")
+        let mut guard = self.reader.lock().expect("DdDataSource mutex poisoned");
+        guard.seek(SeekFrom::Start(offset)).map_err(RtError::Io)?;
+        let mut total = 0;
+        while total < buf.len() {
+            match guard.read(&mut buf[total..]) {
+                Ok(0) => break,
+                Ok(n) => total += n,
+                Err(e) => return Err(RtError::Io(e)),
+            }
+        }
+        Ok(total)
     }
 }
 

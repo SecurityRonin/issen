@@ -26,9 +26,10 @@ KNOWLEDGE
   [repo: state-history-forensic]
 
 CONTAINER                  decode a raw source format → addressable data stream
-  ewf                      E01/EWF → raw sector stream          [repo: ewf, issen-ewf]
+  ewf                      E01/EWF/Ex01 → raw sector stream     [repo: ewf, issen-ewf]
   vhdx                     VHDX → raw sector stream             [repo: vhdx, issen-vhdx]
-  [aff4, vmdk, raw, ...]   other disk image formats             [planned]
+  dd                       raw/dd/img → flat sector stream      [repo: dd, issen-dd]
+  [vmdk, qcow2, vhd, iso, aff4, dmg, apfs-container]          [planned]
   memf-format              memory dumps (WinPMEM, raw,          [repo: memory-forensic]
                            hiberfil.sys, ELF core) → raw page stream
   [log containers: EVTX binary, journal binary, tracev3, PCAP, cloud API stream]
