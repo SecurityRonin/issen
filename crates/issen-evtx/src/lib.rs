@@ -59,27 +59,27 @@ fn walk_dir(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// Parse EVTX files and run session correlation.
+/// Parse a slice of EVTX file paths into a flat `Vec<EvtxEvent>`.
 ///
-/// Files that cannot be parsed are silently skipped (best-effort).
-pub fn analyse_evtx_sessions(evtx_files: &[PathBuf]) -> anyhow::Result<EvtxSessionSummary> {
+/// Files that cannot be opened or parsed are silently skipped. Filters to the
+/// event IDs relevant to session and process correlation (4624, 4634, 4647,
+/// 4648, 4688, 4689).
+///
+/// Use this when you need raw events for frequency analysis or custom
+/// correlation without running the full session pipeline.
+pub fn parse_evtx_to_events(evtx_files: &[PathBuf]) -> Vec<winevt_core::EvtxEvent> {
     use evtx::{EvtxParser, ParserSettings};
-    use winevt_core::EvtxEvent;
-    use crate::session::{correlate_sessions, extract_process_events, find_lateral_movement, link_processes_to_sessions};
-    use crate::analyze::{frequency_analysis, FrequencyKey};
 
     let settings = ParserSettings::default()
         .separate_json_attributes(true)
         .indent(false);
 
-    let mut all_events: Vec<EvtxEvent> = Vec::new();
-
+    let mut all_events: Vec<winevt_core::EvtxEvent> = Vec::new();
     for path in evtx_files {
         let mut parser = match EvtxParser::from_path(path) {
             Ok(p) => p.with_configuration(settings.clone()),
-            Err(_) => continue, // skip files that can't be opened (e.g. zero-byte)
+            Err(_) => continue,
         };
-
         for record in parser.records_json_value() {
             let rec = match record {
                 Ok(r) => r,
@@ -90,6 +90,17 @@ pub fn analyse_evtx_sessions(evtx_files: &[PathBuf]) -> anyhow::Result<EvtxSessi
             }
         }
     }
+    all_events
+}
+
+/// Parse EVTX files and run session correlation.
+///
+/// Files that cannot be parsed are silently skipped (best-effort).
+pub fn analyse_evtx_sessions(evtx_files: &[PathBuf]) -> anyhow::Result<EvtxSessionSummary> {
+    use crate::session::{correlate_sessions, extract_process_events, find_lateral_movement, link_processes_to_sessions};
+    use crate::analyze::{frequency_analysis, FrequencyKey};
+
+    let all_events = parse_evtx_to_events(evtx_files);
 
     // Correlate logon sessions
     let mut sessions_map = correlate_sessions(&all_events);
