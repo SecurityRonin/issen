@@ -2682,6 +2682,60 @@ fn session_json_output_is_valid_json_with_sessions_array() {
     );
 }
 
+// ── issen frequency CLI tests (Step C RED) ───────────────────────────────────
+
+#[test]
+fn frequency_subcommand_appears_in_main_help() {
+    issen_cmd()
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("frequency"));
+}
+
+#[test]
+fn frequency_help_shows_evtx_dir_cap_and_key() {
+    issen_cmd()
+        .args(["frequency", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("evtx-dir"))
+        .stdout(predicate::str::contains("cap"))
+        .stdout(predicate::str::contains("key"));
+}
+
+#[test]
+fn frequency_empty_dir_exits_success_with_json() {
+    let dir = TempDir::new().expect("tmpdir");
+    issen_cmd()
+        .args(["frequency", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("anomalies"));
+}
+
+#[test]
+fn frequency_json_output_has_anomalies_array_and_total_analyzed() {
+    let dir = TempDir::new().expect("tmpdir");
+    let output = issen_cmd()
+        .args(["frequency", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .output()
+        .expect("failed to run issen frequency");
+
+    assert!(output.status.success(), "exit code must be 0");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout)
+        .expect("stdout must be valid JSON");
+    assert!(
+        parsed.get("anomalies").and_then(|v| v.as_array()).is_some(),
+        "JSON must have 'anomalies' array, got: {stdout}"
+    );
+    assert!(
+        parsed.get("total_analyzed").is_some(),
+        "JSON must have 'total_analyzed' field, got: {stdout}"
+    );
+}
+
 #[test]
 fn session_nonexistent_dir_exits_success_with_empty_sessions() {
     issen_cmd()
