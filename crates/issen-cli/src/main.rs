@@ -265,6 +265,21 @@ pub enum Commands {
         #[arg(long, default_value = "text")]
         format: String,
     },
+
+    /// Correlate Windows logon sessions from one or more EVTX files.
+    Session {
+        /// Directory to search recursively for .evtx files.
+        #[arg(long, value_name = "PATH", num_args = 1..)]
+        evtx_dir: Vec<PathBuf>,
+
+        /// Explicit .evtx file path (can be given multiple times).
+        #[arg(long, value_name = "FILE", num_args = 1..)]
+        evtx_file: Vec<PathBuf>,
+
+        /// Output JSON instead of a summary table.
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -440,6 +455,9 @@ fn main() -> ExitCode {
         ),
         Commands::Srum { srudb_path, format } => {
             commands::srum::run(&srudb_path, &format)
+        }
+        Commands::Session { evtx_dir, evtx_file, json } => {
+            commands::session::run(&evtx_dir, &evtx_file, json)
         }
         Commands::Pivot { action } => match action {
             PivotAction::Sync { cache_dir } => {

@@ -34,6 +34,7 @@ issen-correlation = { workspace = true, features = ["remote"] }
 issen-unpack = { workspace = true }
 issen-mem = { workspace = true }
 issen-evtx = { workspace = true }
+winevt-core = { workspace = true }
 issen-remote-io = { workspace = true, features = ["remote"] }
 srum-parser  = { workspace = true }
 srum-core    = { workspace = true }

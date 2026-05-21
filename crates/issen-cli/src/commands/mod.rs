@@ -8,6 +8,7 @@ pub mod pivot_cmd;
 pub mod remote_access;
 pub mod report;
 pub mod scan;
+pub mod session;
 pub mod srum;
 pub mod supertimeline;
 pub mod timeline;
