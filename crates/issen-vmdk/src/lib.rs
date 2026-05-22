@@ -52,7 +52,9 @@ impl std::fmt::Debug for VmdkDataSource {
 impl VmdkDataSource {
     /// Open a VMDK disk image (monolithic sparse).
     pub fn open(path: &Path) -> Result<Self, VmdkError> {
-        todo!("implement VmdkDataSource::open")
+        let reader = vmdk::VmdkReader::open(path)?;
+        let size = reader.virtual_disk_size();
+        Ok(Self { reader: Mutex::new(reader), size })
     }
 }
 
@@ -60,7 +62,16 @@ impl DataSource for VmdkDataSource {
     fn len(&self) -> u64 { self.size }
 
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> Result<usize, RtError> {
-        todo!("implement VmdkDataSource::read_at")
+        let mut guard = self.reader.lock().expect("mutex poisoned");
+        guard.seek(SeekFrom::Start(offset)).map_err(RtError::Io)?;
+        let mut total = 0;
+        while total < buf.len() {
+            match guard.read(&mut buf[total..]).map_err(RtError::Io)? {
+                0 => break,
+                n => total += n,
+            }
+        }
+        Ok(total)
     }
 }
 
