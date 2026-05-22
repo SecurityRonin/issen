@@ -39,6 +39,7 @@ members = [
     "crates/issen-vmdk",
     "crates/issen-qcow2",
     "crates/issen-iso",
+    "crates/issen-aff4",
     "crates/forensic-pivot",
     "crates/issen-wsl",
     "xtask",
@@ -66,6 +67,7 @@ issen-vhdx       = { path = "crates/issen-vhdx" }
 issen-vmdk       = { path = "crates/issen-vmdk" }
 issen-qcow2      = { path = "crates/issen-qcow2" }
 issen-iso        = { path = "crates/issen-iso" }
+issen-aff4       = { path = "crates/issen-aff4" }
 issen-shrinkpath = { path = "crates/issen-shrinkpath" }
 issen-parser-mft     = { path = "crates/parsers/issen-parser-mft" }
 issen-parser-evtx    = { path = "crates/parsers/issen-parser-evtx" }
@@ -158,6 +160,7 @@ vhdx         = { path = "../vhdx/vhdx" }
 vmdk         = { path = "../vmdk/vmdk" }
 qcow2        = { path = "../qcow2/qcow2" }
 hadris-iso   = "1"
+aff4         = { path = "../aff4/aff4" }
 evtx         = { version = "0.11", default-features = false }
 mft          = "0.6"
 notatin      = "1.0"
