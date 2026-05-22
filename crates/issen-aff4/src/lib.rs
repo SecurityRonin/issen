@@ -52,17 +52,26 @@ impl std::fmt::Debug for Aff4DataSource {
 impl Aff4DataSource {
     /// Open an AFF4 image, parsing metadata from `information.turtle`.
     pub fn open(path: &Path) -> Result<Self, Aff4Error> {
-        todo!()
+        let reader = aff4::Aff4Reader::open(path)?;
+        let size = reader.virtual_disk_size();
+        Ok(Self { reader: Mutex::new(reader), size })
     }
 }
 
 impl DataSource for Aff4DataSource {
-    fn len(&self) -> u64 {
-        todo!()
-    }
+    fn len(&self) -> u64 { self.size }
 
-    fn read_at(&self, _offset: u64, _buf: &mut [u8]) -> Result<usize, RtError> {
-        todo!()
+    fn read_at(&self, offset: u64, buf: &mut [u8]) -> Result<usize, RtError> {
+        let mut guard = self.reader.lock().expect("mutex poisoned");
+        guard.seek(SeekFrom::Start(offset)).map_err(RtError::Io)?;
+        let mut total = 0;
+        while total < buf.len() {
+            match guard.read(&mut buf[total..]).map_err(RtError::Io)? {
+                0 => break,
+                n => total += n,
+            }
+        }
+        Ok(total)
     }
 }
 
