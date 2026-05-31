@@ -32,8 +32,15 @@ issen-parser-velociraptor = { workspace = true }
 issen-parser-uac = { workspace = true }
 issen-correlation = { workspace = true, features = ["remote"] }
 issen-unpack = { workspace = true }
-issen-mem = { workspace = true }
-issen-evtx = { workspace = true }
+issen-mem    = { workspace = true }
+issen-evtx   = { workspace = true }
+issen-vhdx   = { workspace = true }
+issen-ewf    = { workspace = true }
+issen-vmdk   = { workspace = true }
+issen-vhd    = { workspace = true }
+issen-dd     = { workspace = true }
+issen-qcow2  = { workspace = true }
+issen-iso    = { workspace = true }
 winevt-core = { workspace = true }
 issen-remote-io = { workspace = true, features = ["remote"] }
 srum-parser  = { workspace = true }

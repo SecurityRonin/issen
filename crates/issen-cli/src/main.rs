@@ -12,6 +12,15 @@ extern crate issen_parser_evtx;
 extern crate issen_parser_uac;
 extern crate issen_parser_velociraptor;
 
+// Link disk image container crates so their CollectionProvider registrations survive.
+extern crate issen_vhdx;
+extern crate issen_ewf;
+extern crate issen_vmdk;
+extern crate issen_vhd;
+extern crate issen_dd;
+extern crate issen_qcow2;
+extern crate issen_iso;
+
 /// Issen — fast forensic triage for incident responders.
 #[derive(Parser, Debug)]
 #[command(name = "issen", version, about)]

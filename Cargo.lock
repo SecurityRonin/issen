@@ -4214,18 +4214,25 @@ dependencies = [
  "inventory",
  "issen-core",
  "issen-correlation",
+ "issen-dd",
  "issen-evtx",
+ "issen-ewf",
  "issen-fswalker",
+ "issen-iso",
  "issen-mem",
  "issen-parser-evtx",
  "issen-parser-uac",
  "issen-parser-velociraptor",
+ "issen-qcow2",
  "issen-remote-access",
  "issen-remote-io",
  "issen-report",
  "issen-signatures",
  "issen-timeline",
  "issen-unpack",
+ "issen-vhd",
+ "issen-vhdx",
+ "issen-vmdk",
  "mft",
  "predicates",
  "serde_json",
@@ -4281,7 +4288,9 @@ name = "issen-dd"
 version = "0.1.0"
 dependencies = [
  "dd",
+ "inventory",
  "issen-core",
+ "issen-unpack",
  "tempfile",
  "thiserror 2.0.18",
 ]
@@ -4311,7 +4320,9 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "ewf",
+ "inventory",
  "issen-core",
+ "issen-unpack",
  "tempfile",
  "thiserror 2.0.18",
 ]
@@ -4337,7 +4348,9 @@ name = "issen-iso"
 version = "0.1.0"
 dependencies = [
  "hadris-iso",
+ "inventory",
  "issen-core",
+ "issen-unpack",
  "tempfile",
  "thiserror 2.0.18",
 ]
@@ -4606,7 +4619,9 @@ dependencies = [
 name = "issen-qcow2"
 version = "0.1.0"
 dependencies = [
+ "inventory",
  "issen-core",
+ "issen-unpack",
  "qcow2",
  "tempfile",
  "thiserror 2.0.18",
@@ -4728,7 +4743,9 @@ dependencies = [
 name = "issen-vhd"
 version = "0.1.0"
 dependencies = [
+ "inventory",
  "issen-core",
+ "issen-unpack",
  "tempfile",
  "thiserror 2.0.18",
  "vhd",
@@ -4738,7 +4755,9 @@ dependencies = [
 name = "issen-vhdx"
 version = "0.1.0"
 dependencies = [
+ "inventory",
  "issen-core",
+ "issen-unpack",
  "tempfile",
  "thiserror 2.0.18",
  "vhdx",
@@ -4748,7 +4767,9 @@ dependencies = [
 name = "issen-vmdk"
 version = "0.1.0"
 dependencies = [
+ "inventory",
  "issen-core",
+ "issen-unpack",
  "tempfile",
  "thiserror 2.0.18",
  "vmdk",
