@@ -94,6 +94,24 @@ fn parse_sockstat_line(line: &str) -> Option<SockstatEntry> {
     })
 }
 
+/// Return distinct AF_UNIX socket paths for a given PID from a sockstat slice.
+///
+/// Extracts `src_addr` from every entry where `family == "AF_UNIX"` and the
+/// address looks like a filesystem path (non-empty, not `-`).
+#[must_use]
+pub fn unix_paths_for_pid(entries: &[SockstatEntry], pid: u32) -> Vec<String> {
+    let mut paths: Vec<String> = entries
+        .iter()
+        .filter(|e| e.pid == pid && e.family == "AF_UNIX")
+        .filter(|e| !e.src_addr.is_empty() && e.src_addr != "-")
+        .map(|e| e.src_addr.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+    paths.sort();
+    paths
+}
+
 /// Read and parse `memory_dump/output-sockstat` from a UAC collection root.
 ///
 /// Returns an empty vec if the file is absent.

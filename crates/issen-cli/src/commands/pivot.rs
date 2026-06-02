@@ -206,6 +206,8 @@ mod tests {
                 thread_names: vec!["libuv-worker".into()],
                 all_thread_names: vec!["libuv-worker".into(), "top".into()],
                 connections: vec![make_sockstat(977, 3333)],
+                unix_socket_paths: vec![],
+                desktop_masquerade: false,
             }],
         };
         let findings = evaluate_correlation(&rootkit, &hidden, &[], Some(97.7))
@@ -260,6 +262,8 @@ mod tests {
                 thread_names: vec![],
                 all_thread_names: vec!["top".into()],
                 connections: vec![],
+                unix_socket_paths: vec![],
+                desktop_masquerade: false,
             }],
         };
         let ev = build_evidence(&[], &hidden, &[], None);
@@ -281,6 +285,8 @@ mod tests {
                 thread_names: vec!["libuv-worker".into()],
                 all_thread_names: vec!["libuv-worker".into(), "top".into()],
                 connections: vec![],
+                unix_socket_paths: vec![],
+                desktop_masquerade: false,
             }],
         };
         let ev = build_evidence(&[], &hidden, &[], None);
@@ -301,6 +307,8 @@ mod tests {
                 thread_names: vec!["libuv-worker".into()],
                 all_thread_names: vec!["libuv-worker".into(), "top".into()],
                 connections: vec![make_sockstat(977, 3333)],
+                unix_socket_paths: vec![],
+                desktop_masquerade: false,
             }],
         };
         let ev = build_evidence(&[], &hidden, &[], None);
@@ -351,6 +359,8 @@ mod tests {
                 thread_names: vec!["libuv-worker".into()],
                 all_thread_names: vec!["libuv-worker".into(), "top".into()],
                 connections: vec![make_sockstat(977, 3333)],
+                unix_socket_paths: vec![],
+                desktop_masquerade: false,
             }],
         };
 

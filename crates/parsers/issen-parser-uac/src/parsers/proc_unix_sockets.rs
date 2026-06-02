@@ -33,21 +33,96 @@ pub struct PidUnixSockets {
 /// with `path = ""`.
 #[must_use]
 pub fn parse_proc_unix(content: &str) -> Vec<ProcUnixEntry> {
-    todo!("RED: not yet implemented")
+    let mut lines = content.lines();
+
+    // Skip the header row.
+    let Some(first) = lines.next() else {
+        return vec![];
+    };
+    // Detect header by presence of "Num" and "RefCount" or "Protocol".
+    let is_header = first.contains("Num") && (first.contains("RefCount") || first.contains("Protocol"));
+    let data_lines: Box<dyn Iterator<Item = &str>> = if is_header {
+        Box::new(lines)
+    } else {
+        // No header — treat first line as data.
+        Box::new(std::iter::once(first).chain(lines))
+    };
+
+    data_lines.filter_map(parse_unix_line).collect()
+}
+
+/// Parse one data line from `/proc/net/unix`.
+///
+/// Format (space-separated):
+/// ```text
+/// Num:  RefCount Protocol Flags Type St Inode [Path]
+/// ```
+/// `Num` has a trailing `:`.  The `Path` field is optional; unnamed sockets
+/// omit it (7 fields total).
+fn parse_unix_line(line: &str) -> Option<ProcUnixEntry> {
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    // Split on whitespace; minimum 7 fields (no Path), 8+ with Path.
+    let fields: Vec<&str> = trimmed.splitn(8, char::is_whitespace)
+        .filter(|f| !f.is_empty())
+        .collect();
+    if fields.len() < 7 {
+        return None;
+    }
+    // Field index 7 (0-based) is the path, if present.
+    let path = if fields.len() >= 8 {
+        fields[7].trim().to_string()
+    } else {
+        String::new()
+    };
+    Some(ProcUnixEntry { path })
 }
 
 /// Walk `live_response/process/proc/*/net/unix.txt` under `root` and return
 /// one `PidUnixSockets` per directory that contains such a file.
 #[must_use]
 pub fn read_all_proc_unix(root: &std::path::Path) -> Vec<PidUnixSockets> {
-    todo!("RED: not yet implemented")
+    let proc_root = root.join("live_response/process/proc");
+    let Ok(entries) = std::fs::read_dir(&proc_root) else {
+        return vec![];
+    };
+
+    let mut result = Vec::new();
+    for entry in entries.flatten() {
+        let pid_dir = entry.path();
+        // Directory name must parse as a u32 PID.
+        let Some(pid) = pid_dir.file_name()
+            .and_then(|n| n.to_str())
+            .and_then(|s| s.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        let unix_path = pid_dir.join("net/unix.txt");
+        let Ok(content) = std::fs::read_to_string(&unix_path) else {
+            continue;
+        };
+        let entries = parse_proc_unix(&content);
+        result.push(PidUnixSockets { pid, entries });
+    }
+    result
 }
 
-/// Return the distinct named paths from a `PidUnixSockets` collection
-/// for a given PID.  Skips empty paths and abstract-socket names.
+/// Return the distinct named filesystem paths from a `PidUnixSockets`
+/// collection for a given PID.  Skips empty paths and abstract-socket names
+/// (those starting with `@`).
 #[must_use]
 pub fn named_paths_for_pid(all: &[PidUnixSockets], pid: u32) -> Vec<String> {
-    todo!("RED: not yet implemented")
+    all.iter()
+        .find(|s| s.pid == pid)
+        .map(|s| {
+            s.entries.iter()
+                .filter(|e| !e.path.is_empty() && !e.path.starts_with('@'))
+                .map(|e| e.path.clone())
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

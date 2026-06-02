@@ -93,6 +93,21 @@ pub fn detect_shell_upgrade_chain(analysis: &HiddenProcessAnalysis) -> Vec<Shell
     chains
 }
 
+/// Known system-daemon unix socket path prefixes/substrings.
+///
+/// A hidden process connecting to ≥2 of these is likely deliberately
+/// masquerading as a legitimate desktop process.
+const SYSTEM_DAEMON_SOCKETS: &[&str] = &[
+    "/run/systemd/journal/",
+    "/run/dbus/",
+    "/run/user/",
+    "/run/systemd/private/",
+    "/run/systemd/notify",
+    "pipewire",
+    "pulseaudio",
+    "jack",
+];
+
 /// A hidden process discovered by correlating `/proc` PID enumeration with
 /// `ps` output and (optionally) Volatility memory sockstat.
 #[derive(Debug, Clone, Serialize)]
@@ -111,6 +126,16 @@ pub struct HiddenProcessFinding {
     pub all_thread_names: Vec<String>,
     /// Network connections attributed to this PID from memory.
     pub connections: Vec<SockstatEntry>,
+    /// Unix domain socket paths for this process.
+    ///
+    /// Sourced from: Volatility `AF_UNIX` rows in `output-sockstat`
+    /// and/or `live_response/process/proc/<PID>/net/unix.txt`.
+    /// Empty paths and abstract-socket names (`@…`) are excluded.
+    pub unix_socket_paths: Vec<String>,
+    /// True when this process connects to ≥2 system-daemon sockets
+    /// (journald, dbus, pipewire, …), indicating deliberate desktop
+    /// process masquerade.
+    pub desktop_masquerade: bool,
 }
 
 /// Analysis of hidden processes in a UAC collection.
@@ -125,9 +150,10 @@ pub struct HiddenProcessAnalysis {
 /// Correlate hidden PIDs with Volatility sockstat output.
 ///
 /// For each hidden PID, collects all sockstat entries attributed to that PID,
-/// determines the process name, and lists distinct thread names (which can
+/// determines the process name, lists distinct thread names (which can
 /// expose masquerade: a process calling itself "top" with "libuv-worker" threads
-/// is almost certainly XMRig).
+/// is almost certainly XMRig), and collects unix domain socket paths from both
+/// AF_UNIX sockstat rows and `live_response/process/proc/<PID>/net/unix.txt`.
 #[must_use]
 pub fn analyze_hidden_processes(root: &Path) -> HiddenProcessAnalysis {
     let hidden_pids = hidden_pids::read_hidden_pids(root);
@@ -136,6 +162,7 @@ pub fn analyze_hidden_processes(root: &Path) -> HiddenProcessAnalysis {
     }
 
     let sockstat = mem_sockstat::read_mem_sockstat(root);
+    let proc_unix = proc_unix_sockets::read_all_proc_unix(root);
 
     let findings = hidden_pids
         .iter()
@@ -170,12 +197,29 @@ pub fn analyze_hidden_processes(root: &Path) -> HiddenProcessAnalysis {
                 .collect();
             all_thread_names.sort();
 
+            // Unix socket paths from two sources (deduplicated):
+            // 1. AF_UNIX rows in Volatility output-sockstat
+            // 2. live_response/process/proc/<PID>/net/unix.txt
+            let from_sockstat = mem_sockstat::unix_paths_for_pid(&sockstat, pid);
+            let from_proc = proc_unix_sockets::named_paths_for_pid(&proc_unix, pid);
+            let mut unix_socket_paths: Vec<String> = from_sockstat
+                .into_iter()
+                .chain(from_proc)
+                .collect::<std::collections::HashSet<_>>()
+                .into_iter()
+                .collect();
+            unix_socket_paths.sort();
+
+            let desktop_masquerade = count_system_daemon_sockets(&unix_socket_paths) >= 2;
+
             HiddenProcessFinding {
                 pid,
                 process_name,
                 thread_names,
                 all_thread_names,
                 connections: pid_entries,
+                unix_socket_paths,
+                desktop_masquerade,
             }
         })
         .collect();
@@ -184,6 +228,14 @@ pub fn analyze_hidden_processes(root: &Path) -> HiddenProcessAnalysis {
         hidden_pids,
         findings,
     }
+}
+
+/// Count how many distinct system-daemon socket prefixes appear in `paths`.
+fn count_system_daemon_sockets(paths: &[String]) -> usize {
+    SYSTEM_DAEMON_SOCKETS
+        .iter()
+        .filter(|&&prefix| paths.iter().any(|p| p.contains(prefix)))
+        .count()
 }
 
 /// Aggregated results from parsing all UAC categories.
