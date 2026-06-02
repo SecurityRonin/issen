@@ -2133,6 +2133,101 @@ fn analyse_synthetic_fixture_shows_hidden_pid() {
         .stdout(predicate::str::contains("977"));
 }
 
+// ── desktop masquerade output ────────────────────────────────────────────────
+
+/// Build a UAC archive where PID 977 has unix socket connections to
+/// journald, dbus, and pipewire (desktop masquerade indicator).
+fn build_uac_with_desktop_masquerade(dest: &std::path::Path) -> std::path::PathBuf {
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+
+    let sockstat = "\
+NetNS\tProcess Name\tPID\tTID\tFD\tSock Offset\tFamily\tType\tProto\tSource Addr\tSource Port\tDestination Addr\tDestination Port\tState\tFilter\n\
+4026531992\ttop\t977\t977\t5\t0xffff880012345678\tAF_INET\tSOCK_STREAM\tTCP\t127.0.0.1\t59182\t127.0.0.1\t3333\tESTABLISHED\t\n\
+4026531992\tlibuv-worker\t977\t978\t5\t0xffff880012345678\tAF_INET\tSOCK_STREAM\tTCP\t127.0.0.1\t59182\t127.0.0.1\t3333\tESTABLISHED\t\n";
+
+    let unix_txt = "\
+Num       RefCount Protocol Flags    Type St Inode Path\n\
+ffffffff80001234: 00000002 00000000 00010000 0001 03 12345 /run/systemd/journal/socket\n\
+ffffffff80001235: 00000002 00000000 00010000 0001 03 12346 /run/dbus/system_bus_socket\n\
+ffffffff80001236: 00000003 00000000 00010000 0001 03 12347 /run/user/1000/pipewire-0\n";
+
+    let files: &[(&str, &str)] = &[
+        ("uac.log", "2026-03-24 23:40:43 UTC - UAC collection started\nLinux vbox-linux\n"),
+        ("chkrootkit/etc_ld_so_preload.txt", "/lib/x86_64-linux-gnu/libymv.so.3\n"),
+        ("live_response/process/hidden_pids_for_ps_command.txt", "977\n"),
+        ("memory_dump/output-sockstat", sockstat),
+        // Per-PID unix socket file — the desktop masquerade source
+        ("live_response/process/proc/977/net/unix.txt", unix_txt),
+        ("live_response/process/top_-b_-n1.txt",
+         "%Cpu(s): 97.7 us,  2.3 sy,  0.0 ni,  0.0 id,  0.0 wa\n"),
+        ("live_response/network/.keep", ""),
+        ("live_response/system/env.txt", "PATH=/usr/bin:/bin\n"),
+        ("live_response/system/lsmod.txt",
+         "Module                  Size  Used by\next4                  729088  2\n"),
+        ("live_response/system/cat_proc_sys_kernel_tainted.txt", "4\n"),
+    ];
+
+    let archive_path = dest.join("uac-masquerade-20260324234043.tar.gz");
+    let file = std::fs::File::create(&archive_path).expect("create archive");
+    let gz = GzEncoder::new(file, Compression::default());
+    let mut builder = tar::Builder::new(gz);
+
+    for (rel_path, content) in files {
+        let data = content.as_bytes();
+        let mut header = tar::Header::new_gnu();
+        header.set_size(data.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        let path = format!("uac-masquerade-20260324234043/{rel_path}");
+        builder.append_data(&mut header, &path, data).expect("append");
+    }
+    builder.finish().expect("finish tar");
+    archive_path
+}
+
+/// `rt analyse` must show unix socket paths for a hidden process that has
+/// proc/<PID>/net/unix.txt in the collection.
+#[test]
+fn analyse_shows_unix_socket_paths_for_hidden_process() {
+    let dir = TempDir::new().expect("tmpdir");
+    let archive = build_uac_with_desktop_masquerade(dir.path());
+
+    let output = issen_cmd()
+        .args(["analyse", archive.to_str().unwrap()])
+        .output()
+        .expect("run rt analyse");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success(), "analyse must exit 0\n{stdout}");
+
+    assert!(
+        stdout.contains("journal") || stdout.contains("dbus") || stdout.contains("pipewire"),
+        "output must show at least one unix socket path for PID 977\n{stdout}"
+    );
+}
+
+/// `rt analyse` must emit a DESKTOP MASQUERADE indicator when a hidden process
+/// connects to ≥2 system-daemon unix sockets.
+#[test]
+fn analyse_shows_desktop_masquerade_indicator() {
+    let dir = TempDir::new().expect("tmpdir");
+    let archive = build_uac_with_desktop_masquerade(dir.path());
+
+    let output = issen_cmd()
+        .args(["analyse", archive.to_str().unwrap()])
+        .output()
+        .expect("run rt analyse");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success(), "analyse must exit 0\n{stdout}");
+
+    assert!(
+        stdout.contains("desktop masquerade") || stdout.contains("DESKTOP MASQUERADE"),
+        "output must flag desktop masquerade for PID 977\n{stdout}"
+    );
+}
+
 // ── WS-10 Phase 3: rt supertimeline ──────────────────────────────────────────
 
 /// `rt supertimeline --help` must succeed and mention the collection argument.
