@@ -12,8 +12,10 @@ name = "issen_disk"
 path = "src/lib.rs"
 
 [dependencies]
-issen-core = { workspace = true }
-thiserror  = { workspace = true }
+issen-core    = { workspace = true }
+disk-forensic = { workspace = true }
+ntfs-forensic = { workspace = true }
+thiserror     = { workspace = true }
 
 [lints]
 workspace = true
