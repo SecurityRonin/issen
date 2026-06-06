@@ -156,6 +156,12 @@ pub const WINDOWS_TRIAGE_GLOBS: &[TriageGlob] = &[
     },
 ];
 
+/// Per-user files collected from each subdirectory of `\Users` (relative paths).
+pub const WINDOWS_USER_FILES: &[&str] = &[
+    "NTUSER.DAT",
+    r"AppData\Local\Microsoft\Windows\UsrClass.dat",
+];
+
 /// Extract the standard Windows triage artifacts — the fixed
 /// [`WINDOWS_TRIAGE_PATHS`] plus the [`WINDOWS_TRIAGE_GLOBS`] directory sweeps —
 /// from every NTFS partition in the disk image.
@@ -169,6 +175,9 @@ pub fn extract_triage(source: &dyn DataSource) -> Result<Vec<ExtractedFile>, Dis
         out.extend(extract_files(source, window, WINDOWS_TRIAGE_PATHS)?);
         for glob in WINDOWS_TRIAGE_GLOBS {
             out.extend(extract_dir_suffix(source, window, glob.dir, glob.suffix)?);
+        }
+        for child in WINDOWS_USER_FILES {
+            out.extend(extract_per_subdir(source, window, r"\Users", child)?);
         }
     }
     Ok(out)
