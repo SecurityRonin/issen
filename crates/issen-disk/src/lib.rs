@@ -123,14 +123,26 @@ pub fn extract_files(
     window: PartitionWindow,
     paths: &[&str],
 ) -> Result<Vec<ExtractedFile>, DiskError> {
-    let _ = (source, window, paths);
-    todo!("extract_files — GREEN step")
-}
+    use ntfs_forensic::{NtfsError, NtfsFs, OffsetReader};
 
-/// Map an NTFS error into a [`DiskError`].
-#[allow(dead_code)]
-fn ntfs_to_disk(e: ntfs_forensic::NtfsError) -> DiskError {
-    DiskError::Ntfs(e.to_string())
+    let to_disk = |e: NtfsError| DiskError::Ntfs(e.to_string());
+    let reader = DataSourceReader::new(source);
+    let part = OffsetReader::new(reader, window.offset, window.length).map_err(to_disk)?;
+    let mut fs = NtfsFs::open(part).map_err(to_disk)?;
+
+    let mut out = Vec::new();
+    for &path in paths {
+        match fs.read_file(path) {
+            Ok(data) => out.push(ExtractedFile {
+                path: path.to_string(),
+                data,
+            }),
+            // The artifact simply isn't on this image — expected during triage.
+            Err(NtfsError::NotFound(_) | NtfsError::NotADirectory(_)) => {}
+            Err(e) => return Err(to_disk(e)),
+        }
+    }
+    Ok(out)
 }
 
 /// A `Read + Seek` view over a [`DataSource`].
@@ -448,8 +460,14 @@ mod tests {
             v[0..512].copy_from_slice(&boot());
 
             let runs = [0x11u8, mft_clusters as u8, MFT_LCN as u8, 0x00];
-            let rec0 = record(0x0001, &nonresident_data(&runs, mft_clusters * CLUSTER as u64));
-            let rec5 = record(0x0003, &index_root(&[index_entry(6, "test.txt"), index_end()]));
+            let rec0 = record(
+                0x0001,
+                &nonresident_data(&runs, mft_clusters * CLUSTER as u64),
+            );
+            let rec5 = record(
+                0x0003,
+                &index_root(&[index_entry(6, "test.txt"), index_end()]),
+            );
             let mut a6 = Vec::new();
             a6.extend_from_slice(&attr_resident(0x10, None, &[0u8; 0x30]));
             a6.extend_from_slice(&attr_resident(0x30, None, &fname(5, "test.txt")));
@@ -492,8 +510,7 @@ mod tests {
     fn missing_paths_are_skipped() {
         let src = disk_with_volume(2048);
         let parts = find_ntfs_partitions(&src).expect("find");
-        let files =
-            extract_files(&src, parts[0], &["\\test.txt", "\\nope.txt"]).expect("extract");
+        let files = extract_files(&src, parts[0], &["\\test.txt", "\\nope.txt"]).expect("extract");
         assert_eq!(files.len(), 1); // only the present file
         assert_eq!(files[0].path, "\\test.txt");
     }
