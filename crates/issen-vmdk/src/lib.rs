@@ -32,7 +32,10 @@ impl From<VmdkError> for RtError {
     fn from(e: VmdkError) -> Self {
         match e {
             VmdkError::Io(io) => Self::Io(io),
-            VmdkError::Vmdk(msg) => Self::Parse { offset: 0, message: format!("vmdk: {msg}") },
+            VmdkError::Vmdk(msg) => Self::Parse {
+                offset: 0,
+                message: format!("vmdk: {msg}"),
+            },
         }
     }
 }
@@ -45,7 +48,9 @@ pub struct VmdkDataSource {
 
 impl std::fmt::Debug for VmdkDataSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("VmdkDataSource").field("size", &self.size).finish()
+        f.debug_struct("VmdkDataSource")
+            .field("size", &self.size)
+            .finish()
     }
 }
 
@@ -55,12 +60,17 @@ impl VmdkDataSource {
         let file = std::fs::File::open(path)?;
         let reader = vmdk::VmdkReader::open(file)?;
         let size = reader.virtual_disk_size();
-        Ok(Self { reader: Mutex::new(reader), size })
+        Ok(Self {
+            reader: Mutex::new(reader),
+            size,
+        })
     }
 }
 
 impl DataSource for VmdkDataSource {
-    fn len(&self) -> u64 { self.size }
+    fn len(&self) -> u64 {
+        self.size
+    }
 
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> Result<usize, RtError> {
         let mut guard = self.reader.lock().expect("mutex poisoned");
@@ -78,7 +88,7 @@ impl DataSource for VmdkDataSource {
 
 // ── CollectionProvider ────────────────────────────────────────────────
 
-use issen_unpack::{CollectionManifest, CollectionMetadata, CollectionProvider, Confidence, OsType};
+use issen_unpack::{CollectionManifest, CollectionProvider, Confidence};
 
 /// Format-recognition and manifest provider for VMware VMDK disk images.
 #[derive(Debug, Default)]
@@ -97,9 +107,7 @@ impl CollectionProvider for VmdkProvider {
         let mut magic = [0u8; 4];
         match f.read_exact(&mut magic) {
             Ok(()) => {}
-            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
-                return Ok(Confidence::None)
-            }
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => return Ok(Confidence::None),
             Err(e) => return Err(RtError::Io(e)),
         }
         if magic == VMDK_MAGIC {
@@ -110,20 +118,11 @@ impl CollectionProvider for VmdkProvider {
     }
 
     fn open(&self, path: &Path) -> Result<CollectionManifest, RtError> {
+        // Decode the VMDK, then run the NTFS disk-triage pipeline: detect the
+        // partition table, open each NTFS volume, and extract the standard
+        // Windows triage artifacts into a manifest the ingest pipeline parses.
         let source = VmdkDataSource::open(path)?;
-        let size = source.len();
-        let tempdir = tempfile::tempdir().map_err(RtError::Io)?;
-        Ok(CollectionManifest::new(
-            self.name().to_string(),
-            tempdir,
-            vec![],
-            CollectionMetadata {
-                hostname: None,
-                collection_time: None,
-                os_type: OsType::Unknown,
-                tool_version: Some(format!("{size} bytes")),
-            },
-        ))
+        Ok(issen_disk::triage_manifest(&source, self.name())?)
     }
 }
 
