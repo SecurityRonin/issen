@@ -352,8 +352,37 @@ pub fn extract_per_subdir(
     parent: &str,
     child: &str,
 ) -> Result<Vec<ExtractedFile>, DiskError> {
-    let _ = (source, window, parent, child);
-    todo!("extract_per_subdir — GREEN step")
+    use ntfs_forensic::{NtfsError, NtfsFs, OffsetReader};
+
+    let to_disk = |e: NtfsError| DiskError::Ntfs(e.to_string());
+    let reader = DataSourceReader::new(source);
+    let part = OffsetReader::new(reader, window.offset, window.length).map_err(to_disk)?;
+    let mut fs = NtfsFs::open(part).map_err(to_disk)?;
+
+    let parent_record = match fs.resolve_path(parent) {
+        Ok(n) => n,
+        Err(NtfsError::NotFound(_) | NtfsError::NotADirectory(_)) => return Ok(Vec::new()),
+        Err(e) => return Err(to_disk(e)),
+    };
+    let record = fs.read_record(parent_record).map_err(to_disk)?;
+    let entries = fs.directory_entries(&record).map_err(to_disk)?;
+
+    let base = parent.trim_end_matches('\\');
+    let mut out = Vec::new();
+    for entry in entries {
+        let Some(name) = entry.file_name.map(|f| f.name) else {
+            continue;
+        };
+        // Try `<parent>\<name>\<child>`; non-directory entries resolve to
+        // NotADirectory and are skipped, so we needn't pre-check the type.
+        let path = format!("{base}\\{name}\\{child}");
+        match fs.read_file(&path) {
+            Ok(data) => out.push(ExtractedFile { path, data }),
+            Err(NtfsError::NotFound(_) | NtfsError::NotADirectory(_)) => {}
+            Err(e) => return Err(to_disk(e)),
+        }
+    }
+    Ok(out)
 }
 
 /// A `Read + Seek` view over a [`DataSource`].
@@ -793,7 +822,8 @@ mod tests {
     fn extract_per_subdir_on_absent_parent_is_empty() {
         let src = disk_with_volume(2048);
         let parts = find_ntfs_partitions(&src).expect("find");
-        let files = extract_per_subdir(&src, parts[0], r"\Users", "NTUSER.DAT").expect("per-subdir");
+        let files =
+            extract_per_subdir(&src, parts[0], r"\Users", "NTUSER.DAT").expect("per-subdir");
         assert!(files.is_empty());
     }
 
