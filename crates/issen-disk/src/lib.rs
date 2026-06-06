@@ -36,6 +36,15 @@ pub enum DiskError {
     Ntfs(String),
 }
 
+impl From<DiskError> for RtError {
+    fn from(e: DiskError) -> Self {
+        match e {
+            DiskError::Io(io) => Self::Io(io),
+            other => Self::InvalidData(other.to_string()),
+        }
+    }
+}
+
 /// Find the NTFS partitions in the disk image behind `source`.
 ///
 /// Detects the partition scheme (MBR/GPT/APM) via `disk-forensic`, then
@@ -50,7 +59,12 @@ pub fn find_ntfs_partitions(source: &dyn DataSource) -> Result<Vec<PartitionWind
     use disk_forensic::DiskReport;
 
     let mut reader = DataSourceReader::new(source);
-    let report = disk_forensic::analyse_disk(&mut reader, source.len())?;
+    let report = match disk_forensic::analyse_disk(&mut reader, source.len()) {
+        Ok(report) => report,
+        // No partition table at all — nothing to triage, not a hard failure.
+        Err(disk_forensic::Error::UnknownScheme) => return Ok(Vec::new()),
+        Err(e) => return Err(e.into()),
+    };
 
     // Candidate windows from whichever partition table was found.
     let candidates: Vec<PartitionWindow> = match &report {
@@ -412,6 +426,13 @@ mod tests {
                 length: 2048 * 512,
             }]
         );
+    }
+
+    #[test]
+    fn disk_without_partition_table_yields_no_partitions() {
+        // A blank disk (no MBR/GPT/APM) is not an error — there's just no NTFS.
+        let src = VecSource(vec![0u8; 64 * SECTOR]);
+        assert!(find_ntfs_partitions(&src).expect("no error").is_empty());
     }
 
     #[test]
