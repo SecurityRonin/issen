@@ -841,6 +841,70 @@ mod tests {
     }
 
     #[test]
+    fn test_render_html_includes_attack_chain_when_tactics_present() {
+        let findings = vec![
+            FindingRow {
+                engine: "Sigma".to_string(),
+                rule_name: "exec_rule".to_string(),
+                severity: "high".to_string(),
+                target: "Security.evtx".to_string(),
+                description: "process spawn".to_string(),
+                tags: vec!["attack.execution".to_string()],
+            },
+            FindingRow {
+                engine: "Sigma".to_string(),
+                rule_name: "logon_rule".to_string(),
+                severity: "medium".to_string(),
+                target: "Security.evtx".to_string(),
+                description: "remote logon".to_string(),
+                tags: vec!["attack.initial_access".to_string()],
+            },
+        ];
+        let data = sample_repoissen_data(vec![], findings);
+        let html = render_html(&data);
+
+        assert!(
+            html.contains("Attack Chain"),
+            "should contain an ATT&CK attack-chain section header"
+        );
+        assert!(html.contains("Initial Access"), "tactic node label present");
+        assert!(html.contains("Execution"), "tactic node label present");
+        // The Mermaid source from render_attack_chain must be embedded, proving
+        // the chain renderer is wired in (self-contained, copy-pastable).
+        assert!(
+            html.contains("flowchart LR"),
+            "should embed the render_attack_chain Mermaid source"
+        );
+        // Nodes appear in ATT&CK kill-chain order: Initial Access before Execution.
+        let ia = html.find("Initial Access").expect("initial access node");
+        let ex = html.find(">Execution").or_else(|| html.find("Execution ("));
+        let ex = ex.expect("execution node");
+        assert!(
+            ia < ex,
+            "Initial Access should precede Execution in kill-chain order"
+        );
+    }
+
+    #[test]
+    fn test_render_html_no_attack_chain_without_tactics() {
+        let findings = vec![FindingRow {
+            engine: "YARA".to_string(),
+            rule_name: "blob_match".to_string(),
+            severity: "low".to_string(),
+            target: "/evidence/blob.bin".to_string(),
+            description: "generic match".to_string(),
+            tags: vec!["malware".to_string()], // no attack.<tactic> tag
+        }];
+        let data = sample_repoissen_data(vec![], findings);
+        let html = render_html(&data);
+
+        assert!(
+            !html.contains("Attack Chain"),
+            "findings without ATT&CK tactics must not produce an attack-chain section"
+        );
+    }
+
+    #[test]
     fn test_event_row_from_timeline_event() {
         // Verify the conversion path used in collect_repoissen_data by inserting
         // an event into a store and reading it back as EventRow via collect.
