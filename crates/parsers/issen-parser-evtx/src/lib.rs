@@ -897,6 +897,82 @@ mod tests {
     }
 
     #[test]
+    fn test_record_to_event_flattens_rich_eventdata_array_shape() {
+        // Real Security/audit serialization: <Data Name="…"> → named-attribute
+        // array. The old hardcoded `.get("…")` silently missed these; flattening
+        // must surface every field AND still derive the legacy logon_id.
+        let data = serde_json::json!({
+            "Event": {
+                "System": { "EventID": 4688, "Channel": "Security" },
+                "EventData": { "Data": [
+                    {"@Name": "SubjectUserName", "#text": "Administrator"},
+                    {"@Name": "NewProcessName", "#text": "C:\\Windows\\Temp\\evil.exe"},
+                    {"@Name": "CommandLine", "#text": "evil.exe -enc AAAA"},
+                    {"@Name": "SubjectLogonId", "#text": "0x0000000000059b61"}
+                ]}
+            }
+        });
+        let event = record_to_event(1, 0, "2024-01-01T00:00:00Z", &data, "src");
+        assert_eq!(
+            event.metadata.get("SubjectUserName"),
+            Some(&serde_json::json!("Administrator")),
+            "rich EventData fields must be flattened into metadata"
+        );
+        assert_eq!(
+            event.metadata.get("NewProcessName"),
+            Some(&serde_json::json!("C:\\Windows\\Temp\\evil.exe"))
+        );
+        assert_eq!(
+            event.metadata.get("CommandLine"),
+            Some(&serde_json::json!("evil.exe -enc AAAA"))
+        );
+        // Legacy derived convenience field still present.
+        assert_eq!(
+            event.metadata.get("logon_id"),
+            Some(&serde_json::json!(0x59b61_u64)),
+            "legacy logon_id must still be derived from the flattened raw field"
+        );
+    }
+
+    #[test]
+    fn test_record_to_event_flattens_sysmon_flat_shape() {
+        // Sysmon EID 1: flat named-element object.
+        let data = serde_json::json!({
+            "Event": {
+                "System": { "EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational" },
+                "EventData": {
+                    "Image": "C:\\Windows\\Temp\\evil.exe",
+                    "CommandLine": "evil.exe -enc AAAA",
+                    "ParentImage": "C:\\Windows\\System32\\services.exe"
+                }
+            }
+        });
+        let event = record_to_event(7, 0, "2024-01-01T00:00:00Z", &data, "src");
+        assert_eq!(event.metadata.get("Image"), Some(&serde_json::json!("C:\\Windows\\Temp\\evil.exe")));
+        assert_eq!(event.metadata.get("CommandLine"), Some(&serde_json::json!("evil.exe -enc AAAA")));
+        assert_eq!(event.metadata.get("ParentImage"), Some(&serde_json::json!("C:\\Windows\\System32\\services.exe")));
+    }
+
+    #[test]
+    fn test_record_to_event_reserved_keys_not_clobbered_by_eventdata() {
+        // A crafted record must not let EventData overwrite the System identity.
+        let data = serde_json::json!({
+            "Event": {
+                "System": { "EventID": 4688, "Channel": "Security" },
+                "EventData": {
+                    "event_id": "999",
+                    "record_id": "999",
+                    "Image": "C:\\evil.exe"
+                }
+            }
+        });
+        let event = record_to_event(42, 0, "2024-01-01T00:00:00Z", &data, "src");
+        assert_eq!(event.metadata.get("event_id"), Some(&serde_json::json!(4688)));
+        assert_eq!(event.metadata.get("record_id"), Some(&serde_json::json!(42_u64)));
+        assert_eq!(event.metadata.get("Image"), Some(&serde_json::json!("C:\\evil.exe")));
+    }
+
+    #[test]
     fn test_record_to_event_4688_decimal_logon_id() {
         // Some EVTX serialisers emit logon IDs as plain decimal strings.
         let data = serde_json::json!({

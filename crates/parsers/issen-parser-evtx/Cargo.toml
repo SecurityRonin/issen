@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 issen-core = { workspace = true }
+winevt-extract = { workspace = true }
 evtx = { workspace = true }
 inventory = { workspace = true }
 tracing = { workspace = true }
