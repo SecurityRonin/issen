@@ -10,6 +10,7 @@ repository.workspace = true
 [dependencies]
 issen-core   = { workspace = true }
 issen-unpack = { workspace = true }
+issen-disk   = { workspace = true }
 inventory    = { workspace = true }
 ewf          = { workspace = true }
 thiserror    = { workspace = true }

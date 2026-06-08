@@ -171,7 +171,7 @@ impl DataSource for EwfDataSource {
 
 // ── CollectionProvider ────────────────────────────────────────────────
 
-use issen_unpack::{CollectionManifest, CollectionMetadata, CollectionProvider, Confidence, OsType};
+use issen_unpack::{CollectionManifest, CollectionProvider, Confidence};
 
 /// Format-recognition and manifest provider for EWF/E01 forensic images.
 #[derive(Debug, Default)]
@@ -203,20 +203,11 @@ impl CollectionProvider for EwfProvider {
     }
 
     fn open(&self, path: &Path) -> Result<CollectionManifest, RtError> {
+        // Decode the E01, then run the NTFS disk-triage extractor (same path as
+        // the VMDK provider): pull $MFT, $UsnJrnl:$J, every .evtx, and the
+        // registry hives off the volume into a manifest.
         let source = EwfDataSource::open(path)?;
-        let size = source.total_size();
-        let tempdir = tempfile::tempdir().map_err(RtError::Io)?;
-        Ok(CollectionManifest::new(
-            self.name().to_string(),
-            tempdir,
-            vec![],
-            CollectionMetadata {
-                hostname: None,
-                collection_time: None,
-                os_type: OsType::Unknown,
-                tool_version: Some(format!("{size} bytes")),
-            },
-        ))
+        Ok(issen_disk::triage_manifest(&source, self.name())?)
     }
 }
 
