@@ -30,10 +30,7 @@ impl EntityIndex {
         let mut inner: HashMap<String, Vec<usize>> = HashMap::new();
         for (idx, event) in events.iter().enumerate() {
             for entity in &event.entity_refs {
-                inner
-                    .entry(Self::entity_key(entity))
-                    .or_default()
-                    .push(idx);
+                inner.entry(Self::entity_key(entity)).or_default().push(idx);
             }
         }
         Self { inner }
@@ -175,7 +172,10 @@ mod tests {
         let events = vec![anchor.clone(), too_late];
         let joined = temporal_join(&anchor, &events, 60 * NS);
 
-        assert!(joined.is_empty(), "event outside 60s window must be excluded");
+        assert!(
+            joined.is_empty(),
+            "event outside 60s window must be excluded"
+        );
     }
 
     #[test]
@@ -240,7 +240,10 @@ mod tests {
         let ev2 = make_event(100 * NS, EventType::FileCreate, "same file created");
 
         // Verify they have the same hash (test our assumption)
-        assert_eq!(ev1.record_hash, ev2.record_hash, "hashes must match for the test to be valid");
+        assert_eq!(
+            ev1.record_hash, ev2.record_hash,
+            "hashes must match for the test to be valid"
+        );
 
         let events = vec![ev1, ev2];
         let deduped = deduplicate(events);
@@ -271,10 +274,16 @@ mod tests {
 
         // Absence of FileModify within 5s should be detected
         let absent = absence_detection(&anchor, &events, &EventType::FileModify, 5 * NS);
-        assert!(absent, "FileModify is absent — absence_detection should return true");
+        assert!(
+            absent,
+            "FileModify is absent — absence_detection should return true"
+        );
 
         // But FileCreate IS present, so absence should return false for it
         let not_absent = absence_detection(&anchor, &events, &EventType::FileCreate, 5 * NS);
-        assert!(!not_absent, "FileCreate is present — absence_detection should return false");
+        assert!(
+            !not_absent,
+            "FileCreate is present — absence_detection should return false"
+        );
     }
 }

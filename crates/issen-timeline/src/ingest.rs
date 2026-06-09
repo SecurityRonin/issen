@@ -327,7 +327,10 @@ mod tests {
         let a = store.insert_batch_at_epoch(&events, "snap-T1").expect("T1");
         let b = store.insert_batch_at_epoch(&events, "snap-T2").expect("T2");
         assert_eq!(a, 5);
-        assert_eq!(b, 5, "identical events at a different epoch are NOT deduped");
+        assert_eq!(
+            b, 5,
+            "identical events at a different epoch are NOT deduped"
+        );
         assert_eq!(store.event_count().expect("count"), 10);
 
         // Point-in-time view: each epoch sees only its own snapshot's timeline.
