@@ -39,6 +39,18 @@ impl TimelineStore {
     /// DO NOTHING` reused across the batch — no per-event `SELECT`, no per-row
     /// commit. Returns the number of events actually inserted (after dedup).
     pub fn inseissen_batch(&self, events: &[TimelineEvent]) -> Result<u64, TimelineStoreError> {
+        self.insert_batch_at_epoch(events, "live")
+    }
+
+    /// Insert a batch of events tagged with a snapshot `epoch`, deduplicating on
+    /// `record_hash` WITHIN that epoch. The same event observed at a *different*
+    /// epoch is a distinct point in the temporal cohort and is kept — this is the
+    /// two-level super-timeline (a cohort of per-snapshot timelines).
+    pub fn insert_batch_at_epoch(
+        &self,
+        events: &[TimelineEvent],
+        epoch: &str,
+    ) -> Result<u64, TimelineStoreError> {
         if events.is_empty() {
             return Ok(0);
         }
@@ -84,18 +96,18 @@ impl TimelineStore {
             "INSERT INTO timeline (
                 timestamp_ns, timestamp_display, event_type, source,
                 artifact_path, description, metadata, user_account,
-                hostname, tags, record_hash, evidence_source
+                hostname, tags, record_hash, evidence_source, epoch
             )
             SELECT timestamp_ns, timestamp_display, event_type, source,
                 artifact_path, description, metadata, user_account,
-                hostname, tags, record_hash, evidence_source
+                hostname, tags, record_hash, evidence_source, ?
             FROM (
                 SELECT *, row_number() OVER (PARTITION BY record_hash) AS _rn
                 FROM _ingest_stage
             ) q
             WHERE q._rn = 1
-              AND q.record_hash NOT IN (SELECT record_hash FROM timeline)",
-            [],
+              AND q.record_hash NOT IN (SELECT record_hash FROM timeline WHERE epoch = ?)",
+            duckdb::params![epoch, epoch],
         )?;
         conn.execute_batch("DELETE FROM _ingest_stage;")?;
         Ok(inserted as u64)

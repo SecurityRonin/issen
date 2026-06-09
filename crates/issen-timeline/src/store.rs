@@ -63,6 +63,7 @@ impl TimelineStore {
                 tags            VARCHAR,
                 record_hash     VARCHAR NOT NULL,
                 evidence_source VARCHAR NOT NULL,
+                epoch           VARCHAR NOT NULL DEFAULT 'live',
                 ingested_at     TIMESTAMP DEFAULT current_timestamp
             );
 
@@ -92,6 +93,27 @@ impl TimelineStore {
             .prepare("SELECT 1 FROM timeline WHERE record_hash = ? LIMIT 1")?;
         let exists = stmt.exists([record_hash])?;
         Ok(exists)
+    }
+
+    /// Number of events recorded at a given snapshot `epoch` (point-in-time view
+    /// over the super-timeline).
+    pub fn event_count_at_epoch(&self, epoch: &str) -> Result<u64, TimelineStoreError> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT COUNT(*) FROM timeline WHERE epoch = ?")?;
+        let count: u64 = stmt.query_row([epoch], |row| row.get(0))?;
+        Ok(count)
+    }
+
+    /// The distinct snapshot epochs present in the cohort.
+    pub fn epochs(&self) -> Result<Vec<String>, TimelineStoreError> {
+        let mut stmt = self.conn.prepare("SELECT DISTINCT epoch FROM timeline")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row?);
+        }
+        Ok(out)
     }
 }
 
