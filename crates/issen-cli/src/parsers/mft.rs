@@ -518,6 +518,56 @@ mod tests {
     }
 
     #[test]
+    fn test_si_mace_surfaced_on_file_create() {
+        use chrono::TimeZone;
+
+        // Four distinct $SI MACE values so each key is unambiguous.
+        let si_created = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
+        let si_modified = Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap();
+        let si_accessed = Utc.with_ymd_and_hms(2020, 1, 3, 0, 0, 0).unwrap();
+        let si_mft_modified = Utc.with_ymd_and_hms(2020, 1, 4, 0, 0, 0).unwrap();
+
+        let mut batch: Vec<TimelineEvent> = Vec::new();
+        emit_mace_timestamps(
+            &mut batch,
+            &si_modified,
+            &si_accessed,
+            &si_created,
+            &si_mft_modified,
+            42,
+            "Users/analyst/report.docx",
+            false,
+            "evidence-001",
+            None,
+        );
+
+        let create = batch
+            .iter()
+            .find(|e| e.event_type == EventType::FileCreate)
+            .expect("FileCreate event emitted");
+
+        // All four $SI MACE must ride on the FileCreate event so the timestomp
+        // FP gate (copy: si_created>si_modified; volume-move) and the stronger
+        // ordering test (si_modified<fn_created) can run from one event.
+        assert_eq!(
+            create.metadata["si_created"],
+            serde_json::json!(datetime_to_display(&si_created)),
+        );
+        assert_eq!(
+            create.metadata["si_modified"],
+            serde_json::json!(datetime_to_display(&si_modified)),
+        );
+        assert_eq!(
+            create.metadata["si_accessed"],
+            serde_json::json!(datetime_to_display(&si_accessed)),
+        );
+        assert_eq!(
+            create.metadata["si_mft_changed"],
+            serde_json::json!(datetime_to_display(&si_mft_modified)),
+        );
+    }
+
+    #[test]
     fn test_no_fn_metadata_when_fn_absent() {
         use chrono::TimeZone;
         let ts = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
