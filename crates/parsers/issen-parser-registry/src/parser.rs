@@ -20,7 +20,6 @@ use issen_core::timeline::event::{EventType, TimelineEvent};
 /// `notatin` on a zero-byte or malformed hive are caught and returned as
 /// `Ok(vec![])`.
 pub fn parse_hive(path: &Path, source_id: &str) -> anyhow::Result<Vec<TimelineEvent>> {
-    use notatin::parser::ParserIterator;
     use notatin::parser_builder::ParserBuilder;
 
     // Zero-byte or very small files are not valid hives — return empty.
@@ -29,22 +28,49 @@ pub fn parse_hive(path: &Path, source_id: &str) -> anyhow::Result<Vec<TimelineEv
         return Ok(vec![]);
     }
 
-    // Build the parser; on any error (corrupt header, wrong magic, etc.) return
-    // an empty vec rather than propagating the error.
-    let owned_path = path.to_path_buf();
-    let parser = match ParserBuilder::from_path(owned_path).build() {
-        Ok(p) => p,
-        Err(_) => return Ok(vec![]),
-    };
-
     let hive_name = path
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
 
-    let mut events = Vec::new();
+    // Build from the path so co-located transaction logs (LOG1/LOG2) are replayed;
+    // on any error (corrupt header, wrong magic) return empty rather than propagate.
+    let owned_path = path.to_path_buf();
+    let parser = match ParserBuilder::from_path(owned_path).build() {
+        Ok(p) => p,
+        Err(_) => return Ok(vec![]),
+    };
+    Ok(events_from_parser(&parser, hive_name, source_id))
+}
 
-    for key in ParserIterator::new(&parser) {
+/// Parse a registry hive from an in-memory reader — the bytes a [`DataSource`]
+/// yields during ingest. Unlike [`parse_hive`], this parses the **primary hive
+/// only** (transaction-log replay needs the sidecar files on disk). Returns an
+/// empty vec on any parse error (not a valid hive).
+///
+/// [`DataSource`]: issen_core::plugin::traits::DataSource
+pub fn parse_hive_reader<R>(reader: R, hive_name: &str, source_id: &str) -> Vec<TimelineEvent>
+where
+    R: notatin::file_info::ReadSeek + 'static,
+{
+    use notatin::parser_builder::ParserBuilder;
+
+    match ParserBuilder::from_file(reader).build() {
+        Ok(parser) => events_from_parser(&parser, hive_name, source_id),
+        Err(_) => vec![],
+    }
+}
+
+/// Emit one `RegistryModify` event per key, keyed on its LastWrite time.
+fn events_from_parser(
+    parser: &notatin::parser::Parser,
+    hive_name: &str,
+    source_id: &str,
+) -> Vec<TimelineEvent> {
+    use notatin::parser::ParserIterator;
+
+    let mut events = Vec::new();
+    for key in ParserIterator::new(parser) {
         let ts: chrono::DateTime<chrono::Utc> = key.last_key_written_date_and_time();
 
         // Convert to nanoseconds since Unix epoch.
@@ -73,5 +99,5 @@ pub fn parse_hive(path: &Path, source_id: &str) -> anyhow::Result<Vec<TimelineEv
         events.push(event);
     }
 
-    Ok(events)
+    events
 }

@@ -118,6 +118,64 @@ mod tests {
         );
     }
 
+    // ── Trait parse() wiring (A2) ──────────────────────────────────────────
+
+    use issen_core::timeline::event::TimelineEvent;
+
+    struct BytesSource {
+        data: Vec<u8>,
+    }
+    impl DataSource for BytesSource {
+        fn len(&self) -> u64 {
+            self.data.len() as u64
+        }
+        fn read_at(&self, offset: u64, buf: &mut [u8]) -> Result<usize, RtError> {
+            let off = offset as usize;
+            if off >= self.data.len() {
+                return Ok(0);
+            }
+            let n = buf.len().min(self.data.len() - off);
+            buf[..n].copy_from_slice(&self.data[off..off + n]);
+            Ok(n)
+        }
+    }
+
+    #[derive(Default)]
+    struct CountingEmitter {
+        count: std::sync::atomic::AtomicU64,
+    }
+    impl EventEmitter for CountingEmitter {
+        fn emit(&self, _event: TimelineEvent) -> Result<(), RtError> {
+            self.count
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            Ok(())
+        }
+        fn emit_batch(&self, batch: Vec<TimelineEvent>) -> Result<(), RtError> {
+            self.count
+                .fetch_add(batch.len() as u64, std::sync::atomic::Ordering::Relaxed);
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn parse_consumes_the_whole_source() {
+        // The stub never reads the DataSource (bytes_processed stays 0). The wired
+        // parser must consume the entire hive image and route it through notatin.
+        // (4 KiB of non-hive bytes → notatin build fails → 0 events, but no panic.)
+        let data = vec![0xABu8; 4096];
+        let src = BytesSource { data: data.clone() };
+        let emitter = CountingEmitter::default();
+        let stats = RegistryHiveParser
+            .parse(&src, &emitter)
+            .expect("parse returns Ok");
+        assert_eq!(
+            stats.bytes_processed,
+            data.len() as u64,
+            "wired parser must read the whole source"
+        );
+        assert_eq!(stats.events_emitted, 0, "invalid hive yields no events");
+    }
+
     // ── parse_hive tests ───────────────────────────────────────────────────
 
     #[test]
