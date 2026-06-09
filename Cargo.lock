@@ -1068,6 +1068,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "url",
 ]
@@ -2983,7 +2984,7 @@ dependencies = [
 
 [[package]]
 name = "forensicnomicon"
-version = "0.3.1"
+version = "0.3.3"
 dependencies = [
  "serde",
 ]
@@ -4316,6 +4317,7 @@ dependencies = [
  "duckdb",
  "flate2",
  "forensic-pivot",
+ "forensicnomicon",
  "inventory",
  "is-terminal",
  "issen-core",
@@ -4812,6 +4814,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "csv",
+ "forensicnomicon",
  "hex",
  "insta",
  "ipnet",

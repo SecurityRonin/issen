@@ -7,7 +7,11 @@
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
+use forensicnomicon::attack_events::FAILED_LOGON_BURST;
 use issen_core::timeline::event::TimelineEvent;
+use issen_signatures::attack_classifier::{
+    classify_event, failed_logon_burst_finding, NativeEventSignature,
+};
 use issen_signatures::matching::engine::ScanEngine;
 use issen_signatures::matching::results::ScanFinding;
 use issen_timeline::findings::FindingRow;
@@ -20,6 +24,7 @@ pub struct ScanPhaseSummary {
     pub sigma_findings: usize,
     pub file_findings: usize,
     pub network_findings: usize,
+    pub native_findings: usize,
     pub total_findings: usize,
 }
 
@@ -73,6 +78,60 @@ fn finding_to_row(
         matched_indicator: finding.matched_indicator.clone(),
         tags: serde_json::to_string(&finding.tags).unwrap_or_else(|_| "[]".to_string()),
     }
+}
+
+/// Build a native ATT&CK signature from a Windows event's metadata. Returns
+/// `None` for events that carry no numeric `event_id` (non-EVTX events).
+fn native_signature(event: &TimelineEvent) -> Option<NativeEventSignature> {
+    let event_id = u32::try_from(event.metadata.get("event_id")?.as_u64()?).ok()?;
+    let logon_type = event
+        .metadata
+        .get("logon_type")
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|n| u32::try_from(n).ok());
+    Some(NativeEventSignature {
+        event_id,
+        logon_type,
+    })
+}
+
+/// Classify native Windows events into ATT&CK-tagged `FindingRow`s — no Sigma.
+///
+/// Per-event techniques (e.g. 4624 type-10 → T1021.001) carry the originating
+/// event's provenance; the aggregate 4625 brute-force burst is attributed to the
+/// first failed-logon event seen. The resulting tags (`attack.<tactic>`) are what
+/// the report's attack-chain reads, so the chain populates without any ruleset.
+pub fn run_native_attack_phase(events: &[TimelineEvent]) -> Vec<FindingRow> {
+    let mut rows = Vec::new();
+    let mut failed_logons = 0usize;
+    let mut burst_src: Option<(&str, &str)> = None;
+
+    for event in events {
+        let Some(sig) = native_signature(event) else {
+            continue;
+        };
+        if sig.event_id == FAILED_LOGON_BURST.event_id {
+            failed_logons += 1;
+            burst_src.get_or_insert((
+                event.evidence_source_id.as_str(),
+                event.artifact_path.as_str(),
+            ));
+        }
+        for finding in &classify_event(&sig) {
+            rows.push(finding_to_row(
+                finding,
+                &event.evidence_source_id,
+                &event.artifact_path,
+            ));
+        }
+    }
+
+    if let Some(burst) = failed_logon_burst_finding(failed_logons) {
+        let (source_id, path) = burst_src.unwrap_or(("native", "EVTX:Security"));
+        rows.push(finding_to_row(&burst, source_id, path));
+    }
+
+    rows
 }
 
 /// Run the scanning phase: evaluate events with Sigma, scan artifact files.
@@ -150,6 +209,11 @@ pub fn run_scan_phase(
             summary.network_findings += 1;
         }
     }
+
+    // Phase 4: native event → ATT&CK classification (no Sigma ruleset).
+    let native = run_native_attack_phase(events);
+    summary.native_findings += native.len();
+    findings.extend(native);
 
     summary.total_findings = findings.len();
     (findings, summary)
