@@ -16,11 +16,19 @@ use crate::open::DumpFormat;
 // Reader bootstrap
 // ---------------------------------------------------------------------------
 
-/// Open a memory dump and build an [`ObjectReader`] backed by ISF symbols.
+/// Open a memory dump and build an [`ObjectReader`] backed by symbols.
+///
+/// Symbol resolution is **zero-config by default**: when `profile` is `None`
+/// or the literal sentinel `"auto"`, the dump is scanned for the Windows
+/// kernel image, its `ntkrnlmp` RSDS PDB GUID is extracted, and the matching
+/// symbol profile is auto-selected via [`AutoProfile`]. An explicit
+/// `--profile <isf.json>` path overrides this and loads that ISF table
+/// directly.
 ///
 /// # Errors
 ///
-/// - Returns `Err` containing `"profile"` when `profile` is `None`.
+/// - Returns `Err` mentioning auto-detection / kernel when `profile` is `None`
+///   or `"auto"` and no kernel image can be located (or its profile resolved).
 /// - Returns `Err` containing `"CR3"` when the dump has no embedded CR3 and
 ///   `cr3_override` is `None`.
 /// - Returns `Err` on I/O failure or ISF parse error.
@@ -29,8 +37,6 @@ pub fn build_reader(
     profile: Option<&str>,
     cr3_override: Option<u64>,
 ) -> anyhow::Result<(DumpFormat, ObjectReader<Box<dyn PhysicalMemoryProvider>>)> {
-    let profile_path = profile.ok_or_else(|| anyhow!("--profile <isf.json> is required"))?;
-
     let provider: Box<dyn PhysicalMemoryProvider> =
         open_dump_with_raw_fallback(path).map_err(|e| anyhow!("failed to open dump: {e}"))?;
 
@@ -46,14 +52,56 @@ pub fn build_reader(
         .or(cr3_override)
         .ok_or_else(|| anyhow!("dump has no embedded CR3; use --cr3 <addr> to provide one"))?;
 
-    let resolver = IsfResolver::from_path(Path::new(profile_path))
-        .map_err(|e| anyhow!("failed to load ISF profile '{profile_path}': {e}"))?;
-    let symbols: Box<dyn memf_symbols::SymbolResolver> = Box::new(resolver);
+    // Zero-config default vs. explicit ISF override.
+    //   None / Some("auto")  → auto-profile (scan kernel → RSDS GUID → resolve)
+    //   Some("<path>.json")  → load that ISF table directly
+    let symbols: Box<dyn memf_symbols::SymbolResolver> = match profile {
+        None | Some("auto") => resolve_auto_profile(&provider)?,
+        Some(profile_path) => {
+            let resolver = IsfResolver::from_path(Path::new(profile_path))
+                .map_err(|e| anyhow!("failed to load ISF profile '{profile_path}': {e}"))?;
+            Box::new(resolver)
+        }
+    };
 
     let vas = VirtualAddressSpace::new(provider, cr3, TranslationMode::X86_64FourLevel);
     let reader = ObjectReader::new(vas, symbols);
 
     Ok((fmt, reader))
+}
+
+/// Auto-select a symbol profile by locating the kernel in `provider` and
+/// resolving its `ntkrnlmp` RSDS PDB GUID via [`AutoProfile`].
+///
+/// Scans physical memory for the Windows kernel PE (`scan_for_kernel`),
+/// extracts its PDB identity (GUID + age), and asks [`AutoProfile`] for the
+/// matching symbol profile (local PDB cache, then the Microsoft symbol
+/// server). Errors here name the auto-detection / kernel scan so the caller
+/// can fall back to an explicit `--profile`.
+///
+/// # Errors
+///
+/// Returns `Err` when no kernel image can be located, or when the resolved
+/// PDB profile cannot be acquired.
+fn resolve_auto_profile<P: PhysicalMemoryProvider>(
+    provider: &P,
+) -> anyhow::Result<Box<dyn memf_symbols::SymbolResolver>> {
+    let pdb_id = memf_symbols::scan_for_kernel(provider).map_err(|e| {
+        anyhow!(
+            "auto profile: could not locate the Windows kernel image to \
+             auto-detect symbols ({e}); pass --profile <isf.json> to override"
+        )
+    })?;
+
+    let auto = memf_symbols::AutoProfile::new()
+        .map_err(|e| anyhow!("auto profile: symbol cache unavailable ({e})"))?;
+    auto.from_pdb_id(&pdb_id).map_err(|e| {
+        anyhow!(
+            "auto profile: failed to resolve symbols for kernel PDB {} ({e}); \
+             pass --profile <isf.json> to override",
+            pdb_id.guid
+        )
+    })
 }
 
 // ---------------------------------------------------------------------------
