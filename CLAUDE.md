@@ -333,7 +333,12 @@ These crates parse **untrusted, attacker-controllable disk images**. The bar is:
 Full rules live in the global `~/.claude/CLAUDE.personal.md` ("SecurityRonin Repository README Standard"); the load-bearing points for these crates:
 
 - **Goal:** convert the target reader (forensic analyst *or* Rust dev) into an active user in **30 seconds** — `cargo add` to a result they care about, above the fold.
-- **Badges:** Crates.io (both `<x>-core` and `<x>-forensic`), Docs.rs, License: MIT, CI, Sponsor (`h4x0r`).
+- **Badges (badge the guarantees we already enforce):** ordered left→right by what a wary analyst checks first —
+  - *Identity / health:* **Crates.io** version (both `<x>-core` and `<x>-forensic`) · **Docs.rs** (libraries) · **CI** (GitHub Actions passing) · **Coverage** (Codecov — surfaces the 100% line-coverage gate).
+  - *Trust signals (the forensic differentiators):* **`unsafe forbidden`** — only for crates that are genuinely `unsafe_code = forbid` (winreg/vhdx/ntfs/qcow2/sqlite-core…); the mmap crates (`ewf`, `memory-forensic`) are `unsafe_code = deny` + bounded-allow, so they **skip** this badge rather than misrepresent · **Security advisories clean** (RustSec / cargo-deny).
+  - *Meta:* **Rust MSRV** (e.g. `Rust 1.80+`) · **License: MIT** · **Sponsor** (`h4x0r`).
+  - *Optional / later:* Crates.io **Downloads** (social proof once it has traction) · **deps.rs** (dependency freshness).
+  - Rationale: Coverage, unsafe-forbidden, and security-audit turn standards we *already meet* (100% coverage gate, `forbid(unsafe)`, cargo-deny) into visible proof — the "trust but verify" pitch the README is built around.
 - **Above the fold:** a bold one-line tagline (never copied between repos), then the single fastest path — for a `*-forensic` workspace lead with the *analyzer* hook (`audit_path(...)` → graded findings), since that is the differentiator, then show the reader.
 - **Body:** the two-crate split (`<x>-core` reader / `<x>-forensic` analyzer), the anomaly-code table, and a "trust but verify" paragraph (panic-free, fuzzed, validated against real artifacts).
 - **Footer (mandatory, exact):** `[Privacy Policy](https://securityronin.github.io/<repo>/privacy/) · [Terms of Service](https://securityronin.github.io/<repo>/terms/) · © 2026 Security Ronin Ltd` — and `docs/privacy.md` + `docs/terms.md` **must exist** to back the links.
