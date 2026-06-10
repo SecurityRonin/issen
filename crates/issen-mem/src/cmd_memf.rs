@@ -290,6 +290,71 @@ mod tests {
     }
 
     // -----------------------------------------------------------------------
+    // resolve_target_os — route by the RESOLVED profile, not just the format.
+    //
+    // A Raw container auto-profiles to Windows (post-B1), so its
+    // format-derived OS is `Unknown` but the resolved symbol profile is a
+    // Windows kernel. Such a dump MUST route to the Windows walkers, not the
+    // Linux fallback. These tests pin the routing DECISION in isolation
+    // (Humble Object), so they fail before resolve_target_os exists.
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn resolve_target_os_windows_raw_profiled_routes_windows() {
+        // Raw container (Unknown) + Windows symbol profile → Windows.
+        assert_eq!(
+            resolve_target_os(TargetOs::Unknown, true),
+            TargetOs::Windows
+        );
+    }
+
+    #[test]
+    fn resolve_target_os_unknown_non_windows_stays_unknown() {
+        // Raw container (Unknown) + no Windows symbols → keep Unknown
+        // (Linux best-effort fallback path is unchanged).
+        assert_eq!(
+            resolve_target_os(TargetOs::Unknown, false),
+            TargetOs::Unknown
+        );
+    }
+
+    #[test]
+    fn resolve_target_os_linux_format_is_never_overridden() {
+        // A definitive Linux container stays Linux even if the (irrelevant)
+        // Windows-symbol probe somehow reported true — the format wins.
+        assert_eq!(resolve_target_os(TargetOs::Linux, true), TargetOs::Linux);
+        assert_eq!(resolve_target_os(TargetOs::Linux, false), TargetOs::Linux);
+    }
+
+    #[test]
+    fn resolve_target_os_windows_format_stays_windows() {
+        // A definitive Windows crash dump stays Windows regardless of probe.
+        assert_eq!(
+            resolve_target_os(TargetOs::Windows, false),
+            TargetOs::Windows
+        );
+    }
+
+    #[test]
+    fn profile_is_windows_detects_ps_active_process_head() {
+        use memf_symbols::isf::IsfResolver;
+        // A profile exposing the Windows-only PsActiveProcessHead symbol is
+        // classified as Windows.
+        let win_isf = br#"{"base_types":{},"user_types":{},"enums":{},
+            "symbols":{"PsActiveProcessHead":{"address":1234}}}"#;
+        let win = IsfResolver::from_bytes(win_isf).expect("ISF parses");
+        assert!(profile_is_windows(&win), "Windows kernel symbol → Windows");
+
+        // A profile without it (e.g. Linux / empty) is not Windows.
+        let other_isf = br#"{"base_types":{},"user_types":{},"enums":{},"symbols":{}}"#;
+        let other = IsfResolver::from_bytes(other_isf).expect("ISF parses");
+        assert!(
+            !profile_is_windows(&other),
+            "no Windows kernel symbol → not Windows"
+        );
+    }
+
+    // -----------------------------------------------------------------------
     // Task 4 — MemfCommand description text tests (RED: describe() not yet defined)
     // -----------------------------------------------------------------------
 
