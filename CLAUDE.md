@@ -305,6 +305,8 @@ the migrated analyzers and `forensicnomicon::report` to aggregate findings into 
 
 **Coverage gate:** each crate keeps 100% line coverage (`cargo llvm-cov --lib`, fail on any `DA:n,0`) **except lines annotated `// cov:unreachable`**. The analyzer's `audit_record`-style entry points are tested end-to-end (build a valid record, drive parse→extract→audit), not just the component helpers.
 
+**Coverage is a backstop, not a 100%-for-its-own-sake target.** The number exists to prove behavior is exercised and to catch regressions — never pursue it by deleting defensive code or contriving meaningless tests (see the `// cov:unreachable` standard below, and the global "Coverage — A Backstop, Not a Target" discipline). **Pure-library crates** (the reference: vmdk/vhdx/ntfs/qcow2) gate on `--lib` at 100%. **Binary-shipping repos** (CLI/TUI/server — e.g. browser-forensic with `br4n6`/`bw`/MCP) gate on **`--workspace`** instead, because `--lib` neither counts integration-test coverage nor measures `main()`/render-loop bins, so it *understates* a binary repo. For those, keep the bin glue thin via the **Humble Object** pattern (decisions in testable libs, only an irreducible draw/read/transport shell in `main()`/the loop), ratchet the `--workspace` threshold to the actual achieved level (no slack), and document the residual untestable shell — do not exempt the glue silently nor drop the bar to hide it.
+
 **`// cov:unreachable` — defence-in-depth over coverage purism (binding standard).** Panic-free parsers keep defensive guard arms (`let Some(x) = … else { continue }`, bounds-checked `.get()` fallbacks, length checks) that are *provably unreachable* under a dominating invariant but are kept so the code degrades gracefully if that invariant is ever broken by a future change. Such an arm cannot be exercised by any test. **Never delete or restructure a defensive guard solely to satisfy the coverage gate** — that trades robustness for a number, the exact opposite of the Paranoid Gatekeeper standard. Instead append `// cov:unreachable: <the dominating invariant>` to the uncovered line (the `continue;`/`return …;`/guard expression). The CI gate exempts only annotated lines; every other zero-hit line still fails. Prefer restructuring to *infallible-by-construction* (e.g. `split_at_mut` so there is no `Option` to guard) where it loses no defence; reach for a crafted-input test before annotating (only annotate genuinely-unreachable arms); the `code-coverage` CI job reads each `DA:n,0` line's source and fails unless it carries the marker.
 
 **Realignment status:** `vmdk`, `vhdx`, `ntfs`, and `qcow2` are all migrated to the workspace standard (vmdk-forensic, vhdx-forensic, ntfs-forensic, qcow2-forensic — each `core/` + `forensic/`).
@@ -333,17 +335,23 @@ These crates parse **untrusted, attacker-controllable disk images**. The bar is:
 Full rules live in the global `~/.claude/CLAUDE.personal.md` ("SecurityRonin Repository README Standard"); the load-bearing points for these crates:
 
 - **Goal:** convert the target reader (forensic analyst *or* Rust dev) into an active user in **30 seconds** — `cargo add` to a result they care about, above the fold.
-- **Badges (badge the guarantees we already enforce):** ordered left→right by what a wary analyst checks first —
-  - *Identity / health:* **Crates.io** version (both `<x>-core` and `<x>-forensic`) · **Docs.rs** (libraries) · **CI** (GitHub Actions passing) · **Coverage** (Codecov — surfaces the 100% line-coverage gate).
-  - *Trust signals (the forensic differentiators):* **`unsafe forbidden`** — only for crates that are genuinely `unsafe_code = forbid` (winreg/vhdx/ntfs/qcow2/sqlite-core…); the mmap crates (`ewf`, `memory-forensic`) are `unsafe_code = deny` + bounded-allow, so they **skip** this badge rather than misrepresent · **Security advisories clean** (RustSec / cargo-deny).
-  - *Meta:* **Rust MSRV** (e.g. `Rust 1.80+`) · **License: MIT** · **Sponsor** (`h4x0r`).
-  - *Optional / later:* Crates.io **Downloads** (social proof once it has traction) · **deps.rs** (dependency freshness).
-  - Rationale: Coverage, unsafe-forbidden, and security-audit turn standards we *already meet* (100% coverage gate, `forbid(unsafe)`, cargo-deny) into visible proof — the "trust but verify" pitch the README is built around.
+- **Badges (badge the guarantees we already enforce; plan for TWO rows — 9 badges wrap on GitHub, and accidental wrapping destroys the information architecture):**
+  - *Row 1 — identity + adoption decision:* **Crates.io** version (both `<x>-core` and `<x>-forensic`) · **Docs.rs** (libraries) · **Rust MSRV** (e.g. `Rust 1.80+` — a build-compat go/no-go, so it pairs with identity, NOT buried in a meta tail) · **License: Apache-2.0** · **Sponsor** (`h4x0r`).
+  - *Row 2 — trust proof:* **CI** (Actions passing) · **Coverage** (Codecov — the 100% line-coverage gate) · **`unsafe forbidden`** — only for crates that are genuinely `unsafe_code = forbid` (winreg/vhdx/ntfs/qcow2/sqlite-core…); the mmap crates (`ewf`, `memory-forensic`) are `unsafe_code = deny` + bounded-allow, so they **skip** this badge rather than misrepresent · **Security advisories clean** (RustSec / cargo-deny).
+  - *Single-row order (when it doesn't wrap):* Crates.io · Docs.rs · Rust 1.80+ · CI · Coverage · unsafe-forbidden · security-audit · License · Sponsor.
+  - *Optional / later:* Crates.io **Downloads** · **deps.rs** · a **fuzzing** badge ONLY with a real fuzz-CI story behind it (an unearned fuzz badge damages trust).
+  - *Never badge:* a **Stars** badge — GitHub already renders the star count natively in the repo header; a README copy is pure redundancy.
+  - Rationale (Codex-reviewed): lead with identity/installability (crates.io → docs → MSRV) so both audiences orient *before* the proof claims; **Coverage** bridges CI→security (read as a natural escalation of rigor); **unsafe-forbidden before security-audit** because memory-safety is the sharper differentiator for evidence parsers than dependency hygiene. Coverage/unsafe-forbidden/security-audit turn standards we *already meet* into visible proof — the "trust but verify" pitch.
+- **GitHub repo metadata (the "About" panel — standardize across the fleet):**
+  - **Description** (one line): `<Domain> forensic <library|reader|analyzer> — <what it parses/does>, <headline capabilities>. <differentiator>.` Mirror the README tagline (one concept, one name); lead with the artifact family, then capabilities (parse/detect/carve/recover), then the differentiator (panic-free · single static binary · no runtime deps · deleted-record carving). e.g. browser-forensic: *"Browser forensic library suite — parse Chrome/Firefox/Safari artifacts, detect history clearing, carve deleted records. Single static binary, no runtime deps."*
+  - **Topics** (GitHub topics, ≤ 20, most-specific first): always `rust` + the DFIR set `forensics · dfir · digital-forensics · incident-response`; plus the **artifact-family** topic (`browser-forensics` / `memory-forensics` / `registry` / `ntfs` …) and the **specific formats/tools** it handles (`chrome · firefox · safari · sqlite`; `registry · windows`; etc.); add `cli` if it ships one.
+  - **Homepage** (the "About" website field): set to `https://securityronin.github.io/<repo>/` (the Pages docs). The README links to docs via the **docs badge** — do **NOT** add a separate "Full documentation →" prose link (redundant with the badge + the homepage field).
 - **Above the fold:** a bold one-line tagline (never copied between repos), then the single fastest path — for a `*-forensic` workspace lead with the *analyzer* hook (`audit_path(...)` → graded findings), since that is the differentiator, then show the reader.
 - **Body:** the two-crate split (`<x>-core` reader / `<x>-forensic` analyzer), the anomaly-code table, and a "trust but verify" paragraph (panic-free, fuzzed, validated against real artifacts).
+- **Comparison / capability tables** (the "What's Different" vs-competitors matrix, the artifact-coverage matrix): mark a supported cell with **`✅`** (U+2705), not a plain `✓` — the emoji reads at a glance and renders consistently. Use `—` (em dash) for "not supported" and the literal word `partial` for partial support; reserve `❌` only when an *explicit* negative is the point being made.
 - **Footer (mandatory, exact):** `[Privacy Policy](https://securityronin.github.io/<repo>/privacy/) · [Terms of Service](https://securityronin.github.io/<repo>/terms/) · © 2026 Security Ronin Ltd` — and `docs/privacy.md` + `docs/terms.md` **must exist** to back the links.
-- **No `## License` section** (the MIT badge → `LICENSE` is the single source of truth).
-- A `docs/validation.md` documents the differential/real-artifact validation (Doer-Checker evidence).
+- **No `## License` section** (the Apache-2.0 badge → `LICENSE` is the single source of truth; the fleet standardized on **Apache-2.0** for its explicit patent grant — migrate any residual MIT repos).
+- A `docs/validation.md` documents the differential/real-artifact validation (Doer-Checker evidence). **Carving/recovery analyzers must validate against an *independent* reference tool, not only against records we deleted ourselves** — the established oracle per domain (e.g. SQLite deleted-record carving → **fqlite**; NTFS → analyzeMFT/the Sleuth Kit; registry → RegRipper/yarp) is the yardstick: run it on the same artifact and reconcile counts + contents, explaining any divergence.
 - After a `*-core`→`*-core`/`*-forensic` restructure, **rewrite the README**: badges/links/repo-name/`cargo add` lines all point at the new crate names, not the pre-split single crate.
 
 ## Test Corpus Catalog — keep it current (MANDATORY)
@@ -366,3 +374,28 @@ change:**
   confidence (`✓` confirmed / `~` inferred / `?` undetermined).
 - Keep the **§H MD5 manifest** in sync (hash new files; `tests/data/` is gitignored so hashes must
   live in the catalog).
+
+**One repo-root `tests/data/` (MANDATORY layout — workspaces included).** Every repo keeps a *single*
+`tests/data/` at the repo root, never per-member `<member>/tests/data/` directories. In a Cargo
+workspace each member's integration tests reach the shared fixtures with a **relative `include_bytes!`
+path** — from `<member>/tests/<file>.rs` the repo root is two levels up, so it is symmetric across
+members: `include_bytes!("../../tests/data/<file>")`. This keeps one home, one README, and no
+duplication, and it is conceptually neutral (a carving fixture used only by `<x>-forensic` need not
+live "inside" `<x>-core`).
+
+- **Never symlink fixtures** to fake a shared location. `include_bytes!` follows symlinks on Unix, but
+  **git on Windows materializes a symlink as a text file containing the link target** — `include_bytes!`
+  would then embed that path *string* instead of the file bytes, silently breaking the Windows CI
+  runner. Use the relative path, not a symlink.
+- **Verification gate:** after moving/adding fixtures, `cargo test` for every member must still compile
+  (the `include_bytes!` paths must resolve) — a wrong path is a build error, not a silent miss.
+
+**`tests/data/README.md` (one per repo, MANDATORY).** Modeled on
+[`issen/tests/data/README.md`](../tests/data/README.md): a per-file `#### <filename>` entry giving
+**Source / Identity / writeup URL(s) / original download URL (hotlinked) / MD5 (or sha256) / notable
+contents** for real datasets, and the **verbatim generator command** (or builder `fn` at `file:line`)
+for synthetic fixtures — never a download URL for something we generate. The README is the co-located
+human-facing detail; `docs/corpus-catalog.md` stays the single machine-index — **cross-reference, never
+duplicate** (the README links up to the catalog). Document large untracked/gitignored artifacts here
+too (provenance even when the bytes aren't committed — e.g. a vendored oracle's test corpus). Use
+straight ASCII in paths/commands.
