@@ -1794,4 +1794,90 @@ mod tests {
         assert!(!headers.is_empty());
         assert!(!rows.is_empty(), "must have at least one row (fallback)");
     }
+
+    // -----------------------------------------------------------------------
+    // B4 — malfind decision helpers (injected-PE vs injected-shellcode)
+    //
+    // Ground truth (SecurityNik TOTAL RECALL 2024 write-up, `windows.malfind`
+    // against SECURITYNIK-WIN-20231116-235706.dmp): the injected regions in
+    // vmtoolsd.exe (PID 7164) and powershell.exe (PID 4852) are MEM_PRIVATE +
+    // PAGE_EXECUTE_READWRITE (VadS) but their first bytes are *all zeros* — i.e.
+    // injected shellcode/Meterpreter, NOT an MZ-prefixed PE. So MEM_PRIVATE+RWX
+    // is the primary signal; an MZ header is a sub-classifier that, when present,
+    // elevates the region to a classic injected-PE.
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn injected_pe_header_detects_mz() {
+        assert!(is_injected_pe_header(b"MZ\x90\x00\x03"));
+        assert!(is_injected_pe_header(&[0x4D, 0x5A, 0x00]));
+    }
+
+    #[test]
+    fn injected_pe_header_rejects_non_mz() {
+        // The REAL Total Recall injected region: leading zeros (shellcode).
+        assert!(!is_injected_pe_header(&[0u8; 64]));
+        assert!(!is_injected_pe_header(b"ZM\x00")); // reversed
+        assert!(!is_injected_pe_header(&[0x4D])); // too short for a full MZ
+        assert!(!is_injected_pe_header(&[])); // no bytes captured
+    }
+
+    #[test]
+    fn classify_malfind_region_distinguishes_pe_from_shellcode() {
+        assert_eq!(classify_malfind_region(b"MZ\x90\x00"), "injected-PE");
+        // Zeroed RWX-private region — the verified Total Recall vmtoolsd/powershell case.
+        assert_eq!(classify_malfind_region(&[0u8; 64]), "injected-code");
+        // No header bytes captured by the walker → still a flagged RWX-private region.
+        assert_eq!(classify_malfind_region(&[]), "injected-code");
+    }
+
+    // -----------------------------------------------------------------------
+    // B3 — netstat decision helpers (external / suspicious-C2 classification)
+    //
+    // Ground truth (SecurityNik TOTAL RECALL 2024 write-up, `windows.netscan`):
+    // the ESTABLISHED C2 sessions are on the 10.0.0.0/8 LAN —
+    //   10.0.0.108:4444  -> 10.0.0.110:38159  (Metasploit 4444)
+    //   10.0.0.108:49957 -> 10.0.0.110:443
+    //   10.0.0.108:49685 -> 10.0.0.101:4444   (Metasploit 4444)
+    //   10.0.0.108:49686 -> 10.0.0.110:22     (SSH)
+    // The IP 203.78.103.109 named in the task brief belongs to a DIFFERENT
+    // challenge (DFIR Madness "Stolen Szechuan Sauce") and does NOT appear here.
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn external_endpoint_excludes_loopback_and_wildcard() {
+        assert!(is_external_endpoint("10.0.0.110"));
+        assert!(is_external_endpoint("203.78.103.109"));
+        assert!(!is_external_endpoint("127.0.0.1"));
+        assert!(!is_external_endpoint("0.0.0.0"));
+        assert!(!is_external_endpoint("")); // unresolved
+        assert!(!is_external_endpoint("::1")); // IPv6 loopback
+    }
+
+    #[test]
+    fn suspicious_remote_port_flags_known_c2_ports() {
+        assert!(is_suspicious_remote_port(4444)); // Metasploit default
+        assert!(!is_suspicious_remote_port(443)); // HTTPS — benign port number
+        assert!(!is_suspicious_remote_port(22)); // SSH
+        assert!(!is_suspicious_remote_port(0));
+    }
+
+    #[test]
+    fn classify_connection_flags_established_external() {
+        use memf_windows::WinTcpState;
+        // ESTABLISHED to an external host on the Metasploit port → suspicious.
+        let note = classify_connection(WinTcpState::Established, "10.0.0.110", 38159);
+        assert_eq!(note, "external-established");
+        let c2 = classify_connection(WinTcpState::Established, "10.0.0.101", 4444);
+        assert_eq!(c2, "suspicious-c2-port");
+        // Loopback / non-established → not flagged.
+        assert_eq!(
+            classify_connection(WinTcpState::Established, "127.0.0.1", 9999),
+            ""
+        );
+        assert_eq!(
+            classify_connection(WinTcpState::Listen, "0.0.0.0", 4444),
+            ""
+        );
+    }
 }
