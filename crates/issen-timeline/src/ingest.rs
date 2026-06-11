@@ -352,4 +352,42 @@ mod tests {
         store.inseissen_batch(&live).expect("live");
         assert_eq!(store.event_count_at_epoch("live").expect("live-count"), 1);
     }
+
+    #[test]
+    fn insert_batch_at_lsn_tags_by_salt_qualified_wal_epoch() {
+        use crate::epoch::epoch_label_for;
+        use forensicnomicon::history::epoch::LsnKind;
+
+        let store = TimelineStore::in_memory().expect("store");
+        let events: Vec<TimelineEvent> = (0..3)
+            .map(|i| sample_event(i64::from(i) * 1_000, &format!("E{i}")))
+            .collect();
+
+        let gen1 = LsnKind::SqliteWalFrame {
+            salt1: 0x1111_1111,
+            salt2: 0x2222_2222,
+            frame_seq: 0,
+            commit_seq: 0,
+        };
+        // A checkpoint reset rolls the salts: same commit position, NEW generation.
+        let gen2 = LsnKind::SqliteWalFrame {
+            salt1: 0x1111_1112,
+            salt2: 0x9999_9999,
+            frame_seq: 0,
+            commit_seq: 0,
+        };
+
+        let a = store.insert_batch_at_lsn(&events, &gen1).expect("gen1");
+        let b = store.insert_batch_at_lsn(&events, &gen2).expect("gen2");
+        assert_eq!(a, 3);
+        assert_eq!(b, 3, "a checkpoint reset is a distinct epoch — not deduped");
+        assert_eq!(store.event_count().expect("count"), 6);
+
+        // The stored epochs are exactly the salt-qualified labels for the two keys.
+        let mut epochs = store.epochs().expect("epochs");
+        epochs.sort();
+        let mut expected = vec![epoch_label_for(&gen1), epoch_label_for(&gen2)];
+        expected.sort();
+        assert_eq!(epochs, expected);
+    }
 }
