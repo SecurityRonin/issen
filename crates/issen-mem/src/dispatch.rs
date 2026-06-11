@@ -46,12 +46,19 @@ pub fn build_reader(
     let metadata = provider.metadata();
     let embedded_cr3 = metadata.as_ref().and_then(|m| m.cr3);
 
+    // The x64 Low Stub yields the kernel CR3 *and* the kernel base VA (KVO) from
+    // low physical memory, header-independent. It is the most authoritative
+    // header-less anchor, so it leads CR3 resolution and supplies the KVO that
+    // rebases RVA-based kernel symbols.
+    let low_stub = memf_symbols::find_low_stub(&provider);
+
     // Resolve CR3: prefer the dump's embedded value, then the caller-supplied
-    // override, then the header-less DTB scan (self-referencing-PML4
-    // discriminator) — raw WinPMEM-style dumps carry no metadata, so the scan
-    // is what makes them zero-config. Fail only when all three come up empty.
+    // override, then the Low Stub, then the self-referential-PML4 DTB scan — raw
+    // WinPMEM-style dumps carry no metadata, so the latter two make them
+    // zero-config. Fail only when all come up empty.
     let cr3 = embedded_cr3
         .or(cr3_override)
+        .or_else(|| low_stub.map(|ls| ls.cr3))
         .or_else(|| memf_symbols::scan_for_kernel_dtb(&provider))
         .ok_or_else(|| {
             anyhow!(
@@ -70,6 +77,18 @@ pub fn build_reader(
                 .map_err(|e| anyhow!("failed to load ISF profile '{profile_path}': {e}"))?;
             Box::new(resolver)
         }
+    };
+
+    // Rebase RVA-based kernel symbols by the Low Stub's kernel base VA, at the
+    // resolver level so EVERY `symbol_address` caller (the memf-windows walkers
+    // resolve PsActiveProcessHead et al. directly off the resolver) gets a real
+    // VA by construction — without it they dereference bare RVAs and the EPROCESS
+    // walk fails on a non-canonical low address.
+    let symbols: Box<dyn memf_symbols::SymbolResolver> = match low_stub {
+        Some(ls) if ls.kernel_base_va != 0 => {
+            Box::new(memf_symbols::RebasedResolver::new(symbols, ls.kernel_base_va))
+        }
+        _ => symbols,
     };
 
     let vas = VirtualAddressSpace::new(provider, cr3, TranslationMode::X86_64FourLevel);
