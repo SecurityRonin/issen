@@ -421,13 +421,29 @@ the self-ref DTB exactly) and **`kernel_base_va=0xfffff800cbe00000`** — the KV
 at `0xcbe00000`, a different region than the drivers at `0x64xxxxxx`, which is why the VA MZ
 scan never found it).
 
-**Sole remaining gate (B1-kvo, next RED→GREEN):** thread the Low Stub KVO into the symbol
-resolver so `symbol_address` returns `kvo + rva` by construction (secure-by-design — no call
-site can obtain an un-rebased RVA; steelman fix #1). Then `PsActiveProcessHead` resolves to
-`0xfffff800cc0b00a0` and the EPROCESS walk lists processes. Until it lands, F26–F37 stand
-write-up-corroborated in `docs/case001-union-answers.md`, not yet issen-measured. Steelman
-fixes #2 (vol3 `seen`-set list-walk loop detection) and #3 (DTB precision: exactly-one-self-ref,
-reserved-bit reject, `0x1a0000–0x1b0000` prior) follow as hardening.
+**B1-kvo — LANDED (symbol rebasing) 2026-06-11.** `RebasedResolver` (memf-symbols) decorates
+the symbol resolver so **every** `symbol_address` caller — the memf-windows walkers resolve
+`PsActiveProcessHead` directly off the resolver, bypassing `required_symbol` — gets `kvo + rva`
+by construction (secure-by-design, steelman fix #1). `build_reader` leads CR3 resolution with
+the Low Stub and wraps the resolver with its KVO. **Verified on the real DC dump:**
+`PsActiveProcessHead` now rebases from the bare RVA `0x2b00a0` to the kernel VA
+`0xfffff800cc0b00a0` (KVO `0xfffff800cbe00000` + RVA) — the walker reaches a real kernel
+address.
+
+**Sole remaining gate (B1-kvo-refine):** that VA's page reads "not present" — the Low Stub's
+LmTarget rounded to 2 MiB approximates ntoskrnl's base; the exact 2 MiB base needs vol3's
+`method_low_stub` refinement (scan down for the MZ — paged out here) or cross-validation
+against the physical ntkrnlmp RSDS's mapped VA, plus confirming the resolved ISF GUID matches
+this exact build (the RVA must be correct for *this* kernel). Once the KVO pins ntoskrnl's
+true base, the EPROCESS walk lists processes. Until then F26–F37 stand write-up-corroborated
+in `docs/case001-union-answers.md`, not yet issen-measured. Steelman fixes #2 (vol3 `seen`-set
+list-walk loop detection) and #3 (DTB precision rules) follow as hardening.
+
+**Memory-leg progress this session (all RED→GREEN, vol2/vol3/rekall/MemProcFS-steelmanned):**
+0 candidates → multi-slot self-ref enumeration (2012 R2 `0x1ED`) → DTB `0x1a7000` (header-paged
+discriminator) → profile via physical RSDS → Low Stub CR3 (cross-validates the DTB) + KVO →
+resolver-level symbol rebasing → walker resolving real kernel VAs. From completely dark to one
+KVO-refinement step from a live process list.
 
 ---
 
