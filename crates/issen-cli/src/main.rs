@@ -214,7 +214,8 @@ pub enum Commands {
     },
 
     /// Analyse a physical memory dump (LiME, AVML, Windows crash dump, raw).
-    Memf {
+    #[command(visible_alias = "mem")]
+    Memory {
         /// Path to the memory dump file.
         #[arg(value_name = "DUMP_PATH")]
         dump_path: PathBuf,
@@ -514,7 +515,7 @@ fn main() -> ExitCode {
             &format,
             db.as_deref(),
         ),
-        Commands::Memf {
+        Commands::Memory {
             dump_path,
             command,
             profile,
