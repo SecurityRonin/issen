@@ -46,11 +46,19 @@ pub fn build_reader(
     let metadata = provider.metadata();
     let embedded_cr3 = metadata.as_ref().and_then(|m| m.cr3);
 
-    // Resolve CR3: prefer the dump's embedded value; fall back to the
-    // caller-supplied override; fail if neither is available.
+    // Resolve CR3: prefer the dump's embedded value, then the caller-supplied
+    // override, then the header-less DTB scan (self-referencing-PML4
+    // discriminator) — raw WinPMEM-style dumps carry no metadata, so the scan
+    // is what makes them zero-config. Fail only when all three come up empty.
     let cr3 = embedded_cr3
         .or(cr3_override)
-        .ok_or_else(|| anyhow!("dump has no embedded CR3; use --cr3 <addr> to provide one"))?;
+        .or_else(|| memf_symbols::scan_for_kernel_dtb(&provider))
+        .ok_or_else(|| {
+            anyhow!(
+                "dump has no embedded CR3 and the DTB scan found no \
+                 self-referencing PML4 mapping a kernel; use --cr3 <addr>"
+            )
+        })?;
 
     // Zero-config default vs. explicit ISF override.
     //   None / Some("auto")  → auto-profile (scan kernel → RSDS GUID → resolve)
