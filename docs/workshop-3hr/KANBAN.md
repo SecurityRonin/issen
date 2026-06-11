@@ -59,4 +59,3 @@ Provenance recorded in `issen/docs/corpus-catalog.md` (§A3).
 - **Role boundary set:** this session = workshop materials + tool-dev **handover MD plans only**;
   a separate Issen-tool-dev Claude session executes code changes.
 - Data: have full DESKTOP host; **DC01 (5.4 GB) downloading in background** (was entirely absent).
-- Workshop folder moved → `docs/workshops/3hr` (reusable format, not event-pinned).

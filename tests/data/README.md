@@ -1,24 +1,37 @@
 # Test Data — Issen
 
-Forensic disk images, UAC collections, and other test artifacts.
+Forensic disk images, memory dumps, and UAC/Velociraptor collections, plus other test artifacts.
 These files are large and not tracked in git — download them manually.
 
-Files are organized into per-challenge or per-source subfolders.
+Files are organized into per-challenge or per-source subfolders. For the **fleet-wide** corpus
+inventory (every repo, real vs synthetic, provenance + licenses) see
+[`docs/corpus-catalog.md`](../../docs/corpus-catalog.md).
 
 ## Directory Layout
 
 ```
 tests/data/
+├── CyberDefenders/
+│   └── 78-DeepDive.zip                              (537 MB)
+├── CyberSpace CTF 2024/
+│   └── csctf-2024_forensics_memory.zip             (671 MB)
 ├── DEF CON DFIR CTF 2018/
-│   └── MaxPowersCDrive.E01
-├── DFIR Madness "Stolen Szechuan Sauce" Case 001 — Windows 10/
-│   └── DESKTOP-E01.zip
+│   └── MaxPowersCDrive.E01                          (29 GB)
+├── DFIR Madness "Stolen Szechuan Sauce" Case 001 — Windows 10/   (full case, both hosts)
+│   ├── DC01-E01.zip / DC01-memory.zip / DC01-pagefile.zip          (Server 2012 R2)
+│   ├── DESKTOP-E01.zip / DESKTOP-SDN1RPT-memory.zip / …-pagefile.zip  (Windows 10)
+│   ├── {DC01,DESKTOP-SDN1RPT}-autorunsc.zip + *Protected*Files*.zip ×2
+│   └── case001-pcap.zip
 ├── Hal Linux DFIR Challenge/
-│   ├── uac-vbox-linux-20260324193807.tar.gz    (143 MB — no memory dump)
-│   └── uac-vbox-linux-20260324234043.tar.gz    (5.9 GB — includes avml.lime)
+│   ├── uac-vbox-linux-20260324193807.tar.gz        (143 MB — no memory dump)
+│   └── uac-vbox-linux-20260324234043.tar.gz        (5.9 GB — includes avml.lime)
 ├── Magnet Virtual Summit 2023 CTF — Windows 11/
-│   └── PC-MUS-001.E01
-└── Collection-A380_localdomain-2025-08-10T03_41_20Z.zip   (2.2 GB — root)
+│   └── PC-MUS-001.E01                               (49 GB)
+├── SecurityNik/
+│   └── TOTAL_RECALL_memory_forensics_CHALLENGE.zip (1.2 GB)
+├── Volatility/
+│   └── cridex_memdump.zip                           (38 MB)
+└── Collection-A380_localdomain-2025-08-10T03_41_20Z.zip   (2.2 GB — Velociraptor, root)
 ```
 
 ## Files
@@ -38,14 +51,19 @@ tests/data/
 
 ### DFIR Madness "Stolen Szechuan Sauce" Case 001 — Windows 10/
 
-#### DESKTOP-E01.zip
+**Full case present — both hosts** (the folder name predates the DC host): CitadelDC01
+(Server 2012 R2) and DESKTOP-SDN1RPT (Windows 10), each with disk E01 + memory + pagefile, plus
+the PCAP, autoruns, and protected-files bundles.
 
 - **Source:** DFIR Madness — "The Case of the Stolen Szechuan Sauce" (Case 001)
 - **Created by:** James Smith (DFIR Madness)
-- **Description:** Windows 10 desktop disk image; part of a multi-artifact case (also includes DC01 server, memory dumps, PCAP, pagefiles)
 - **Site:** <https://dfirmadness.com/the-stolen-szechuan-sauce/> (may be down)
 - **Mirror:** <https://mimircyber.com/the-case-of-the-stolen-szechuan-sauce/>
-- **MD5:** `71C5C3509331F472ABCDF81EB6EFFF07`
+- **DESKTOP-E01.zip MD5:** `71C5C3509331F472ABCDF81EB6EFFF07` (DC01 hashes not published on the
+  case page — DC01 files verified by byte-length vs server `content-length`)
+- **Used by:** BSidesHK 3hr workshop (`docs/workshop-3hr/`, disk + RAM only — pcap/autoruns/
+  protected-files downloaded for completeness but excluded from the lab) and `usnjrnl-forensic`
+  integration tests (desktop E01).
 
 ### Hal Linux DFIR Challenge/
 
@@ -79,13 +97,47 @@ Used by automated tests in `rt-parser-uac` and `rt-navigator`. The small archive
 - **MD5:** `522df9db8289f4f8132cf47b14d20fb8`
 - **Notable contents:** Contains `hiberfil.sys` (MFT entry 54, 3.37 GB allocated) — usable as real test data for `memf-format` hiberfil provider
 
+### CyberDefenders/
+
+#### 78-DeepDive.zip (537 MB)
+
+- **Source:** CyberDefenders Blue-Team lab **#78 "DeepDive"** (<https://cyberdefenders.org/blueteam-ctf-challenges/deepdive/>)
+- **Contents:** `banking-malware.vmem` (2.0 GB) — Win7 SP1 x64 memory image of an **Emotet** banking-trojan infection (DKOM-hidden process `vds_ps.exe`). *Confirmed by inspecting the archive (2026-06-09).*
+- **Redistribution:** CyberDefenders educational license — verify before redistribution.
+
+### CyberSpace CTF 2024/
+
+#### csctf-2024_forensics_memory.zip (671 MB)
+
+- **Source:** **CyberSpace CTF 2024**, "Memory" forensics challenge (30 Aug–01 Sep 2024; CTFtime event #2428)
+- **Contents:** `mem.dmp` (2.0 GB) — MS Windows 64-bit crash dump; recover-deleted-`flag.jpg` via PowerShell/AES/environment-variables. *Confirmed by inspecting the archive + write-ups (2026-06-09).*
+- **Redistribution:** Verify CyberSpace CTF terms.
+
+### SecurityNik/
+
+#### TOTAL_RECALL_memory_forensics_CHALLENGE.zip (1.2 GB)
+
+- **Source:** SecurityNik **TOTAL RECALL 2024** memory-forensics challenge by Nik Alleyne (write-up <https://www.securitynik.com/2024/03/total-recall-2024-memory-forensics-self.html>, files <https://github.com/SecurityNik/CTF>)
+- **Contents:** `SECURITYNIK-WIN-20231116-235706.dmp` (4.29 GB) + sidecar `.json` — Windows 11 (build 22621) x64 crash dump, acquired with **DumpIt 3.0**, host `SECURITYNIK-WIN` / user `securitynik`. **SHA256** `cabe2fd543eac1cd2eab9ccd0a840d83481a3f00e16015287323b2cb44fe0686`. *Confirmed from embedded metadata (2026-06-09).*
+- **Redistribution:** SecurityNik public challenge — attribution.
+
+### Volatility/
+
+#### cridex_memdump.zip (38 MB)
+
+- **Source:** Volatility Foundation public sample — Cridex banking-trojan memory image (<https://github.com/volatilityfoundation/volatility/wiki/Memory-Samples>)
+- **Contents:** `cridex.vmem` (512 MB) — the canonical Windows XP Cridex memory sample (2012-08-02) from the Volatility tutorials. *Confirmed by inspecting the archive (2026-06-09).*
+- **Redistribution:** Volatility Foundation public sample.
+
 ### Root (self-collected, no challenge affiliation)
 
 #### Collection-A380_localdomain-2025-08-10T03_41_20Z.zip (2.2 GB)
 
-- **Source:** Self-collected using UAC from host `A380_localdomain`, August 10, 2025
-- **Tool:** [UAC](https://github.com/tclahr/uac)
+- **Source:** Self-collected from host `A380` (Windows 11 Pro 24H2, standalone workstation), August 10, 2025
+- **Tool:** Velociraptor offline collector v0.74.5 — artifact `Windows.KapeFiles.Targets` (`_SANS_Triage` target set). **Not UAC** — the earlier "UAC" label was incorrect (verified by inspecting the archive: `client_info.json` / `collection_context.json`, 2026-06-09).
+- **Contents:** Disk-artifact triage only — registry hives, EVTX, prefetch, `$MFT`, browser artifacts (2,952 files). **No memory dump.** Benign baseline (real daily-driver host), not an intrusion scenario.
 - **Use case:** Velociraptor parser integration tests (`rt-parser-velociraptor`, `rt-navigator`)
+- **Note:** Contains real personal artifacts — sanitize before any external sharing.
 
 ## Examining E01 Images
 
