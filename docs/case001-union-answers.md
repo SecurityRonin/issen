@@ -42,8 +42,18 @@ flowchart LR
 | Tag | Meaning |
 |---|---|
 | **MEASURED-BY-ISSEN** | the value was produced by issen on the real Case 001 images during the G1 disk gate run (2026-06-11) and is quoted verbatim |
-| **WRITE-UP-CORROBORATED** | reproduced from ≥ 2 published write-ups; issen’s memory leg has not yet produced it (the G2 memory gate is blocked on DTB discovery — see the walkthrough) |
+| **WRITE-UP-CORROBORATED** | reproduced from ≥ 2 published write-ups; **issen does not currently produce it** — it needs a capability not yet wired (see coverage below) |
 | **OUT** | outside issen’s current evidence reach (pcap, OSINT/whois, content carving) — answered from the write-ups only |
+
+### issen coverage today — honest accounting
+
+**issen does not yet solve this case end-to-end.** Of the F1–F44 union, only **~11 findings are MEASURED-BY-ISSEN**; the rest are write-up-corroborated, design, partial, or out. Concretely:
+
+- **Disk leg — 4 of the 8 common artifacts are wired** and gave correct results on the real images: **$MFT, $UsnJrnl ($J), Registry hives, EVTX**. These carry the intrusion timeline, brute-force/logon, lateral RDP, and service+Run persistence answers.
+- **Not wired (parser crates exist but are dead code in the binary — PRE-5):** **Prefetch, Shimcache (AppCompatCache), Amcache, LNK/Jump Lists.** Verified 0 events on both hosts (2026-06-11). Several official answers genuinely *require* these — the **evidence-of-execution** answers (“was `coreupdater.exe` *run*, how many times, at what times”, its hash) come from Prefetch/Amcache/Shimcache, and the staging answers from `Loot.lnk`/`Secret.lnk` targets. issen currently only *infers* execution indirectly (the `.pf` file’s MFT creation time + the 7045 service start); it does not parse the prefetch/amcache run metadata.
+- **Memory leg — the process list is now MEASURED** (G2 passed 2026-06-11 via psscan: 40 processes incl. `coreupdater.exe` 3644, `spoolsv.exe` 3724). Deeper memory enrichment (netstat C2 row, malfind injection bytes) is not yet wired for this dump.
+
+So where this document tags a finding **WRITE-UP-CORROBORATED**, the answer is taken from a published human analysis, **not** produced by issen. Closing the disk gap is tracked as **PRE-5** (wire the four parsers + add the `.lnk` discovery arm) and the broader artifact-expansion plan.
 
 ---
 
