@@ -212,7 +212,11 @@ pub fn triage_manifest(
 
     let mut artifacts = Vec::new();
     for file in &files {
-        let rel = sanitize_ntfs_path(&file.path);
+        // Namespace by source partition: every NTFS volume on a disk carries
+        // same-named files (`\$MFT`, hives on a recovery volume), so a layout
+        // keyed by NTFS path alone lets the last partition overwrite the rest.
+        let rel = std::path::PathBuf::from(format!("part-{:010x}", file.partition_offset))
+            .join(sanitize_ntfs_path(&file.path));
         let dest = tempdir.path().join(&rel);
         if let Some(parent) = dest.parent() {
             std::fs::create_dir_all(parent)?;
@@ -259,6 +263,12 @@ pub struct ExtractedFile {
     pub path: String,
     /// The file's unnamed `$DATA` contents.
     pub data: Vec<u8>,
+    /// Byte offset of the source partition within the disk image. Same-named
+    /// files exist on every NTFS volume of a multi-partition disk (`\$MFT`,
+    /// hives on a recovery volume), so the partition is part of the file's
+    /// identity — extraction layouts must namespace by it or volumes overwrite
+    /// each other.
+    pub partition_offset: u64,
 }
 
 /// Read each of `paths` from the NTFS partition at `window`.
@@ -288,6 +298,7 @@ pub fn extract_files(
             Ok(data) => out.push(ExtractedFile {
                 path: path.to_string(),
                 data,
+                partition_offset: window.offset,
             }),
             // The artifact simply isn't on this image — expected during triage.
             Err(NtfsError::NotFound(_) | NtfsError::NotADirectory(_)) => {}
@@ -341,7 +352,11 @@ pub fn extract_dir_suffix(
         }
         let path = format!("{base}\\{name}");
         match fs.read_file(&path) {
-            Ok(data) => out.push(ExtractedFile { path, data }),
+            Ok(data) => out.push(ExtractedFile {
+                path,
+                data,
+                partition_offset: window.offset,
+            }),
             Err(NtfsError::NotFound(_) | NtfsError::NotADirectory(_)) => {}
             Err(e) => return Err(to_disk(e)),
         }
@@ -391,7 +406,11 @@ pub fn extract_per_subdir(
         // NotADirectory and are skipped, so we needn't pre-check the type.
         let path = format!("{base}\\{name}\\{child}");
         match fs.read_file(&path) {
-            Ok(data) => out.push(ExtractedFile { path, data }),
+            Ok(data) => out.push(ExtractedFile {
+                path,
+                data,
+                partition_offset: window.offset,
+            }),
             Err(NtfsError::NotFound(_) | NtfsError::NotADirectory(_)) => {}
             Err(e) => return Err(to_disk(e)),
         }
@@ -431,6 +450,7 @@ pub fn extract_named_streams(
             Ok(data) => out.push(ExtractedFile {
                 path: format!("{path}:{stream}"),
                 data,
+                partition_offset: window.offset,
             }),
             Err(NtfsError::NotFound(_) | NtfsError::NotADirectory(_)) => {}
             Err(e) => return Err(to_disk(e)),
