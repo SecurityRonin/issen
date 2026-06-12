@@ -743,3 +743,25 @@ AppCompatCache decode returns empty on this hive (needs standalone check). **She
 - **usnjrnl**: confirmed NOT dark (39,076 USN events; the inventory audit conflated "not force-linked as a parser" with dark — issen-disk handles MFT/USN/EVTX directly).
 
 Full Desktop ingest now: Prefetch 636, AmCache 97, Shellbags 55, Shimcache 1(blob-found).
+
+### Shimcache root cause — winreg-core big-data (db) reassembly (deeper than the decoder)
+
+Two shimcache decoder bugs fixed by TDD in winreg-artifacts (committed): (1) offline
+ControlSet resolution via `Select\Current`; (2) the real Win10 AppCompatCache header +
+`10ts` entry layout. BUT real-data re-ingest still yields 1 sentinel because the REAL
+blocker is in **winreg-core**, not shimcache:
+
+Extracting the Desktop SYSTEM hive and probing `ControlSet001\…\AppCompatCache` shows the
+value's data is **12 bytes: `64 62 05 00 …` = ASCII "db"** — the NT registry **big-data
+record** (values > 16344 B are split into segments via a `db` cell + segment list).
+`winreg-core::value::raw_data()` (`value.rs:45`) reads the data cell and returns
+`body[..size]` WITHOUT detecting the `db` record and following its `segment_list_offset`
+to reassemble the segments. So AppCompatCache — and **every large registry value
+fleet-wide** — comes back as the 12-byte db header.
+
+**Next TDD step (bounded):** extend `TestHiveBuilder` to emit a `db` record for values
+> 16344 B (it currently puts all data in one cell, so it can't reproduce the bug), write
+the RED (read a >16 KB value back, assert full length/content), then GREEN: in
+`raw_data()`, when the data cell is `Cell::BigData`, walk the segment list and concatenate
+segment-cell bodies, truncating to `data_size`. winreg-format already exposes
+`RawBigData::parse` + `Cell::BigData`.
