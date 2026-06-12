@@ -43,6 +43,8 @@
 //! is the wiring point that runs the disk-leg pass and appends the memory-leg
 //! firings to the same `Vec<Correlation>` before persistence.
 
+use std::collections::HashMap;
+
 use issen_core::timeline::event::EntityRef;
 
 use crate::correlation::Correlation;
@@ -186,6 +188,73 @@ fn of_type<E: EventView>(events: &[E], event_type: &str) -> Vec<RunEvent> {
         .collect()
 }
 
+/// An inverted index from each candidate's entity refs to the candidate
+/// positions that carry them.
+///
+/// The generic [`evaluate`](crate::evaluator::evaluate) engine mandates
+/// `shares_entity(anchor, candidate)` before any pair can fire, so a candidate
+/// that shares no entity ref with the anchor can never produce a correlation.
+/// Scanning the full candidate slice per anchor is therefore O(anchors ×
+/// candidates) of pure rejection. This index lets each anchor visit only the
+/// candidates that share one of its own entity refs, collapsing the hot loops to
+/// O(matches) without changing which pairs the engine considers — every
+/// candidate that *could* match is still reached, so the fired set is identical.
+type EntityIndex = HashMap<EntityRef, Vec<usize>>;
+
+/// Build the [`EntityIndex`] over `candidates`, keyed on each candidate's own
+/// entity refs (`EntityRef` is `Eq + Hash`, so it keys the map directly).
+fn build_entity_index(candidates: &[RunEvent]) -> EntityIndex {
+    let mut index: EntityIndex = HashMap::new();
+    for (pos, cand) in candidates.iter().enumerate() {
+        for entity in cand.entity_refs() {
+            index.entry(entity.clone()).or_default().push(pos);
+        }
+    }
+    index
+}
+
+/// Candidate positions sharing at least one of `anchor`'s entity refs,
+/// de-duplicated (a candidate sharing two of the anchor's entities appears
+/// once) and with `exclude` (the anchor's own position in a self-join) removed.
+///
+/// Positions are returned sorted so the reduced candidate slice preserves the
+/// original candidate order — the engine's "nearest consequent wins" tie-break
+/// then resolves exactly as it did over the full slice.
+fn entity_candidate_positions<A: EventView>(
+    anchor: &A,
+    index: &EntityIndex,
+    exclude: Option<usize>,
+) -> Vec<usize> {
+    let mut positions: Vec<usize> = Vec::new();
+    for entity in anchor.entity_refs() {
+        if let Some(bucket) = index.get(entity) {
+            positions.extend(bucket.iter().copied());
+        }
+    }
+    positions.sort_unstable();
+    positions.dedup();
+    if let Some(skip) = exclude {
+        positions.retain(|&p| p != skip);
+    }
+    positions
+}
+
+/// The reduced owned candidate slice for `anchor`: the `all` candidates sharing
+/// one of the anchor's entity refs (de-duplicated, `exclude` removed), in
+/// original order. The owned `Vec<RunEvent>` matches the `&[C]` the `evaluate_*`
+/// wrappers take.
+fn reduced_candidates<A: EventView>(
+    anchor: &A,
+    index: &EntityIndex,
+    all: &[RunEvent],
+    exclude: Option<usize>,
+) -> Vec<RunEvent> {
+    entity_candidate_positions(anchor, index, exclude)
+        .into_iter()
+        .map(|p| all[p].clone())
+        .collect()
+}
+
 // ── Tier A ───────────────────────────────────────────────────────────────────
 
 /// `CORR-MALWARE-RELOCATE`: each `FileCreate` (user-writable drop) against the
@@ -201,9 +270,19 @@ fn run_relocate<E: EventView>(events: &[E]) -> Vec<Correlation> {
         })
         .collect();
 
+    // Index the rename candidates by their basename join entity; each create
+    // anchor only visits renames that share its basename (the engine's
+    // shares_entity gate already requires this), not the full rename slice.
+    let rename_events: Vec<RunEvent> = renames.iter().map(|(ev, _)| ev.clone()).collect();
+    let index = build_entity_index(&rename_events);
+
     let mut out = Vec::new();
     for anchor in &creates {
-        if let Some(corr) = evaluate_relocate(anchor, anchor.artifact_path(), &renames) {
+        let reduced: Vec<(RunEvent, String)> = entity_candidate_positions(anchor, &index, None)
+            .into_iter()
+            .map(|p| renames[p].clone())
+            .collect();
+        if let Some(corr) = evaluate_relocate(anchor, anchor.artifact_path(), &reduced) {
             out.push(corr);
         }
     }
@@ -215,10 +294,12 @@ fn run_relocate<E: EventView>(events: &[E]) -> Vec<Correlation> {
 fn run_persist<E: EventView>(events: &[E]) -> Vec<Correlation> {
     let creates = projected(events, "FileCreate", |e| stem_entity(e.artifact_path()));
     let installs = projected(events, "ServiceInstall", |e| stem_entity(e.artifact_path()));
+    let index = build_entity_index(&installs);
 
     let mut out = Vec::new();
     for anchor in &creates {
-        if let Some(corr) = evaluate_persist(anchor, &installs) {
+        let reduced = reduced_candidates(anchor, &index, &installs, None);
+        if let Some(corr) = evaluate_persist(anchor, &reduced) {
             out.push(corr);
         }
     }
@@ -262,10 +343,12 @@ fn run_bruteforce<E: EventView>(events: &[E]) -> Vec<Correlation> {
 fn run_logon_malware<E: EventView>(events: &[E]) -> Vec<Correlation> {
     let logons = of_type(events, "LogonSuccess");
     let writes = of_type(events, "FileCreate");
+    let index = build_entity_index(&writes);
 
     let mut out = Vec::new();
     for anchor in &logons {
-        if let Some(corr) = evaluate_logon_malware(anchor, &writes) {
+        let reduced = reduced_candidates(anchor, &index, &writes, None);
+        if let Some(corr) = evaluate_logon_malware(anchor, &reduced) {
             out.push(corr);
         }
     }
@@ -276,18 +359,16 @@ fn run_logon_malware<E: EventView>(events: &[E]) -> Vec<Correlation> {
 /// `FileCreate` artifacts (the guard reads paths), joined on the session owner.
 fn run_exfil_stage<E: EventView>(events: &[E]) -> Vec<Correlation> {
     let creates = of_type(events, "FileCreate");
+    let index = build_entity_index(&creates);
 
     let mut out = Vec::new();
     for (i, anchor) in creates.iter().enumerate() {
         // Every FileCreate is a candidate anchor; the staging guard keeps only
-        // the archive↔loot-link pairs. Exclude the anchor itself from its own
-        // candidate slice so a single event never pairs with itself.
-        let candidates: Vec<RunEvent> = creates
-            .iter()
-            .enumerate()
-            .filter(|(j, _)| *j != i)
-            .map(|(_, e)| e.clone())
-            .collect();
+        // the archive↔loot-link pairs. The engine's shares_entity gate means a
+        // candidate must share the session-owner join entity, so visit only
+        // those candidates; exclude the anchor's own position so a single event
+        // never pairs with itself (preserving the prior j != i self-exclusion).
+        let candidates = reduced_candidates(anchor, &index, &creates, Some(i));
         if let Some(corr) = evaluate_exfil_stage(anchor, &candidates) {
             out.push(corr);
         }
@@ -302,10 +383,12 @@ fn run_exfil_stage<E: EventView>(events: &[E]) -> Vec<Correlation> {
 fn run_regconfirm<E: EventView>(events: &[E]) -> Vec<Correlation> {
     let installs = projected(events, "ServiceInstall", |e| stem_entity(e.artifact_path()));
     let reg_writes = projected(events, "RegistryModify", |e| stem_entity(e.artifact_path()));
+    let index = build_entity_index(&reg_writes);
 
     let mut out = Vec::new();
     for anchor in &installs {
-        if let Some(corr) = evaluate_regconfirm(anchor, &reg_writes) {
+        let reduced = reduced_candidates(anchor, &index, &reg_writes, None);
+        if let Some(corr) = evaluate_regconfirm(anchor, &reduced) {
             out.push(corr);
         }
     }
@@ -319,15 +402,15 @@ fn run_regconfirm<E: EventView>(events: &[E]) -> Vec<Correlation> {
 /// carries, so the events keep their own entity refs.
 fn run_lateral_move<E: EventView>(events: &[E]) -> Vec<Correlation> {
     let logons = of_type(events, "RdpLogon");
+    let index = build_entity_index(&logons);
 
     let mut out = Vec::new();
     for (i, anchor) in logons.iter().enumerate() {
-        let candidates: Vec<RunEvent> = logons
-            .iter()
-            .enumerate()
-            .filter(|(j, _)| *j != i)
-            .map(|(_, e)| e.clone())
-            .collect();
+        // Self-join on the account join entity; exclude the anchor's own
+        // position (the prior j != i self-exclusion). RdpLogon slices are tiny,
+        // so this is behavior-identical to the full scan — it just shares the
+        // same index helper as the hot rules.
+        let candidates = reduced_candidates(anchor, &index, &logons, Some(i));
         if let Some(corr) = evaluate_lateral_move(anchor, &candidates) {
             out.push(corr);
         }
@@ -519,6 +602,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     fn scales_to_a_large_disjoint_filecreate_slice_without_quadratic_blowup() {
         // Regression guard for the O(n^2) hang: a real DC timeline carries
         // ~111k FileCreate events. The pre-index runner cloned/scanned the ENTIRE
