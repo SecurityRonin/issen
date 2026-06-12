@@ -124,12 +124,20 @@ impl EventView for RunEvent {
 /// drives, exercised here directly on synthetic events. Memory-leg rules are
 /// not run (see the module-level Tier-C seam note).
 #[must_use]
-pub fn run_correlations<E>(_events: &[E]) -> Vec<Correlation>
+pub fn run_correlations<E>(events: &[E]) -> Vec<Correlation>
 where
     E: EventView,
 {
-    // RED stub — implementation follows in the GREEN commit.
-    Vec::new()
+    let mut out = Vec::new();
+    out.extend(run_relocate(events));
+    out.extend(run_persist(events));
+    out.extend(run_copy_delete(events));
+    out.extend(run_bruteforce(events));
+    out.extend(run_logon_malware(events));
+    out.extend(run_exfil_stage(events));
+    out.extend(run_regconfirm(events));
+    out.extend(run_lateral_move(events));
+    out
 }
 
 /// Events of one type, projected with the given normalized join entity.
