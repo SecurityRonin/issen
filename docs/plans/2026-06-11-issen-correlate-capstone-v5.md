@@ -848,3 +848,21 @@ refinement (key the burst→success join on the account when the failures lack a
 source IP; suppress link-local / machine-account self-logons), and it is the
 representative head of the F1–F44 precision tail — single-host disk alone; the
 full union needs both hosts + the memory leg.
+
+### Update — brute-force precision fixed and re-validated (2026-06-13)
+
+The diagnosed brute-force join-key gap is now fixed (`6d0d894` RED / `66f85bc`
+GREEN). `burst_anchors` (1) only seeds a `LogonFailureBurst` from a run of
+`LogonFailure` events — a dense `LogonSuccess` run can no longer masquerade as
+one (kills the link-local machine-account FP) — and (2) joins on the entity every
+burst member shares (`burst_join_entity`): the source IP when present, else the
+targeted account.
+
+Re-run on the real DC E01 now fires the **genuine** intrusion:
+`CORR-BRUTEFORCE-LOGON` (T1110) — anchor #530624 `LogonFailure User:Administrator
+Session:0` (tail of a **96-event** Administrator failed-logon burst) → consequent
+#109165 `LogonSuccess User:Administrator` **217 ms later** (2020-09-19 03:21:46).
+That is the Case-001 DC RDP brute-force, correctly account-keyed; the earlier
+link-local false positive is gone. Pipeline still completes E2E on 691k events in
+~35 s. Four real-data defects total found-and-fixed under TDD this pass
+(disk-image discovery, 100k truncation, O(n²) evaluator, brute-force join key).
