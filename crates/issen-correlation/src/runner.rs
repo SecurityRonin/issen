@@ -451,6 +451,10 @@ mod tests {
             self.entity_refs.push(e);
             self
         }
+        fn host_none(mut self) -> Self {
+            self.host = None;
+            self
+        }
         fn at(mut self, p: &str) -> Self {
             self.path = p.to_string();
             self
@@ -515,6 +519,42 @@ mod tests {
                 .at("C:\\Windows\\System32\\coreupdater.exe"),
         ];
         assert!(has_code(&run_correlations(&events), "CORR-MALWARE-PERSIST"));
+    }
+
+    #[test]
+    fn persist_fires_when_the_disk_create_has_an_unknown_host() {
+        // Real-data shape: the FileCreate comes from MFT/USN (no hostname), the
+        // 7045 ServiceInstall from EVTX (hostname set). SameHost must not reject a
+        // disk artifact whose host is simply unknown — within one image every
+        // event is the same host.
+        let events = vec![
+            Ev::new(1, 1_000, "FileCreate", "", EventSource::Disk)
+                .at("coreupdater.exe")
+                .host_none(),
+            Ev::new(2, 200_000_000_000, "ServiceInstall", "CITADEL-DC01", EventSource::Evtx)
+                .at("C:\\Windows\\System32\\coreupdater.exe"),
+        ];
+        assert!(
+            has_code(&run_correlations(&events), "CORR-MALWARE-PERSIST"),
+            "persist must fire across a no-host disk create and a hosted service install"
+        );
+    }
+
+    #[test]
+    fn relocate_fires_when_both_disk_events_have_unknown_host() {
+        // FileCreate and FileRename both come from MFT/USN with no hostname.
+        let events = vec![
+            Ev::new(1, 1_000, "FileCreate", "", EventSource::Disk)
+                .at("coreupdater.exe")
+                .host_none(),
+            Ev::new(2, 2_000, "FileRename", "", EventSource::Disk)
+                .at("C:\\Windows\\System32\\coreupdater.exe")
+                .host_none(),
+        ];
+        assert!(
+            has_code(&run_correlations(&events), "CORR-MALWARE-RELOCATE"),
+            "relocate must fire across two no-host disk events sharing a basename"
+        );
     }
 
     #[test]
