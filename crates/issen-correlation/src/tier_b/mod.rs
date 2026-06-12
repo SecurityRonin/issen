@@ -32,6 +32,7 @@
 use crate::evaluator::RuleSpec;
 
 pub mod bruteforce;
+pub mod exfil_stage;
 pub mod logon_malware;
 
 /// The bundled Tier-B ordered-window rules.
@@ -45,6 +46,7 @@ pub fn tier_b_rules() -> Vec<RuleSpec> {
     vec![
         bruteforce::bruteforce_rule(),
         logon_malware::logon_malware_rule(),
+        exfil_stage::exfil_stage_rule(),
     ]
 }
 
@@ -128,6 +130,7 @@ mod tests {
         let codes: Vec<&str> = tier_b_rules().iter().map(|r| r.code).collect();
         assert!(codes.contains(&"CORR-BRUTEFORCE-LOGON"));
         assert!(codes.contains(&"CORR-LOGON-MALWARE-WRITE"));
+        assert!(codes.contains(&"CORR-EXFIL-STAGE"));
     }
 
     /// Epistemics gate (plan v5 §7.5): every Tier-B note is an observation, not
