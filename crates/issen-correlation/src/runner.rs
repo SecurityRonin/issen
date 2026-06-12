@@ -519,6 +519,58 @@ mod tests {
     }
 
     #[test]
+    fn scales_to_a_large_disjoint_filecreate_slice_without_quadratic_blowup() {
+        // Regression guard for the O(n^2) hang: a real DC timeline carries
+        // ~111k FileCreate events. The pre-index runner cloned/scanned the ENTIRE
+        // candidate slice for every anchor (run_exfil_stage cloned all N others
+        // per anchor), so this slice took minutes of CPU. With the entity index,
+        // each anchor only visits the candidates that share one of ITS OWN entity
+        // refs, so a slice whose events pairwise share nothing is near-instant.
+        //
+        // The slice below has N FileCreates that share NO entity ref and NO
+        // basename/stem with each other (so zero disk-leg correlations among
+        // them), plus one genuine FileCreate -> ServiceInstall persistence pair
+        // on a shared stem. The ONLY correlation that may fire is that one
+        // CORR-MALWARE-PERSIST; we assert exactly that, and that the whole pass
+        // completes well under a second.
+        const N: u64 = 30_000;
+        let mut events: Vec<Ev> = Vec::with_capacity(N as usize + 2);
+        for i in 0..N {
+            // Each event: unique path (no shared basename/stem) and a unique
+            // entity ref (no shared join entity) -> structurally disjoint.
+            events.push(
+                Ev::new(i, 1_000 + i as i64, "FileCreate", "DC01", EventSource::Disk)
+                    .at(&format!("C:\\noise\\u{i}\\f{i}.dat"))
+                    .ent(EntityRef::FilePath(format!("noise-entity-{i}"))),
+            );
+        }
+        // One genuine persistence pair (FileCreate -> ServiceInstall, same stem).
+        events.push(
+            Ev::new(N, 1_000, "FileCreate", "DC01", EventSource::Disk)
+                .at("C:\\Windows\\System32\\coreupdater.exe"),
+        );
+        events.push(
+            Ev::new(N + 1, 2_000, "ServiceInstall", "DC01", EventSource::Evtx)
+                .at("C:\\Windows\\System32\\coreupdater.exe"),
+        );
+
+        let start = std::time::Instant::now();
+        let corrs = run_correlations(&events);
+        let elapsed = start.elapsed();
+
+        let fired = codes(&corrs);
+        assert_eq!(
+            fired,
+            vec!["CORR-MALWARE-PERSIST".to_string()],
+            "only the one genuine persistence pair may fire: {fired:?}"
+        );
+        assert!(
+            elapsed < std::time::Duration::from_secs(5),
+            "a {N}-event disjoint FileCreate slice must not be O(n^2); took {elapsed:?}"
+        );
+    }
+
+    #[test]
     fn run_with_memory_matches_a_resident_process_to_its_on_disk_create() {
         use issen_core::timeline::event::EntityRef;
         // A disk FileCreate of coreupdater.exe and a memory ProcessExec for the
