@@ -48,13 +48,12 @@ pub fn bruteforce_rule() -> RuleSpec {
 /// `LogonSuccess` candidates. Thin wrapper over the generic engine; both sides
 /// must carry the source IP as their join entity.
 #[must_use]
-pub fn evaluate_bruteforce<A, C>(_burst: &A, _successes: &[C]) -> Option<Correlation>
+pub fn evaluate_bruteforce<A, C>(burst: &A, successes: &[C]) -> Option<Correlation>
 where
     A: EventView,
     C: EventView,
 {
-    // RED stub — implemented in the GREEN commit.
-    None
+    evaluate(&bruteforce_rule(), burst, successes)
 }
 
 #[cfg(test)]

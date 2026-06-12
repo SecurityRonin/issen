@@ -83,7 +83,10 @@ pub(crate) mod testkit {
             self
         }
 
+        // `with_path` is added with the guarded rules (logon_malware, exfil)
+        // that read `artifact_path` — bruteforce needs no path.
         #[must_use]
+        #[allow(dead_code)]
         pub fn with_path(mut self, p: &str) -> Self {
             self.path = p.to_string();
             self
