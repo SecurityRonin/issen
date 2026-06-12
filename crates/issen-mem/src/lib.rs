@@ -44,6 +44,7 @@ pub mod hashdb;
 pub mod open;
 pub mod output;
 pub mod strings;
+pub mod timeline;
 
 pub use cmd_memf::run_memf_command;
 pub use open::{detect_format, DumpFormat};

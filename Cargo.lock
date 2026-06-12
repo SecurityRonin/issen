@@ -4476,7 +4476,11 @@ name = "issen-mem"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "forensic-hashdb",
+ "issen-core",
+ "issen-correlation",
+ "issen-timeline",
  "memf-core",
  "memf-correlate",
  "memf-format",
