@@ -259,6 +259,27 @@ mod tests {
     }
 
     #[test]
+    fn usn_event_carries_filepath_entity_ref() {
+        // PRE-2: USN file events carry EntityRef::FilePath (the rename/move join
+        // key for CORR-MALWARE-RELOCATE / CORR-COPY-DELETE).
+        use issen_core::timeline::event::EntityRef;
+        let data = build_usn_v2(
+            "coreupdater.exe",
+            133_451_432_000_000_000i64,
+            UsnReason::RENAME_NEW_NAME.bits() | UsnReason::CLOSE.bits(),
+        );
+        let record = parse_usn_record_v2(&data).expect("parse");
+        let event = record_to_event(&record, "dc01-usn");
+        assert!(
+            event
+                .entity_refs
+                .contains(&EntityRef::FilePath("coreupdater.exe".to_string())),
+            "{:?}",
+            event.entity_refs
+        );
+    }
+
+    #[test]
     fn record_length_from_slice_too_short() {
         assert_eq!(record_length_from_slice(&[]), 8);
         assert_eq!(record_length_from_slice(&[0, 1]), 8);

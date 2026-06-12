@@ -430,6 +430,30 @@ mod tests {
     }
 
     #[test]
+    fn mace_event_carries_filepath_entity_ref() {
+        // PRE-2: file events carry EntityRef::FilePath — the join key the
+        // RELOCATE / COPY-DELETE / EXFIL-STAGE correlation rules need.
+        use issen_core::timeline::event::EntityRef;
+        let dt = DateTime::parse_from_rfc3339("2020-09-19T03:24:06Z")
+            .expect("valid")
+            .with_timezone(&Utc);
+        let ev = mace_event(
+            &dt,
+            EventType::FileCreate,
+            42,
+            "Windows/System32/coreupdater.exe",
+            false,
+            "dc01",
+        );
+        assert!(
+            ev.entity_refs
+                .contains(&EntityRef::FilePath("Windows/System32/coreupdater.exe".to_string())),
+            "{:?}",
+            ev.entity_refs
+        );
+    }
+
+    #[test]
     fn test_parse_empty_input() {
         let source = SliceSource(vec![]);
         let emitter = CollectingEmitter::new();
