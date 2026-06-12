@@ -209,9 +209,69 @@ mod tests {
         }
     }
 
+    fn touch(path: &Path) {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("mkdir");
+        }
+        std::fs::write(path, b"x").expect("write");
+    }
+
     #[test]
-    fn discover_evidence_returns_the_case_dir_as_ingest_root() {
-        let root = discover_evidence(Path::new("/cases/case-001"));
-        assert_eq!(root, PathBuf::from("/cases/case-001"));
+    fn discover_evidence_finds_disk_image_first_segment() {
+        // A raw EWF set: the first segment (.E01) is the ingest root; the disk
+        // pipeline auto-follows .E02… internally, so we must NOT also ingest them.
+        let dir = tempfile::tempdir().expect("tmpdir");
+        touch(&dir.path().join("img.E01"));
+        touch(&dir.path().join("img.E02"));
+        let roots = discover_evidence(dir.path());
+        assert_eq!(roots, vec![dir.path().join("img.E01")]);
+    }
+
+    #[test]
+    fn discover_evidence_recurses_into_subdirs() {
+        // Case-001 keeps the DC image in extracted/E01-DC01/ — discovery must
+        // descend into subdirectories to find it.
+        let dir = tempfile::tempdir().expect("tmpdir");
+        touch(&dir.path().join("E01-DC01").join("disk.raw"));
+        let roots = discover_evidence(dir.path());
+        assert_eq!(roots, vec![dir.path().join("E01-DC01").join("disk.raw")]);
+    }
+
+    #[test]
+    fn discover_evidence_skips_sidecars_memory_dumps_and_trailing_segments() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        touch(&dir.path().join("img.E01"));
+        touch(&dir.path().join("img.E02")); // trailing segment — not a root
+        touch(&dir.path().join("img.E01.txt")); // sidecar metadata
+        touch(&dir.path().join("citadeldc01.mem")); // memory leg, not disk
+        let roots = discover_evidence(dir.path());
+        assert_eq!(roots, vec![dir.path().join("img.E01")]);
+    }
+
+    #[test]
+    fn discover_evidence_finds_multiple_images_sorted() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        touch(&dir.path().join("desktop.E01"));
+        touch(&dir.path().join("E01-DC01").join("dc.E01"));
+        let roots = discover_evidence(dir.path());
+        assert_eq!(
+            roots,
+            vec![
+                dir.path().join("E01-DC01").join("dc.E01"),
+                dir.path().join("desktop.E01"),
+            ]
+        );
+    }
+
+    #[test]
+    fn discover_evidence_falls_back_to_dir_when_no_images() {
+        // A directory of loose, already-extracted artifacts (UAC/KAPE style):
+        // no disk image present, so the dir itself is the ingest root and the
+        // existing loose-artifact walk handles it.
+        let dir = tempfile::tempdir().expect("tmpdir");
+        touch(&dir.path().join("MFT"));
+        touch(&dir.path().join("notes.txt"));
+        let roots = discover_evidence(dir.path());
+        assert_eq!(roots, vec![dir.path().to_path_buf()]);
     }
 }
