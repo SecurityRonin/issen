@@ -32,6 +32,7 @@
 use crate::evaluator::RuleSpec;
 
 pub mod bruteforce;
+pub mod logon_malware;
 
 /// The bundled Tier-B ordered-window rules.
 ///
@@ -41,7 +42,10 @@ pub mod bruteforce;
 /// real artifact paths the guards read. All three appear here.
 #[must_use]
 pub fn tier_b_rules() -> Vec<RuleSpec> {
-    vec![bruteforce::bruteforce_rule()]
+    vec![
+        bruteforce::bruteforce_rule(),
+        logon_malware::logon_malware_rule(),
+    ]
 }
 
 #[cfg(test)]
@@ -83,10 +87,7 @@ pub(crate) mod testkit {
             self
         }
 
-        // `with_path` is added with the guarded rules (logon_malware, exfil)
-        // that read `artifact_path` — bruteforce needs no path.
         #[must_use]
-        #[allow(dead_code)]
         pub fn with_path(mut self, p: &str) -> Self {
             self.path = p.to_string();
             self
@@ -126,6 +127,7 @@ mod tests {
     fn registry_carries_the_tier_b_rules() {
         let codes: Vec<&str> = tier_b_rules().iter().map(|r| r.code).collect();
         assert!(codes.contains(&"CORR-BRUTEFORCE-LOGON"));
+        assert!(codes.contains(&"CORR-LOGON-MALWARE-WRITE"));
     }
 
     /// Epistemics gate (plan v5 §7.5): every Tier-B note is an observation, not
