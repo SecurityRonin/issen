@@ -38,9 +38,38 @@ fn is_established_external(conn: &MemEvent) -> bool {
 /// The injection is the anchor and the connection the consequent. Only memory
 /// rows from the same dump (host label) pair, mirroring the `SameDump` scope.
 #[must_use]
-pub fn injected_c2_pairs(_events: &[MemEvent]) -> Vec<Correlation> {
-    // RED stub — replaced by the real matcher in the GREEN commit.
-    Vec::new()
+pub fn injected_c2_pairs(events: &[MemEvent]) -> Vec<Correlation> {
+    let injections = events
+        .iter()
+        .filter(|e| e.event_type == MEMORY_INJECTION_EVENT_TYPE);
+    let connections: Vec<&MemEvent> = events.iter().filter(|e| is_established_external(e)).collect();
+
+    let mut out = Vec::new();
+    for inj in injections {
+        for conn in &connections {
+            if inj.hostname != conn.hostname {
+                continue;
+            }
+            if !inj.shares_process(conn) {
+                continue;
+            }
+            let (first, last) = if inj.timestamp_ns <= conn.timestamp_ns {
+                (inj.timestamp_ns, conn.timestamp_ns)
+            } else {
+                (conn.timestamp_ns, inj.timestamp_ns)
+            };
+            out.push(
+                Correlation::new("CORR-INJECTED-C2", Severity::Critical)
+                    .with_attack_technique("T1055")
+                    .with_scope(CorrelationScope::SameDump)
+                    .with_window(first, last)
+                    .with_note(INJECTED_C2_NOTE)
+                    .with_member(CorrelationMember::new(inj.id, CorrelationRole::Anchor))
+                    .with_member(CorrelationMember::new(conn.id, CorrelationRole::Consequent)),
+            );
+        }
+    }
+    out
 }
 
 #[cfg(test)]
