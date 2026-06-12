@@ -389,6 +389,40 @@ mod tests {
         assert!(q.entity_filter().is_some());
     }
 
+    #[test]
+    fn unbounded_is_the_explicit_full_scan_opt_in() {
+        // The correlation pass legitimately scans the whole timeline. limit(u64::MAX)
+        // is the explicit, greppable opt-in; an ordinary query stays capped so it
+        // can never accidentally full-scan.
+        assert!(EventQuery::within(1, i64::MAX).limit(u64::MAX).is_unbounded());
+        assert!(!EventQuery::within(1, i64::MAX).is_unbounded());
+    }
+
+    #[test]
+    fn fetch_events_unbounded_does_not_apply_the_default_cap() {
+        let store = store_with(&[
+            logon_failure(1_000, "203.0.113.1"),
+            logon_failure(2_000, "203.0.113.2"),
+            logon_failure(3_000, "203.0.113.3"),
+        ]);
+        // A capped query honors the cap…
+        assert_eq!(
+            store
+                .fetch_events(&EventQuery::within(0, i64::MAX).limit(2))
+                .expect("fetch")
+                .len(),
+            2
+        );
+        // …the unbounded sentinel returns every row (no LIMIT clause).
+        assert_eq!(
+            store
+                .fetch_events(&EventQuery::within(0, i64::MAX).limit(u64::MAX))
+                .expect("fetch")
+                .len(),
+            3
+        );
+    }
+
     // ── fetch_events round-trips, including entity_refs ──────────────────────
 
     #[test]

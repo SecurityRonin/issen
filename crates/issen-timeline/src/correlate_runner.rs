@@ -409,4 +409,16 @@ mod tests {
         let store = TimelineStore::in_memory().expect("store");
         assert!(store.run_and_persist().expect("run").is_empty());
     }
+
+    #[test]
+    fn correlation_query_scans_the_whole_timeline_unbounded() {
+        // Regression for the real-data failure: on the Case-001 DC (691k events)
+        // the default 100k row cap truncated the correlation fetch to the earliest
+        // events — the entire attack window (ranks 368k–691k) was discarded and no
+        // rule fired. The correlation pass MUST scan every event.
+        assert!(
+            super::correlation_query().is_unbounded(),
+            "run_and_persist must fetch the whole timeline, not the first DEFAULT_LIMIT rows"
+        );
+    }
 }
