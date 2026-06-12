@@ -798,3 +798,53 @@ REMAINING (gated, not reachable without the external blockers):
 - Disk evidence-surfacing pre-tasks **PRE-5 / PRE-3 / D2** (force-link inert parsers,
   registry named-value table, EVTX 4776) — reachable enrichment; the correlation
   engine does not depend on them.
+
+---
+
+## Real-data validation — `issen correlate` on the Case-001 DC E01 (2026-06-13)
+
+Ran `issen correlate` against the genuine Case-001 DC image
+(`extracted/E01-DC01/20200918_0347_CDrive.E01`). This is the §8.1 oracle's
+disk leg on real evidence. It surfaced **three blocking defects every synthetic
+test had passed through**, each fixed under strict TDD (separate RED/GREEN
+commits), plus one diagnosed precision gap:
+
+1. **Disk image never cracked (0 artifacts).** `correlate::discover_evidence`
+   returned the bare case dir; `run_auto` walks a directory for *loose*
+   artifacts and never opens a nested `.E01` (that is `run_collection_pipeline`,
+   reached only when ingest is pointed at the image *file*). Fix: discovery
+   recurses for disk-image first-segments and ingests each as a file.
+   `d35bec4` (RED) / `af6fffd` (GREEN). → **120 artifacts, 691,649 events.**
+
+2. **Correlation pass truncated to the earliest 100k events (0 correlations).**
+   `run_and_persist` fetched `EventQuery::within(1, i64::MAX)`, which carried the
+   `DEFAULT_LIMIT = 100_000` cap; `ORDER BY timestamp_ns ASC LIMIT 100000`
+   returned only 2019 OS-install artifacts. 2,702 of 2,712 logon/service/process
+   attack events sit at ranks 368k–691k and were discarded. Fix: an explicit
+   unbounded opt-in (`limit(u64::MAX)` → no `LIMIT` clause) used by
+   `correlation_query()`. `610965a` (RED) / `b753b1a` (GREEN).
+
+3. **Evaluator O(n²) hang.** Every rule scanned all candidates; `run_exfil_stage`
+   cloned all 111,240 `FileCreate`s per anchor (~1.2e10 clones) before any
+   precondition. Fix: a semantics-preserving entity index — since `evaluate`
+   already mandates `shares_entity`, candidates are bucketed by `EntityRef` and
+   each anchor evaluates only entity-sharing candidates (identical fired set).
+   `aebaedc` (RED) / `9824f0f` (GREEN). → **run completes in ~35s.**
+
+**End-to-end result:** the full pipeline (disk ingest → 691k events → all 11
+rules → persisted correlations → hedged report) now runs on real evidence in
+~35 s. One correlation fires (`CORR-BRUTEFORCE-LOGON`, T1110).
+
+**Precision gap diagnosed (not yet fixed) — brute-force join key.** Doer-Checker
+on the fired correlation: both members are `LogonSuccess` over a `fe80::`
+link-local address with the `CITADEL-DC01$` machine account — a coincidental
+match, not the real intrusion. The real RDP brute-force is *95 `Administrator`
+`LogonFailure` events* that carry **no IP** (`Session:0`); the attacker IP
+`194.61.24.102` appears only on the *successful* 4624/4648 logons. The
+`CORR-BRUTEFORCE-LOGON` rule joins failure-burst → success **on shared IP**, so
+it cannot link this case's evidence (whose join key is the **account**, within a
+time window) and instead fired on link-local noise. This is a rule-design
+refinement (key the burst→success join on the account when the failures lack a
+source IP; suppress link-local / machine-account self-logons), and it is the
+representative head of the F1–F44 precision tail — single-host disk alone; the
+full union needs both hosts + the memory leg.
