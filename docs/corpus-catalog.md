@@ -259,6 +259,16 @@ mkfs.ext4 -F -L forensic-test -O has_journal,metadata_csum,64bit,extents -b 4096
 HFS+ volumes created via macOS `hdiutil create -layout SPUD`; real Apple filesystem structures
 with known files (`HELLO.TXT` = "hello hfs"). Asserted in `tests/catalog.rs`.
 
+### C4b · hfsplus-forensic decmpfs — `tests/data/decmpfs/` (~4.3 MB) · REAL-self + SYNTHETIC ✓
+HFS+/APFS transparent-compression (`decmpfs`) fixtures. **REAL-self:** `lzvn.rsrc`+`lzvn.expected`
+(a `ditto --hfsCompression` resource fork, decmpfs **type 8 LZVN**, 2×64 KiB chunks, 80000 B) and
+`hfs_decmpfs_volume.bin` (a 4 MiB layout-NONE HFS+ volume with `comp.bin` = type-8 LZVN 262144 B +
+`plain.bin` uncompressed control; payload = an LCG block ×32 regenerated in-test). **SYNTHETIC** (independent
+oracle = Python `zlib`, not the `flate2` under test): `zlib_type4.rsrc` (type-4 zlib block table, 3×64 KiB)
+and `zlib_type3_{inline,stored}.payload`. macOS hides `com.apple.decmpfs`; type read via
+`getxattr(..., XATTR_SHOWCOMPRESSION)`. Full generators in `hfsplus-forensic/tests/data/README.md`.
+Asserted in `core` lib tests + `tests/decmpfs_integration.rs`.
+
 ### C5 · apm-partition-forensic — `forensic/tests/data/apm_map.bin` (2 KB) · REAL-self ✓
 Apple Partition Map + DDM from an `hdiutil` HFS+ image (2 partitions). `forensic/tests/map.rs`.
 
