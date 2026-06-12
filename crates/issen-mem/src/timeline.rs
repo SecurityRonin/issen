@@ -24,6 +24,7 @@
 use chrono::{TimeZone, Utc};
 use issen_core::artifacts::ArtifactType;
 use issen_core::timeline::event::{EntityRef, EventType, TimelineEvent};
+use issen_timeline::store::{TimelineStore, TimelineStoreError};
 
 /// A process observed by the process-list walker (`walk_processes` / `psscan`).
 ///
@@ -85,12 +86,15 @@ fn process_subject(image_name: &str, pid: u32) -> String {
 ///
 /// Mirrors the workspace convention (`issen-cli` `commands::correlate::fmt_ns`):
 /// out-of-range instants degrade to a raw `<n>ns` label rather than panicking.
+/// The seconds derived from any `i64` nanosecond value (`ns / 1e9`, so at most
+/// ~9.2e9 s ≈ year 2262) always fall within chrono's representable range, so the
+/// degradation arm is a defence-in-depth guard, not a reachable path.
 fn fmt_ns(ns: i64) -> String {
     let secs = ns.div_euclid(1_000_000_000);
     let nanos = ns.rem_euclid(1_000_000_000) as u32;
     match Utc.timestamp_opt(secs, nanos).single() {
         Some(dt) => dt.to_rfc3339_opts(chrono::SecondsFormat::Nanos, true),
-        None => format!("{ns}ns"),
+        None => format!("{ns}ns"), // cov:unreachable: ns/1e9 secs is always in chrono range
     }
 }
 
@@ -115,9 +119,97 @@ pub fn memory_events(
     tcp: &[MemTcpRow],
     malfind: &[MemMalfindRow],
 ) -> Vec<TimelineEvent> {
-    // RED stub — intentionally empty so the GREEN converter can replace it.
-    let _ = (dump_stem, acquired_at_ns, processes, tcp, malfind);
-    Vec::new()
+    let display = fmt_ns(acquired_at_ns);
+    let mut events =
+        Vec::with_capacity(processes.len() + tcp.len() + malfind.len());
+
+    for p in processes {
+        let subject = process_subject(&p.image_name, p.pid);
+        let event = TimelineEvent::new(
+            acquired_at_ns,
+            display.clone(),
+            EventType::ProcessExec,
+            ArtifactType::ProcessList,
+            format!("pid:{}", p.pid),
+            format!(
+                "Process {subject} (pid {}, ppid {}, {} thread(s)) resident in memory",
+                p.pid, p.ppid, p.thread_count
+            ),
+            dump_stem.to_string(),
+        )
+        .with_entity_ref(EntityRef::Process(subject))
+        .with_metadata("pid", serde_json::json!(p.pid))
+        .with_metadata("ppid", serde_json::json!(p.ppid))
+        .with_metadata("thread_count", serde_json::json!(p.thread_count));
+        events.push(memory_provenance(event, dump_stem));
+    }
+
+    for c in tcp {
+        let subject = process_subject(&c.process_name, c.pid);
+        let mut event = TimelineEvent::new(
+            acquired_at_ns,
+            display.clone(),
+            EventType::NetworkConnect,
+            ArtifactType::NetworkState,
+            format!("pid:{}", c.pid),
+            format!(
+                "{subject} (pid {}) {} {}:{} -> {}:{}",
+                c.pid, c.state, c.local_addr, c.local_port, c.remote_addr, c.remote_port
+            ),
+            dump_stem.to_string(),
+        )
+        .with_entity_ref(EntityRef::Process(subject))
+        .with_metadata("local_port", serde_json::json!(c.local_port))
+        .with_metadata("remote_port", serde_json::json!(c.remote_port))
+        .with_metadata("state", serde_json::json!(c.state));
+        // Only attach an Ip ref for a real remote peer — a listening/wildcard
+        // row has no peer to correlate against.
+        if !c.remote_addr.is_empty() {
+            event = event.with_entity_ref(EntityRef::Ip(c.remote_addr.clone()));
+        }
+        events.push(memory_provenance(event, dump_stem));
+    }
+
+    for m in malfind {
+        let subject = process_subject(&m.image_name, m.pid);
+        let event = TimelineEvent::new(
+            acquired_at_ns,
+            display.clone(),
+            EventType::Other("MemoryInjection".to_string()),
+            ArtifactType::RootkitScan,
+            format!("pid:{}", m.pid),
+            format!(
+                "Injected region in {subject} (pid {}): {}",
+                m.pid, m.injection_class
+            ),
+            dump_stem.to_string(),
+        )
+        .with_entity_ref(EntityRef::Process(subject))
+        .with_metadata("pid", serde_json::json!(m.pid))
+        .with_metadata("injection", serde_json::json!(m.injection_class));
+        events.push(memory_provenance(event, dump_stem));
+    }
+
+    events
+}
+
+/// Persist memory events into the case timeline under a memory snapshot epoch.
+///
+/// Thin wrapper over the existing batch insert: the memory leg is a point-in-time
+/// cohort, so it is tagged with a dump-scoped epoch (`mem:<dump_stem>`) rather
+/// than the live epoch — re-ingesting the same dump dedups on `record_hash`
+/// within that epoch, while a second dump of the same host is a distinct cohort.
+/// Returns the number of rows actually inserted (post-dedup).
+///
+/// # Errors
+///
+/// Returns [`TimelineStoreError`] if the underlying batch insert fails.
+pub fn persist_memory_events(
+    store: &TimelineStore,
+    dump_stem: &str,
+    events: &[TimelineEvent],
+) -> Result<u64, TimelineStoreError> {
+    store.insert_batch_at_epoch(events, &format!("mem:{dump_stem}"))
 }
 
 #[cfg(test)]
@@ -267,9 +359,26 @@ mod tests {
     }
 
     #[test]
-    fn fmt_ns_renders_rfc3339_and_degrades_gracefully() {
+    fn persist_memory_events_inserts_and_dedups_within_epoch() {
+        let events = memory_events(STEM, ACQ_NS, &[proc_row()], &[tcp_row()], &[malfind_row()]);
+        let store = TimelineStore::in_memory().expect("store");
+
+        let n = persist_memory_events(&store, STEM, &events).expect("persist");
+        assert_eq!(n, 3, "all three rows persist on first ingest");
+
+        // Re-ingesting the same dump dedups on record_hash within the epoch.
+        let again = persist_memory_events(&store, STEM, &events).expect("persist");
+        assert_eq!(again, 0, "identical re-ingest is fully deduped");
+
+        let back = store
+            .fetch_events(&EventQuery::within(0, i64::MAX))
+            .expect("fetch");
+        assert_eq!(back.len(), 3);
+    }
+
+    #[test]
+    fn fmt_ns_renders_rfc3339_utc() {
         assert!(fmt_ns(ACQ_NS).starts_with("2023-11-14T22:13:20"));
-        // i64::MAX is out of chrono's representable range → raw ns label.
-        assert!(fmt_ns(i64::MAX).ends_with("ns"));
+        assert!(fmt_ns(ACQ_NS).ends_with('Z'));
     }
 }
