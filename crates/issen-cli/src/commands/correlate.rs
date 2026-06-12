@@ -18,15 +18,59 @@ use chrono::{TimeZone, Utc};
 use issen_correlation::correlation::Correlation;
 use issen_timeline::store::TimelineStore;
 
-/// Discover the evidence root to ingest under `case_dir`.
+/// Disk-image first-segment extensions. A split set (EWF `.E01/.E02…`, raw
+/// `.001/.002…`) names only its FIRST segment here; the disk pipeline follows
+/// the rest internally, so ingesting a later segment would double-crack the set.
+/// Probing is by internal magic downstream (`open_collection`) — this list only
+/// nominates candidate roots. `.mem`/`.raw`-memory dumps are excluded: they go
+/// through the memory leg, not the disk pipeline.
+const FIRST_SEGMENT_IMAGE_EXTS: &[&str] = &[
+    "e01", "ex01", "001", "dd", "img", "vmdk", "vhd", "vhdx", "qcow2", "aff4", "iso",
+];
+
+/// True if `path` names a disk-image first segment we should ingest as a file.
+fn is_disk_image_first_segment(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase)
+        .is_some_and(|ext| FIRST_SEGMENT_IMAGE_EXTS.contains(&ext.as_str()))
+}
+
+/// Recursively collect disk-image first-segment files under `dir`.
+fn collect_disk_images(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return; // unreadable dir → contributes nothing, never panics
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_disk_images(&path, out);
+        } else if is_disk_image_first_segment(&path) {
+            out.push(path);
+        }
+    }
+}
+
+/// Discover the evidence root(s) to ingest under `case_dir`.
 ///
-/// The current disk-leg ingest walks a directory or single file, so discovery
-/// is simply: the case dir itself is the ingest root. Returned as its own helper
-/// so the sequencing decision is unit-testable and so a future multi-image
-/// per-evidence walk slots in here without touching `run`.
+/// `run_auto` forks on its argument: a *file* is opened as a disk image /
+/// collection (`run_collection_pipeline` → crack container → NTFS → artifacts),
+/// while a *directory* is walked for already-extracted LOOSE artifacts. Handing
+/// it the bare case dir therefore never cracks a nested `.E01` (the real-data
+/// failure mode: 0 artifacts on the Case-001 DC image). So discovery returns the
+/// disk-image first-segment file(s) under the case dir — each ingested as a file
+/// — and falls back to the dir itself only when no image is present (the
+/// loose-artifact / UAC-collection case the directory walk already handles).
 #[must_use]
-pub fn discover_evidence(case_dir: &Path) -> PathBuf {
-    case_dir.to_path_buf()
+pub fn discover_evidence(case_dir: &Path) -> Vec<PathBuf> {
+    let mut images = Vec::new();
+    collect_disk_images(case_dir, &mut images);
+    images.sort();
+    if images.is_empty() {
+        vec![case_dir.to_path_buf()]
+    } else {
+        images
+    }
 }
 
 /// Format a nanosecond Unix timestamp as an RFC3339 UTC instant for display.
@@ -99,22 +143,30 @@ pub fn render_correlated_findings(correlations: &[Correlation]) -> String {
 /// Run the correlate command: ingest the case dir, run + persist the disk-leg
 /// correlations, and print the Correlated Findings report.
 pub fn run(case_dir: &Path) -> Result<()> {
-    let evidence_root = discover_evidence(case_dir);
+    let evidence_roots = discover_evidence(case_dir);
     let db_path = case_dir.join("correlate.duckdb");
 
+    // Ingest each discovered disk image (or the loose-artifact dir) into the one
+    // timeline DB, so cross-artifact rules join across every host's evidence.
     // Reuse the existing disk ingest — do not reimplement artifact parsing.
-    crate::commands::ingest::run(
-        &evidence_root,
-        &db_path,
-        None,
-        None,
-        false,
-        None,
-        None,
-        None,
-        None,
-    )
-    .with_context(|| format!("ingesting evidence under {}", case_dir.display()))?;
+    for root in &evidence_roots {
+        let source_id = root
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .map(ToString::to_string);
+        crate::commands::ingest::run(
+            root,
+            &db_path,
+            source_id.as_deref(),
+            None,
+            false,
+            None,
+            None,
+            None,
+            None,
+        )
+        .with_context(|| format!("ingesting evidence {}", root.display()))?;
+    }
 
     let store = TimelineStore::open(&db_path)
         .with_context(|| format!("opening timeline database {}", db_path.display()))?;
@@ -231,10 +283,12 @@ mod tests {
     fn discover_evidence_recurses_into_subdirs() {
         // Case-001 keeps the DC image in extracted/E01-DC01/ — discovery must
         // descend into subdirectories to find it.
+        // .dd (not .raw — that extension is claimed by the memory leg) keeps
+        // this a pure recursion check, free of the disk/memory ambiguity.
         let dir = tempfile::tempdir().expect("tmpdir");
-        touch(&dir.path().join("E01-DC01").join("disk.raw"));
+        touch(&dir.path().join("E01-DC01").join("disk.dd"));
         let roots = discover_evidence(dir.path());
-        assert_eq!(roots, vec![dir.path().join("E01-DC01").join("disk.raw")]);
+        assert_eq!(roots, vec![dir.path().join("E01-DC01").join("disk.dd")]);
     }
 
     #[test]
