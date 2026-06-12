@@ -43,6 +43,13 @@ impl TimelineStore {
         &self.conn
     }
 
+    /// Re-run the idempotent schema initialization (as on re-opening an existing
+    /// case DB). Exposed for callers that need to ensure the correlation tables
+    /// exist on a store that predates them.
+    pub fn initialize_schema_public(&self) -> Result<(), TimelineStoreError> {
+        self.initialize_schema()
+    }
+
     /// Initialize the timeline schema (idempotent).
     fn initialize_schema(&self) -> Result<(), TimelineStoreError> {
         self.conn.execute_batch(
@@ -79,6 +86,33 @@ impl TimelineStore {
                 file_size       BIGINT,
                 ingested_at     TIMESTAMP DEFAULT current_timestamp
             );
+
+            -- Cross-artifact correlation findings produced by the ordered
+            -- evaluator. One row per finding; members live in
+            -- correlation_members keyed on timeline.id.
+            CREATE SEQUENCE IF NOT EXISTS correlation_seq START 1;
+
+            CREATE TABLE IF NOT EXISTS correlations (
+                id               UBIGINT PRIMARY KEY DEFAULT nextval('correlation_seq'),
+                code             VARCHAR NOT NULL,
+                attack_technique VARCHAR,
+                severity         VARCHAR NOT NULL,
+                first_ts         BIGINT NOT NULL,
+                last_ts          BIGINT NOT NULL,
+                scope            VARCHAR NOT NULL,
+                note             VARCHAR NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS correlation_members (
+                correlation_id   UBIGINT NOT NULL,
+                timeline_id      UBIGINT NOT NULL,
+                role             VARCHAR NOT NULL
+            );
+
+            -- Additive safety for case DBs created before the correlation
+            -- engine landed (mirrors the PRE-4 entity_refs backfill).
+            ALTER TABLE correlations ADD COLUMN IF NOT EXISTS attack_technique VARCHAR;
+            ALTER TABLE correlations ADD COLUMN IF NOT EXISTS note VARCHAR DEFAULT '';
             ",
         )?;
         Ok(())
