@@ -41,6 +41,7 @@ pub mod cmd_memf;
 pub mod correlate;
 pub mod dispatch;
 pub mod hashdb;
+pub mod mem_ingest;
 pub mod open;
 pub mod output;
 pub mod strings;
