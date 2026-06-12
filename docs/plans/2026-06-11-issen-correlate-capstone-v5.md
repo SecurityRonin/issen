@@ -765,3 +765,36 @@ the RED (read a >16 KB value back, assert full length/content), then GREEN: in
 `raw_data()`, when the data cell is `Cell::BigData`, walk the segment list and concatenate
 segment-cell bodies, truncating to `data_size`. winreg-format already exposes
 `RawBigData::parse` + `Cell::BigData`.
+
+---
+
+## Implementation progress — 2026-06-13 (analytical core COMPLETE + runnable)
+
+The capstone's analytical machine is built, wired, and verified on synthetic
+fixtures (every phase `rtk proxy cargo test`-green at HEAD; one real regression
+caught + fixed mid-pipeline). Done:
+
+- **PRE-4** entity_refs persisted (schema + ALTER backfill + both ingest paths).
+- **PRE-2** disk parsers (EVTX/MFT/USN) populate EntityRef User/Ip/Session/Process/FilePath.
+- **PRE-1** `issen-mem::timeline::memory_events` converter + `persist_memory_events`
+  (process/netstat/malfind → typed memory TimelineEvents, EventSource::Memory).
+- **Engine** (issen-correlation): correlation schema, `EventQuery`/`fetch_events`/
+  `burst_windows`, ordered `evaluate()` + `RuleSpec.guard`/`ordered` hook + `EventView`.
+- **All 11 rules**: Tier A (RELOCATE/PERSIST/COPY-DELETE), Tier B (BRUTEFORCE-LOGON/
+  LOGON-MALWARE-WRITE/EXFIL-STAGE), Tier B' (PERSIST-REGCONFIRM), Tier D (LATERAL-MOVE),
+  Tier C (INJECTED-C2/PROC-DISK-MATCH/PROC-MIGRATION + degraded). Each with negative
+  controls + the epistemics ("consistent with", no verdict words) gate.
+- **Runner + `run_and_persist`** (memory-aware), **`correlate` CLI**, **Correlated
+  Findings report** (tribunal footer). `cargo build --bin issen` Finished.
+
+REMAINING (gated, not reachable without the external blockers):
+- **§8.1 acceptance oracle** — the real Case-001 corpus run asserting F1–F44 incl.
+  memory F26–F37. Gated: needs the live `memf` walk on the actual dumps.
+- **dispatch→PRE-1 live wiring** (turn `dispatch_windows_*` string-row output into
+  PRE-1 rows + call `persist_memory_events` from the CLI) — dump-gated follow-on.
+- **M-2** (malfind `first_bytes`) lives in the memory-forensic repo — blocked on its
+  dirty tree being committed. **M-1** (netstat C2 note) is issen-side, small, optional
+  (INJECTED-C2 already grades the C2 via the injected-process join).
+- Disk evidence-surfacing pre-tasks **PRE-5 / PRE-3 / D2** (force-link inert parsers,
+  registry named-value table, EVTX 4776) — reachable enrichment; the correlation
+  engine does not depend on them.
