@@ -1,0 +1,24 @@
+[package]
+name = "issen-parser-sam"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+issen-core = { workspace = true }
+issen-plugin-sdk = { workspace = true }
+# SAM local accounts live in the SAM hive — decode via OUR winreg-forensic fleet
+# crates (winreg-artifacts::sam over winreg-core), never third-party notatin.
+winreg-core = { workspace = true }
+winreg-artifacts = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+inventory = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

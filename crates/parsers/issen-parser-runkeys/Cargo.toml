@@ -1,0 +1,25 @@
+[package]
+name = "issen-parser-runkeys"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+issen-core = { workspace = true }
+issen-plugin-sdk = { workspace = true }
+# Run/RunOnce keys live in the SOFTWARE and NTUSER.DAT hives — decode via OUR
+# winreg-forensic fleet crates (winreg-artifacts::run_keys over winreg-core),
+# never third-party notatin.
+winreg-core = { workspace = true }
+winreg-artifacts = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+inventory = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

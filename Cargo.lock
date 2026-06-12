@@ -4316,10 +4316,13 @@ dependencies = [
  "issen-parser-evtx",
  "issen-parser-prefetch",
  "issen-parser-registry",
+ "issen-parser-runkeys",
+ "issen-parser-sam",
  "issen-parser-shellbags",
  "issen-parser-shimcache",
  "issen-parser-srum",
  "issen-parser-uac",
+ "issen-parser-userassist",
  "issen-parser-velociraptor",
  "issen-qcow2",
  "issen-remote-access",
@@ -4637,6 +4640,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "issen-parser-runkeys"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
+]
+
+[[package]]
+name = "issen-parser-sam"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
+]
+
+[[package]]
 name = "issen-parser-setupapi"
 version = "0.1.0"
 dependencies = [
@@ -4711,6 +4744,21 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "tracing",
+]
+
+[[package]]
+name = "issen-parser-userassist"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
 ]
 
 [[package]]

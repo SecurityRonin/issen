@@ -25,6 +25,9 @@ members = [
     "crates/parsers/issen-parser-shellbags",
     "crates/parsers/issen-parser-setupapi",
     "crates/parsers/issen-parser-srum",
+    "crates/parsers/issen-parser-runkeys",
+    "crates/parsers/issen-parser-userassist",
+    "crates/parsers/issen-parser-sam",
     "crates/issen-report",
     "crates/issen-cli",
     "crates/issen-navigator",
@@ -82,6 +85,9 @@ issen-parser-velociraptor = { path = "crates/parsers/issen-parser-velociraptor" 
 issen-parser-uac          = { path = "crates/parsers/issen-parser-uac" }
 issen-parser-registry     = { path = "crates/parsers/issen-parser-registry" }
 issen-parser-srum         = { path = "crates/parsers/issen-parser-srum" }
+issen-parser-runkeys      = { path = "crates/parsers/issen-parser-runkeys" }
+issen-parser-userassist   = { path = "crates/parsers/issen-parser-userassist" }
+issen-parser-sam          = { path = "crates/parsers/issen-parser-sam" }
 issen-parser-prefetch     = { path = "crates/parsers/issen-parser-prefetch" }
 issen-parser-lnk          = { path = "crates/parsers/issen-parser-lnk" }
 issen-parser-amcache      = { path = "crates/parsers/issen-parser-amcache" }

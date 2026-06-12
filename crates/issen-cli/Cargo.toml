@@ -37,6 +37,9 @@ issen-parser-amcache = { workspace = true }
 issen-parser-shimcache = { workspace = true }
 issen-parser-shellbags = { workspace = true }
 issen-parser-srum = { workspace = true }
+issen-parser-runkeys = { workspace = true }
+issen-parser-userassist = { workspace = true }
+issen-parser-sam = { workspace = true }
 issen-correlation = { workspace = true, features = ["remote"] }
 issen-unpack = { workspace = true }
 issen-mem    = { workspace = true }
