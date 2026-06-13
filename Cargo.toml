@@ -169,8 +169,8 @@ flate2       = "1"
 tar          = "0.4"
 
 # Forensic artifact parsers
-srum-parser      = { path = "../srum-forensic/crates/srum-parser" }
-srum-core        = { path = "../srum-forensic/crates/srum-core" }
+srum-parser      = "0.1.0"
+srum-core        = "0.1.0"
 goblin       = { version = "0.10", default-features = false, features = ["pe32", "pe64", "std"] }
 ewf          = "0.1"
 vhd          = { path = "../vhd/vhd" }
@@ -183,8 +183,8 @@ evtx         = { version = "0.11", default-features = false }
 mft          = "0.6"
 
 # Registry — our own winreg-forensic fleet crates (notatin fully removed)
-winreg-core      = { path = "../winreg-forensic/crates/winreg-core" }
-winreg-artifacts = { path = "../winreg-forensic/crates/winreg-artifacts" }
+winreg-core      = "0.1.0"
+winreg-artifacts = "0.1.1"
 
 # XML / filesystem scanning
 uuid         = { version = "1", features = ["v4"] }
