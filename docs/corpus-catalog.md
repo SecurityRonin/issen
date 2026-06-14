@@ -168,11 +168,15 @@ image-creation doc (hashes, app list):
 - **Local-only prior validation (already done):** segb-core's SEGB v2 container matched ccl-segb
   exactly (785/785 records, states + timestamps) on a *private* macOS 15.7 Biome stream — see
   `segb-core/docs/validation.md`. This iOS image is the public/reproducible version of that check.
-- **MD5:** _computing on download completion (auto-finalize: extract `*[Bb]iome*`, hash the tar.gz,
-  reconcile segb-core vs `ccl_segb_cli.py` across the extracted SEGB files)._ Stored under
-  `issen/tests/data/Josh Hickman iOS 17 (Biome SEGB)/` (gitignored; only the biome subset is kept on
-  disk after extraction). Note: `App.MenuItem` is macOS-Tahoe-26-only, so it is **not** in this iOS
-  image — this validates the SEGB *container*, not the App.MenuItem protobuf field mapping.
+- **`iOS_17_Public_Image.tar.gz` MD5:** `e115f051d15178fa1334489e24c9f0fd` (22,132,295,131 bytes).
+- **Structure:** a Cellebrite UFED package — `iOS_17/Cellebrite_Extraction/.../EXTRACTION_FFS 01/
+  EXTRACTION_FFS.zip` (the full file system; biome streams live under
+  `private/var/db/biome/streams/restricted/*/local` and
+  `private/var/mobile/.../Library/Biome/`), plus an iTunes `Backup/…zip` and a `sysdiagnose/…tar.gz`.
+  Extract the biome subset from the nested FFS zip (zip random access), then reconcile segb-core vs
+  `ccl_segb_cli.py`. Stored under `issen/tests/data/Josh Hickman iOS 17 (Biome SEGB)/` (gitignored;
+  only the biome subset kept on disk). Note: `App.MenuItem` is macOS-Tahoe-26-only, so it is **not**
+  in this iOS image — this validates the SEGB *container*, not the App.MenuItem protobuf field mapping.
 
 ## B. Disk-image / container-format fixtures
 

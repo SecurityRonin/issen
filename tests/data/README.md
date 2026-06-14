@@ -169,10 +169,12 @@ icat -i ewf -o 239616 PC-MUS-001.E01 54-128-1 > hiberfil.sys
 - **Writeup:** <https://thebinaryhick.blog/2024/09/14/triple-trouble-ios-16-android-14-and-ios-17-images-now-available/>
 - **Original download:** <https://digitalcorpora.s3.amazonaws.com/corpora/mobile/iOS17/iOS_17_Public_Image.tar.gz>
   (image-creation doc with hashes: <https://digitalcorpora.s3.amazonaws.com/corpora/mobile/iOS17/iOS17-ImageCreation.pdf>)
-- **MD5:** _computed on download completion (auto-finalize step)._
-- **Notable contents:** real **Apple Biome SEGB** streams under
-  `private/var/db/biome/streams/restricted/*/local` and `private/var/mobile/Library/Biome/...` — the
-  same SEGB v1/v2 container macOS uses. Only the biome subset is kept on disk after extraction.
+- **MD5:** `e115f051d15178fa1334489e24c9f0fd` (22,132,295,131 bytes).
+- **Structure:** Cellebrite UFED package — the full file system is the nested
+  `iOS_17/Cellebrite_Extraction/.../EXTRACTION_FFS 01/EXTRACTION_FFS.zip`; biome streams are inside it
+  at `private/var/db/biome/streams/restricted/*/local` and `private/var/mobile/.../Library/Biome/`
+  (same SEGB v1/v2 container macOS uses). Extract the biome subset from the nested zip; only that
+  subset is kept on disk.
 - **Used by:** `segb-core` — public/reproducible validation of the SEGB container reader vs the
   ccl-segb reference (the container was already validated locally on a private macOS Biome stream,
   785/785; see `segb-core/docs/validation.md`). `App.MenuItem` is macOS-Tahoe-26-only and absent here.
