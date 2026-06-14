@@ -175,9 +175,11 @@ icat -i ewf -o 239616 PC-MUS-001.E01 54-128-1 > hiberfil.sys
   at `private/var/db/biome/streams/restricted/*/local` and `private/var/mobile/.../Library/Biome/`
   (same SEGB v1/v2 container macOS uses). Extract the biome subset from the nested zip; only that
   subset is kept on disk.
-- **Used by:** `segb-core` — public/reproducible validation of the SEGB container reader vs the
-  ccl-segb reference (the container was already validated locally on a private macOS Biome stream,
-  785/785; see `segb-core/docs/validation.md`). `App.MenuItem` is macOS-Tahoe-26-only and absent here.
+- **Used by:** `segb-core` — **public/reproducible validation**: across all **401** real iOS 17 Biome
+  SEGB files (139 v1 + 262 v2), segb-core's record counts match the ccl-segb reference exactly —
+  **401 PASS / 0 MISMATCH** (2026-06-14). The stream dirs unzip with restrictive Apple modes (0700);
+  `chmod -R u+rwX` before scanning. `App.MenuItem` is macOS-Tahoe-26-only and absent here (this is the
+  container validation; the App.MenuItem protobuf field mapping still awaits a Tahoe 26 image).
 
 ## Test path references
 

@@ -165,9 +165,15 @@ image-creation doc (hashes, app list):
   iOS uses the *same* SEGB v1/v2 container as macOS (`/private/var/db/biome/streams/restricted/*/local`
   and `/private/var/mobile/Library/Biome/...`). **Used by** `segb-core` to validate its SEGB container
   reader against real Apple data + the ccl-segb reference oracle, publicly and reproducibly.
-- **Local-only prior validation (already done):** segb-core's SEGB v2 container matched ccl-segb
-  exactly (785/785 records, states + timestamps) on a *private* macOS 15.7 Biome stream — see
-  `segb-core/docs/validation.md`. This iOS image is the public/reproducible version of that check.
+- **VALIDATED (2026-06-14):** segb-core reconciles **exactly** with the ccl-segb reference across
+  **all 401 real iOS 17 Biome SEGB files** in this image (139 SEGB **v1** + 262 SEGB **v2**) — record
+  counts match on every file, **401 PASS / 0 MISMATCH**. Streams include `_DKEvent.Safari.History`,
+  `_DKEvent.Device.BatteryPercentage`, `MicroLocationVisit`, `Siri.SelfTriggerSuppression`,
+  DuetActivityScheduler app-launch/kill, `unifiedMessageStream`, etc. The SEGB files live in
+  `private/var/db/biome/streams/restricted/*/local/*` and
+  `private/var/mobile/Library/.../Biome/.../local/*` — note these dirs unzip with restrictive Apple
+  modes (0700), so `chmod -R u+rwX` is needed before scanning. (A prior macOS 15.7 private-stream
+  check also matched 785/785; this iOS image is the public, reproducible, **both-variant** validation.)
 - **`iOS_17_Public_Image.tar.gz` MD5:** `e115f051d15178fa1334489e24c9f0fd` (22,132,295,131 bytes).
 - **Structure:** a Cellebrite UFED package — `iOS_17/Cellebrite_Extraction/.../EXTRACTION_FFS 01/
   EXTRACTION_FFS.zip` (the full file system; biome streams live under
