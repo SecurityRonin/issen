@@ -9,27 +9,27 @@ mod parsers;
 mod scanning;
 
 // Link parser crates so their inventory::submit! registrations are included.
-extern crate issen_parser_evtx;
-extern crate issen_parser_registry;
-extern crate issen_parser_uac;
-extern crate issen_parser_prefetch;
 extern crate issen_parser_amcache;
-extern crate issen_parser_shimcache;
-extern crate issen_parser_shellbags;
-extern crate issen_parser_srum;
+extern crate issen_parser_evtx;
+extern crate issen_parser_prefetch;
+extern crate issen_parser_registry;
 extern crate issen_parser_runkeys;
-extern crate issen_parser_userassist;
 extern crate issen_parser_sam;
+extern crate issen_parser_shellbags;
+extern crate issen_parser_shimcache;
+extern crate issen_parser_srum;
+extern crate issen_parser_uac;
+extern crate issen_parser_userassist;
 extern crate issen_parser_velociraptor;
 
 // Link disk image container crates so their CollectionProvider registrations survive.
-extern crate issen_vhdx;
-extern crate issen_ewf;
-extern crate issen_vmdk;
-extern crate issen_vhd;
 extern crate issen_dd;
-extern crate issen_qcow2;
+extern crate issen_ewf;
 extern crate issen_iso;
+extern crate issen_qcow2;
+extern crate issen_vhd;
+extern crate issen_vhdx;
+extern crate issen_vmdk;
 
 /// When to emit ANSI color codes.
 #[derive(ValueEnum, Debug, Clone, Default)]
@@ -563,26 +563,29 @@ fn main() -> ExitCode {
             examiner.as_deref(),
             max_events,
         ),
-        Commands::Srum { srudb_path, format } => {
-            commands::srum::run(&srudb_path, &format)
-        }
-        Commands::Biome { biome_path, format } => {
-            commands::biome::run(&biome_path, &format)
-        }
-        Commands::Frequency { evtx_dir, evtx_file, cap, key, json } => {
-            match commands::frequency::parse_key(&key) {
-                Ok(freq_key) => {
-                    commands::frequency::run(&evtx_dir, &evtx_file, cap, freq_key, json)
-                }
-                Err(e) => Err(anyhow::anyhow!("{e}")),
-            }
-        }
-        Commands::Processes { evtx_dir, evtx_file, json, link_sessions } => {
-            commands::processes::run(&evtx_dir, &evtx_file, json, link_sessions)
-        }
-        Commands::Session { evtx_dir, evtx_file, json } => {
-            commands::session::run(&evtx_dir, &evtx_file, json)
-        }
+        Commands::Srum { srudb_path, format } => commands::srum::run(&srudb_path, &format),
+        Commands::Biome { biome_path, format } => commands::biome::run(&biome_path, &format),
+        Commands::Frequency {
+            evtx_dir,
+            evtx_file,
+            cap,
+            key,
+            json,
+        } => match commands::frequency::parse_key(&key) {
+            Ok(freq_key) => commands::frequency::run(&evtx_dir, &evtx_file, cap, freq_key, json),
+            Err(e) => Err(anyhow::anyhow!("{e}")),
+        },
+        Commands::Processes {
+            evtx_dir,
+            evtx_file,
+            json,
+            link_sessions,
+        } => commands::processes::run(&evtx_dir, &evtx_file, json, link_sessions),
+        Commands::Session {
+            evtx_dir,
+            evtx_file,
+            json,
+        } => commands::session::run(&evtx_dir, &evtx_file, json),
         Commands::Pivot { action } => match action {
             PivotAction::Sync { cache_dir } => {
                 let default_cache = dirs_next_cache();
@@ -592,9 +595,7 @@ fn main() -> ExitCode {
             PivotAction::Rules { rules_dir } => {
                 commands::pivot_cmd::run_rules(rules_dir.as_deref())
             }
-            PivotAction::Eval { evidence_file } => {
-                commands::pivot_cmd::run_eval(&evidence_file)
-            }
+            PivotAction::Eval { evidence_file } => commands::pivot_cmd::run_eval(&evidence_file),
         },
     };
 

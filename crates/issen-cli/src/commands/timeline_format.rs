@@ -8,7 +8,14 @@ use issen_timeline::query::TimelineRow;
 /// Header: timestamp,event_type,source,path,description,evidence_source
 pub fn write_csv(events: &[TimelineRow], out: &mut impl Write) -> Result<()> {
     let mut wtr = csv::Writer::from_writer(out);
-    wtr.write_record(["timestamp", "event_type", "source", "path", "description", "evidence_source"])?;
+    wtr.write_record([
+        "timestamp",
+        "event_type",
+        "source",
+        "path",
+        "description",
+        "evidence_source",
+    ])?;
     for row in events {
         wtr.write_record([
             &row.timestamp_display,
@@ -85,7 +92,11 @@ mod tests {
 
     #[test]
     fn csv_has_correct_headers() {
-        let events = vec![make_row("FileCreate", 1_705_314_225_000_000_000, r"C:\foo\bar.exe")];
+        let events = vec![make_row(
+            "FileCreate",
+            1_705_314_225_000_000_000,
+            r"C:\foo\bar.exe",
+        )];
         let mut out = Vec::new();
         write_csv(&events, &mut out).unwrap();
         let text = String::from_utf8(out).unwrap();
@@ -98,7 +109,11 @@ mod tests {
 
     #[test]
     fn csv_event_serialises_correctly() {
-        let events = vec![make_row("FileCreate", 1_705_314_225_000_000_000, r"C:\foo\bar.exe")];
+        let events = vec![make_row(
+            "FileCreate",
+            1_705_314_225_000_000_000,
+            r"C:\foo\bar.exe",
+        )];
         let mut out = Vec::new();
         write_csv(&events, &mut out).unwrap();
         let text = String::from_utf8(out).unwrap();
@@ -106,13 +121,22 @@ mod tests {
         let _header = lines.next().unwrap(); // skip header
         let data_line = lines.next().expect("expected at least one data row");
         // Should contain the timestamp display value
-        assert!(data_line.contains("2024-01-15T10:23:45Z"), "missing timestamp: {data_line}");
+        assert!(
+            data_line.contains("2024-01-15T10:23:45Z"),
+            "missing timestamp: {data_line}"
+        );
         // Should contain event_type
-        assert!(data_line.contains("FileCreate"), "missing event_type: {data_line}");
+        assert!(
+            data_line.contains("FileCreate"),
+            "missing event_type: {data_line}"
+        );
         // Should contain source
         assert!(data_line.contains("MFT"), "missing source: {data_line}");
         // Should contain evidence_source
-        assert!(data_line.contains("evidence.zip"), "missing evidence_source: {data_line}");
+        assert!(
+            data_line.contains("evidence.zip"),
+            "missing evidence_source: {data_line}"
+        );
     }
 
     // ---- Bodyfile tests ----
@@ -122,7 +146,11 @@ mod tests {
         // 2024-01-15T10:23:45Z in ns → epoch 1_705_314_225
         let ts_ns = 1_705_314_225_000_000_000i64;
         let expected_epoch = 1_705_314_225i64;
-        let events = vec![make_row("FileCreate", ts_ns, r"C:\Users\victim\malware.exe")];
+        let events = vec![make_row(
+            "FileCreate",
+            ts_ns,
+            r"C:\Users\victim\malware.exe",
+        )];
         let mut out = Vec::new();
         write_bodyfile(&events, &mut out).unwrap();
         let text = String::from_utf8(out).unwrap();
@@ -148,7 +176,11 @@ mod tests {
     fn bodyfile_filemodify_sets_mtime() {
         let ts_ns = 1_705_314_225_000_000_000i64;
         let expected_epoch = 1_705_314_225i64;
-        let events = vec![make_row("FileModify", ts_ns, r"C:\Windows\System32\evil.dll")];
+        let events = vec![make_row(
+            "FileModify",
+            ts_ns,
+            r"C:\Windows\System32\evil.dll",
+        )];
         let mut out = Vec::new();
         write_bodyfile(&events, &mut out).unwrap();
         let text = String::from_utf8(out).unwrap();
@@ -169,15 +201,25 @@ mod tests {
 
     #[test]
     fn bodyfile_pipe_separated() {
-        let events = vec![make_row("FileAccess", 1_705_314_225_000_000_000, r"C:\temp\data.csv")];
+        let events = vec![make_row(
+            "FileAccess",
+            1_705_314_225_000_000_000,
+            r"C:\temp\data.csv",
+        )];
         let mut out = Vec::new();
         write_bodyfile(&events, &mut out).unwrap();
         let text = String::from_utf8(out).unwrap();
         let line = text.lines().next().expect("expected output line");
         // Must contain pipe characters (mactime bodyfile format)
-        assert!(line.contains('|'), "output should be pipe-separated: {line}");
+        assert!(
+            line.contains('|'),
+            "output should be pipe-separated: {line}"
+        );
         // Must have exactly 10 pipes (11 fields)
         let pipe_count = line.chars().filter(|&c| c == '|').count();
-        assert_eq!(pipe_count, 10, "should have 10 pipe separators (11 fields): {line}");
+        assert_eq!(
+            pipe_count, 10,
+            "should have 10 pipe separators (11 fields): {line}"
+        );
     }
 }

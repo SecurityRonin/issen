@@ -1980,24 +1980,41 @@ NetNS\tProcess Name\tPID\tTID\tFD\tSock Offset\tFamily\tType\tProto\tSource Addr
 
     let files: &[(&str, &str)] = &[
         // Metadata
-        ("uac.log", "2026-03-24 23:40:43 UTC - UAC collection started\nLinux vbox-linux\n"),
+        (
+            "uac.log",
+            "2026-03-24 23:40:43 UTC - UAC collection started\nLinux vbox-linux\n",
+        ),
         // Rootkit: ld.so.preload populated → triggers rootkit_indicator tag
-        ("chkrootkit/etc_ld_so_preload.txt", "/lib/x86_64-linux-gnu/libymv.so.3\n"),
+        (
+            "chkrootkit/etc_ld_so_preload.txt",
+            "/lib/x86_64-linux-gnu/libymv.so.3\n",
+        ),
         // Hidden PIDs: PID 977 hidden from ps
-        ("live_response/process/hidden_pids_for_ps_command.txt", "977\n"),
+        (
+            "live_response/process/hidden_pids_for_ps_command.txt",
+            "977\n",
+        ),
         // Memory sockstat: PID 977 "top" → dst_port 3333 (Stratum)
         ("memory_dump/output-sockstat", sockstat),
         // CPU: 97.7% user → cpu_anomaly evidence
-        ("live_response/process/top_-b_-n1.txt",
-         "%Cpu(s): 97.7 us,  2.3 sy,  0.0 ni,  0.0 id,  0.0 wa\n"),
+        (
+            "live_response/process/top_-b_-n1.txt",
+            "%Cpu(s): 97.7 us,  2.3 sy,  0.0 ni,  0.0 id,  0.0 wa\n",
+        ),
         // Network dir placeholder so the section renders
         ("live_response/network/.keep", ""),
         // Env (no LD_PRELOAD in env, so no duplicate warning)
         ("live_response/system/env.txt", "PATH=/usr/bin:/bin\n"),
         // Lsmod: no known rootkit modules
-        ("live_response/system/lsmod.txt", "Module                  Size  Used by\next4                  729088  2\n"),
+        (
+            "live_response/system/lsmod.txt",
+            "Module                  Size  Used by\next4                  729088  2\n",
+        ),
         // Taint: 0 (clean)
-        ("live_response/system/cat_proc_sys_kernel_tainted.txt", "0\n"),
+        (
+            "live_response/system/cat_proc_sys_kernel_tainted.txt",
+            "0\n",
+        ),
     ];
 
     let archive_path = dest.join("uac-vbox-linux-20260324234043.tar.gz");
@@ -2153,19 +2170,35 @@ ffffffff80001235: 00000002 00000000 00010000 0001 03 12346 /run/dbus/system_bus_
 ffffffff80001236: 00000003 00000000 00010000 0001 03 12347 /run/user/1000/pipewire-0\n";
 
     let files: &[(&str, &str)] = &[
-        ("uac.log", "2026-03-24 23:40:43 UTC - UAC collection started\nLinux vbox-linux\n"),
-        ("chkrootkit/etc_ld_so_preload.txt", "/lib/x86_64-linux-gnu/libymv.so.3\n"),
-        ("live_response/process/hidden_pids_for_ps_command.txt", "977\n"),
+        (
+            "uac.log",
+            "2026-03-24 23:40:43 UTC - UAC collection started\nLinux vbox-linux\n",
+        ),
+        (
+            "chkrootkit/etc_ld_so_preload.txt",
+            "/lib/x86_64-linux-gnu/libymv.so.3\n",
+        ),
+        (
+            "live_response/process/hidden_pids_for_ps_command.txt",
+            "977\n",
+        ),
         ("memory_dump/output-sockstat", sockstat),
         // Per-PID unix socket file — the desktop masquerade source
         ("live_response/process/proc/977/net/unix.txt", unix_txt),
-        ("live_response/process/top_-b_-n1.txt",
-         "%Cpu(s): 97.7 us,  2.3 sy,  0.0 ni,  0.0 id,  0.0 wa\n"),
+        (
+            "live_response/process/top_-b_-n1.txt",
+            "%Cpu(s): 97.7 us,  2.3 sy,  0.0 ni,  0.0 id,  0.0 wa\n",
+        ),
         ("live_response/network/.keep", ""),
         ("live_response/system/env.txt", "PATH=/usr/bin:/bin\n"),
-        ("live_response/system/lsmod.txt",
-         "Module                  Size  Used by\next4                  729088  2\n"),
-        ("live_response/system/cat_proc_sys_kernel_tainted.txt", "4\n"),
+        (
+            "live_response/system/lsmod.txt",
+            "Module                  Size  Used by\next4                  729088  2\n",
+        ),
+        (
+            "live_response/system/cat_proc_sys_kernel_tainted.txt",
+            "4\n",
+        ),
     ];
 
     let archive_path = dest.join("uac-masquerade-20260324234043.tar.gz");
@@ -2180,7 +2213,9 @@ ffffffff80001236: 00000003 00000000 00010000 0001 03 12347 /run/user/1000/pipewi
         header.set_mode(0o644);
         header.set_cksum();
         let path = format!("uac-masquerade-20260324234043/{rel_path}");
-        builder.append_data(&mut header, &path, data).expect("append");
+        builder
+            .append_data(&mut header, &path, data)
+            .expect("append");
     }
     builder.finish().expect("finish tar");
     archive_path
@@ -2329,7 +2364,10 @@ fn supertimeline_jsonl_output_is_valid() {
         .output()
         .expect("supertimeline command should run");
 
-    assert!(output.status.success(), "supertimeline --format jsonl must exit 0");
+    assert!(
+        output.status.success(),
+        "supertimeline --format jsonl must exit 0"
+    );
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     // Every non-empty line must be a valid JSON object.
@@ -2356,7 +2394,10 @@ fn supertimeline_csv_output_has_correct_headers() {
         .output()
         .expect("supertimeline command should run");
 
-    assert!(output.status.success(), "supertimeline --format csv must exit 0");
+    assert!(
+        output.status.success(),
+        "supertimeline --format csv must exit 0"
+    );
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let first_line = stdout.lines().next().unwrap_or("");
@@ -2416,13 +2457,22 @@ fn build_uac_fixture_with_evtx(dest: &std::path::Path) -> std::path::PathBuf {
     use flate2::Compression;
 
     let files: &[(&str, &[u8])] = &[
-        ("uac.log", b"2026-03-24 23:40:43 UTC - UAC collection started\nLinux vbox-linux\n"),
+        (
+            "uac.log",
+            b"2026-03-24 23:40:43 UTC - UAC collection started\nLinux vbox-linux\n",
+        ),
         ("chkrootkit/etc_ld_so_preload.txt", b""),
         ("live_response/process/hidden_pids_for_ps_command.txt", b""),
         ("live_response/network/.keep", b""),
         ("live_response/system/env.txt", b"PATH=/usr/bin:/bin\n"),
-        ("live_response/system/lsmod.txt", b"Module                  Size  Used by\next4                  729088  2\n"),
-        ("live_response/system/cat_proc_sys_kernel_tainted.txt", b"0\n"),
+        (
+            "live_response/system/lsmod.txt",
+            b"Module                  Size  Used by\next4                  729088  2\n",
+        ),
+        (
+            "live_response/system/cat_proc_sys_kernel_tainted.txt",
+            b"0\n",
+        ),
         // Zero-byte EVTX file — parser must not panic
         ("Windows/System32/winevt/Logs/Security.evtx", b""),
     ];
@@ -2437,8 +2487,7 @@ fn build_uac_fixture_with_evtx(dest: &std::path::Path) -> std::path::PathBuf {
         header.set_size(content.len() as u64);
         header.set_mode(0o644);
         header.set_cksum();
-        let archive_path_str =
-            format!("uac-windows-evtx-20260324234043/{rel_path}");
+        let archive_path_str = format!("uac-windows-evtx-20260324234043/{rel_path}");
         builder
             .append_data(&mut header, &archive_path_str, *content)
             .expect("append file");
@@ -2513,7 +2562,12 @@ fn feed_attack_flow_help_exits_success() {
 #[test]
 fn feed_attack_flow_bad_cache_dir_exits_nonzero() {
     issen_cmd()
-        .args(["feed", "attack-flow", "--cache-dir", "/proc/nonexistent/readonly"])
+        .args([
+            "feed",
+            "attack-flow",
+            "--cache-dir",
+            "/proc/nonexistent/readonly",
+        ])
         .assert()
         .failure();
 }
@@ -2565,10 +2619,7 @@ fn pivot_eval_empty_evidence_no_findings() {
         .args(["pivot", "eval", evidence_file.to_str().unwrap()])
         .assert()
         .success()
-        .stdout(
-            predicate::str::contains("No findings")
-                .or(predicate::str::is_empty()),
-        );
+        .stdout(predicate::str::contains("No findings").or(predicate::str::is_empty()));
 }
 
 // ── Phase 3: rt srum subcommand ──────────────────────────────────────────────
@@ -2649,7 +2700,7 @@ fn pivot_eval_matching_evidence_emits_finding() {
 
 #[cfg(test)]
 mod drive_breakdown_tests {
-    use issen_cli::commands::analyse::{DriveBreakdown, drive_breakdown};
+    use issen_cli::commands::analyse::{drive_breakdown, DriveBreakdown};
     use issen_core::artifacts::types::ArtifactType;
     use issen_core::timeline::event::{EventType, TimelineEvent};
 
@@ -2709,15 +2760,28 @@ mod drive_breakdown_tests {
 
     #[test]
     fn drive_breakdown_render_contains_removable_line() {
-        let b = DriveBreakdown { fixed: 1, removable: 2, network: 0, unknown: 0 };
+        let b = DriveBreakdown {
+            fixed: 1,
+            removable: 2,
+            network: 0,
+            unknown: 0,
+        };
         let rendered = b.render();
-        assert!(rendered.contains("Removable"), "render must contain 'Removable'");
+        assert!(
+            rendered.contains("Removable"),
+            "render must contain 'Removable'"
+        );
         assert!(rendered.contains('2'), "render must contain the count 2");
     }
 
     #[test]
     fn drive_breakdown_render_flags_removable_when_present() {
-        let b = DriveBreakdown { fixed: 0, removable: 5, network: 0, unknown: 0 };
+        let b = DriveBreakdown {
+            fixed: 0,
+            removable: 5,
+            network: 0,
+            unknown: 0,
+        };
         let rendered = b.render();
         assert!(
             rendered.contains("exfiltration") || rendered.contains('\u{2190}'),
@@ -2727,10 +2791,7 @@ mod drive_breakdown_tests {
 
     #[test]
     fn drive_breakdown_unknown_counts_events_without_drive_type_tag() {
-        let events = vec![
-            make_event(&["some_other_tag"]),
-            make_event(&[]),
-        ];
+        let events = vec![make_event(&["some_other_tag"]), make_event(&[])];
         let bd = drive_breakdown(&events);
         assert_eq!(bd.unknown, 2);
     }
@@ -2768,7 +2829,12 @@ fn processes_help_shows_evtx_dir_and_link_sessions() {
 fn processes_empty_dir_exits_success_with_json() {
     let dir = TempDir::new().expect("tmpdir");
     issen_cmd()
-        .args(["processes", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .args([
+            "processes",
+            "--evtx-dir",
+            &dir.path().to_string_lossy(),
+            "--json",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("processes"));
@@ -2778,14 +2844,19 @@ fn processes_empty_dir_exits_success_with_json() {
 fn processes_json_output_has_processes_array_and_total_count() {
     let dir = TempDir::new().expect("tmpdir");
     let output = issen_cmd()
-        .args(["processes", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .args([
+            "processes",
+            "--evtx-dir",
+            &dir.path().to_string_lossy(),
+            "--json",
+        ])
         .output()
         .expect("failed to run issen processes");
 
     assert!(output.status.success(), "exit code must be 0");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let parsed: serde_json::Value = serde_json::from_str(&stdout)
-        .expect("stdout must be valid JSON");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("stdout must be valid JSON");
     assert!(
         parsed.get("processes").and_then(|v| v.as_array()).is_some(),
         "JSON must have 'processes' array, got: {stdout}"
@@ -2821,7 +2892,12 @@ fn session_help_shows_evtx_dir_option() {
 fn session_empty_dir_exits_success_with_json() {
     let dir = TempDir::new().expect("tmpdir");
     issen_cmd()
-        .args(["session", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .args([
+            "session",
+            "--evtx-dir",
+            &dir.path().to_string_lossy(),
+            "--json",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("sessions"));
@@ -2831,14 +2907,19 @@ fn session_empty_dir_exits_success_with_json() {
 fn session_json_output_is_valid_json_with_sessions_array() {
     let dir = TempDir::new().expect("tmpdir");
     let output = issen_cmd()
-        .args(["session", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .args([
+            "session",
+            "--evtx-dir",
+            &dir.path().to_string_lossy(),
+            "--json",
+        ])
         .output()
         .expect("failed to run issen session");
 
     assert!(output.status.success(), "exit code must be 0");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let parsed: serde_json::Value = serde_json::from_str(&stdout)
-        .expect("stdout must be valid JSON");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("stdout must be valid JSON");
     assert!(
         parsed.get("sessions").and_then(|v| v.as_array()).is_some(),
         "JSON must contain a 'sessions' array, got: {stdout}"
@@ -2875,7 +2956,12 @@ fn frequency_help_shows_evtx_dir_cap_and_key() {
 fn frequency_empty_dir_exits_success_with_json() {
     let dir = TempDir::new().expect("tmpdir");
     issen_cmd()
-        .args(["frequency", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .args([
+            "frequency",
+            "--evtx-dir",
+            &dir.path().to_string_lossy(),
+            "--json",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("anomalies"));
@@ -2885,14 +2971,19 @@ fn frequency_empty_dir_exits_success_with_json() {
 fn frequency_json_output_has_anomalies_array_and_total_analyzed() {
     let dir = TempDir::new().expect("tmpdir");
     let output = issen_cmd()
-        .args(["frequency", "--evtx-dir", &dir.path().to_string_lossy(), "--json"])
+        .args([
+            "frequency",
+            "--evtx-dir",
+            &dir.path().to_string_lossy(),
+            "--json",
+        ])
         .output()
         .expect("failed to run issen frequency");
 
     assert!(output.status.success(), "exit code must be 0");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let parsed: serde_json::Value = serde_json::from_str(&stdout)
-        .expect("stdout must be valid JSON");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("stdout must be valid JSON");
     assert!(
         parsed.get("anomalies").and_then(|v| v.as_array()).is_some(),
         "JSON must have 'anomalies' array, got: {stdout}"
@@ -2906,7 +2997,12 @@ fn frequency_json_output_has_anomalies_array_and_total_analyzed() {
 #[test]
 fn session_nonexistent_dir_exits_success_with_empty_sessions() {
     issen_cmd()
-        .args(["session", "--evtx-dir", "/tmp/issen_test_nonexistent_dir_abc", "--json"])
+        .args([
+            "session",
+            "--evtx-dir",
+            "/tmp/issen_test_nonexistent_dir_abc",
+            "--json",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("\"sessions\""));

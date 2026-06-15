@@ -59,7 +59,11 @@ pub(crate) fn session_to_json_value(s: &LogonSession) -> serde_json::Value {
     });
     if let Some(ip) = &s.src_ip {
         obj["src_ip"] = serde_json::json!(ip);
-        let source = if s.logon_type == 10 { "IpAddress" } else { "WorkstationName" };
+        let source = if s.logon_type == 10 {
+            "IpAddress"
+        } else {
+            "WorkstationName"
+        };
         obj["src_ip_source"] = serde_json::json!(source);
     }
     if let Some(logoff_ns) = s.logoff_time_ns {
@@ -72,11 +76,8 @@ pub(crate) fn session_to_json_value(s: &LogonSession) -> serde_json::Value {
 }
 
 fn print_json(summary: &EvtxSessionSummary) -> anyhow::Result<()> {
-    let sessions_json: Vec<serde_json::Value> = summary
-        .sessions
-        .iter()
-        .map(session_to_json_value)
-        .collect();
+    let sessions_json: Vec<serde_json::Value> =
+        summary.sessions.iter().map(session_to_json_value).collect();
 
     let lateral_json: Vec<serde_json::Value> = summary
         .lateral_movements
@@ -103,7 +104,10 @@ fn print_json(summary: &EvtxSessionSummary) -> anyhow::Result<()> {
 
 fn print_summary(summary: &EvtxSessionSummary) {
     println!("Sessions: {}", summary.session_count);
-    println!("Lateral movement indicators: {}", summary.lateral_movement_count);
+    println!(
+        "Lateral movement indicators: {}",
+        summary.lateral_movement_count
+    );
 
     let orphaned: Vec<_> = summary.sessions.iter().filter(|s| s.is_orphaned).collect();
     if !orphaned.is_empty() {

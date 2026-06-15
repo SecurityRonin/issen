@@ -15,7 +15,7 @@ use anyhow::Result;
 use issen_core::artifacts::ArtifactType;
 use issen_core::timeline::event::{EntityRef, EventType, TimelineEvent};
 use issen_correlation::temporal_rule::{
-    DiscrepancyClause, EventTypeFilter, TemporalRule, evaluate_temporal,
+    evaluate_temporal, DiscrepancyClause, EventTypeFilter, TemporalRule,
 };
 use issen_parser_uac::parsers;
 use issen_unpack::CollectionProvider as _;
@@ -112,8 +112,7 @@ fn collect_events_from_dir(root: &Path) -> Vec<TimelineEvent> {
     }
 
     // Hidden PIDs → ProcessExec events with hidden_process tag.
-    let hidden_path = root
-        .join("live_response/process/hidden_pids_for_ps_command.txt");
+    let hidden_path = root.join("live_response/process/hidden_pids_for_ps_command.txt");
     if let Ok(content) = std::fs::read_to_string(&hidden_path) {
         {
             let pids = parsers::hidden_pids::parse_hidden_pids(&content);
@@ -207,9 +206,7 @@ fn bundled_temporal_rules() -> Vec<TemporalRule> {
             description: None,
             within_seconds: 3600,
             anchor: EventTypeFilter::new("ProcessExec").with_source("Prefetch"),
-            sequence: vec![
-                EventTypeFilter::new("FileDelete").with_source("USN Journal"),
-            ],
+            sequence: vec![EventTypeFilter::new("FileDelete").with_source("USN Journal")],
             absent: vec![],
             discrepancy: vec![],
         },
@@ -221,9 +218,7 @@ fn bundled_temporal_rules() -> Vec<TemporalRule> {
             description: None,
             within_seconds: 10,
             anchor: EventTypeFilter::new("LogonSuccess"),
-            sequence: vec![
-                EventTypeFilter::new("FileCreate").with_description("/tmp/silly.txt"),
-            ],
+            sequence: vec![EventTypeFilter::new("FileCreate").with_description("/tmp/silly.txt")],
             absent: vec![],
             discrepancy: vec![],
         },
@@ -287,7 +282,12 @@ fn emit_narrative(
         println!("│  No temporal anomalies detected.");
     } else {
         for f in temporal_findings {
-            println!("│  [{}] {} — {}", f.severity.to_uppercase(), f.rule_id, f.title);
+            println!(
+                "│  [{}] {} — {}",
+                f.severity.to_uppercase(),
+                f.rule_id,
+                f.title
+            );
             if let Some(ref detail) = f.discrepancy {
                 println!(
                     "│    Discrepancy: {} @ {} vs {} @ {} (Δ {:.1}s)",

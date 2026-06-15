@@ -248,12 +248,22 @@ mod tests {
     #[test]
     fn rendered_report_is_hedged_and_carries_a_tribunal_footer() {
         let report = render_correlated_findings(&sample_findings()).to_ascii_lowercase();
-        assert!(report.contains("consistent with"), "must hedge with 'consistent with'");
+        assert!(
+            report.contains("consistent with"),
+            "must hedge with 'consistent with'"
+        );
         assert!(
             report.contains("the court may draw its own conclusions"),
             "must hand legal conclusions to the tribunal"
         );
-        for forbidden in ["confirm", "prove", "proof", "exceed", "undoubtedly", "certainly"] {
+        for forbidden in [
+            "confirm",
+            "prove",
+            "proof",
+            "exceed",
+            "undoubtedly",
+            "certainly",
+        ] {
             assert!(
                 !report.contains(forbidden),
                 "report must not assert a verdict ({forbidden:?})"

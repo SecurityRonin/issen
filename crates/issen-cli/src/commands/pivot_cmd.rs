@@ -117,11 +117,19 @@ pub fn run_rules(rules_dir: Option<&Path>) -> anyhow::Result<()> {
 /// # Errors
 /// Returns an error if the file cannot be read or parsed.
 pub fn run_eval(evidence_path: &Path) -> anyhow::Result<()> {
-    let json = std::fs::read_to_string(evidence_path)
-        .map_err(|e| anyhow::anyhow!("cannot read evidence file '{}': {e}", evidence_path.display()))?;
+    let json = std::fs::read_to_string(evidence_path).map_err(|e| {
+        anyhow::anyhow!(
+            "cannot read evidence file '{}': {e}",
+            evidence_path.display()
+        )
+    })?;
 
-    let evidence: Vec<Evidence> = serde_json::from_str(&json)
-        .map_err(|e| anyhow::anyhow!("invalid evidence JSON in '{}': {e}", evidence_path.display()))?;
+    let evidence: Vec<Evidence> = serde_json::from_str(&json).map_err(|e| {
+        anyhow::anyhow!(
+            "invalid evidence JSON in '{}': {e}",
+            evidence_path.display()
+        )
+    })?;
 
     let rules = bundled_rules();
     let engine = forensic_pivot::PivotEngine::new(rules);

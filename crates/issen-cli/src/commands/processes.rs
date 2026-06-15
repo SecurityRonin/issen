@@ -58,11 +58,7 @@ pub fn run(
 fn build_session_map(
     summary: &issen_evtx::session::EvtxSessionSummary,
 ) -> std::collections::HashMap<u64, &winevt_core::LogonSession> {
-    summary
-        .sessions
-        .iter()
-        .map(|s| (s.logon_id, s))
-        .collect()
+    summary.sessions.iter().map(|s| (s.logon_id, s)).collect()
 }
 
 fn enrich_with_sessions(
@@ -114,7 +110,10 @@ fn print_summary(processes: &[ProcessEvent]) {
             "  {}  {}{}",
             p.image_path,
             p.command_line.as_deref().unwrap_or(""),
-            p.user.as_ref().map(|u| format!("  [{}]", u)).unwrap_or_default(),
+            p.user
+                .as_ref()
+                .map(|u| format!("  [{}]", u))
+                .unwrap_or_default(),
         );
     }
 }

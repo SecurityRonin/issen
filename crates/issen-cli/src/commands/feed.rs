@@ -39,7 +39,9 @@ pub enum FeedAction {
     /// Show details for a specific feed.
     Info { id: String },
     /// Download the CTID Attack Flow v3.0.0 corpus zip.
-    AttackFlow { cache_dir: Option<std::path::PathBuf> },
+    AttackFlow {
+        cache_dir: Option<std::path::PathBuf>,
+    },
 }
 
 /// List all configured feeds with their status.

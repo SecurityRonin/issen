@@ -65,11 +65,7 @@ fn is_memory_dump_name(path: &Path) -> bool {
     let ext_matches = path
         .extension()
         .and_then(|e| e.to_str())
-        .is_some_and(|ext| {
-            DUMP_EXTENSIONS
-                .iter()
-                .any(|d| d.eq_ignore_ascii_case(ext))
-        });
+        .is_some_and(|ext| DUMP_EXTENSIONS.iter().any(|d| d.eq_ignore_ascii_case(ext)));
     name_is_hiberfil || ext_matches
 }
 
@@ -123,9 +119,7 @@ pub fn resolve_acquisition_ns(
 /// unavailable / before the Unix epoch.
 fn file_mtime_ns(path: &Path) -> Option<i64> {
     let modified = std::fs::metadata(path).ok()?.modified().ok()?;
-    let dur = modified
-        .duration_since(std::time::UNIX_EPOCH)
-        .ok()?;
+    let dur = modified.duration_since(std::time::UNIX_EPOCH).ok()?;
     i64::try_from(dur.as_nanos()).ok()
 }
 
@@ -204,7 +198,13 @@ mod tests {
     #[test]
     fn discover_finds_known_extensions_and_hiberfil_case_insensitively() {
         let dir = tempfile::tempdir().unwrap();
-        for name in ["dump.mem", "image.RAW", "vm.vmem", "crash.dmp", "HIBERFIL.SYS"] {
+        for name in [
+            "dump.mem",
+            "image.RAW",
+            "vm.vmem",
+            "crash.dmp",
+            "HIBERFIL.SYS",
+        ] {
             let mut f = std::fs::File::create(dir.path().join(name)).unwrap();
             f.write_all(b"x").unwrap();
         }
@@ -249,7 +249,10 @@ mod tests {
 
     #[test]
     fn dump_stem_strips_extension() {
-        assert_eq!(dump_stem(Path::new("/cases/WIN-CASE001.mem")), "WIN-CASE001");
+        assert_eq!(
+            dump_stem(Path::new("/cases/WIN-CASE001.mem")),
+            "WIN-CASE001"
+        );
         assert_eq!(dump_stem(Path::new("/cases/hiberfil.sys")), "hiberfil");
     }
 
@@ -258,7 +261,10 @@ mod tests {
     #[test]
     fn filetime_unix_epoch_maps_to_zero_ns() {
         // FILETIME for 1970-01-01T00:00:00Z is exactly the epoch delta.
-        assert_eq!(acquisition_ns_from_filetime(FILETIME_UNIX_EPOCH_DELTA), Some(0));
+        assert_eq!(
+            acquisition_ns_from_filetime(FILETIME_UNIX_EPOCH_DELTA),
+            Some(0)
+        );
     }
 
     #[test]
@@ -275,7 +281,10 @@ mod tests {
     #[test]
     fn filetime_zero_and_pre_epoch_yield_none() {
         assert_eq!(acquisition_ns_from_filetime(0), None);
-        assert_eq!(acquisition_ns_from_filetime(FILETIME_UNIX_EPOCH_DELTA - 1), None);
+        assert_eq!(
+            acquisition_ns_from_filetime(FILETIME_UNIX_EPOCH_DELTA - 1),
+            None
+        );
     }
 
     // ── resolve_acquisition_ns priority order ────────────────────────────────

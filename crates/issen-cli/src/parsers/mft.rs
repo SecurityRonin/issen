@@ -128,7 +128,10 @@ fn emit_mace_timestamps(
     // event so the timestomp FP gate (copy/volume-move) and the stronger
     // si_modified<fn_created ordering test can run from one event.
     create_event = create_event
-        .with_metadata("si_created", serde_json::json!(datetime_to_display(created)))
+        .with_metadata(
+            "si_created",
+            serde_json::json!(datetime_to_display(created)),
+        )
         .with_metadata(
             "si_modified",
             serde_json::json!(datetime_to_display(modified)),
@@ -448,8 +451,9 @@ mod tests {
             "dc01",
         );
         assert!(
-            ev.entity_refs
-                .contains(&EntityRef::FilePath("Windows/System32/coreupdater.exe".to_string())),
+            ev.entity_refs.contains(&EntityRef::FilePath(
+                "Windows/System32/coreupdater.exe".to_string()
+            )),
             "{:?}",
             ev.entity_refs
         );

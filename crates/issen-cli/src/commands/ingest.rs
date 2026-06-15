@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use issen_remote_io::gdrive;
-use issen_remote_io::uri::{UriScheme, is_remote_uri};
 use issen_fswalker::orchestrator::run_auto;
 use issen_fswalker::progress::ProgressReporter;
+use issen_remote_io::gdrive;
+use issen_remote_io::uri::{is_remote_uri, UriScheme};
 use issen_signatures::engines::ioc_hash::HashIocStore;
 use issen_signatures::engines::ioc_network::NetworkIocStore;
 use issen_signatures::engines::yara::YaraEngine;

@@ -258,7 +258,10 @@ fn collect_files_recursive(dir: &Path, files: &mut Vec<std::path::PathBuf>) -> R
 }
 
 /// Print findings for one file in text format.
-fn print_text_report(file_path: &Path, findings: &[issen_signatures::matching::results::ScanFinding]) {
+fn print_text_report(
+    file_path: &Path,
+    findings: &[issen_signatures::matching::results::ScanFinding],
+) {
     println!("--- {} ---", file_path.display());
     for f in findings {
         let indicator_str = f
@@ -316,8 +319,9 @@ fn load_engine_from_feeds() -> Result<ScanEngine> {
     let registry = issen_signatures::feeds::config::FeedRegistry::with_defaults(&feed_cache_dir);
     let feed_cache = issen_signatures::feeds::fetcher::FeedCache::new(&feed_cache_dir);
 
-    let (engine, summary) = issen_signatures::feeds::loader::load_cached_feeds(&registry, &feed_cache)
-        .map_err(|e| anyhow::anyhow!("failed to load cached feeds: {e}"))?;
+    let (engine, summary) =
+        issen_signatures::feeds::loader::load_cached_feeds(&registry, &feed_cache)
+            .map_err(|e| anyhow::anyhow!("failed to load cached feeds: {e}"))?;
 
     if summary.feeds_loaded > 0 {
         eprintln!(
