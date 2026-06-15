@@ -27,6 +27,8 @@ pub enum ArtifactType {
     JumpLists,
     /// System Resource Usage Monitor (SRUM)
     Srum,
+    /// Apple Biome `App.MenuItem` stream (macOS menu-bar selections, SEGB).
+    BiomeMenuItem,
     /// Assessment or derived finding (not a raw artifact).
     Assessment,
     /// Mactime bodyfile (filesystem timeline from UAC)
@@ -66,6 +68,7 @@ impl std::fmt::Display for ArtifactType {
             Self::BrowserHistory => write!(f, "Browser History"),
             Self::JumpLists => write!(f, "Jump Lists"),
             Self::Srum => write!(f, "SRUM"),
+            Self::BiomeMenuItem => write!(f, "Biome MenuItem"),
             Self::Assessment => write!(f, "Assessment"),
             Self::Bodyfile => write!(f, "Bodyfile"),
             Self::NetworkState => write!(f, "Network State"),

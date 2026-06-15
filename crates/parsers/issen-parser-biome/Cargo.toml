@@ -1,0 +1,20 @@
+[package]
+name = "issen-parser-biome"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "Apple Biome App.MenuItem (SEGB) parser for Issen — macOS menu-selection timeline"
+repository.workspace = true
+
+[dependencies]
+issen-core       = { workspace = true }
+segb             = { workspace = true }
+useract-forensic = { workspace = true }
+inventory        = { workspace = true }
+chrono           = { workspace = true }
+serde_json       = { workspace = true }
+anyhow           = { workspace = true }
+
+[lints]
+workspace = true

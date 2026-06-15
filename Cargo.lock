@@ -1332,6 +1332,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cfb"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a347dcabdae9c31b0825fd6a8bed285ec9c2acb89c47827126d52fa4f59cece3"
+dependencies = [
+ "fnv",
+ "uuid",
+ "web-time",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4541,6 +4552,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "issen-parser-biome"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "segb-core",
+ "serde_json",
+ "useract-forensic",
+]
+
+[[package]]
 name = "issen-parser-evtx"
 version = "0.1.0"
 dependencies = [
@@ -5311,6 +5335,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92daf443525c4cce67b150400bc2316076100ce0b3686209eb8cf3c31612e6f0"
 
 [[package]]
+name = "lnk-core"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09a0068b1de44f59112df46e20109562aec2bb954ffb83ea1739863e1a195d81"
+dependencies = [
+ "cfb",
+ "forensicnomicon 0.5.4",
+ "shellitem",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5641,6 +5676,7 @@ dependencies = [
  "memf-format",
  "memf-symbols",
  "memmap2",
+ "png",
  "rust-lzxpress",
  "serde",
  "thiserror 2.0.18",
@@ -5654,23 +5690,6 @@ dependencies = [
  "forensicnomicon 0.5.4",
  "serde",
  "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "memf-dpapi"
-version = "0.1.0"
-dependencies = [
- "aes",
- "aes-gcm",
- "cbc",
- "cipher",
- "des",
- "digest",
- "hmac",
- "pbkdf2",
- "sha1",
- "sha2",
  "thiserror 2.0.18",
 ]
 
@@ -5690,15 +5709,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "memf-framebuffer"
-version = "0.1.0"
-dependencies = [
- "png",
- "serde",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "memf-linux"
 version = "0.1.0"
 dependencies = [
@@ -5708,7 +5718,6 @@ dependencies = [
  "memf-core",
  "memf-correlate",
  "memf-format",
- "memf-framebuffer",
  "memf-symbols",
  "serde",
  "thiserror 2.0.18",
@@ -5743,16 +5752,24 @@ dependencies = [
 name = "memf-windows"
 version = "0.1.0"
 dependencies = [
+ "aes",
+ "aes-gcm",
+ "cbc",
+ "cipher",
+ "des",
+ "digest",
  "forensicnomicon 0.5.4",
  "goblin 0.9.3",
+ "hmac",
  "memf-core",
  "memf-correlate",
- "memf-dpapi",
  "memf-format",
- "memf-framebuffer",
  "memf-symbols",
+ "pbkdf2",
  "regex",
  "serde",
+ "sha1",
+ "sha2",
  "thiserror 2.0.18",
  "winevt-core",
  "yara-x",
@@ -6643,6 +6660,12 @@ name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
+
+[[package]]
+name = "peripheral-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1316fa0c02e9625af9583e4cffa9a60fc8bdce759434637614dab561e29e1c38"
 
 [[package]]
 name = "petgraph"
@@ -8384,6 +8407,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "segb-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee686498081b9d89cf4dab622990d2873f237d238e90cc51a387af47d5093814"
+dependencies = [
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "selectors"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8594,6 +8626,12 @@ name = "shell-words"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc6fe69c597f9c37bfeeeeeb33da3530379845f10be461a66d16d03eca2ded77"
+
+[[package]]
+name = "shellhist-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02efdbc76904189c4a388a1ecd0fe7ca301a8aea0772302bd8a1a39fb6bb6a9e"
 
 [[package]]
 name = "shellitem"
@@ -10195,6 +10233,23 @@ dependencies = [
  "idna",
  "percent-encoding",
  "serde",
+]
+
+[[package]]
+name = "useract-forensic"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15f34578a931293cc6b9da313f03cd28a179a523de633033754fd298dd87f868"
+dependencies = [
+ "chrono",
+ "forensicnomicon 0.5.4",
+ "lnk-core",
+ "peripheral-core",
+ "segb-core",
+ "shellhist-core",
+ "srum-core",
+ "srum-parser",
+ "winreg-artifacts",
 ]
 
 [[package]]

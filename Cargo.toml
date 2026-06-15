@@ -20,6 +20,7 @@ members = [
     "crates/parsers/issen-parser-lnk",
     "crates/parsers/issen-parser-linux",
     "crates/parsers/issen-parser-macos",
+    "crates/parsers/issen-parser-biome",
     "crates/parsers/issen-parser-amcache",
     "crates/parsers/issen-parser-shimcache",
     "crates/parsers/issen-parser-shellbags",
@@ -85,6 +86,7 @@ issen-parser-velociraptor = { path = "crates/parsers/issen-parser-velociraptor" 
 issen-parser-uac          = { path = "crates/parsers/issen-parser-uac" }
 issen-parser-registry     = { path = "crates/parsers/issen-parser-registry" }
 issen-parser-srum         = { path = "crates/parsers/issen-parser-srum" }
+issen-parser-biome        = { path = "crates/parsers/issen-parser-biome" }
 issen-parser-runkeys      = { path = "crates/parsers/issen-parser-runkeys" }
 issen-parser-userassist   = { path = "crates/parsers/issen-parser-userassist" }
 issen-parser-sam          = { path = "crates/parsers/issen-parser-sam" }
@@ -171,6 +173,8 @@ tar          = "0.4"
 # Forensic artifact parsers
 srum-parser      = "0.1.0"
 srum-core        = "0.1.0"
+segb             = { version = "0.1", package = "segb-core" }
+useract-forensic = "0.3"
 goblin       = { version = "0.10", default-features = false, features = ["pe32", "pe64", "std"] }
 ewf          = "0.1"
 vhd          = "0.1.0"
