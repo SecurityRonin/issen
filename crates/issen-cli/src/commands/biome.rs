@@ -19,9 +19,8 @@ use issen_parser_biome::BiomeParser;
 /// # Errors
 ///
 /// Returns an error if the file cannot be read.
-pub fn collect_events(_path: &Path) -> anyhow::Result<Vec<TimelineEvent>> {
-    // RED stub — implemented in GREEN.
-    Ok(Vec::new())
+pub fn collect_events(path: &Path) -> anyhow::Result<Vec<TimelineEvent>> {
+    BiomeParser.parse_path(path)
 }
 
 /// Run the Biome parser against `path` and print results in `format`.
@@ -94,7 +93,11 @@ mod tests {
         payload.extend_from_slice(item);
 
         let mut rec = Vec::new();
-        rec.extend_from_slice(&i32::try_from(payload.len()).expect("fits i32").to_le_bytes());
+        rec.extend_from_slice(
+            &i32::try_from(payload.len())
+                .expect("fits i32")
+                .to_le_bytes(),
+        );
         rec.extend_from_slice(&1i32.to_le_bytes()); // Written
         rec.extend_from_slice(&721_692_800f64.to_le_bytes()); // unix 1_700_000_000
         rec.extend_from_slice(&721_692_800f64.to_le_bytes());
@@ -130,5 +133,21 @@ mod tests {
     #[test]
     fn run_errors_on_missing_path() {
         assert!(run(Path::new("/no/such/biome/local"), "text").is_err());
+    }
+
+    #[test]
+    fn biome_parser_is_registered_in_the_ingest_inventory() {
+        use issen_core::artifacts::ArtifactType;
+        use issen_core::plugin::registry::all_parsers;
+        // Force-linking issen-parser-biome into the CLI must make its parser
+        // discoverable by the orchestrator's compile-time inventory.
+        let registered = all_parsers().iter().any(|p| {
+            p.supported_artifacts()
+                .contains(&ArtifactType::BiomeMenuItem)
+        });
+        assert!(
+            registered,
+            "no registered parser advertises ArtifactType::BiomeMenuItem"
+        );
     }
 }
