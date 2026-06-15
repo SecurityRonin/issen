@@ -111,9 +111,9 @@ issen-evtx          = { path = "crates/issen-evtx" }
 issen-wsl           = { path = "crates/issen-wsl" }
 
 # winevt-forensic crates (path dependencies into sibling workspace)
-winevt-core     = { path = "../winevt-forensic/crates/winevt-core" }
-winevt-extract  = { path = "../winevt-forensic/crates/winevt-extract" }
-winevt-analysis = { path = "../winevt-forensic/crates/winevt-analysis" }
+winevt-core     = "0.2"
+winevt-extract  = "0.1"
+winevt-analysis = "0.1"
 
 # Memory forensic crates (path dependencies into sibling workspace)
 memf-core      = { path = "../memory-forensic/crates/memf-core" }

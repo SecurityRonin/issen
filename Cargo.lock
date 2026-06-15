@@ -11204,6 +11204,8 @@ checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
 [[package]]
 name = "winevt-analysis"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be3e756e773a003877c844cf2acae3c004b8c2d20339e87d2edffb354b7e49db"
 dependencies = [
  "forensicnomicon 0.5.4",
  "serde",
@@ -11213,6 +11215,8 @@ dependencies = [
 [[package]]
 name = "winevt-core"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7db60323ad1c52b0ebc6a2bdafd56f1047b171d3c03cf19b00ab2698e458a983"
 dependencies = [
  "crc32fast",
  "forensicnomicon 0.5.4",
@@ -11222,6 +11226,8 @@ dependencies = [
 [[package]]
 name = "winevt-extract"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c50f7c82dc482a673096cad65ea6ba2eea24572ed3c8f6fd6c44a4feb255dc9e"
 dependencies = [
  "base64 0.22.1",
  "evtx",
