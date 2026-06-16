@@ -138,6 +138,67 @@ DuckDB is ACID with its own WAL; an interrupted process leaves the DB at the las
 transaction. Because each unit's (events + completion) commit atomically, the DB is always consistent
 and resume is exact — the only redone work is the unit(s) in flight at crash time.
 
+## Codex critique (folded in — 2026-06-17): the keystone is the parser-completion contract
+
+Codex confirmed the direction but proved every prerequisite is **absent today** and that the
+correctness story was overstated. The load-bearing correction reorders the whole plan:
+
+- **`Ok(ParseStats)` does NOT mean "complete" — this is risk #1 (silent data loss).** `parse` returns
+  `Result<ParseStats, RtError>` where `Ok` means only "not unrecoverable." MFT returns `Ok` with zero
+  events on empty / too-small / init-failed input (`mft.rs:211,217,229` — lenient *skip* paths); USN
+  returns `Ok` regardless of recovered errors (`usnjrnl.rs:84,94`). An `ingest_log` built on `Ok`
+  would durably mark **partial or skipped units as complete** → resume skips them → permanent silent
+  loss. **Fix the contract first:** `parse` must return an explicit terminal status —
+  `Complete | CompleteWithRecoveries | Incomplete{offset,reason} | Unsupported | CorruptFatal` — and a
+  unit is marked complete ONLY on an explicit `Complete(WithRecoveries)`, never inferred from `Ok`.
+  "Zero events" is a valid completion *only* paired with an explicit complete status (distinguishes
+  "valid empty" from "skipped invalid" and from "never ran").
+- **Completion is tied to the writer's COMMIT ack, not the parser thread.** `emit_batch` today returns
+  `Ok` even if the mutex lock fails, silently dropping events (`orchestrator.rs:65-69`). The unit's
+  `complete` marker must be written by the single writer only after its transaction commits — never by
+  the worker that produced the events.
+- **MFT byte-progress is wrong, not just imprecise.** MFT `read_all`s the whole file *before* entry
+  iteration (`mft.rs:177,226`), so a byte bar hits 100% then stalls during the real work. Intra-artifact
+  progress must be **per-parser-semantic**: MFT = entry index / `entry_count`; USN = byte offset (but
+  it skips zero-filled regions). So the progress hook is parser-specific, not a generic byte sink.
+- **`deterministic` capability already exists** (`traits.rs:12`) but the orchestrator ignores it. Gate
+  the "dedup makes re-parse idempotent for free" reasoning on it; non-deterministic parsers need the
+  delete-partial path (and `record_hash` excludes metadata/tags/entity_refs/epoch, so it is not a
+  full-content identity).
+- **Concurrency is undefined** — `TimelineStore::open` takes no case-level lock; concurrent
+  `issen ingest` / resume / `--refresh` against one DuckDB file is unspecified. MVP needs an ingest
+  lock/lease + a clear "another ingest owns this case" error.
+- **Nested-volume resume isn't honest** unless expansion/enumeration is itself checkpointed: you must
+  re-expand (re-pay decompression) just to enumerate inner units. Defer entirely.
+- **Schema migration is missing** — no `ingest_log`, no `timeline.ingest_unit_id`, no indexes; the
+  initializer is additive-only. Existing case DBs need an explicit migration + a legacy-rows policy
+  (treat as immutable; no resume on pre-`ingest_log` DBs).
+- **Reuse the appender staging**, don't introduce a per-row writer thread — the existing
+  stage-table + set-based dedup-insert is a stronger foundation; on USN/MFT the DB writer + anti-join
+  is the throughput ceiling, so a naive writer thread serializes away parallelism. Keep parsing
+  parallel but the per-unit commit is the real cost; size transactions accordingly.
+
+### Revised MVP (loose files only; defer nested volumes, VSS dedup, dynamic denominators, intra-artifact progress)
+
+1. **Parser completion contract** (risk #1) — terminal-status enum; fix MFT/USN lenient paths so
+   invalid input is not silently equivalent to clean zero-event completion. *Prerequisite for trusting
+   any resume.*
+2. **Schema + migration** — `timeline.ingest_unit_id`, `ingest_log` table, indexes
+   `ingest_log(evidence_key,status)` + `timeline(ingest_unit_id)`; additive migration in the
+   initializer; legacy rows = immutable (no resume).
+3. **Per-unit transaction in the store** — `begin → DELETE this unit's rows → stage/insert events →
+   upsert ingest_log 'complete' → commit`, adapting the existing appender path. Complete marker only
+   after commit.
+4. **Stable unit IDs for loose artifacts** — root-relative normalized path + parser + evidence_key;
+   **deterministic sorted discovery** (also fixes mode 6E ordering).
+5. **Unit-level streaming** — MFT/USN already emit in 1000-event batches; route those per-unit to the
+   store instead of buffering in `CollectingEmitter`.
+6. **Case-level ingest lock** + a clear error when another ingest owns the DB; `--refresh` deletes
+   this evidence_key's rows under the lock before re-ingest.
+
+Target: survive kill/restart for loose USN/MFT/EVTX with **no duplicates, no false completion**, and a
+clear lock error. Per-type/intra-artifact progress and nested volumes are phase 2+.
+
 ## Open questions for Codex
 
 1. DuckDB: can a single unit's transaction hold millions of inserts without OOM, or must we always
