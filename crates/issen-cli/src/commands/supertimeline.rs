@@ -12,13 +12,12 @@
 use std::path::Path;
 
 use anyhow::Result;
-use issen_core::artifacts::ArtifactType;
-use issen_core::timeline::event::{EntityRef, EventType, TimelineEvent};
+use issen_core::timeline::event::TimelineEvent;
 use issen_correlation::temporal_rule::{
     evaluate_temporal, DiscrepancyClause, EventTypeFilter, TemporalRule,
 };
-use issen_parser_uac::parsers;
-use issen_unpack::CollectionProvider as _;
+use issen_fswalker::orchestrator::run_auto;
+use issen_fswalker::progress::ProgressReporter;
 
 /// Run the supertimeline command.
 ///
@@ -26,18 +25,11 @@ use issen_unpack::CollectionProvider as _;
 ///
 /// Returns an error if the collection cannot be opened.
 pub fn run(collection: &Path, format: &str) -> Result<()> {
-    // ── 1. Open the collection ────────────────────────────────────────────
-    let events = if collection.is_dir() {
-        // Bare directory — scan for supported artifacts directly.
-        collect_events_from_dir(collection)
-    } else {
-        // Archive (UAC tar.gz, zip, etc.) — extract then scan.
-        let provider = issen_parser_uac::UacProvider;
-        match provider.open(collection) {
-            Ok(manifest) => collect_events_from_dir(&manifest.extracted_root),
-            Err(_) => Vec::new(),
-        }
-    };
+    // ── 1. Parse the collection via the full pipeline ─────────────────────
+    // `run_auto` auto-detects directory vs archive (UAC tar.gz / zip), extracts
+    // if needed, and parses every recognised artifact through the 20-parser
+    // registry — the same path `ingest` uses.
+    let events = collect_events_from_dir(collection);
 
     // ── 2. Apply bundled temporal rules ───────────────────────────────────
     let rules = bundled_temporal_rules();
@@ -58,82 +50,17 @@ pub fn run(collection: &Path, format: &str) -> Result<()> {
 
 // ── Event collection ──────────────────────────────────────────────────────────
 
-/// Walk a directory and synthesize `TimelineEvent`s from recognised artifacts.
-fn collect_events_from_dir(root: &Path) -> Vec<TimelineEvent> {
-    let mut events = Vec::new();
-
-    // LD_PRELOAD rootkit indicator → FileCreate event for each library listed.
-    let preload_path = root.join("chkrootkit/etc_ld_so_preload.txt");
-    if let Ok(content) = std::fs::read_to_string(&preload_path) {
-        for line in content.lines().map(str::trim).filter(|l| !l.is_empty()) {
-            let ev = TimelineEvent::new(
-                0, // timestamp unknown from this artifact alone
-                "unknown".to_string(),
-                EventType::FileCreate,
-                ArtifactType::Assessment,
-                preload_path.to_string_lossy().into_owned(),
-                format!("ld.so.preload: {line}"),
-                "supertimeline".to_string(),
-            )
-            .with_entity_ref(EntityRef::FilePath(line.to_string()))
-            .with_tag("ld_preload_rootkit");
-            events.push(ev);
-        }
-    }
-
-    // Sockstat → ProcessExec + NetworkConnect events.
-    let sockstat_path = root.join("memory_dump/output-sockstat");
-    if let Ok(content) = std::fs::read_to_string(&sockstat_path) {
-        {
-            let entries = parsers::mem_sockstat::parse_mem_sockstat(&content);
-            for entry in entries {
-                let ev = TimelineEvent::new(
-                    0,
-                    "unknown".to_string(),
-                    EventType::NetworkConnect,
-                    ArtifactType::NetworkState,
-                    sockstat_path.to_string_lossy().into_owned(),
-                    format!(
-                        "PID {} {} {}:{} -> {}:{} [{}]",
-                        entry.pid,
-                        entry.process_name,
-                        entry.src_addr,
-                        entry.src_port.unwrap_or(0),
-                        entry.dst_addr,
-                        entry.dst_port.unwrap_or(0),
-                        entry.state
-                    ),
-                    "supertimeline".to_string(),
-                )
-                .with_entity_ref(EntityRef::Process(entry.process_name));
-                events.push(ev);
-            }
-        }
-    }
-
-    // Hidden PIDs → ProcessExec events with hidden_process tag.
-    let hidden_path = root.join("live_response/process/hidden_pids_for_ps_command.txt");
-    if let Ok(content) = std::fs::read_to_string(&hidden_path) {
-        {
-            let pids = parsers::hidden_pids::parse_hidden_pids(&content);
-            for pid in pids {
-                let ev = TimelineEvent::new(
-                    0,
-                    "unknown".to_string(),
-                    EventType::ProcessExec,
-                    ArtifactType::ProcessList,
-                    hidden_path.to_string_lossy().into_owned(),
-                    format!("hidden PID {pid}"),
-                    "supertimeline".to_string(),
-                )
-                .with_entity_ref(EntityRef::Process(pid.to_string()))
-                .with_tag("hidden_process");
-                events.push(ev);
-            }
-        }
-    }
-
-    events
+/// Parse a collection (directory or archive) through the full `run_auto`
+/// pipeline and return its `TimelineEvent`s.
+///
+/// Replaces the former hardcoded 3-file stub: supertimeline now sees every
+/// artifact `ingest` does (the 20-parser registry), with real timestamps, so
+/// the temporal rules below operate on genuine data.
+fn collect_events_from_dir(collection: &Path) -> Vec<TimelineEvent> {
+    let progress = ProgressReporter::new();
+    run_auto(collection, &progress)
+        .map(|(events, _result)| events)
+        .unwrap_or_default()
 }
 
 // ── Bundled temporal rules ────────────────────────────────────────────────────
