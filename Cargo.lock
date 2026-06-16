@@ -4333,14 +4333,20 @@ dependencies = [
  "issen-mem",
  "issen-parser-amcache",
  "issen-parser-biome",
+ "issen-parser-comhijack",
  "issen-parser-evtx",
+ "issen-parser-lsadump",
+ "issen-parser-lxss",
  "issen-parser-prefetch",
+ "issen-parser-regcatalog",
  "issen-parser-registry",
  "issen-parser-runkeys",
  "issen-parser-sam",
  "issen-parser-shellbags",
  "issen-parser-shimcache",
  "issen-parser-srum",
+ "issen-parser-svcdiff",
+ "issen-parser-typedurls",
  "issen-parser-uac",
  "issen-parser-userassist",
  "issen-parser-velociraptor",
@@ -4576,6 +4582,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "issen-parser-comhijack"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
+]
+
+[[package]]
 name = "issen-parser-evtx"
 version = "0.1.0"
 dependencies = [
@@ -4610,6 +4631,36 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+]
+
+[[package]]
+name = "issen-parser-lsadump"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
+]
+
+[[package]]
+name = "issen-parser-lxss"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
 ]
 
 [[package]]
@@ -4658,6 +4709,21 @@ dependencies = [
  "prefetch-forensic",
  "serde_json",
  "tempfile",
+]
+
+[[package]]
+name = "issen-parser-regcatalog"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
 ]
 
 [[package]]
@@ -4762,6 +4828,36 @@ dependencies = [
  "srum-parser",
  "tempfile",
  "tracing",
+]
+
+[[package]]
+name = "issen-parser-svcdiff"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
+]
+
+[[package]]
+name = "issen-parser-typedurls"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
 ]
 
 [[package]]
