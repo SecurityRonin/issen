@@ -45,6 +45,51 @@ impl std::fmt::Display for EventType {
     }
 }
 
+impl EventType {
+    /// Reconstruct an `EventType` from the `format!("{:?}", _)` string that
+    /// `TimelineStore` persists in the `event_type` column (the inverse of the
+    /// store's serialization). Total: any string that is not a known unit
+    /// variant maps to `Other`, so `from_debug_str(&format!("{e:?}")) == e`
+    /// holds. `Other` inner strings are assumed free of `"`/`\` — true for
+    /// every fleet parser's artifact-specific event names.
+    #[must_use]
+    pub fn from_debug_str(s: &str) -> Self {
+        match s {
+            "FileCreate" => Self::FileCreate,
+            "FileDelete" => Self::FileDelete,
+            "FileModify" => Self::FileModify,
+            "FileRename" => Self::FileRename,
+            "FileAccess" => Self::FileAccess,
+            "ProcessExec" => Self::ProcessExec,
+            "ProcessExit" => Self::ProcessExit,
+            "RegistryModify" => Self::RegistryModify,
+            "RegistryCreate" => Self::RegistryCreate,
+            "RegistryDelete" => Self::RegistryDelete,
+            "LogonSuccess" => Self::LogonSuccess,
+            "LogonFailure" => Self::LogonFailure,
+            "Logoff" => Self::Logoff,
+            "NetworkConnect" => Self::NetworkConnect,
+            "NetworkListen" => Self::NetworkListen,
+            "ServiceInstall" => Self::ServiceInstall,
+            "ServiceStart" => Self::ServiceStart,
+            "ServiceStop" => Self::ServiceStop,
+            "ScheduledTaskCreate" => Self::ScheduledTaskCreate,
+            "ScheduledTaskRun" => Self::ScheduledTaskRun,
+            "UserAccountChange" => Self::UserAccountChange,
+            "PolicyChange" => Self::PolicyChange,
+            "SystemBoot" => Self::SystemBoot,
+            "SystemShutdown" => Self::SystemShutdown,
+            other => other
+                .strip_prefix("Other(\"")
+                .and_then(|r| r.strip_suffix("\")"))
+                .map_or_else(
+                    || Self::Other(other.to_string()),
+                    |inner| Self::Other(inner.to_string()),
+                ),
+        }
+    }
+}
+
 /// A typed reference to the entity (file, process, user, IP, or session) that
 /// an event relates to. Used by `EntityIndex` and `temporal_join` to correlate
 /// events from different artifact sources that share the same entity.
@@ -411,7 +456,7 @@ mod tests {
             let debug = format!("{et:?}");
             assert_eq!(
                 EventType::from_debug_str(&debug),
-                et.clone(),
+                et,
                 "round-trip failed for {debug}"
             );
         }

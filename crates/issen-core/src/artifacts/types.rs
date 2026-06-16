@@ -84,6 +84,45 @@ impl std::fmt::Display for ArtifactType {
     }
 }
 
+impl ArtifactType {
+    /// Reconstruct an `ArtifactType` from the `format!("{:?}", _)` string that
+    /// `TimelineStore` persists in the `source` column (the inverse of the
+    /// store's serialization). Returns `None` for an unrecognized string — the
+    /// enum has no catch-all variant, so callers handle the (in practice
+    /// impossible — every row was written from a real variant) miss explicitly
+    /// rather than silently mis-tagging the source.
+    #[must_use]
+    pub fn from_debug_str(s: &str) -> Option<Self> {
+        Some(match s {
+            "UsnJournal" => Self::UsnJournal,
+            "Mft" => Self::Mft,
+            "EventLog" => Self::EventLog,
+            "Prefetch" => Self::Prefetch,
+            "Registry" => Self::Registry,
+            "Shellbags" => Self::Shellbags,
+            "Lnk" => Self::Lnk,
+            "Amcache" => Self::Amcache,
+            "Bam" => Self::Bam,
+            "BrowserHistory" => Self::BrowserHistory,
+            "JumpLists" => Self::JumpLists,
+            "Srum" => Self::Srum,
+            "BiomeMenuItem" => Self::BiomeMenuItem,
+            "Assessment" => Self::Assessment,
+            "Bodyfile" => Self::Bodyfile,
+            "NetworkState" => Self::NetworkState,
+            "ProcessList" => Self::ProcessList,
+            "PackageList" => Self::PackageList,
+            "SystemInfo" => Self::SystemInfo,
+            "LoginHistory" => Self::LoginHistory,
+            "CrontabConfig" => Self::CrontabConfig,
+            "HashManifest" => Self::HashManifest,
+            "RootkitScan" => Self::RootkitScan,
+            "SystemConfig" => Self::SystemConfig,
+            _ => return None,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,7 +188,7 @@ mod tests {
             let debug = format!("{at:?}");
             assert_eq!(
                 ArtifactType::from_debug_str(&debug),
-                Some(at.clone()),
+                Some(at),
                 "round-trip failed for {debug}"
             );
         }
