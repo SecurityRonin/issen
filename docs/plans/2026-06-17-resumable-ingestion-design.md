@@ -79,10 +79,18 @@ for unit in units where unit.id not in done:        # the COMPLEMENT, not "the l
   Re-doing *every unit not marked complete* is the correct generalization. Under sequential
   processing it reduces exactly to the user's model: the not-complete set is {the interrupted unit} ∪
   {not-yet-started}, processed in order, so the interrupted one is redone first.
-- **Why `DELETE … WHERE ingest_unit_id` first:** a huge artifact may have flushed *some* batches before
-  the crash (we cannot hold millions of events in one transaction). The delete clears any partial
-  residue so the re-parse cannot duplicate. This makes resume correct **regardless of batch
-  granularity** — the universal backstop. (Requires `ingest_unit_id` indexed.)
+- **The store already dedups on `record_hash`** (`insert_batch_at_epoch` anti-joins the staged batch
+  against existing rows). So for a **deterministic** parser, re-parsing an incomplete unit re-emits
+  identical `record_hash`es and the duplicates are dropped *automatically* — resume is idempotent for
+  free. The `DELETE … WHERE ingest_unit_id=?` is therefore **not the primary mechanism**; it is a
+  backstop for **non-deterministic** parsers (a re-parse that produces different `record_hash`es —
+  e.g. a parser folding wall-clock or RNG into a field) and for reclaiming space from a partial unit.
+  Reuse the existing dedup-insert primitive per-unit; reach for delete-partial only where determinism
+  isn't guaranteed. (Requires `ingest_unit_id` indexed if used.)
+- **Reuse, don't rebuild:** the `StoreEmitter` calls the existing `insert_batch_at_epoch` (Appender +
+  set-based dedup-insert, file-backed) per unit, wrapped with the `ingest_log` upsert in the same
+  transaction. The DB layer already exists; this design changes *when/by whom* it is called (per-unit,
+  streaming) and adds the completion log + provenance column.
 - **"Verified complete" = parser reached clean EOF** (not an error/truncation) **AND** the commit
   succeeded. A parser that errors or hits truncation mid-stream leaves the unit not-complete → redone.
 
