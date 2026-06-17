@@ -2,6 +2,22 @@ use issen_core::timeline::event::TimelineEvent;
 
 use crate::store::{TimelineStore, TimelineStoreError};
 
+/// A resumable ingestion unit: one `(evidence, artifact-type, parser)` parse
+/// whose events and completion marker commit atomically (issen #115).
+///
+/// The `unit_id` is the durable identity a resume keys on — to delete a
+/// half-written unit's rows and re-parse it from scratch — so it must be
+/// derived from the parse's structural coordinates (evidence key + artifact
+/// path + parser), never from a counter that shifts between runs.
+#[derive(Debug, Clone)]
+pub struct IngestUnit {
+    pub unit_id: String,
+    pub evidence_key: String,
+    pub artifact_type: String,
+    pub parser: String,
+    pub bytes: i64,
+}
+
 impl TimelineStore {
     /// Insert a single event into the timeline.
     pub fn inseissen_event(&self, event: &TimelineEvent) -> Result<(), TimelineStoreError> {
@@ -171,6 +187,101 @@ impl TimelineStore {
         )?;
         Ok(())
     }
+
+    /// Commit a unit's events and its `complete` marker in ONE transaction
+    /// (issen #115 step 2.2).
+    ///
+    /// Resume-safe by construction: a crash mid-parse rolls the transaction
+    /// back, leaving NO committed rows for the unit, so "events flushed" and
+    /// "unit complete" can never disagree across a restart. Re-committing the
+    /// same `unit_id` deletes its prior rows first, so a deterministic re-parse
+    /// is idempotent (no duplication). Returns the number of events written.
+    pub fn commit_unit(
+        &self,
+        unit: &IngestUnit,
+        events: &[TimelineEvent],
+    ) -> Result<u64, TimelineStoreError> {
+        let conn = self.connection();
+        conn.execute_batch("BEGIN TRANSACTION;")?;
+        match self.commit_unit_body(unit, events) {
+            Ok(n) => {
+                conn.execute_batch("COMMIT;")?;
+                Ok(n)
+            }
+            Err(e) => {
+                // Best-effort rollback; surface the original error regardless.
+                let _ = conn.execute_batch("ROLLBACK;");
+                Err(e)
+            }
+        }
+    }
+
+    /// The mutating body of [`Self::commit_unit`], run inside the caller's
+    /// transaction so any error aborts the whole unit.
+    fn commit_unit_body(
+        &self,
+        unit: &IngestUnit,
+        events: &[TimelineEvent],
+    ) -> Result<u64, TimelineStoreError> {
+        let conn = self.connection();
+        // Delete-first: a resume re-parses a unit from scratch, so drop any rows
+        // a prior partial attempt left tagged with this unit id.
+        conn.execute(
+            "DELETE FROM timeline WHERE ingest_unit_id = ?",
+            duckdb::params![unit.unit_id],
+        )?;
+        {
+            let mut stmt = conn.prepare(
+                "INSERT INTO timeline (
+                    timestamp_ns, timestamp_display, event_type, source,
+                    artifact_path, description, metadata, user_account,
+                    hostname, tags, record_hash, evidence_source, entity_refs,
+                    ingest_unit_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            )?;
+            for event in events {
+                let metadata_json =
+                    serde_json::to_string(&event.metadata).unwrap_or_else(|_| "{}".to_string());
+                let tags_json =
+                    serde_json::to_string(&event.tags).unwrap_or_else(|_| "[]".to_string());
+                let entity_refs_json =
+                    serde_json::to_string(&event.entity_refs).unwrap_or_else(|_| "[]".to_string());
+                stmt.execute(duckdb::params![
+                    event.timestamp_ns,
+                    event.timestamp_display,
+                    format!("{:?}", event.event_type),
+                    format!("{:?}", event.source),
+                    event.artifact_path,
+                    event.description,
+                    metadata_json,
+                    event.user,
+                    event.hostname,
+                    tags_json,
+                    event.record_hash,
+                    event.evidence_source_id,
+                    entity_refs_json,
+                    unit.unit_id,
+                ])?;
+            }
+        }
+        let count = events.len() as u64;
+        // The completion marker lands in the SAME transaction as the events.
+        conn.execute(
+            "INSERT OR REPLACE INTO ingest_log (
+                unit_id, evidence_key, artifact_type, parser, bytes,
+                event_count, status, completed_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'complete', current_timestamp)",
+            duckdb::params![
+                unit.unit_id,
+                unit.evidence_key,
+                unit.artifact_type,
+                unit.parser,
+                unit.bytes,
+                count as i64,
+            ],
+        )?;
+        Ok(count)
+    }
 }
 
 #[cfg(test)]
@@ -178,6 +289,7 @@ mod tests {
     use issen_core::artifacts::ArtifactType;
     use issen_core::timeline::event::{EventType, TimelineEvent};
 
+    use super::IngestUnit;
     use crate::store::TimelineStore;
 
     fn sample_event(ts: i64, desc: &str) -> TimelineEvent {
@@ -210,6 +322,50 @@ mod tests {
         let inserted = store.inseissen_batch(&events).expect("batch");
         assert_eq!(inserted, 10);
         assert_eq!(store.event_count().expect("count"), 10);
+    }
+
+    #[test]
+    fn commit_unit_writes_events_and_completion_idempotently() {
+        // issen #115 step 2.2: a unit's events + its completion marker commit in
+        // ONE transaction; re-committing the same unit deletes its prior rows
+        // first (idempotent resume — no duplication).
+        let store = TimelineStore::in_memory().expect("store");
+        let unit = IngestUnit {
+            unit_id: "CASE!/C/$MFT|mft".to_string(),
+            evidence_key: "CASE".to_string(),
+            artifact_type: "Mft".to_string(),
+            parser: "MFT Parser".to_string(),
+            bytes: 1024,
+        };
+        let events = vec![sample_event(100, "a"), sample_event(200, "b")];
+
+        let n = store.commit_unit(&unit, &events).expect("commit");
+        assert_eq!(n, 2);
+
+        let conn = store.connection();
+        let tagged: i64 = conn
+            .prepare("SELECT count(*) FROM timeline WHERE ingest_unit_id = ?")
+            .expect("prep")
+            .query_row([&unit.unit_id], |r| r.get(0))
+            .expect("q");
+        assert_eq!(tagged, 2, "events tagged with the unit id");
+
+        let status: String = conn
+            .prepare("SELECT status FROM ingest_log WHERE unit_id = ?")
+            .expect("prep")
+            .query_row([&unit.unit_id], |r| r.get(0))
+            .expect("q");
+        assert_eq!(status, "complete", "completion marker written");
+
+        // Idempotent re-commit: delete-first means no duplication.
+        let n2 = store.commit_unit(&unit, &events).expect("recommit");
+        assert_eq!(n2, 2);
+        let total: i64 = conn
+            .prepare("SELECT count(*) FROM timeline WHERE ingest_unit_id = ?")
+            .expect("prep")
+            .query_row([&unit.unit_id], |r| r.get(0))
+            .expect("q");
+        assert_eq!(total, 2, "re-commit must not duplicate the unit's rows");
     }
 
     #[test]
@@ -424,7 +580,9 @@ mod tests {
         let event = sample_event(1000, "malware process beacon")
             .with_entity_ref(EntityRef::Process("coreupdater.exe".to_string()))
             .with_entity_ref(EntityRef::Ip("203.78.103.109".to_string()));
-        store.inseissen_batch(&[event.clone()]).expect("batch insert");
+        store
+            .inseissen_batch(&[event.clone()])
+            .expect("batch insert");
 
         let mut stmt = store
             .connection()
@@ -433,7 +591,10 @@ mod tests {
         let json: String = stmt
             .query_row([&event.record_hash], |row| row.get(0))
             .expect("query entity_refs");
-        assert!(json.contains("coreupdater.exe"), "process ref persisted: {json}");
+        assert!(
+            json.contains("coreupdater.exe"),
+            "process ref persisted: {json}"
+        );
         assert!(json.contains("203.78.103.109"), "ip ref persisted: {json}");
     }
 
@@ -443,7 +604,9 @@ mod tests {
         // garbage — the column is always a valid array for downstream parsing.
         let store = TimelineStore::in_memory().expect("store");
         let event = sample_event(2000, "plain event");
-        store.inseissen_batch(&[event.clone()]).expect("batch insert");
+        store
+            .inseissen_batch(&[event.clone()])
+            .expect("batch insert");
         let mut stmt = store
             .connection()
             .prepare("SELECT entity_refs FROM timeline WHERE record_hash = ?")
