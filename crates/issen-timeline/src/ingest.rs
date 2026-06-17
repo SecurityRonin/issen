@@ -1,4 +1,5 @@
 use issen_core::timeline::event::TimelineEvent;
+use sha2::{Digest, Sha256};
 
 use crate::store::{TimelineStore, TimelineStoreError};
 
@@ -16,6 +17,56 @@ pub struct IngestUnit {
     pub artifact_type: String,
     pub parser: String,
     pub bytes: i64,
+}
+
+impl IngestUnit {
+    /// Derive the durable `unit_id` from a parse's structural coordinates.
+    ///
+    /// SHA-256 hex (matching the fleet `record_hash` convention) over the four
+    /// coordinates, each **NUL-separated** so the encoding is injective: a byte
+    /// shifted across a field boundary cannot alias two distinct artifacts onto
+    /// one id — which would make a resume's delete-first target the wrong unit's
+    /// rows. NUL is not a valid path or identifier byte, so it is a safe domain
+    /// separator.
+    #[must_use]
+    pub fn stable_id(
+        evidence_key: &str,
+        artifact_type: &str,
+        artifact_path: &str,
+        parser: &str,
+    ) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(evidence_key.as_bytes());
+        hasher.update([0u8]);
+        hasher.update(artifact_type.as_bytes());
+        hasher.update([0u8]);
+        hasher.update(artifact_path.as_bytes());
+        hasher.update([0u8]);
+        hasher.update(parser.as_bytes());
+        hex::encode(hasher.finalize())
+    }
+
+    /// Construct a unit with its `unit_id` derived from the coordinates.
+    ///
+    /// The secure-by-default surface: the id is *always* derived via
+    /// [`Self::stable_id`], so it can never be hand-set inconsistently with the
+    /// coordinates a resume will recompute from.
+    #[must_use]
+    pub fn new(
+        evidence_key: &str,
+        artifact_type: &str,
+        artifact_path: &str,
+        parser: &str,
+        bytes: i64,
+    ) -> Self {
+        Self {
+            unit_id: Self::stable_id(evidence_key, artifact_type, artifact_path, parser),
+            evidence_key: evidence_key.to_string(),
+            artifact_type: artifact_type.to_string(),
+            parser: parser.to_string(),
+            bytes,
+        }
+    }
 }
 
 impl TimelineStore {
@@ -366,6 +417,59 @@ mod tests {
             .query_row([&unit.unit_id], |r| r.get(0))
             .expect("q");
         assert_eq!(total, 2, "re-commit must not duplicate the unit's rows");
+    }
+
+    #[test]
+    fn stable_id_is_deterministic_and_collision_resistant() {
+        // issen #115 step 3: the unit_id MUST derive from the parse's structural
+        // coordinates so a resume recomputes the SAME id (delete-first then
+        // targets exactly the prior attempt's rows). Same coordinates -> same id;
+        // any coordinate change -> a different id.
+        let id = IngestUnit::stable_id("CASE", "Mft", "/C/$MFT", "MFT Parser");
+        assert_eq!(
+            id,
+            IngestUnit::stable_id("CASE", "Mft", "/C/$MFT", "MFT Parser"),
+            "deterministic across runs"
+        );
+        assert_eq!(id.len(), 64, "SHA-256 hex, matching record_hash convention");
+        assert!(id.chars().all(|c| c.is_ascii_hexdigit()));
+
+        // Every coordinate participates — vary any one and the id changes.
+        assert_ne!(
+            id,
+            IngestUnit::stable_id("CASE2", "Mft", "/C/$MFT", "MFT Parser")
+        );
+        assert_ne!(
+            id,
+            IngestUnit::stable_id("CASE", "UsnJournal", "/C/$MFT", "MFT Parser")
+        );
+        assert_ne!(
+            id,
+            IngestUnit::stable_id("CASE", "Mft", "/D/$MFT", "MFT Parser")
+        );
+        assert_ne!(id, IngestUnit::stable_id("CASE", "Mft", "/C/$MFT", "Other"));
+
+        // No delimiter-collision: shifting a byte across a field boundary must
+        // NOT alias (this fails under naive concatenation, passes with NUL-sep).
+        assert_ne!(
+            IngestUnit::stable_id("a", "b", "c", "d"),
+            IngestUnit::stable_id("a", "b", "cd", ""),
+        );
+    }
+
+    #[test]
+    fn new_derives_unit_id_from_coordinates() {
+        // The constructor is the secure-by-default surface: the id is ALWAYS
+        // derived, never hand-set inconsistently with the coordinates.
+        let unit = IngestUnit::new("CASE", "Mft", "/C/$MFT", "MFT Parser", 1024);
+        assert_eq!(
+            unit.unit_id,
+            IngestUnit::stable_id("CASE", "Mft", "/C/$MFT", "MFT Parser")
+        );
+        assert_eq!(unit.evidence_key, "CASE");
+        assert_eq!(unit.artifact_type, "Mft");
+        assert_eq!(unit.parser, "MFT Parser");
+        assert_eq!(unit.bytes, 1024);
     }
 
     #[test]
