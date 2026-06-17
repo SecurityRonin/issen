@@ -293,15 +293,25 @@ pub fn run_auto_units(
     progress: &ProgressReporter,
     skip: &dyn Fn(&ArtifactType, &Path, &str) -> bool,
 ) -> Result<(Vec<ParsedUnit>, IngestResult, usize), RtError> {
-    let artifacts = if path.is_dir() {
-        discover_artifacts(path)?
+    let parsers = all_parsers();
+    // A collection's files live in a RAII `TempDir` owned by its manifest, so
+    // parsing MUST happen while the manifest is still alive — dropping it early
+    // (e.g. scoping it to a discovery-only branch) deletes the extracted files
+    // before `parse_units` opens them, and every artifact fails to open. So the
+    // collection branch discovers AND parses before its `manifest` drops, the
+    // same way the flat `run_collection_pipeline` keeps it alive across
+    // `run_pipeline`.
+    let (artifacts, units, errors, skipped) = if path.is_dir() {
+        let artifacts = discover_artifacts(path)?;
+        let (units, errors, skipped) = parse_units(&artifacts, &parsers, progress, skip);
+        (artifacts, units, errors, skipped)
     } else {
         let manifest = issen_unpack::registry::open_collection(path)
             .map_err(|e| RtError::UnsupportedFormat(e.to_string()))?;
-        discover_artifacts(&manifest.extracted_root)?
+        let artifacts = discover_artifacts(&manifest.extracted_root)?;
+        let (units, errors, skipped) = parse_units(&artifacts, &parsers, progress, skip);
+        (artifacts, units, errors, skipped)
     };
-    let parsers = all_parsers();
-    let (units, errors, skipped) = parse_units(&artifacts, &parsers, progress, skip);
     let result = IngestResult {
         artifacts_found: artifacts.len(),
         artifacts_parsed: units.len(),
