@@ -116,8 +116,7 @@ fn run_update(registry: &FeedRegistry, cache: &FeedCache) -> Result<()> {
     }
 
     println!(
-        "\nSummary: {} downloaded, {} not modified, {} skipped, {} failed",
-        downloaded, not_modified, skipped, failed
+        "\nSummary: {downloaded} downloaded, {not_modified} not modified, {skipped} skipped, {failed} failed"
     );
 
     if failed > 0 {
@@ -158,7 +157,7 @@ fn run_info(registry: &FeedRegistry, cache: &FeedCache, id: &str) -> Result<()> 
             println!("  File size:       {} bytes", meta.file_size);
             println!("  Indicators:      {}", meta.indicator_count);
             if let Some(ref etag) = meta.etag {
-                println!("  ETag:            {}", etag);
+                println!("  ETag:            {etag}");
             }
         }
     } else {

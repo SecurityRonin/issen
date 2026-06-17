@@ -54,7 +54,7 @@ pub fn run(
                     }
                 }
             }
-            let refs: Vec<&str> = sources.iter().map(|s| s.as_str()).collect();
+            let refs: Vec<&str> = sources.iter().map(std::string::String::as_str).collect();
             if refs.is_empty() {
                 anyhow::bail!("No .yar/.yara files found in {}", rules_path.display());
             }
@@ -267,7 +267,7 @@ fn print_text_report(
         let indicator_str = f
             .matched_indicator
             .as_deref()
-            .map(|i| format!(" [{}]", i))
+            .map(|i| format!(" [{i}]"))
             .unwrap_or_default();
         println!(
             "  [{severity}] ({source}) {rule}{indicator}",
@@ -346,7 +346,7 @@ fn default_feed_cache_dir() -> std::path::PathBuf {
 
 /// Extract the host from a URL string (simple implementation).
 fn extract_host(url: &str) -> Option<String> {
-    let after_scheme = url.find("://").map(|pos| &url[pos + 3..]).unwrap_or(url);
+    let after_scheme = url.find("://").map_or(url, |pos| &url[pos + 3..]);
     let host_port = after_scheme.split('/').next()?;
     let host = if let Some(colon) = host_port.rfind(':') {
         let after = &host_port[colon + 1..];

@@ -217,8 +217,7 @@ pub fn run_scan_phase(
                     let source_id = events
                         .iter()
                         .find(|e| e.artifact_path == artifact_path)
-                        .map(|e| e.evidence_source_id.as_str())
-                        .unwrap_or("unknown");
+                        .map_or("unknown", |e| e.evidence_source_id.as_str());
 
                     findings.push(finding_to_row(finding, source_id, artifact_path));
                     summary.file_findings += 1;

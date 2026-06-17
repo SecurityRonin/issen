@@ -15,7 +15,7 @@ use ntfs_core::usn::{parse_usn_record_v2, UsnReason, UsnRecord};
 pub struct UsnJrnlParser;
 
 impl ForensicParser for UsnJrnlParser {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "USN Journal Parser"
     }
 
@@ -59,25 +59,22 @@ impl ForensicParser for UsnJrnlParser {
                     continue;
                 }
 
-                match parse_usn_record_v2(&chunk[pos..]) {
-                    Ok(record) => {
-                        let record_length = record_length_from_slice(&chunk[pos..]);
-                        let event = record_to_event(&record, "usnjrnl-evidence");
-                        batch.push(event);
+                if let Ok(record) = parse_usn_record_v2(&chunk[pos..]) {
+                    let record_length = record_length_from_slice(&chunk[pos..]);
+                    let event = record_to_event(&record, "usnjrnl-evidence");
+                    batch.push(event);
 
-                        if batch.len() >= 1000 {
-                            stats.events_emitted += batch.len() as u64;
-                            emitter.emit_batch(std::mem::take(&mut batch))?;
-                        }
+                    if batch.len() >= 1000 {
+                        stats.events_emitted += batch.len() as u64;
+                        emitter.emit_batch(std::mem::take(&mut batch))?;
+                    }
 
-                        // Advance by record length (8-byte aligned).
-                        let advance = ((record_length) + 7) & !7;
-                        pos += advance.max(8);
-                    }
-                    Err(_) => {
-                        stats.errors_recovered += 1;
-                        pos += 8;
-                    }
+                    // Advance by record length (8-byte aligned).
+                    let advance = ((record_length) + 7) & !7;
+                    pos += advance.max(8);
+                } else {
+                    stats.errors_recovered += 1;
+                    pos += 8;
                 }
             }
 

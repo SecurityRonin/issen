@@ -39,34 +39,31 @@ pub fn run(path: &Path, format: &str) -> anyhow::Result<()> {
     let events = collect_events(path)
         .with_context(|| format!("Failed to surface Biome timeline from {}", path.display()))?;
 
-    match format {
-        "json" => {
-            let rows: Vec<_> = events
-                .iter()
-                .map(|e| {
-                    serde_json::json!({
-                        "timestamp": e.timestamp_display,
-                        "description": e.description,
-                    })
+    if format == "json" {
+        let rows: Vec<_> = events
+            .iter()
+            .map(|e| {
+                serde_json::json!({
+                    "timestamp": e.timestamp_display,
+                    "description": e.description,
                 })
-                .collect();
-            let output = serde_json::json!({
-                "timeline_event_count": events.len(),
-                "events": rows,
-            });
-            println!("{}", serde_json::to_string_pretty(&output)?);
+            })
+            .collect();
+        let output = serde_json::json!({
+            "timeline_event_count": events.len(),
+            "events": rows,
+        });
+        println!("{}", serde_json::to_string_pretty(&output)?);
+    } else {
+        if events.is_empty() {
+            println!("No Biome App.MenuItem records found.");
+            return Ok(());
         }
-        _ => {
-            if events.is_empty() {
-                println!("No Biome App.MenuItem records found.");
-                return Ok(());
-            }
-            println!("Surfaced {} Biome menu-selection event(s).", events.len());
-            println!("{:<30} Selection", "Timestamp");
-            println!("{}", "-".repeat(70));
-            for e in &events {
-                println!("{:<30} {}", e.timestamp_display, e.description);
-            }
+        println!("Surfaced {} Biome menu-selection event(s).", events.len());
+        println!("{:<30} Selection", "Timestamp");
+        println!("{}", "-".repeat(70));
+        for e in &events {
+            println!("{:<30} {}", e.timestamp_display, e.description);
         }
     }
 

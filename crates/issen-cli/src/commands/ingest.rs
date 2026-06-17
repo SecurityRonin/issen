@@ -56,25 +56,22 @@ pub fn run(
         let scheme = UriScheme::detect(uri)
             .ok_or_else(|| anyhow::anyhow!("Unsupported URI scheme: {uri}"))?;
 
-        match scheme {
-            UriScheme::GDrive => {
-                let file_id = gdrive::parse_file_id(uri)
-                    .ok_or_else(|| anyhow::anyhow!("Could not parse gdrive file ID from: {uri}"))?;
-                let auth = issen_remote_io::gdrive::auth::resolve_auth_mode();
-                println!("Remote source URI: gdrive://{file_id} (auth: {auth:?})");
-                println!(
-                    "Note: gdrive fetch is a stub — download would stream to a temp file for ingest."
-                );
-            }
-            _ => {
-                // All other recognised schemes use the OpenDAL operator.
-                let (_, path) = issen_remote_io::operator::operator_for_uri(uri)
-                    .with_context(|| format!("building operator for source URI: {uri}"))?;
-                println!("Remote source URI: {uri} (path: {path})");
-                println!(
-                    "Note: remote fetch is a stub — bytes would be streamed to a temp file for ingest."
-                );
-            }
+        if scheme == UriScheme::GDrive {
+            let file_id = gdrive::parse_file_id(uri)
+                .ok_or_else(|| anyhow::anyhow!("Could not parse gdrive file ID from: {uri}"))?;
+            let auth = issen_remote_io::gdrive::auth::resolve_auth_mode();
+            println!("Remote source URI: gdrive://{file_id} (auth: {auth:?})");
+            println!(
+                "Note: gdrive fetch is a stub — download would stream to a temp file for ingest."
+            );
+        } else {
+            // All other recognised schemes use the OpenDAL operator.
+            let (_, path) = issen_remote_io::operator::operator_for_uri(uri)
+                .with_context(|| format!("building operator for source URI: {uri}"))?;
+            println!("Remote source URI: {uri} (path: {path})");
+            println!(
+                "Note: remote fetch is a stub — bytes would be streamed to a temp file for ingest."
+            );
         }
 
         return Ok(());
@@ -222,7 +219,7 @@ pub fn run(
                         }
                     }
                 }
-                let refs: Vec<&str> = sources.iter().map(|s| s.as_str()).collect();
+                let refs: Vec<&str> = sources.iter().map(std::string::String::as_str).collect();
                 if refs.is_empty() {
                     anyhow::bail!("No .yar/.yara files found in {}", rules_path.display());
                 }

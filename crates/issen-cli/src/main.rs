@@ -642,9 +642,7 @@ fn main() -> ExitCode {
 
 /// Return `~/.local/share/issen/pivot/` as the default pivot cache dir.
 fn dirs_next_cache() -> PathBuf {
-    std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("."))
+    std::env::var_os("HOME").map_or_else(|| PathBuf::from("."), PathBuf::from)
         .join(".local")
         .join("share")
         .join("issen")

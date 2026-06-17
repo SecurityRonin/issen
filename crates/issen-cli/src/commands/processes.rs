@@ -117,7 +117,7 @@ fn print_summary(processes: &[ProcessEvent]) {
             p.command_line.as_deref().unwrap_or(""),
             p.user
                 .as_ref()
-                .map(|u| format!("  [{}]", u))
+                .map(|u| format!("  [{u}]"))
                 .unwrap_or_default(),
         );
     }

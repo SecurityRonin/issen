@@ -28,7 +28,7 @@ pub fn run(db_path: &Path) -> Result<()> {
         let mut types: Vec<_> = stats.event_type_counts.iter().collect();
         types.sort_by(|a, b| b.1.cmp(&a.1));
         for (et, count) in types {
-            println!("  {:<20} {count}", et);
+            println!("  {et:<20} {count}");
         }
     }
 
@@ -37,7 +37,7 @@ pub fn run(db_path: &Path) -> Result<()> {
         let mut sources: Vec<_> = stats.source_counts.iter().collect();
         sources.sort_by(|a, b| b.1.cmp(&a.1));
         for (src, count) in sources {
-            println!("  {:<20} {count}", src);
+            println!("  {src:<20} {count}");
         }
     }
 

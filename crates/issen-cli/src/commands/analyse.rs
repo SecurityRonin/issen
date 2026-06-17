@@ -70,9 +70,7 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
     let hostname = manifest.metadata.hostname.as_deref().unwrap_or("(unknown)");
     let collected_at = manifest
         .metadata
-        .collection_time
-        .map(|t| t.format("%Y-%m-%d %H:%M:%S UTC").to_string())
-        .unwrap_or_else(|| "(unknown)".to_string());
+        .collection_time.map_or_else(|| "(unknown)".to_string(), |t| t.format("%Y-%m-%d %H:%M:%S UTC").to_string());
 
     println!(
         "{}",
@@ -130,7 +128,7 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
             "{}",
             "┌─ VERDICT ─────────────────────────────────────────────".bold()
         );
-        println!("│  [{}] {}", colored_label, banner);
+        println!("│  [{colored_label}] {banner}");
         println!();
     }
 
@@ -244,7 +242,7 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
                     chain
                         .pids
                         .iter()
-                        .map(|p| p.to_string())
+                        .map(std::string::ToString::to_string)
                         .collect::<Vec<_>>()
                         .join("+"),
                     chain.shared_endpoint,
@@ -308,7 +306,7 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
                 // "%Cpu(s): 97.7 us,  2.3 sy, ..."  or  "%Cpu(s):  97.7 us, ..."
                 line.split_once(':')
                     .and_then(|(_, rest)| rest.trim().split(',').next())
-                    .and_then(|tok| tok.trim().split_whitespace().next())
+                    .and_then(|tok| tok.split_whitespace().next())
                     .and_then(|n| n.parse::<f32>().ok())
             })
     });
