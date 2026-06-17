@@ -845,6 +845,85 @@ mod tests {
     }
 
     #[test]
+    fn parse_units_skips_completed_units_without_parsing() {
+        // issen #115 resume optimization: a unit the skip-predicate marks
+        // complete must NOT be parsed (its parser is never invoked) and must be
+        // counted as skipped — so a resume run avoids the parse cost, not just
+        // the DB commit. Before this, resume reparsed everything and only
+        // skipped the commit (a warm run was ~as slow as a cold one).
+        use issen_core::error::RtError;
+        use issen_core::plugin::traits::{
+            DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
+        };
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::sync::Arc;
+
+        struct CountingMock {
+            kind: ArtifactType,
+            calls: Arc<AtomicUsize>,
+        }
+        impl ForensicParser for CountingMock {
+            fn name(&self) -> &str {
+                "Counter"
+            }
+            fn supported_artifacts(&self) -> &[ArtifactType] {
+                std::slice::from_ref(&self.kind)
+            }
+            fn parse(
+                &self,
+                _input: &dyn DataSource,
+                _emitter: &dyn EventEmitter,
+            ) -> Result<ParseStats, RtError> {
+                self.calls.fetch_add(1, Ordering::SeqCst);
+                Ok(ParseStats::new())
+            }
+            fn capabilities(&self) -> ParserCapabilities {
+                ParserCapabilities {
+                    max_memory_bytes: None,
+                    streaming: false,
+                    deterministic: true,
+                }
+            }
+        }
+
+        let dir = tempfile::tempdir().expect("tmp");
+        let a = dir.path().join("a.bin");
+        let b = dir.path().join("b.bin");
+        std::fs::write(&a, b"x").expect("w");
+        std::fs::write(&b, b"y").expect("w");
+        let skip_path = a.clone();
+        let artifacts = vec![
+            DiscoveredArtifact {
+                path: a,
+                artifact_type: ArtifactType::UsnJournal,
+            },
+            DiscoveredArtifact {
+                path: b.clone(),
+                artifact_type: ArtifactType::UsnJournal,
+            },
+        ];
+        let calls = Arc::new(AtomicUsize::new(0));
+        let parsers: Vec<Box<dyn ForensicParser>> = vec![Box::new(CountingMock {
+            kind: ArtifactType::UsnJournal,
+            calls: calls.clone(),
+        })];
+        let progress = ProgressReporter::new();
+        // Mark artifact `a` already complete; `b` still pending.
+        let skip = |_at: &ArtifactType, path: &Path, _parser: &str| path == skip_path.as_path();
+        let (units, errors, skipped) = parse_units(&artifacts, &parsers, &progress, &skip);
+
+        assert!(errors.is_empty(), "no failures on the happy path");
+        assert_eq!(skipped, 1, "the completed unit is counted as skipped");
+        assert_eq!(units.len(), 1, "only the non-skipped unit is parsed");
+        assert_eq!(units[0].path, b, "the pending artifact is the one parsed");
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "the skipped unit's parser is NEVER invoked (parse cost avoided)"
+        );
+    }
+
+    #[test]
     fn test_collecting_emitter() {
         let emitter = CollectingEmitter::new();
         let event = TimelineEvent::new(
