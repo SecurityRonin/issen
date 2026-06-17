@@ -11,6 +11,9 @@ pub enum TimelineStoreError {
 
     #[error("Query error: {0}")]
     Query(String),
+
+    #[error("case is locked by another ingest: {0}")]
+    Locked(String),
 }
 
 /// Manages the DuckDB connection and schema for a forensic timeline.

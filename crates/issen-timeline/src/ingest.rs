@@ -69,6 +69,78 @@ impl IngestUnit {
     }
 }
 
+/// The resume decision (issen #115 step 6): which discovered units still need
+/// parsing.
+///
+/// Returns the complement of `completed` — units whose `unit_id` is not yet
+/// recorded `complete` — or, when `refresh` is set, *every* unit, so a
+/// `--refresh` run re-parses from scratch. [`TimelineStore::commit_unit`]'s
+/// delete-first then makes the re-parse idempotent. The interrupted unit of a
+/// crashed run is absent from `completed` (its atomic commit rolled back), so it
+/// is naturally included.
+#[must_use]
+pub fn units_to_ingest<'a, S: std::hash::BuildHasher>(
+    discovered: &'a [IngestUnit],
+    completed: &std::collections::HashSet<String, S>,
+    refresh: bool,
+) -> Vec<&'a IngestUnit> {
+    discovered
+        .iter()
+        .filter(|u| refresh || !completed.contains(&u.unit_id))
+        .collect()
+}
+
+/// An exclusive advisory lock for a case, so two concurrent ingests can't
+/// corrupt the resumable-ingestion state (issen #115 step 5).
+///
+/// Backed by an `<case>.ingest.lock` file created atomically with `create_new`
+/// (O_EXCL); the file is removed when the guard drops (RAII). This is advisory
+/// and complements DuckDB's own single-writer file lock — it guards the whole
+/// ingest *session*, not just open DB handles.
+#[derive(Debug)]
+pub struct CaseLock {
+    path: std::path::PathBuf,
+}
+
+impl CaseLock {
+    /// Acquire the ingest lock for `case_db`. Fails with
+    /// [`TimelineStoreError::Locked`] if another holder already exists.
+    pub fn acquire(case_db: &std::path::Path) -> Result<Self, TimelineStoreError> {
+        let path = Self::lock_path(case_db);
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path)
+        {
+            Ok(mut f) => {
+                use std::io::Write;
+                // Best-effort holder hint; the lock's existence is what matters.
+                let _ = writeln!(f, "{}", std::process::id());
+                Ok(Self { path })
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                Err(TimelineStoreError::Locked(path.display().to_string()))
+            }
+            Err(e) => Err(TimelineStoreError::Locked(format!(
+                "{}: {e}",
+                path.display()
+            ))),
+        }
+    }
+
+    fn lock_path(case_db: &std::path::Path) -> std::path::PathBuf {
+        let mut s = case_db.as_os_str().to_owned();
+        s.push(".ingest.lock");
+        std::path::PathBuf::from(s)
+    }
+}
+
+impl Drop for CaseLock {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
 impl TimelineStore {
     /// Insert a single event into the timeline.
     pub fn inseissen_event(&self, event: &TimelineEvent) -> Result<(), TimelineStoreError> {
@@ -363,7 +435,7 @@ mod tests {
     use issen_core::artifacts::ArtifactType;
     use issen_core::timeline::event::{EventType, TimelineEvent};
 
-    use super::IngestUnit;
+    use super::{units_to_ingest, CaseLock, IngestUnit};
     use crate::store::TimelineStore;
 
     fn sample_event(ts: i64, desc: &str) -> TimelineEvent {
@@ -473,6 +545,43 @@ mod tests {
         // A never-committed unit is simply absent → it will be (re)parsed.
         let pending = IngestUnit::new("CASE", "Prefetch", "/C/pf", "PF Parser", 5);
         assert!(!done.contains(&pending.unit_id));
+    }
+
+    #[test]
+    fn units_to_ingest_skips_completed_unless_refresh() {
+        // issen #115 step 6 (--refresh): the resume decision. Normally parse the
+        // complement of `completed`; with refresh=true, re-parse everything.
+        let u1 = IngestUnit::new("CASE", "Mft", "/C/$MFT", "MFT Parser", 1);
+        let u2 = IngestUnit::new("CASE", "UsnJournal", "/C/$J", "USN Parser", 1);
+        let u3 = IngestUnit::new("CASE", "Prefetch", "/C/pf", "PF Parser", 1);
+        let units = vec![u1.clone(), u2.clone(), u3.clone()];
+        let mut completed = std::collections::HashSet::new();
+        completed.insert(u1.unit_id.clone());
+        completed.insert(u2.unit_id.clone());
+
+        let todo = units_to_ingest(&units, &completed, false);
+        assert_eq!(
+            todo.iter().map(|u| &u.unit_id).collect::<Vec<_>>(),
+            vec![&u3.unit_id],
+            "resume parses only the not-yet-completed unit"
+        );
+
+        let refreshed = units_to_ingest(&units, &completed, true);
+        assert_eq!(refreshed.len(), 3, "--refresh re-parses everything");
+    }
+
+    #[test]
+    fn case_lock_is_exclusive_and_releases() {
+        // issen #115 step 5 (case-level lock): only one ingest at a time per case.
+        let dir = tempfile::tempdir().expect("tmp");
+        let case = dir.path().join("case.duckdb");
+        let lock = CaseLock::acquire(&case).expect("first acquire");
+        assert!(
+            CaseLock::acquire(&case).is_err(),
+            "a second acquire must fail while the lock is held"
+        );
+        drop(lock);
+        let _again = CaseLock::acquire(&case).expect("re-acquire after release");
     }
 
     #[test]
