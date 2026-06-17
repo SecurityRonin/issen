@@ -113,6 +113,29 @@ impl TimelineStore {
             -- engine landed (mirrors the PRE-4 entity_refs backfill).
             ALTER TABLE correlations ADD COLUMN IF NOT EXISTS attack_technique VARCHAR;
             ALTER TABLE correlations ADD COLUMN IF NOT EXISTS note VARCHAR DEFAULT '';
+
+            -- Resumable ingestion (issen #115): the durable per-unit completion
+            -- log + the per-event provenance column. Completion is written here
+            -- in the SAME transaction as a unit's events, so 'events flushed' and
+            -- 'unit complete' can never disagree across a crash. Additive: case
+            -- DBs predating this get NULL ingest_unit_id (legacy rows are
+            -- immutable and not eligible for resume).
+            CREATE TABLE IF NOT EXISTS ingest_log (
+                unit_id        VARCHAR PRIMARY KEY,
+                evidence_key   VARCHAR NOT NULL,
+                artifact_type  VARCHAR NOT NULL,
+                parser         VARCHAR NOT NULL,
+                bytes          BIGINT,
+                event_count    BIGINT,
+                status         VARCHAR NOT NULL,
+                started_at     TIMESTAMP,
+                completed_at   TIMESTAMP
+            );
+            ALTER TABLE timeline ADD COLUMN IF NOT EXISTS ingest_unit_id VARCHAR;
+            CREATE INDEX IF NOT EXISTS idx_ingest_log_evidence_status
+                ON ingest_log (evidence_key, status);
+            CREATE INDEX IF NOT EXISTS idx_timeline_ingest_unit
+                ON timeline (ingest_unit_id);
             ",
         )?;
         Ok(())
@@ -181,6 +204,25 @@ mod tests {
         // Calling initialize_schema again should not fail.
         store.initialize_schema().expect("re-initialize");
         assert_eq!(store.event_count().expect("count"), 0);
+    }
+
+    #[test]
+    fn schema_has_ingest_log_and_unit_id_for_resume() {
+        // issen #115 step 2: resumable ingestion needs a durable `ingest_log`
+        // (the per-unit completion record) and a per-event `ingest_unit_id`
+        // provenance column on `timeline` (so a resume can delete a unit's
+        // partial rows and re-parse idempotently).
+        let store = TimelineStore::in_memory().expect("create store");
+        let conn = store.connection();
+
+        let mut stmt = conn
+            .prepare("SELECT count(*) FROM ingest_log")
+            .expect("ingest_log table must exist");
+        let n: i64 = stmt.query_row([], |r| r.get(0)).expect("query ingest_log");
+        assert_eq!(n, 0, "ingest_log starts empty");
+
+        conn.prepare("SELECT ingest_unit_id FROM timeline LIMIT 0")
+            .expect("timeline.ingest_unit_id column must exist");
     }
 
     #[test]
