@@ -4,7 +4,7 @@ use std::sync::Mutex;
 use issen_core::artifacts::ArtifactType;
 use issen_core::error::RtError;
 use issen_core::plugin::registry::all_parsers;
-use issen_core::plugin::traits::EventEmitter;
+use issen_core::plugin::traits::{EventEmitter, ForensicParser};
 use issen_core::timeline::event::TimelineEvent;
 use rayon::prelude::*;
 
@@ -293,6 +293,77 @@ pub(crate) fn sort_timeline_events(events: &mut [TimelineEvent]) {
             .cmp(&b.timestamp_ns)
             .then_with(|| a.record_hash.cmp(&b.record_hash))
     });
+}
+
+/// One resumable ingest unit's parse result: the events a single parser produced
+/// for a single artifact. Each `(artifact, parser)` pair is one unit — the
+/// granularity the resumable ingest path commits and skips at (issen #115).
+pub struct ParsedUnit {
+    /// The artifact's classified type.
+    pub artifact_type: ArtifactType,
+    /// The artifact's path.
+    pub path: PathBuf,
+    /// The parser that produced these events (`ForensicParser::name`).
+    pub parser: String,
+    /// Events this parser emitted for this artifact, in parse order.
+    pub events: Vec<TimelineEvent>,
+    /// Bytes the parser reported processing.
+    pub bytes: u64,
+}
+
+/// Parse each `(artifact, matching-parser)` pair into its own [`ParsedUnit`].
+///
+/// Unlike [`run_pipeline`] (one shared emitter → a flat event list), this gives
+/// every unit a fresh emitter so its events are grouped — the shape the
+/// resumable ingest path needs to `commit_unit` per unit and skip completed
+/// ones. Parsers are passed in (dependency injection) rather than read from the
+/// force-linked registry, so the per-unit grouping is unit-testable.
+#[must_use]
+pub fn parse_units(
+    artifacts: &[DiscoveredArtifact],
+    parsers: &[Box<dyn ForensicParser>],
+    progress: &ProgressReporter,
+) -> Vec<ParsedUnit> {
+    let mut units = Vec::new();
+    for artifact in artifacts {
+        let matching: Vec<_> = parsers
+            .iter()
+            .filter(|p| p.supported_artifacts().contains(&artifact.artifact_type))
+            .collect();
+        if matching.is_empty() {
+            continue;
+        }
+        // Open the source once and share it across this artifact's parsers.
+        let Ok(source) = FileDataSource::open(&artifact.path) else {
+            // Open failures are reported by the flat pipeline; here we just skip.
+            continue;
+        };
+        for parser in matching {
+            // A fresh emitter per unit — this is what groups events by unit.
+            let emitter = CollectingEmitter::new();
+            let label = format!("{} [{}]", artifact.path.display(), parser.name());
+            let bytes = match run_isolated(label, || parser.parse(&source, &emitter)) {
+                Isolated::Completed(stats) => {
+                    progress.add_events(stats.events_emitted);
+                    progress.add_bytes(stats.bytes_processed);
+                    progress.complete_artifact();
+                    stats.bytes_processed
+                }
+                Isolated::Failed(_) => {
+                    progress.record_error();
+                    continue;
+                }
+            };
+            units.push(ParsedUnit {
+                artifact_type: artifact.artifact_type,
+                path: artifact.path.clone(),
+                parser: parser.name().to_string(),
+                events: emitter.into_events(),
+                bytes,
+            });
+        }
+    }
+    units
 }
 
 /// Run the pipeline using rayon parallel iteration across artifacts.
@@ -589,6 +660,99 @@ mod tests {
         let (events, result) = run_auto(dir.path(), &progress).expect("run_auto");
         assert_eq!(result.artifacts_found, 1);
         assert!(events.is_empty()); // No parsers registered in test binary
+    }
+
+    #[test]
+    fn parse_units_groups_events_per_artifact_and_parser() {
+        // issen #115: the resumable path commits/skips at (artifact, parser)
+        // granularity, so parse_units must give each its own unit with a FRESH
+        // emitter — events grouped per unit, not pooled into one flat list.
+        // Parsers are injected (the force-linked registry is empty in tests).
+        use issen_core::error::RtError;
+        use issen_core::plugin::traits::{
+            DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
+        };
+        use issen_core::timeline::event::{EventType, TimelineEvent};
+
+        struct Mock {
+            name: String,
+            kind: ArtifactType,
+            n: u64,
+        }
+        impl ForensicParser for Mock {
+            fn name(&self) -> &str {
+                &self.name
+            }
+            fn supported_artifacts(&self) -> &[ArtifactType] {
+                std::slice::from_ref(&self.kind)
+            }
+            fn parse(
+                &self,
+                _input: &dyn DataSource,
+                emitter: &dyn EventEmitter,
+            ) -> Result<ParseStats, RtError> {
+                for i in 0..self.n {
+                    emitter.emit(TimelineEvent::new(
+                        i as i64,
+                        "ts".into(),
+                        EventType::FileCreate,
+                        self.kind,
+                        "p".into(),
+                        format!("{}-{i}", self.name),
+                        "ev".into(),
+                    ))?;
+                }
+                let mut s = ParseStats::new();
+                s.events_emitted = self.n;
+                Ok(s)
+            }
+            fn capabilities(&self) -> ParserCapabilities {
+                ParserCapabilities {
+                    max_memory_bytes: None,
+                    streaming: false,
+                    deterministic: true,
+                }
+            }
+        }
+
+        let dir = tempfile::tempdir().expect("tmp");
+        let a = dir.path().join("a.bin");
+        let b = dir.path().join("b.bin");
+        std::fs::write(&a, b"x").expect("w");
+        std::fs::write(&b, b"y").expect("w");
+        let artifacts = vec![
+            DiscoveredArtifact {
+                path: a,
+                artifact_type: ArtifactType::UsnJournal,
+            },
+            DiscoveredArtifact {
+                path: b,
+                artifact_type: ArtifactType::Mft,
+            },
+        ];
+        let parsers: Vec<Box<dyn ForensicParser>> = vec![
+            Box::new(Mock {
+                name: "USN".into(),
+                kind: ArtifactType::UsnJournal,
+                n: 3,
+            }),
+            Box::new(Mock {
+                name: "MFT".into(),
+                kind: ArtifactType::Mft,
+                n: 2,
+            }),
+        ];
+        let progress = ProgressReporter::new();
+        let units = parse_units(&artifacts, &parsers, &progress);
+
+        assert_eq!(units.len(), 2, "one unit per (artifact, matching parser)");
+        let usn = units.iter().find(|u| u.parser == "USN").expect("USN unit");
+        assert_eq!(usn.events.len(), 3, "events grouped per unit");
+        assert_eq!(usn.artifact_type, ArtifactType::UsnJournal);
+        // Events are SEPARATE per unit, not pooled — every USN event is USN-tagged.
+        assert!(usn.events.iter().all(|e| e.description.starts_with("USN-")));
+        let mft = units.iter().find(|u| u.parser == "MFT").expect("MFT unit");
+        assert_eq!(mft.events.len(), 2);
     }
 
     #[test]
