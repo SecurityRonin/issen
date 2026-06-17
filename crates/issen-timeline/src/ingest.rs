@@ -267,6 +267,29 @@ impl TimelineStore {
         }
     }
 
+    /// The set of `unit_id`s already flushed to completion for an evidence
+    /// source — the resume skip-list (issen #115 step 4).
+    ///
+    /// A restart parses the *complement* of this set: any unit not listed here
+    /// (including the one interrupted mid-parse, whose atomic [`Self::commit_unit`]
+    /// rolled back and left no `complete` row) is re-parsed, and commit_unit's
+    /// delete-first clears any partial rows before re-inserting.
+    pub fn completed_units(
+        &self,
+        evidence_key: &str,
+    ) -> Result<std::collections::HashSet<String>, TimelineStoreError> {
+        let conn = self.connection();
+        let mut stmt = conn.prepare(
+            "SELECT unit_id FROM ingest_log WHERE evidence_key = ? AND status = 'complete'",
+        )?;
+        let rows = stmt.query_map([evidence_key], |row| row.get::<_, String>(0))?;
+        let mut out = std::collections::HashSet::new();
+        for row in rows {
+            out.insert(row?);
+        }
+        Ok(out)
+    }
+
     /// The mutating body of [`Self::commit_unit`], run inside the caller's
     /// transaction so any error aborts the whole unit.
     fn commit_unit_body(
@@ -417,6 +440,39 @@ mod tests {
             .query_row([&unit.unit_id], |r| r.get(0))
             .expect("q");
         assert_eq!(total, 2, "re-commit must not duplicate the unit's rows");
+    }
+
+    #[test]
+    fn completed_units_returns_only_flushed_units_scoped_to_evidence() {
+        // issen #115 step 4 — the resume query. `completed_units` is the set a
+        // restart skips; everything else (including the interrupted unit, whose
+        // atomic commit_unit rolled back leaving no log row) is re-parsed. So a
+        // resume = "parse the complement of completed", and commit_unit's
+        // delete-first then cleans any partial rows of the re-parsed unit.
+        let store = TimelineStore::in_memory().expect("store");
+        let u1 = IngestUnit::new("CASE", "Mft", "/C/$MFT", "MFT Parser", 10);
+        let u2 = IngestUnit::new("CASE", "UsnJournal", "/C/$J", "USN Parser", 20);
+        store.commit_unit(&u1, &[sample_event(1, "a")]).expect("c1");
+        store.commit_unit(&u2, &[sample_event(2, "b")]).expect("c2");
+
+        // A unit from a DIFFERENT evidence must not leak into CASE's resume set.
+        let other = IngestUnit::new("CASE2", "Mft", "/C/$MFT", "MFT Parser", 10);
+        store
+            .commit_unit(&other, &[sample_event(3, "c")])
+            .expect("c3");
+
+        let done = store.completed_units("CASE").expect("query");
+        assert!(done.contains(&u1.unit_id), "u1 flushed");
+        assert!(done.contains(&u2.unit_id), "u2 flushed");
+        assert!(
+            !done.contains(&other.unit_id),
+            "scoped to evidence_key — CASE2 excluded"
+        );
+        assert_eq!(done.len(), 2);
+
+        // A never-committed unit is simply absent → it will be (re)parsed.
+        let pending = IngestUnit::new("CASE", "Prefetch", "/C/pf", "PF Parser", 5);
+        assert!(!done.contains(&pending.unit_id));
     }
 
     #[test]
