@@ -88,6 +88,13 @@ pub fn run(
     // Open or create the DuckDB timeline store.
     let store = TimelineStore::open(output).context("Failed to open timeline database")?;
 
+    // Guard against a concurrent ingest corrupting the resumable-ingestion state
+    // (issen #115). RAII: the <case>.ingest.lock is released when `_case_lock`
+    // drops at function exit. The lock logic is unit-tested in issen-timeline.
+    let _case_lock = issen_timeline::ingest::CaseLock::acquire(output).context(
+        "another ingest is already running for this case (delete a stale *.ingest.lock if not)",
+    )?;
+
     // Register evidence source if provided.
     let source_id = evidence_source.unwrap_or("default");
     store
