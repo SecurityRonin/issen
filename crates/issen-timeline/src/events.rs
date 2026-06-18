@@ -296,12 +296,13 @@ impl TimelineStore {
             params.push(Box::new(host.clone()));
         }
         // Serialized fragment for the entity prefilter, e.g. {"Ip":"203.0.113.5"}.
-        let entity_fragment = match q.entity.as_ref() {
-            Some(entity) => Some(serde_json::to_string(entity).map_err(|e| {
-                TimelineStoreError::Query(format!("serialize entity filter: {e}"))
-            })?),
-            None => None,
-        };
+        let entity_fragment =
+            match q.entity.as_ref() {
+                Some(entity) => Some(serde_json::to_string(entity).map_err(|e| {
+                    TimelineStoreError::Query(format!("serialize entity filter: {e}"))
+                })?),
+                None => None,
+            };
         if let Some(ref fragment) = entity_fragment {
             sql.push_str(" AND entity_refs LIKE ?");
             params.push(Box::new(format!("%{fragment}%")));
@@ -504,8 +505,51 @@ mod tests {
         assert_eq!(pe.timestamp_ns, 1_000);
 
         let other = &events[1];
-        assert_eq!(other.event_type, EventType::Other("SrumNetUsage".to_string()));
+        assert_eq!(
+            other.event_type,
+            EventType::Other("SrumNetUsage".to_string())
+        );
         assert_eq!(format!("{}", other.source), "SRUM");
+    }
+
+    #[test]
+    fn activity_category_survives_db_round_trip() {
+        // CADET tagging is only useful if it persists: a tagged event ingested to
+        // DuckDB must reload with its category. A None-tagged event reloads None.
+        use issen_core::ActivityCategory;
+        let store = TimelineStore::in_memory().expect("store");
+        let tagged = TimelineEvent::new(
+            1_000,
+            "2026-01-01T00:00:01Z".to_string(),
+            EventType::ProcessExec,
+            ArtifactType::Amcache,
+            "Amcache.hve".to_string(),
+            "evil.exe executed".to_string(),
+            "DC01".to_string(),
+        )
+        .with_activity_category(ActivityCategory::Execution);
+        let untagged = TimelineEvent::new(
+            2_000,
+            "2026-01-01T00:00:02Z".to_string(),
+            EventType::RegistryModify,
+            ArtifactType::Registry,
+            "SOFTWARE".to_string(),
+            "some config".to_string(),
+            "DC01".to_string(),
+        );
+        store.inseissen_batch(&[tagged, untagged]).expect("ingest");
+
+        let mut events = store.load_timeline_events().expect("load");
+        events.sort_by_key(|e| e.timestamp_ns);
+        assert_eq!(
+            events[0].activity_category,
+            Some(ActivityCategory::Execution),
+            "tagged event must reload with its category"
+        );
+        assert_eq!(
+            events[1].activity_category, None,
+            "untagged event must reload as None"
+        );
     }
 
     // ── EventQuery is bounded by construction ────────────────────────────────
@@ -543,7 +587,9 @@ mod tests {
         // The correlation pass legitimately scans the whole timeline. limit(u64::MAX)
         // is the explicit, greppable opt-in; an ordinary query stays capped so it
         // can never accidentally full-scan.
-        assert!(EventQuery::within(1, i64::MAX).limit(u64::MAX).is_unbounded());
+        assert!(EventQuery::within(1, i64::MAX)
+            .limit(u64::MAX)
+            .is_unbounded());
         assert!(!EventQuery::within(1, i64::MAX).is_unbounded());
     }
 
@@ -681,7 +727,8 @@ mod tests {
             scope: ScopeRule::SameHost,
             guard: None,
             ordered: true,
-            note: "Failed-logon burst then success from the same IP is consistent with brute force.",
+            note:
+                "Failed-logon burst then success from the same IP is consistent with brute force.",
         };
 
         let corr = evaluate(&rule, &anchors[0], &consequents).expect("a correlation");
@@ -709,7 +756,9 @@ mod tests {
     fn stored_event_source_leg_maps_eventlog_to_evtx() {
         use issen_correlation::evaluator::{EventSource, EventView};
         let store = store_with(&[logon_failure(1_000, "203.0.113.5")]);
-        let events = store.fetch_events(&EventQuery::within(0, 5_000)).expect("fetch");
+        let events = store
+            .fetch_events(&EventQuery::within(0, 5_000))
+            .expect("fetch");
         assert_eq!(events[0].source(), EventSource::Evtx);
     }
 
@@ -720,7 +769,9 @@ mod tests {
         // persisted path, not the `""` trait default.
         use issen_correlation::evaluator::EventView;
         let store = store_with(&[logon_failure(1_000, "203.0.113.5")]);
-        let events = store.fetch_events(&EventQuery::within(0, 5_000)).expect("fetch");
+        let events = store
+            .fetch_events(&EventQuery::within(0, 5_000))
+            .expect("fetch");
         assert_eq!(EventView::artifact_path(&events[0]), "Security.evtx");
     }
 
