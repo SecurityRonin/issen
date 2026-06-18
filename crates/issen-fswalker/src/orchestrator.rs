@@ -689,6 +689,17 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_setupapi_log() {
+        // setupapi.dev.log is a device-install log, NOT a registry hive — it gets
+        // its own DeviceInstall type so SetupApiParser receives its real file
+        // (it previously advertised Registry, got hives, and emitted nothing).
+        assert_eq!(
+            detect_artifact_type(Path::new("C:/Windows/inf/setupapi.dev.log")),
+            Some(ArtifactType::DeviceInstall),
+        );
+    }
+
+    #[test]
     fn test_detect_linux_macos_logs() {
         // issen #114: the linux syslog/cron/bash_history + macos unified/fsevents
         // parsers are wired; classify their files so discovery reaches them.

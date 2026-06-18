@@ -51,6 +51,8 @@ pub enum ArtifactType {
     RootkitScan,
     /// System configuration files (/etc)
     SystemConfig,
+    /// Windows device/driver install log (setupapi.dev.log)
+    DeviceInstall,
 }
 
 impl std::fmt::Display for ArtifactType {
@@ -80,6 +82,7 @@ impl std::fmt::Display for ArtifactType {
             Self::HashManifest => write!(f, "Hash Manifest"),
             Self::RootkitScan => write!(f, "Rootkit Scan"),
             Self::SystemConfig => write!(f, "System Config"),
+            Self::DeviceInstall => write!(f, "Device Install"),
         }
     }
 }
@@ -118,6 +121,7 @@ impl ArtifactType {
             "HashManifest" => Self::HashManifest,
             "RootkitScan" => Self::RootkitScan,
             "SystemConfig" => Self::SystemConfig,
+            "DeviceInstall" => Self::DeviceInstall,
             _ => return None,
         })
     }
@@ -184,6 +188,7 @@ mod tests {
             ArtifactType::HashManifest,
             ArtifactType::RootkitScan,
             ArtifactType::SystemConfig,
+            ArtifactType::DeviceInstall,
         ] {
             let debug = format!("{at:?}");
             assert_eq!(
