@@ -203,7 +203,7 @@ mft          = "0.6"
 
 # Registry — our own winreg-forensic fleet crates (notatin fully removed)
 winreg-core      = "0.1.0"
-winreg-artifacts = "0.1.3"
+winreg-artifacts = "0.1.4"
 
 # XML / filesystem scanning
 uuid         = { version = "1", features = ["v4"] }

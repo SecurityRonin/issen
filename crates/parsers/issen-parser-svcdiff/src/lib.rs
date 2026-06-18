@@ -61,10 +61,14 @@ pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<
     winreg_artifacts::svc_diff::parse(&hive)
         .into_iter()
         .map(|e| {
-            // Service registrations carry no per-value timestamp.
+            // The service key's LastWriteTime ≈ the service install/modify time.
+            let (ts_ns, ts_display) = e.last_written.map_or_else(
+                || (0, "unknown".to_string()),
+                |dt| (dt.timestamp_nanos_opt().unwrap_or(0), dt.to_rfc3339()),
+            );
             TimelineEvent::new(
-                0,
-                "unknown".to_string(),
+                ts_ns,
+                ts_display,
                 EventType::ServiceInstall,
                 ArtifactType::Registry,
                 format!("{hive_name}\\CurrentControlSet\\Services\\{}", e.name),
