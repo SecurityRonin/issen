@@ -43,6 +43,7 @@ issen-parser-userassist = { workspace = true }
 issen-parser-sam = { workspace = true }
 issen-parser-comhijack = { workspace = true }
 issen-parser-dcc2 = { workspace = true }
+issen-parser-lsasecrets = { workspace = true }
 issen-parser-svcdiff = { workspace = true }
 issen-parser-typedurls = { workspace = true }
 issen-parser-lxss = { workspace = true }

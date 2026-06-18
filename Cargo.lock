@@ -4334,10 +4334,11 @@ dependencies = [
  "issen-parser-amcache",
  "issen-parser-biome",
  "issen-parser-comhijack",
+ "issen-parser-dcc2",
  "issen-parser-evtx",
  "issen-parser-linux",
  "issen-parser-lnk",
- "issen-parser-lsadump",
+ "issen-parser-lsasecrets",
  "issen-parser-lxss",
  "issen-parser-macos",
  "issen-parser-mft",
@@ -4606,6 +4607,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "issen-parser-dcc2"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "inventory",
+ "issen-core",
+ "issen-plugin-sdk",
+ "serde_json",
+ "tempfile",
+ "winreg-artifacts",
+ "winreg-core",
+]
+
+[[package]]
 name = "issen-parser-evtx"
 version = "0.1.0"
 dependencies = [
@@ -4643,7 +4659,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "issen-parser-lsadump"
+name = "issen-parser-lsasecrets"
 version = "0.1.0"
 dependencies = [
  "anyhow",

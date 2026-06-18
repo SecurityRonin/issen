@@ -31,6 +31,7 @@ members = [
     "crates/parsers/issen-parser-sam",
     "crates/parsers/issen-parser-comhijack",
     "crates/parsers/issen-parser-dcc2",
+    "crates/parsers/issen-parser-lsasecrets",
     "crates/parsers/issen-parser-svcdiff",
     "crates/parsers/issen-parser-typedurls",
     "crates/parsers/issen-parser-lxss",
@@ -99,6 +100,7 @@ issen-parser-userassist   = { path = "crates/parsers/issen-parser-userassist" }
 issen-parser-sam          = { path = "crates/parsers/issen-parser-sam" }
 issen-parser-comhijack    = { path = "crates/parsers/issen-parser-comhijack" }
 issen-parser-dcc2         = { path = "crates/parsers/issen-parser-dcc2" }
+issen-parser-lsasecrets   = { path = "crates/parsers/issen-parser-lsasecrets" }
 issen-parser-svcdiff      = { path = "crates/parsers/issen-parser-svcdiff" }
 issen-parser-typedurls    = { path = "crates/parsers/issen-parser-typedurls" }
 issen-parser-lxss         = { path = "crates/parsers/issen-parser-lxss" }

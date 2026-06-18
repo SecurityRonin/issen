@@ -25,6 +25,7 @@ extern crate issen_parser_velociraptor;
 // their inventory::submit! and they never run (a [dependency] alone is not enough).
 extern crate issen_parser_comhijack;
 extern crate issen_parser_dcc2;
+extern crate issen_parser_lsasecrets;
 extern crate issen_parser_lxss;
 extern crate issen_parser_regcatalog;
 extern crate issen_parser_svcdiff;
@@ -642,7 +643,8 @@ fn main() -> ExitCode {
 
 /// Return `~/.local/share/issen/pivot/` as the default pivot cache dir.
 fn dirs_next_cache() -> PathBuf {
-    std::env::var_os("HOME").map_or_else(|| PathBuf::from("."), PathBuf::from)
+    std::env::var_os("HOME")
+        .map_or_else(|| PathBuf::from("."), PathBuf::from)
         .join(".local")
         .join("share")
         .join("issen")
