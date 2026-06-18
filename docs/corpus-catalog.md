@@ -81,6 +81,33 @@ hotlinks `https://dfirmadness.com/case001/<file>` (e.g.
 filename in the table above). **Used by** `usnjrnl-forensic` integration tests (`#[ignore]`, desktop
 E01). Redistribution: dfirmadness.com — educational/research.
 
+#### A3b · Registry hives extracted from `DC01-ProtectedFiles.zip` (loose, gitignored) · REAL-ext ✓
+
+Used by the registry parsers' real-data CADET category tests
+(`crates/parsers/issen-parser-{runkeys,userassist,shimcache,sam,shellbags,registry,typedurls}/tests/real_hive_category.rs`,
+which skip cleanly when absent). **NO download — extract from A3's `DC01-ProtectedFiles.zip`:**
+
+```sh
+cd "tests/data/DFIR Madness \"Stolen Szechuan Sauce\" Case 001 — Windows 10/"
+unzip -o -j DC01-ProtectedFiles.zip Protected/SAM Protected/SECURITY Protected/software \
+  Protected/system Users/Administrator/NTUSER.DAT -d ../case001-hives
+cd ../case001-hives && mv -f software SOFTWARE && mv -f system SYSTEM
+```
+
+Yields `tests/data/case001-hives/{SAM,SECURITY,SOFTWARE,SYSTEM,NTUSER.DAT}` (all `regf`). MD5s:
+
+| Hive | Bytes | MD5 |
+|---|---|---|
+| `SAM` | 262144 | `36456b3ccffc110e00c4a7ec5240abb1` |
+| `SECURITY` | 262144 | `919ea108536018ab651e91e2984682e0` |
+| `SOFTWARE` | 45875200 | `477c82a44f2f59f3f36afc0f13413cc3` |
+| `SYSTEM` | 12845056 | `05cd86230d5bdbcade8fd6da1d5313a4` |
+| `NTUSER.DAT` (Administrator) | 524288 | `9f540e3d52a70c8060a54d0d8ee7e1bf` |
+
+Artifacts NOT present in this case (parsers left untagged, not faked): DCC2 cache (`lsadump`/SECURITY),
+COM CLSID hijacks (`comhijack`/SOFTWARE), service-diff entries (`svcdiff`/SYSTEM); `amcache` needs
+`Amcache.hve` (not in the zip).
+
 #### A3a · Prefetch fixtures derived from A3 (committed in two repos) · SYNTHETIC-from-REAL ✓
 
 Three Win10 `.pf` files extracted from the Case 001 **Desktop** image above, small enough to commit
