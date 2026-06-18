@@ -30,13 +30,15 @@ _(nothing actively in progress — pick the next item from the backlog below)_
 | 2026-06-18 | issen | **#114** producer-coverage gate (every classified `ArtifactType` has a producing parser) | `0457f25` |
 | 2026-06-18 | issen | **#114** wire LNK trait `parse()` — removed the `lnk` dark parser (machinery existed, trait was a stub) | `1fa4d11`→`175ca20` |
 | 2026-06-18 | issen | **#114** dark-parser gate — static check flags any `parse()` that ignores its emitter; caught 3 dark parsers (incl. one I'd dismissed) | `f250de5`→`d5022f3` |
+| 2026-06-18 | issen | **#114** wire SetupAPI trait `parse()` — removed the `setupapi` dark parser (the third the gate caught) | `a42244d`→`b212545` |
 | 2026-06-18 | issen | **#109** issen-cli clippy greening (510→0 errors; pragmatic-allow config) | `5af7d86`, `ae8cce5`, `04b9888` |
 
 ---
 
 ## Tactical Backlog — issen
 
-- ⬜ **#114** remaining dark parsers (gate-tracked in `dark_parser_gate.rs` `KNOWN_DARK_PARSERS`): **`setupapi`** — wireable now (`parse_setupapi` exists, like lnk was); **`linux`** / **`macos`** — need real parser implementations (only `can_parse` detection today). Then **CoverageManifest** + **catalog-driven discovery** (forensic knowledge → `forensicnomicon`).
+- ⬜ **#114** remaining dark parsers (gate-tracked in `dark_parser_gate.rs` `KNOWN_DARK_PARSERS`): **`linux`** / **`macos`** — need real parser **implementations** (only `can_parse` detection today; no byte→event core to wire, unlike lnk/setupapi which are now done). Then **CoverageManifest** + **catalog-driven discovery** (forensic knowledge → `forensicnomicon`).
+- 🚩 `issen-parser-setupapi` pre-existing clippy debt (2 test `result.unwrap()` + a `fn name` literal-bound) — trivial, flagged during the #114 wiring, not folded in.
 - ⬜ **#112** de-specialize over-fit temporal correlation rules — needs Case-001 validation/judgment (rules look well-built but unverified).
 - ⬜ **#110** unified timeline P3/P4.
 - ⬜ **#37** correlate capstone — open tail: brute-force join-key false-positive (see [[project_correlate_realdata_validation]]).
