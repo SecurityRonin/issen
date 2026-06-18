@@ -9,6 +9,7 @@
 //! - NTUSER.DAT:    `Software\Microsoft\Windows\Shell\BagMRU`
 //! - UsrClass.dat:  `Local Settings\Software\Microsoft\Windows\Shell\BagMRU`
 
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 #![allow(
     clippy::doc_markdown,
     clippy::missing_errors_doc,
@@ -67,7 +68,11 @@ pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<
                     (dt.timestamp_nanos_opt().unwrap_or(0), dt.to_rfc3339())
                 });
 
-            let label = if e.path.is_empty() { &e.key_path } else { &e.path };
+            let label = if e.path.is_empty() {
+                &e.key_path
+            } else {
+                &e.path
+            };
             TimelineEvent::new(
                 timestamp_ns,
                 timestamp_display,
@@ -77,6 +82,7 @@ pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<
                 format!("Shellbag access: {label}"),
                 source_id.to_string(),
             )
+            .with_activity_category(issen_core::ActivityCategory::FileSystemActivity)
             .with_metadata("hive", serde_json::json!(hive_name))
             .with_metadata("key_path", serde_json::json!(e.key_path))
             .with_metadata("path", serde_json::json!(e.path))

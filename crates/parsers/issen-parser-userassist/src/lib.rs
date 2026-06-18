@@ -9,6 +9,7 @@
 //! delegated to our own `winreg-artifacts::userassist` (over `winreg-core`) —
 //! the registry-artifact home for the fleet — never third-party notatin.
 
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 #![allow(
     clippy::doc_markdown,
     clippy::missing_errors_doc,
@@ -75,6 +76,7 @@ pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<
                 format!("UserAssist: {} (run_count={})", e.program, e.run_count),
                 source_id.to_string(),
             )
+            .with_activity_category(issen_core::ActivityCategory::Execution)
             .with_metadata("program", serde_json::json!(e.program))
             .with_metadata("run_count", serde_json::json!(e.run_count))
             .with_metadata("focus_count", serde_json::json!(e.focus_count))
@@ -174,22 +176,30 @@ mod tests {
 
     #[test]
     fn can_parse_ntuser_dat_lowercase() {
-        assert!(UserAssistParser::can_parse(&PathBuf::from("/evidence/ntuser.dat")));
+        assert!(UserAssistParser::can_parse(&PathBuf::from(
+            "/evidence/ntuser.dat"
+        )));
     }
 
     #[test]
     fn cannot_parse_system_hive() {
-        assert!(!UserAssistParser::can_parse(&PathBuf::from("/evidence/SYSTEM")));
+        assert!(!UserAssistParser::can_parse(&PathBuf::from(
+            "/evidence/SYSTEM"
+        )));
     }
 
     #[test]
     fn cannot_parse_sam_hive() {
-        assert!(!UserAssistParser::can_parse(&PathBuf::from("/evidence/SAM")));
+        assert!(!UserAssistParser::can_parse(&PathBuf::from(
+            "/evidence/SAM"
+        )));
     }
 
     #[test]
     fn cannot_parse_amcache() {
-        assert!(!UserAssistParser::can_parse(&PathBuf::from("/evidence/Amcache.hve")));
+        assert!(!UserAssistParser::can_parse(&PathBuf::from(
+            "/evidence/Amcache.hve"
+        )));
     }
 
     #[test]

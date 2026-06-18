@@ -10,6 +10,7 @@
 //! `winreg-core`) — the registry-artifact home for the fleet — never
 //! third-party notatin.
 
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 #![allow(
     clippy::doc_markdown,
     clippy::missing_errors_doc,
@@ -77,6 +78,7 @@ pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<
                 format!("Shimcache: {}", e.path),
                 source_id.to_string(),
             )
+            .with_activity_category(issen_core::ActivityCategory::Execution)
             .with_metadata("path", serde_json::json!(e.path))
             .with_metadata("entry_index", serde_json::json!(e.entry_index))
             .with_metadata("hive", serde_json::json!(hive_name))
@@ -172,17 +174,23 @@ mod tests {
 
     #[test]
     fn can_parse_system_hive_lowercase() {
-        assert!(ShimcacheParser::can_parse(&PathBuf::from("/evidence/system")));
+        assert!(ShimcacheParser::can_parse(&PathBuf::from(
+            "/evidence/system"
+        )));
     }
 
     #[test]
     fn cannot_parse_software_hive() {
-        assert!(!ShimcacheParser::can_parse(&PathBuf::from("/evidence/SOFTWARE")));
+        assert!(!ShimcacheParser::can_parse(&PathBuf::from(
+            "/evidence/SOFTWARE"
+        )));
     }
 
     #[test]
     fn cannot_parse_amcache() {
-        assert!(!ShimcacheParser::can_parse(&PathBuf::from("/evidence/Amcache.hve")));
+        assert!(!ShimcacheParser::can_parse(&PathBuf::from(
+            "/evidence/Amcache.hve"
+        )));
     }
 
     #[test]

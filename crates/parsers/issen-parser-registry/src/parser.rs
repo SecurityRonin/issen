@@ -71,6 +71,7 @@ fn events_from_hive(
             description,
             source_id.to_string(),
         )
+        .with_activity_category(issen_core::ActivityCategory::SystemState)
         .with_metadata("hive", serde_json::json!(hive_name))
         .with_metadata("key", serde_json::json!(key.path))
         .with_metadata("value_count", serde_json::json!(key.value_count));

@@ -9,6 +9,7 @@
 //! delegated to our own `winreg-artifacts::sam` (over `winreg-core`) — the
 //! registry-artifact home for the fleet — never third-party notatin.
 
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 #![allow(
     clippy::doc_markdown,
     clippy::missing_errors_doc,
@@ -72,6 +73,7 @@ pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<
                 format!("SAM account: {} (RID {})", e.username, e.rid),
                 source_id.to_string(),
             )
+            .with_activity_category(issen_core::ActivityCategory::AccountActivity)
             .with_metadata("username", serde_json::json!(e.username))
             .with_metadata("rid", serde_json::json!(e.rid))
             .with_metadata("last_login", serde_json::json!(e.last_login))
@@ -188,7 +190,9 @@ mod tests {
 
     #[test]
     fn cannot_parse_amcache() {
-        assert!(!SamParser::can_parse(&PathBuf::from("/evidence/Amcache.hve")));
+        assert!(!SamParser::can_parse(&PathBuf::from(
+            "/evidence/Amcache.hve"
+        )));
     }
 
     #[test]

@@ -98,6 +98,7 @@ pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<
                 format!("TypedURL: {}", e.url),
                 source_id.to_string(),
             )
+            .with_activity_category(issen_core::ActivityCategory::BrowserActivity)
             .with_metadata("url", serde_json::json!(e.url))
             .with_metadata("last_visited", serde_json::json!(e.last_visited))
             .with_metadata("is_suspicious", serde_json::json!(e.is_suspicious))
