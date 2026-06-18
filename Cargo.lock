@@ -11396,9 +11396,9 @@ dependencies = [
 
 [[package]]
 name = "winreg-artifacts"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79fde306245d8de8268517b9d2c177547962d3425ed3fc91a7b366cf38f473a8"
+checksum = "76cd990bb098edca3c34300d086c94386fdf8f68ee19ce0e4167e2a33ac09a2d"
 dependencies = [
  "chrono",
  "forensicnomicon 0.5.6",

@@ -74,6 +74,7 @@ pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<
                 ),
                 source_id.to_string(),
             )
+            .with_activity_category(issen_core::ActivityCategory::Persistence)
             .with_metadata("name", serde_json::json!(e.name))
             .with_metadata("display_name", serde_json::json!(e.display_name))
             .with_metadata("image_path", serde_json::json!(e.image_path))
