@@ -545,3 +545,150 @@ human-facing detail; `docs/corpus-catalog.md` stays the single machine-index —
 duplicate** (the README links up to the catalog). Document large untracked/gitignored artifacts here
 too (provenance even when the bytes aren't committed — e.g. a vendored oracle's test corpus). Use
 straight ASCII in paths/commands.
+
+## Release & Distribution Standard — binaries + Homebrew/apt/winget (every app/CLI repo)
+
+Reference implementations (both verified end-to-end): **`blazehash`** and **`disk-forensic`** —
+`.github/workflows/release.yml` is byte-identical between them except for the binary/crate name and
+the Homebrew dispatch `event-type`. Copy from one of those, then apply the rules below. This applies
+to **apps/CLIs** (the `*4n6` binaries, `blazehash`, GUI tools) — published *libraries* only need the
+`crate` job, not the binary/Homebrew/apt/winget channels.
+
+### What one `v*` tag delivers
+
+A single annotated, signed tag (`git tag -s vX.Y.Z && git push origin vX.Y.Z`) triggers
+`release.yml`, which produces **all** of:
+- **Standalone executables for macOS (aarch64 + x86_64), Linux (aarch64 + x86_64, musl-static), and Windows (x86_64 MSI)** — attached to a GitHub Release with a `checksums.txt`.
+- **crates.io** publish (`crate` job).
+- **Homebrew** formula bump (dispatch → shared tap).
+- **apt/.deb** for amd64 + arm64, uploaded to the Release **and** pushed to Cloudsmith (`apt` repo).
+- **winget** auto-PR (after the one-time manual bootstrap — see below).
+
+Build matrix targets: `aarch64-apple-darwin`, `x86_64-apple-darwin`, `x86_64-unknown-linux-musl`,
+`aarch64-unknown-linux-musl`, `x86_64-pc-windows-msvc` (binaries); `x86_64-unknown-linux-gnu` +
+`aarch64-unknown-linux-gnu` (the `deb` job only).
+
+### Secrets — ORG-level, single source of truth
+
+All four release secrets live as **SecurityRonin organization** secrets (visibility = all repos), so
+every fleet repo inherits them and rotation is one update:
+
+| Secret | Purpose | Notes |
+|---|---|---|
+| `CARGO_REGISTRY_TOKEN` | crates.io publish | crate-scoped tokens are *more* secure than one broad token, but org-wide is the chosen trade-off for fleet convenience |
+| `TAP_GITHUB_TOKEN` | dispatch to `SecurityRonin/homebrew-tap` | owned by `securityronin-bot`; the bot must have **write** (push) on the tap (see Homebrew) |
+| `WINGET_TOKEN` | PR to `microsoft/winget-pkgs` | `securityronin-bot` PAT, `public_repo`; the fork lives at `securityronin-bot/winget-pkgs`; `release.yml` sets `fork-user: securityronin-bot` |
+| `CLOUDSMITH_API_KEY` | push `.deb` to Cloudsmith | account-wide; works for any repo |
+
+- **Shadowing rule (the trap):** a **repo-level** secret *overrides* an org secret of the same name.
+  After adding an org secret, **delete the repo-level copies** or the repo keeps using its stale local
+  value and silently ignores the org one. (`gh secret delete <NAME> -R SecurityRonin/<repo>`.)
+- **Secret values are write-only** — they cannot be read back via API or copied between repos; they
+  live only in GitHub's vault (and your password manager). "We have it in <repo>" means it's set on
+  that repo's GitHub, not recoverable from the checkout.
+- **Org secrets need `admin:org`** to manage via CLI (`gh auth refresh -h github.com -s admin:org`),
+  or use the web UI (org owner can always do it there).
+- **Binaries + GitHub Release need only the built-in `GITHUB_TOKEN`** — the four secrets are only for
+  crates.io / Homebrew / winget / Cloudsmith. A release with *just* the executables works with zero
+  external secrets.
+
+### Two gotchas that fail the build/deb green-looking (both bit disk-forensic)
+
+1. **`rust-toolchain.toml` pin overrides the cross-build → `error[E0463]: can't find crate for core`.**
+   If the repo pins `rust-toolchain.toml` (apps pin to the dev toolchain, e.g. `1.96.0`), that pin
+   overrides whatever toolchain the `dtolnay/rust-toolchain` action installs. The action adds the
+   cross-*target* to its default `stable`, but cargo actually builds with the pinned version — which
+   lacks the target → every cross build fails. **Fix:** pin the action to the *same* version, so the
+   target lands on the toolchain cargo uses:
+   ```yaml
+   - uses: dtolnay/rust-toolchain@<sha> # stable
+     with:
+       toolchain: 1.96.0          # MUST match rust-toolchain.toml
+       targets: ${{ matrix.target }}
+   ```
+   Apply to **both** the `build` job and the `deb` job (native `crate`/publish is unaffected).
+   Symptom is platform-independent and fails in ~20s (before real compilation). A *native* `cargo
+   publish --dry-run` will NOT catch it — only a `--target` build does.
+2. **`cargo-deb` (v3.x) errors `The package must have a copyright or authors property`.** Add
+   `authors = ["Albert Hui <albert@securityronin.com>"]` to `[package]` in `Cargo.toml`. (blazehash
+   had it; disk-forensic didn't — that's the whole difference.) Verify locally before tagging:
+   `cargo install cargo-deb && cargo deb` must package past the copyright check (the macOS-only
+   `strip: unrecognized option --strip-unneeded` warning is harmless — GNU strip on the Linux runner
+   is fine).
+
+### crates.io versioning rule
+
+A crate version can be published **once**. **Bump `version` in `Cargo.toml` before every release tag**
+— a tag whose `crate` job re-publishes an existing version fails "already exists." Re-tagging the
+*same* `vX.Y.Z` is only safe if the prior run never reached the `crate`/`release` jobs (e.g. it died
+in `build`); once published, you must bump (e.g. `0.8.2` → `0.8.3`). To move a not-yet-published tag:
+`git tag -d v… ; git push origin :refs/tags/v… ; git tag -s v… ; git push origin v…`.
+
+### App requirement: conventional `--version`
+
+The CLI must support `-V`/`--version` printing `<bin> X.Y.Z` to stdout and exiting **0** (use
+`env!("CARGO_PKG_VERSION")`). The Homebrew formula `test do` block asserts on it
+(`assert_match "<bin> #{version}", shell_output("#{bin}/<bin> --version")`). disk4n6 originally lacked
+it and treated `--version` as a path — add it (TDD: RED parse test → GREEN).
+
+### Homebrew — shared tap, per-project dispatch + handler
+
+- One tap for the whole fleet: **`SecurityRonin/homebrew-tap`** (`brew install SecurityRonin/tap/<bin>`).
+- **Each project dispatches its OWN `event-type`** (`update-<bin>`, e.g. `update-blazehash`,
+  `update-disk4n6`) and the tap has a **matching per-project handler workflow** `update-<bin>.yml`
+  listening on that type. **Never share a generic `update-formula` event** — two projects on the same
+  event collide (the second project's release fires the first project's updater). Each handler downloads
+  the release `checksums.txt`, fills the SHA256s, and writes `Formula/<bin>.rb`.
+- **`securityronin-bot` must have `write` (push) on `homebrew-tap`** — `repository_dispatch` requires
+  write access; a read collaborator gets 403. (Granting it creates an *invitation* the bot must accept:
+  `gh api -X PUT repos/SecurityRonin/homebrew-tap/collaborators/securityronin-bot -f permission=push`
+  then accept as the bot via `gh api -X PATCH user/repository_invitations/<id>`.)
+- Formula class name is the bin name capitalized, digits kept (`disk4n6` → `class Disk4n6 < Formula`).
+- The tap handler commits via the GitHub API / `github-actions[bot]` (GitHub-verified) — consistent
+  with the tap's existing bot-commit style.
+
+### winget — action does UPDATES only; first version is a MANUAL bootstrap
+
+`vedantmgoyal9/winget-releaser` **cannot create a new package** — it only bumps an existing one. So
+the `winget` job is `continue-on-error: true` and **fails harmlessly until the first version is
+submitted by hand**. After the first PR merges, every future release auto-PRs the update. The PR
+title tells which is which: a manual first submission says **"New package: …"** / "Add …"; the
+action's auto-PRs say **"New version: …"**. (blazehash's 0.2.0 was a manual PR by `h4x0r`; 0.2.1+ were
+auto by the bot.)
+
+**Bootstrapping the first version from a Mac (no Windows, no `wingetcreate` — it's Windows-only):**
+1. `brew install msitools` and extract the MSI GUIDs:
+   `msiinfo export <bin>-X.Y.Z-x86_64-pc-windows-msvc.msi Property | grep -iE 'ProductCode|UpgradeCode|ProductVersion'`.
+2. Get the installer SHA256 from the release `checksums.txt` (winget wants it **uppercase**).
+3. Hand-author the **3 manifests** (model them on an existing fleet package already in winget-pkgs,
+   e.g. `manifests/s/SecurityRonin/blazehash/<v>/`): `<Id>.yaml` (version), `<Id>.installer.yaml`
+   (InstallerType `wix`, Scope `machine`, `ProductCode`, `AppsAndFeaturesEntries` with Product+Upgrade
+   codes, the installer URL + SHA256), `<Id>.locale.en-US.yaml` (publisher/license/description/tags).
+4. Submit via the bot, API-only (don't clone the huge winget-pkgs repo): `gh auth switch --user
+   securityronin-bot` → `gh repo sync securityronin-bot/winget-pkgs --source microsoft/winget-pkgs` →
+   create a branch ref at master → `PUT` the 3 files under
+   `manifests/s/SecurityRonin/<bin>/X.Y.Z/` → `POST` a PR `head: securityronin-bot:<branch>`,
+   `base: master` → `gh auth switch --user h4x0r`.
+- **`PackageIdentifier` must be identical** between the manual first PR and the action's `identifier:`
+  input (`SecurityRonin.<bin>`), or future auto-updates orphan.
+- **Keep the MSI `UpgradeCode` stable across versions** (it's fixed in `wix/main.wxs`) — winget keys
+  upgrades off it; a changing UpgradeCode makes each release look like an unrelated package.
+
+### Cloudsmith (apt)
+
+- One account-wide `CLOUDSMITH_API_KEY`. **The destination repo must exist first** —
+  `securityronin/<repo>` at cloudsmith.io (the push 404s otherwise). Public install path:
+  `curl -1sLf https://dl.cloudsmith.io/public/securityronin/<repo>/setup.deb.sh | sudo bash`.
+
+### Pre-tag checklist
+
+1. `version` bumped in `Cargo.toml` (not already on crates.io).
+2. `[package] authors` present (cargo-deb).
+3. `release.yml` toolchain pinned to `rust-toolchain.toml`'s version (if pinned).
+4. CLI has `--version`.
+5. Org secrets present; repo-level shadows deleted.
+6. Homebrew: per-project `update-<bin>.yml` exists in the tap; dispatch `event-type` matches; bot has
+   write on the tap.
+7. Cloudsmith repo created.
+8. First winget version bootstrapped (or accept `continue-on-error` until you do).
+9. Tag is **signed** (`git tag -s`).
