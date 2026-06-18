@@ -84,7 +84,7 @@ E01). Redistribution: dfirmadness.com — educational/research.
 #### A3b · Registry hives extracted from `DC01-ProtectedFiles.zip` (loose, gitignored) · REAL-ext ✓
 
 Used by the registry parsers' real-data CADET category tests
-(`crates/parsers/issen-parser-{runkeys,userassist,shimcache,sam,shellbags,registry,typedurls}/tests/real_hive_category.rs`,
+(`crates/parsers/issen-parser-{runkeys,userassist,shimcache,sam,shellbags,registry,typedurls,svcdiff}/tests/real_hive_category.rs`,
 which skip cleanly when absent). **NO download — extract from A3's `DC01-ProtectedFiles.zip`:**
 
 ```sh
@@ -104,9 +104,25 @@ Yields `tests/data/case001-hives/{SAM,SECURITY,SOFTWARE,SYSTEM,NTUSER.DAT}` (all
 | `SYSTEM` | 12845056 | `05cd86230d5bdbcade8fd6da1d5313a4` |
 | `NTUSER.DAT` (Administrator) | 524288 | `9f540e3d52a70c8060a54d0d8ee7e1bf` |
 
-Artifacts NOT present in this case (parsers left untagged, not faked): DCC2 cache (`lsadump`/SECURITY),
-COM CLSID hijacks (`comhijack`/SOFTWARE), service-diff entries (`svcdiff`/SYSTEM); `amcache` needs
-`Amcache.hve` (not in the zip).
+**`UsrClass.dat` (carved from the Desktop E01, NOT the protected-files zip)** — used by
+`issen-parser-comhijack/tests/real_hive_category.rs` (Win10 per-user COM CLSID lives here, not NTUSER.DAT).
+Carve every user's UsrClass.dat with the one-off `issen-disk` example (untracked, like `dump_file.rs`):
+
+```sh
+unzip -o -j "DFIR Madness .../DESKTOP-E01.zip" '*.E0*' -d /tmp/desktop-e01   # ~6.4GB, 4 EWF segments
+cargo run --release --example extract_usrclass -- /tmp/desktop-e01/20200918_0417_DESKTOP-SDN1RPT.E01 tests/data/case001-hives
+cp -f tests/data/case001-hives/UsrClass-ricksanchez.dat tests/data/case001-hives/UsrClass.dat   # primary user
+```
+
+| Hive | Bytes | MD5 |
+|---|---|---|
+| `UsrClass.dat` (ricksanchez) | 3407872 | `5e28f59f5414e754b4e6e4868fa9d7a0` |
+
+Artifacts STILL not satisfiable from this case (parsers left untagged, not faked): DCC2 cache
+(`lsadump`/SECURITY — `Cache` has 0 `NL$n` slots in Case-001), `amcache` needs `Amcache.hve`
+(at `Windows/AppCompat/Programs/` in the E01, carvable via `extract_dir_suffix`). `svcdiff` &
+`comhijack` were NOT data gaps — they were parser bugs, fixed in **winreg-artifacts 0.1.2** (offline
+`ControlSet001` resolution / `UsrClass.dat` root CLSID) and now tagged.
 
 #### A3a · Prefetch fixtures derived from A3 (committed in two repos) · SYNTHETIC-from-REAL ✓
 
