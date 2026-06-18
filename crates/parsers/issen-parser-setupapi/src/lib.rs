@@ -24,15 +24,13 @@
     clippy::must_use_candidate
 )]
 
-use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-use anyhow::Context;
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use issen_core::artifacts::ArtifactType;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use regex::Regex;
@@ -70,37 +68,48 @@ fn parse_setupapi_timestamp(s: &str) -> Option<(i64, String)> {
 /// Returns `Ok(vec![])` for nonexistent, empty, or non-matching files.
 pub fn parse_setupapi(path: &Path, source_id: &str) -> anyhow::Result<Vec<TimelineEvent>> {
     // Nonexistent / unreadable files — return empty without error.
-    let file = match std::fs::File::open(path) {
-        Ok(f) => f,
-        Err(_) => return Ok(vec![]),
+    let Ok(raw) = std::fs::read(path) else {
+        return Ok(vec![]);
+    };
+    let content = String::from_utf8_lossy(&raw);
+    Ok(parse_setupapi_str(
+        &content,
+        &path.to_string_lossy(),
+        source_id,
+    ))
+}
+
+/// Parse SetupAPI log text into device-install timeline events.
+///
+/// The text-level core shared by the path-based [`parse_setupapi`] and the
+/// `ForensicParser` trait impl (which reads bytes from a `DataSource` and has no
+/// file path of its own). `artifact_path` labels the events; `source_id` tags
+/// their source. The header regexes are constant and valid; on the impossible
+/// compile failure this yields no events rather than panicking.
+#[must_use]
+pub fn parse_setupapi_str(
+    content: &str,
+    artifact_path: &str,
+    source_id: &str,
+) -> Vec<TimelineEvent> {
+    // Vista+ pattern: line starts with `[`, description first, timestamp last.
+    //   group 1 — description; group 2 — timestamp (YYYY/MM/DD HH:MM:SS[.mmm]).
+    let Ok(vista_re) =
+        Regex::new(r"^\[(.+?)\s+(\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)\]")
+    else {
+        return Vec::new();
+    };
+    // XP pattern: timestamp first inside brackets.
+    let Ok(xp_re) =
+        Regex::new(r"^\[(\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s+[^\]]+\]\s*(.*)")
+    else {
+        return Vec::new();
     };
 
-    let artifact_path = path.to_string_lossy().into_owned();
-
-    // Vista+ pattern: line starts with `[`, description first, timestamp last.
-    // Example: [Device Install (Hardware initiated) - USB\VID_... 2023/04/15 14:23:11.456]
-    //
-    // Regex captures:
-    //   group 1 — description (everything between `[` and the timestamp)
-    //   group 2 — timestamp string (YYYY/MM/DD HH:MM:SS with optional .mmm)
-    let vista_re = Regex::new(r"^\[(.+?)\s+(\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)\]")
-        .context("compile Vista+ regex")?;
-
-    // XP pattern: timestamp first inside brackets.
-    // Example: [2005/05/12 12:34:56 1234.5678] Device Install - ...
-    let xp_re =
-        Regex::new(r"^\[(\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s+[^\]]+\]\s*(.*)")
-            .context("compile XP regex")?;
-
     let mut events: Vec<TimelineEvent> = Vec::new();
-    let reader = BufReader::new(file);
+    let artifact_path = artifact_path.to_string();
 
-    for line in reader.lines() {
-        let line = match line {
-            Ok(l) => l,
-            Err(_) => continue,
-        };
-
+    for line in content.lines() {
         let trimmed = line.trim();
         if trimmed.is_empty() || !trimmed.starts_with('[') {
             continue;
@@ -158,7 +167,7 @@ pub fn parse_setupapi(path: &Path, source_id: &str) -> anyhow::Result<Vec<Timeli
         }
     }
 
-    Ok(events)
+    events
 }
 
 // ---------------------------------------------------------------------------
@@ -192,10 +201,40 @@ impl ForensicParser for SetupApiParser {
 
     fn parse(
         &self,
-        _input: &dyn DataSource,
-        _emitter: &dyn EventEmitter,
+        input: &dyn DataSource,
+        emitter: &dyn EventEmitter,
     ) -> Result<ParseStats, issen_core::error::RtError> {
-        Ok(ParseStats::new())
+        let mut stats = ParseStats::new();
+        let len = input.len();
+        if len == 0 {
+            stats.completion = ParseCompletion::Unsupported;
+            return Ok(stats);
+        }
+
+        // SetupAPI logs are plain text; read the whole log into memory.
+        let mut bytes = vec![0u8; len as usize];
+        let mut off = 0u64;
+        while off < len {
+            let n = input.read_at(off, &mut bytes[off as usize..])?;
+            if n == 0 {
+                break;
+            }
+            off += n as u64;
+        }
+        stats.bytes_processed = off;
+
+        let content = String::from_utf8_lossy(&bytes[..off as usize]);
+        let artifact_path = input.source_path().map_or_else(
+            || "setupapi-evidence".to_string(),
+            |p| p.to_string_lossy().into_owned(),
+        );
+        let events = parse_setupapi_str(&content, &artifact_path, "setupapi-evidence");
+        stats.events_emitted = events.len() as u64;
+        if !events.is_empty() {
+            emitter.emit_batch(events)?;
+        }
+        stats.completion = ParseCompletion::Complete;
+        Ok(stats)
     }
 
     fn capabilities(&self) -> ParserCapabilities {

@@ -22,16 +22,10 @@ use std::path::Path;
 /// debt. Once a parser's `parse()` is wired to emit, REMOVE it here — the gate
 /// fails until you do (the intended ratchet, so the list reflects reality).
 ///
-/// - `setupapi` is **wireable** now: `parser::parse_setupapi(path, source_id)`
-///   already exists (like `lnk` did before it was wired); only the trait impl
-///   is stubbed.
 /// - `linux` / `macos` need real parser **implementations** (they only have
-///   `can_parse` detection, no event extraction yet).
-const KNOWN_DARK_PARSERS: &[&str] = &[
-    "issen-parser-linux",
-    "issen-parser-macos",
-    "issen-parser-setupapi",
-];
+///   `can_parse` detection, no event extraction yet). `lnk` and `setupapi` were
+///   wired in #114 (their parse cores already existed) and are no longer here.
+const KNOWN_DARK_PARSERS: &[&str] = &["issen-parser-linux", "issen-parser-macos"];
 
 fn concat_rs(dir: &Path, out: &mut String) {
     let Ok(entries) = fs::read_dir(dir) else {
