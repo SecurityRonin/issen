@@ -1,3 +1,4 @@
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 #![allow(
     clippy::doc_markdown,
     clippy::missing_errors_doc,
@@ -380,6 +381,7 @@ fn record_to_event(record: &UsnRecordV2, evidence_source_id: &str) -> TimelineEv
         description,
         evidence_source_id.to_string(),
     )
+    .with_activity_category(issen_core::ActivityCategory::FileSystemActivity)
     .with_metadata("usn", serde_json::json!(record.usn))
     .with_metadata(
         "reason_flags",
