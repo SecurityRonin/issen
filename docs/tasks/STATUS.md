@@ -57,33 +57,33 @@ _(nothing actively in progress — pick the next item from the backlog below)_
 
 ## Design Tasks (larger refactors)
 
-### ⬜ Two-axis artifact model — `SourceType` + `ActivityCategory` (CADET) (issen #NEW)
+### ⬜ Two-axis artifact model — keep `ArtifactType` (routing) + add `ActivityCategory` (CADET, meaning) (issen #NEW)
 
 **Problem.** `ArtifactType` (issen-core/artifacts/types.rs) conflates two orthogonal axes:
-1. **Source / format** — *which parser reads this file* (routing). A registry hive ≠ a setupapi text log ≠ an evtx. `detect_artifact_type` needs this.
-2. **Forensic semantic** — *what the evidence means* (a category that **spans many sources**).
+1. **Artifact / format** — *which parser reads this file* (routing). A registry hive ≠ a setupapi text log ≠ an evtx. `detect_artifact_type` needs this.
+2. **Forensic semantic** — *what the evidence means* (a category that **spans many artifacts**).
 
-The enum already mixes them: `Registry`/`Prefetch`/`Mft`/`Lnk` are *sources*, but `LoginHistory`/`SystemInfo`/`CrontabConfig`/`DeviceInstall` are *semantics*. Symptoms:
-- **Cross-feeding:** `auth.log` and `.bash_history` both route to *both* parsers because they share the `LoginHistory` type (coarse routing). Same for syslog/macos sharing `SystemInfo`.
-- **Can't express cross-source evidence:** "device-install" comes from setupapi.dev.log **and** registry `USBSTOR`/`MountedDevices` **and** EVTX — but `DeviceInstall` is pinned to one parser. (This is the flaw that surfaced when setupapi was retyped: a semantic name was given to a routing type.)
+The enum mixes them: `Registry`/`Prefetch`/`Mft`/`Lnk` are *artifact kinds*, but `LoginHistory`/`SystemInfo`/`CrontabConfig`/`DeviceInstall` are *meanings*. The real defect is **the conflation, not the name** — `ArtifactType` is the correct noun for the routing axis (auth.log *is* an artifact). The motivating symptom:
+- **Can't express cross-artifact evidence:** "device-install" comes from setupapi.dev.log **and** registry `USBSTOR`/`MountedDevices` **and** EVTX — but `DeviceInstall` is pinned to one parser. (This is the flaw that surfaced when setupapi was retyped: a *meaning* was given to a *routing* slot.) The `TimelineEvent` has no category field, so cross-artifact category queries are impossible today.
+- (NOTE — the earlier "cross-feed" symptom does NOT hold: each meaning-named type has exactly one parser; the `Registry`→12-parser fan-out is *intentional* via `run_pipeline`.)
 
-**Design — split the axes:**
-- **`SourceType`** (routing): file/format → its parser, source-specific (`RegistryHive`, `SetupApiLog`, `AuthLog`, `Syslog`, `BashHistory`, `Evtx`, `Prefetch`, `Mft`, `Lnk`, `UsnJournal`, `Srum`, `Amcache`, …). `detect_artifact_type` returns this; a parser declares the exact source it consumes → **precise routing, no cross-feed**.
-- **`ActivityCategory`** (CADET — semantic, cross-source): `DeviceInstall`, `LoginActivity`, `Execution`, `Persistence`, `NetworkActivity`, `ScheduledTask`, … carried by **each emitted `TimelineEvent`**. Correlation + the report group by **this** → "all device-install evidence regardless of source" becomes a category query. (Precedent: `forensicnomicon::report::Category` is a sibling semantic axis.)
+**Design — evict the meanings; do NOT rename the routing type:**
+- **`ArtifactType`** (routing) stays as-is — name AND stored-data contract (DuckDB `source` column keyed on `from_debug_str`) unchanged. `SourceType` was rejected: "source" already means the *evidence source* (the image/collection; cf. `Finding.source`, `evidence_source_id`) — overloading it onto an artifact is a category error.
+- **`ActivityCategory`** (CADET — semantic, cross-artifact): `DeviceInstall`, `LoginActivity`, `Execution`, … carried by **each emitted `TimelineEvent`**. Correlation + the report group by **this** → "all device-install evidence regardless of artifact" becomes a category query. (Precedent: `forensicnomicon::report::Category` is a sibling semantic axis.)
 
-> **Knowledge placement (binding):** `ActivityCategory` (CADET) and the artifact→category mapping ("which artifact answers LoginActivity/Execution") are **forensic knowledge → they live in `forensicnomicon`**, never in issen-core/issen. issen depends DOWN on forensicnomicon and consumes them. Only the *routing* type (`SourceType`/`ArtifactType` — which parser reads a file) is issen plumbing.
+> **Knowledge placement (binding):** `ActivityCategory` (CADET) and the artifact→category mapping ("which artifact answers LoginActivity/Execution") are **forensic knowledge → they live in `forensicnomicon`**, never in issen-core/issen. issen depends DOWN on forensicnomicon and consumes them. Only the *routing* type (`ArtifactType` — which parser reads a file) is issen plumbing.
 
 **Migration plan (phased, TDD per phase):**
 1. ✅ **Add the activity taxonomy — branded `CADET`** (Categories of Activity in Digital Evidence Taxonomy), type **`forensicnomicon::cadet::ActivityCategory`** (v0.5.6, commits `1e7c342`→`a454a12`). **Grounded in prior art, not invented:** a documented synthesis of **SANS "Evidence of…"** (FOR500), **Plaso** tags (cross-platform precedent), and **MITRE ATT&CK** tactics (`attack_tactic()` for the adversarial overlap; `None` for benign — it's a superset of ATT&CK). 16 variants + stable `code()`/`from_code()` (the serialization contract a future **CASE/UCO** *export* layer maps to UCO `Action`/`Observable`). `FileSystemActivity` kept **unified** (observed activity, not SANS's inferred open/download/delete split). **Brand vs type** mirrors ATT&CK / `AttackTechnique`; CADET cleared against DFIR prior art (≠ Shavers' F.A.C.T., the TRACE toolkit, Vestige Ltd).
    - **1b — the `source → ActivityCategory` mapping (forensicnomicon knowledge), built INCREMENTALLY at phase 4 — NOT derived wholesale from the catalog.** Investigated 2026-06-18: the 6,548-entry catalog is too heterogeneous to classify structurally (96 `linux_*`/39 `macos_*` IDs span login/exec/persistence with no prefix→category rule), and `mitre_techniques` is the *adversarial* axis — it would miscategorize benign artifacts (`browser_chrome_history` carries `T1217`→Discovery, but its category is **BrowserActivity**). So the mapping is a **curated knowledge table sized to issen's ~30 real parser sources**, grounded in SANS "Evidence of…" families, with ATT&CK as a cross-check only — added as each parser is wired (phase 4), where it is actually consumed. issen consumes `ActivityCategory` after the fn **0.5.6 publish** (enum is complete + grounded + tested; the mapping ships with the parsers that use it).
-2. **Rename `ArtifactType` → `SourceType`**; split the semantic variants into real sources: `LoginHistory`→{`AuthLog`,`BashHistory`,`Wtmp`,…}; `SystemInfo`→{`Syslog`,`MacosUnifiedLog`,`FsEvents`}; `CrontabConfig`→`CronLog`; `DeviceInstall`→`SetupApiLog`.
-3. **`detect_artifact_type` → returns `SourceType`** (one file → one precise source → one parser; no cross-feed). Update the per-source classification.
-4. **Each parser:** `supported_artifacts` → the specific `SourceType`(s) it reads; tag emitted events with `ActivityCategory`.
-5. **`TimelineEvent`:** add a `category: ActivityCategory` (or `Vec<>`); persist + index it.
-6. **Correlation + report:** group/pivot by category (cross-source), not by source.
-7. **Gates:** update `producer_coverage` / `reachability_gate` / `dark_parser_gate` to the two-axis model; the reachability gate's current **type-level blind spot** (a parser advertising a classified type whose files aren't its real input — how setupapi slipped through) disappears once routing is source-exact.
+2. **`TimelineEvent`: add `activity_category: Option<ActivityCategory>`** (`#[serde(default)]` — **additive, no data migration**). This is the essential, high-value slice. Needs issen on forensicnomicon **0.5.6** (direct dep is 0.5.4 → small in-range bump; `cargo update -p forensicnomicon@0.5.4 --precise 0.5.6`). Blocked on the protected dirty `Cargo.lock` (unrelated +3-line `hex`/`sha2`/`inventory` change — commit it first, then bump on top).
+3. **Each parser tags its emitted events** with the right `ActivityCategory` — looked up from the forensicnomicon **per-source mapping** (knowledge half, 1b), added incrementally as each parser is touched.
+4. **Correlation + report:** group/pivot by `ActivityCategory` (cross-artifact), in addition to by `ArtifactType`.
+5. **(Optional, deferred — separate data migration) variant cleanup:** rename the few *meaning-named* `ArtifactType` variants to honest artifact names so the routing enum is internally pure: `LoginHistory`→{`AuthLog`,`BashHistory`,`Wtmp`}; `SystemInfo`→{`Syslog`,`MacosUnifiedLog`,`FsEvents`}; `CrontabConfig`→`CronLog`; `DeviceInstall`→`SetupApiLog`. Touches the DuckDB `source` column (keyed on `from_debug_str`) — needs a migration, so it's NOT a prerequisite for the category work.
 
-**Scope/risk:** touches the core enum, every `issen-parser-*`, `detect_artifact_type`, the timeline schema, correlation, the report, and all three gates. Large — do it phased, not as a drive-by. **Benefits:** exact routing (no cross-feed), cross-source semantic queries, cleaner correlation/reporting, and `DeviceInstall`-as-category done right.
+**`SourceType` REJECTED (2026-06-18):** "source" already means the *evidence source* (image/collection; `Finding.source`, `evidence_source_id`) — an auth.log is an *artifact*, not a source. Keep `ArtifactType` for routing; the original name was right, the defect was only the conflation. The earlier "cross-feed / exact-routing" benefit was also illusory (one parser per meaning-type; `Registry` fan-out intentional).
+
+**Scope/risk:** the essential slice (steps 2–4) is **additive** — a new `Option` field + per-parser tagging + a dep bump; no enum rename, no forced migration. The optional step 5 is the only data-migration piece and stays deferred. **Benefit:** cross-artifact semantic queries ("all device-install evidence regardless of artifact"), `DeviceInstall`-as-category done right.
 
 ---
 
