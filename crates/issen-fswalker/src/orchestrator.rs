@@ -649,6 +649,16 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_lnk() {
+        // issen #114: LnkParser was wired but .lnk was never classified, so the
+        // wired parser stayed unreachable via discovery. Classify it.
+        assert_eq!(
+            detect_artifact_type(Path::new("/Users/a/Recent/foo.lnk")),
+            Some(ArtifactType::Lnk),
+        );
+    }
+
+    #[test]
     fn test_detect_linux_auth_log() {
         // issen #114: LinuxAuthLogParser advertises LoginHistory and is now
         // wired, but the classifier never routed anything to it — auth.log was
