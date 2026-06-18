@@ -36,6 +36,7 @@ download/regenerate per the provenance notes; they are not committed._
 | CyberSpace CTF 2024 — "Memory" (memory) | 671 MB | REAL-ext | CyberSpace CTF 2024 (CTFtime #2428) |
 | CyberDefenders lab #78 "DeepDive" (memory) | 537 MB | REAL-ext | cyberdefenders.org |
 | Volatility `cridex.vmem` | 38 MB | REAL-ext | Volatility Foundation public sample |
+| LogHub `OpenSSH_2k.log` — real sshd `auth.log` | 220 KB | REAL-ext | logpai/loghub (ISSRE'23) |
 
 ---
 
@@ -187,6 +188,19 @@ image-creation doc (hashes, app list):
   `ccl_segb_cli.py`. Stored under `issen/tests/data/Josh Hickman iOS 17 (Biome SEGB)/` (gitignored;
   only the biome subset kept on disk). Note: `App.MenuItem` is macOS-Tahoe-26-only, so it is **not**
   in this iOS image — this validates the SEGB *container*, not the App.MenuItem protobuf field mapping.
+
+### A8 · LogHub `OpenSSH_2k.log` — real sshd `auth.log` (220 KB) · REAL-ext ✓
+
+Pre-journald **real** Linux SSH auth events (text `auth.log` syslog format) from a real `LabSZ`
+server — unsanitized, with genuine attacker IPs / brute-force `Failed password` floods / invalid
+users. 1999 lines, **md5** `72efdaaf373b8d6c8a809cc86b2a951f`. The 2k-sample slice of the loghub
+OpenSSH dataset (ISSRE'23). **Used by** `issen-parser-linux` to validate `parse_auth_log` against
+real evidence (the Hal Linux UAC corpus is journald-only, so it has no text `auth.log`): ingested as
+`auth.log` → **519 events** (1 Accepted + 518 Failed), exact match to an independent grep oracle.
+Stored at `tests/data/loghub-openssh/OpenSSH_2k.log`; rename/copy to `auth.log` to exercise discovery.
+Redistribution: freely available for research; cite loghub (Zhu et al., ISSRE 2023).
+**Download:** <https://raw.githubusercontent.com/logpai/loghub/master/OpenSSH/OpenSSH_2k.log>
+(dataset: <https://github.com/logpai/loghub/tree/master/OpenSSH>)
 
 ## B. Disk-image / container-format fixtures
 
@@ -506,6 +520,7 @@ so these are recorded here. Verify a download with `md5 <file>` (macOS) / `md5su
 
 | File | Size (bytes) | MD5 |
 |---|---|---|
+| `loghub-openssh/OpenSSH_2k.log` | 225216 | `72efdaaf373b8d6c8a809cc86b2a951f` |
 | `DEF CON DFIR CTF 2018/MaxPowersCDrive.E01` | 31577797290 | `bed3b3ddece20d136a56aa653f0de608` |
 | `Magnet Virtual Summit 2023 … Windows 11/PC-MUS-001.E01` | 52629766482 | `8cf0c007391f4a72ddc12a570a115b46` |
 | `Szechuan/DESKTOP-E01.zip` | 6843484923 | `71c5c3509331f472abcdf81eb6efff07` |

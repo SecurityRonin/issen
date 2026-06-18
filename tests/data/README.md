@@ -181,6 +181,20 @@ icat -i ewf -o 239616 PC-MUS-001.E01 54-128-1 > hiberfil.sys
   `chmod -R u+rwX` before scanning. `App.MenuItem` is macOS-Tahoe-26-only and absent here (this is the
   container validation; the App.MenuItem protobuf field mapping still awaits a Tahoe 26 image).
 
+#### loghub-openssh/OpenSSH_2k.log (220 KB)
+
+- **Source:** loghub (logpai), the LogPAI OpenSSH dataset — real, unsanitized SSH server auth events
+  from a `LabSZ` host (genuine attacker IPs, brute-force `Failed password` floods, invalid users).
+  Pre-journald **text** `auth.log` syslog format. Cite: Zhu et al., *Loghub*, ISSRE 2023.
+- **Identity:** the 2k-line sample slice (1999 lines) of the OpenSSH dataset.
+- **Original download:** <https://raw.githubusercontent.com/logpai/loghub/master/OpenSSH/OpenSSH_2k.log>
+  (dataset: <https://github.com/logpai/loghub/tree/master/OpenSSH>)
+- **MD5:** `72efdaaf373b8d6c8a809cc86b2a951f` (225,216 bytes).
+- **Used by:** `issen-parser-linux` to validate `parse_auth_log` against **real** evidence — the Hal
+  Linux UAC corpus is journald-only (no text `auth.log`), so this fills that gap. Copy/rename to
+  `auth.log` and ingest → **519 LoginHistory events** (1 Accepted + 518 Failed), exact match to an
+  independent grep oracle. See catalog §A8.
+
 ## Test path references
 
 Tests reference these files relative to the crate root (e.g., `../../tests/data/...`).
