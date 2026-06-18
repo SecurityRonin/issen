@@ -37,4 +37,10 @@ fn svcdiff_real_system_hive_tagged_persistence() {
             .all(|e| e.activity_category.map(|c| c.code()) == Some("persistence")),
         "every service event must be tagged ActivityCategory::Persistence"
     );
+    // Service events must carry the service key's LastWriteTime (install/modify
+    // time), not timestamp 0 — the forensic "when was this service created".
+    assert!(
+        events.iter().any(|e| e.timestamp_ns > 0),
+        "service events must carry a real LastWriteTime, not 0"
+    );
 }
