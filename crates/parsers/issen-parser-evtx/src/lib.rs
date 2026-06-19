@@ -50,7 +50,7 @@ use issen_core::plugin::traits::{
 };
 use issen_core::timeline::event::{EntityRef, EventType, TimelineEvent};
 use serde_json::Value;
-use tracing::warn;
+use tracing::{debug, warn};
 
 /// Windows Event Log parser.
 pub struct EvtxFileParser;
@@ -82,8 +82,18 @@ pub enum ChunkErrorClass {
 /// invalid chunk magic — i.e. the bytes at that cluster are not an EVTX chunk
 /// at all (uninitialised slack past the last committed chunk).
 #[must_use]
-pub fn classify_chunk_error(_err: &EvtxError) -> ChunkErrorClass {
-    // RED stub: not yet classifying benign slack.
+pub fn classify_chunk_error(err: &EvtxError) -> ChunkErrorClass {
+    if let EvtxError::FailedToParseChunk { chunk_id, source } = err {
+        if let ChunkError::FailedToParseChunkHeader(DeserializationError::InvalidEvtxChunkMagic {
+            magic,
+        }) = source.as_ref()
+        {
+            return ChunkErrorClass::BenignSlack {
+                chunk_id: *chunk_id,
+                magic: *magic,
+            };
+        }
+    }
     ChunkErrorClass::GenuineLoss
 }
 
@@ -446,10 +456,22 @@ impl ForensicParser for EvtxFileParser {
                         emitter.emit_batch(std::mem::take(&mut batch))?;
                     }
                 }
-                Err(e) => {
-                    warn!(error = %e, "Failed to parse EVTX record, skipping");
-                    stats.errors_recovered += 1;
-                }
+                Err(e) => match classify_chunk_error(&e) {
+                    ChunkErrorClass::BenignSlack { chunk_id, magic } => {
+                        // Filesystem slack past the last committed chunk — not a
+                        // real EVTX chunk, so no record is lost. Surface the
+                        // offending value at debug level, not as a recovery.
+                        debug!(
+                            chunk = chunk_id,
+                            magic = format!("{magic:02x?}"),
+                            "skipping non-EVTX trailing slack cluster (invalid chunk magic)"
+                        );
+                    }
+                    ChunkErrorClass::GenuineLoss => {
+                        warn!(error = %e, "Failed to parse EVTX record, skipping");
+                        stats.errors_recovered += 1;
+                    }
+                },
             }
         }
 
