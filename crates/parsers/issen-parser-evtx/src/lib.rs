@@ -1232,7 +1232,7 @@ mod tests {
         });
         let event = record_to_event(4, 0, "2024-01-01T00:00:00Z", &data, "src");
         assert!(
-            event.metadata.get("logon_id").is_none(),
+            !event.metadata.contains_key("logon_id"),
             "logon_id must not be inserted when absent from EventData"
         );
     }
