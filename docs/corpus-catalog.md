@@ -162,6 +162,33 @@ Verified `ntfs_core::decompress(lznt1_real.bin)` truncated to 1832 B equals `lzn
 | `lznt1_real.bin` (raw LZNT1 stream, 1 cluster) | 4096 | `8c791f1d34a7f4a9aaeaddce71210a26` |
 | `lznt1_real.expected` (TSK `icat` plaintext) | 1832 | `f4cc46d7e07ab76540a46471622e10af` |
 
+#### A3d · Recycle Bin `$I` index extracted from A3's DC01 C: drive (recyclebin-forensic wiring validation) · REAL-ext ✓
+
+Carved from A3's **DC01 C: drive** E01 to validate the `issen-parser-recyclebin` wiring
+(`recyclebin-core`) against a genuine on-disk `$I` index, with **`rifiuti-vista` as the independent
+oracle**. The single Recycle Bin entry on the DC lives under the Administrator SID
+(`S-1-5-21-2232410529-1445159330-2725690660-500`): `$IU2L112.txt` (**MFT inode 87102**), paired with
+`$RU2L112.txt`. It is a **version-1** `$I` (544 B = 24-byte header + 520-byte fixed UTF-16LE name).
+NTFS partition at sector **offset 718848**.
+
+```sh
+E01=".../extracted/E01-DC01/20200918_0347_CDrive.E01"
+fls  -o 718848 "$E01" 85070                       # SID dir: $IU2L112.txt = inode 87102
+icat -o 718848 "$E01" 87102 > '$IU2L112.txt'      # the $I index (544 B)
+```
+
+Decoded fields (our parser, run via `issen ingest` end-to-end, agree with `rifiuti-vista -f json`):
+original path `C:\FileShare\Secret\SECRET_beth.txt`, original size **28** bytes, deletion time
+**2020-09-19T03:34:27Z** (FILETIME `132449600672980000`; our `timestamp_ns` `1600486467298000000`
+keeps the .298 s sub-second that rifiuti truncates). Emitted as one `FileDelete` /
+`source = RecycleBin` event. (This is the DC file-share copy; the famous DESKTOP-SDN1RPT desktop copy
+of `SECRET_beth.txt` referenced by CTF answers F24/F43 is on the **DESKTOP** image, not in this
+DC-only E01.)
+
+| File | Bytes | MD5 |
+|---|---|---|
+| `$IU2L112.txt` (raw v1 `$I` index, icat inode 87102) | 544 | `ba140375cf27bf63268784cd71a18827` |
+
 #### A3a · Prefetch fixtures derived from A3 (committed in two repos) · SYNTHETIC-from-REAL ✓
 
 Three Win10 `.pf` files extracted from the Case 001 **Desktop** image above, small enough to commit
