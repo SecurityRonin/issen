@@ -7,7 +7,16 @@
 //! derives a **collision-resistant** id, so two `CDrive.E01` files under
 //! different host folders never alias onto one id and silently merge.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+use sha2::{Digest, Sha256};
+
+/// Disk-image first-segment extensions (mirrors the correlate pipeline). Only the
+/// first segment of a split set is nominated; the disk pipeline follows the rest
+/// internally, so a later segment would double-crack the set.
+const CONTAINER_EXTS: &[&str] = &[
+    "e01", "ex01", "001", "dd", "img", "vmdk", "vhd", "vhdx", "qcow2", "aff4", "iso",
+];
 
 /// One attributable evidence source: a path to ingest plus its stable id.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,18 +36,86 @@ pub struct EvidenceSource {
 /// Each source gets a collision-resistant `source_id`.
 #[must_use]
 pub fn resolve_evidence_sources(paths: &[PathBuf]) -> Vec<EvidenceSource> {
-    // STUB (RED): one source per input path, stem-only id, no expansion.
-    paths
-        .iter()
-        .map(|p| EvidenceSource {
-            path: p.clone(),
-            source_id: p
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("source")
-                .to_string(),
+    let mut out = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    for path in paths {
+        for p in expand_path(path) {
+            let mut id = source_id_for(&p);
+            // Belt-and-suspenders: guarantee uniqueness even if two inputs
+            // canonicalize to the same path (the hash would otherwise collide).
+            while !seen.insert(id.clone()) {
+                id.push('_');
+            }
+            out.push(EvidenceSource {
+                path: p,
+                source_id: id,
+            });
+        }
+    }
+    out
+}
+
+/// Expand one input path: a directory of containers → one path per container;
+/// a loose-artifact directory → itself; a file → itself.
+fn expand_path(path: &Path) -> Vec<PathBuf> {
+    if path.is_dir() {
+        let mut imgs = Vec::new();
+        collect_containers(path, &mut imgs);
+        imgs.sort();
+        if imgs.is_empty() {
+            vec![path.to_path_buf()]
+        } else {
+            imgs
+        }
+    } else {
+        vec![path.to_path_buf()]
+    }
+}
+
+fn collect_containers(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return; // unreadable dir contributes nothing; never panics
+    };
+    for entry in entries.flatten() {
+        let p = entry.path();
+        if p.is_dir() {
+            collect_containers(&p, out);
+        } else if is_container(&p) {
+            out.push(p);
+        }
+    }
+}
+
+fn is_container(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase)
+        .is_some_and(|ext| CONTAINER_EXTS.contains(&ext.as_str()))
+}
+
+/// Collision-resistant id: sanitized file stem + 8 hex of sha256(canonical path).
+/// Two files with the same stem in different directories get distinct ids; the id
+/// is stable per-path across runs, so resume keys consistently.
+fn source_id_for(path: &Path) -> String {
+    let stem = path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("source");
+    let sanitized: String = stem
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
         })
-        .collect()
+        .collect();
+    let canonical = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    let mut hasher = Sha256::new();
+    hasher.update(canonical.to_string_lossy().as_bytes());
+    let digest = hex::encode(hasher.finalize());
+    format!("{sanitized}-{}", &digest[..8])
 }
 
 #[cfg(test)]
