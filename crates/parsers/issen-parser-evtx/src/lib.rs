@@ -40,6 +40,7 @@
 //! Wraps the `evtx` crate to parse `.evtx` files and emit [`TimelineEvent`]s
 //! via the [`ForensicParser`] trait.
 
+use evtx::err::{ChunkError, DeserializationError, EvtxError};
 use evtx::EvtxParser as EvtxCrateParser;
 use issen_core::artifacts::ArtifactType;
 use issen_core::error::RtError;
@@ -53,6 +54,38 @@ use tracing::warn;
 
 /// Windows Event Log parser.
 pub struct EvtxFileParser;
+
+/// Classification of an error yielded by the `evtx` crate's record iterator.
+///
+/// The `evtx` crate derives its chunk count from the on-disk file *size*
+/// (`(size - header) / 65536`), not from the file header's committed chunk
+/// count. A real `.evtx` file carved from NTFS is allocated in whole clusters,
+/// so the region past the last committed `ElfChnk` chunk is filesystem slack
+/// (leftover registry fragments, UTF-16 text, random bytes). The crate tries to
+/// parse those slack clusters as chunks and fails with `InvalidEvtxChunkMagic`.
+/// That is benign noise — no EVTX record is lost — and must be distinguished
+/// from a genuine failure to read a *populated* chunk or record.
+#[derive(Debug, PartialEq, Eq)]
+pub enum ChunkErrorClass {
+    /// A trailing slack cluster whose first 8 bytes are not `ElfChnk\0`. Not a
+    /// real EVTX chunk; no records lost. Carries the chunk number and the
+    /// offending magic bytes for diagnostics.
+    BenignSlack { chunk_id: u64, magic: [u8; 8] },
+    /// Any other failure: a populated chunk or record that genuinely could not
+    /// be read (truncation, checksum, string-cache, BinXML, record-level). This
+    /// is real, possibly forensically significant, data loss.
+    GenuineLoss,
+}
+
+/// Classify an `evtx` iterator error as benign trailing-slack noise vs genuine
+/// data loss. The only benign case is a chunk-header parse failure caused by an
+/// invalid chunk magic — i.e. the bytes at that cluster are not an EVTX chunk
+/// at all (uninitialised slack past the last committed chunk).
+#[must_use]
+pub fn classify_chunk_error(_err: &EvtxError) -> ChunkErrorClass {
+    // RED stub: not yet classifying benign slack.
+    ChunkErrorClass::GenuineLoss
+}
 
 /// Map a Windows Security/System Event ID to the corresponding [`EventType`].
 #[must_use]
@@ -1357,5 +1390,60 @@ mod tests {
         assert!(event
             .entity_refs
             .contains(&EntityRef::User("SYSTEM".to_string())));
+    }
+
+    // -- Chunk-error classification (benign slack vs genuine loss) ----------
+
+    /// A trailing slack cluster (invalid chunk magic) must be classified as
+    /// benign noise, surfacing the offending chunk id + magic bytes. This is
+    /// the exact error the `evtx` crate emits for the uninitialised clusters
+    /// past the last committed chunk in an NTFS-carved `.evtx` file (verified
+    /// on the DFIRMadness Szechuan Sauce DC01 image, e.g.
+    /// `InvalidEvtxChunkMagic { magic: [140, 6, 1, 0, 145, 231, 0, 0] }`).
+    #[test]
+    fn test_invalid_chunk_magic_is_benign_slack() {
+        let magic = [140u8, 6, 1, 0, 145, 231, 0, 0];
+        let err = EvtxError::FailedToParseChunk {
+            chunk_id: 3,
+            source: Box::new(ChunkError::FailedToParseChunkHeader(
+                DeserializationError::InvalidEvtxChunkMagic { magic },
+            )),
+        };
+        assert_eq!(
+            classify_chunk_error(&err),
+            ChunkErrorClass::BenignSlack { chunk_id: 3, magic },
+            "an invalid chunk magic in a trailing cluster is filesystem slack, not data loss"
+        );
+    }
+
+    /// A chunk that genuinely could not be read (e.g. reached EOF mid-chunk)
+    /// is real data loss and must stay loud (GenuineLoss), even though it is
+    /// also a `FailedToParseChunk` — only the invalid-magic sub-case is benign.
+    #[test]
+    fn test_incomplete_chunk_is_genuine_loss() {
+        let err = EvtxError::FailedToParseChunk {
+            chunk_id: 1,
+            source: Box::new(ChunkError::IncompleteChunk),
+        };
+        assert_eq!(
+            classify_chunk_error(&err),
+            ChunkErrorClass::GenuineLoss,
+            "an incomplete (truncated) chunk is genuine loss, not benign slack"
+        );
+    }
+
+    /// A record-level failure (the chunk header was valid, but a record inside
+    /// it failed to deserialise) is genuine loss of a populated record.
+    #[test]
+    fn test_record_level_failure_is_genuine_loss() {
+        let err = EvtxError::FailedToParseRecord {
+            record_id: 42,
+            source: Box::new(EvtxError::FailedToCreateRecordModel("bad binxml")),
+        };
+        assert_eq!(
+            classify_chunk_error(&err),
+            ChunkErrorClass::GenuineLoss,
+            "a record-level deserialisation failure is genuine data loss"
+        );
     }
 }
