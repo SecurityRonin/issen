@@ -75,6 +75,17 @@ impl EventEmitter for CollectingEmitter {
 /// This is the MVP artifact detection — matches well-known KAPE output paths.
 /// More sophisticated detection (magic bytes, directory structure) comes later.
 #[must_use]
+/// True if `path` starts with the `regf` registry-hive magic. Confirms an
+/// ambiguously-named machine hive (SYSTEM/SOFTWARE/SAM/SECURITY) wherever it was
+/// extracted, instead of relying on the path containing "registry"/"config".
+fn is_regf(path: &Path) -> bool {
+    use std::io::Read;
+    let mut buf = [0u8; 4];
+    std::fs::File::open(path)
+        .and_then(|mut f| f.read_exact(&mut buf))
+        .map_or(false, |()| &buf == b"regf")
+}
+
 pub fn detect_artifact_type(path: &Path) -> Option<ArtifactType> {
     let name = path.file_name()?.to_str()?.to_lowercase();
     let full = path.to_str().unwrap_or_default().to_lowercase();
@@ -709,6 +720,20 @@ mod tests {
             detect_artifact_type(Path::new("/Prefetch/CMD.EXE-12345.pf")),
             Some(ArtifactType::Prefetch),
         );
+    }
+
+    #[test]
+    fn test_detect_machine_hive_by_regf_magic() {
+        let dir = tempfile::tempdir().expect("tmp");
+        // A real SOFTWARE hive extracted to a clean dir (no "registry"/"config"
+        // in the path) is recognized by the `regf` magic.
+        let hive = dir.path().join("SOFTWARE");
+        std::fs::write(&hive, b"regf\x00\x00\x00\x00rest-of-hive").expect("w");
+        assert_eq!(detect_artifact_type(&hive), Some(ArtifactType::Registry));
+        // A non-hive file that merely happens to be named "system" is NOT routed.
+        let bogus = dir.path().join("system");
+        std::fs::write(&bogus, b"not a hive").expect("w");
+        assert_eq!(detect_artifact_type(&bogus), None);
     }
 
     #[test]

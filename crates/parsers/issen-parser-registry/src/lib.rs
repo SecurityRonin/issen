@@ -82,7 +82,13 @@ impl ForensicParser for RegistryHiveParser {
         }
         bytes.truncate(filled);
 
-        let events = parser::parse_hive_bytes(bytes, "registry-hive", "registry");
+        // The hive filename (SOFTWARE/SYSTEM/NTUSER.DAT/…) selects which named-value
+        // extraction runs (OS version, timezone, …), so pass it through.
+        let hive_name = input
+            .source_path()
+            .and_then(|p| p.file_name().and_then(|n| n.to_str()).map(String::from))
+            .unwrap_or_else(|| "registry-hive".to_string());
+        let events = parser::parse_hive_bytes(bytes, &hive_name, "registry");
         stats.events_emitted = events.len() as u64;
         stats.bytes_processed = len;
         emitter.emit_batch(events)?;
