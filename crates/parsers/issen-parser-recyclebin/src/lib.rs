@@ -13,7 +13,8 @@
     clippy::doc_markdown,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
-    clippy::must_use_candidate
+    clippy::must_use_candidate,
+    clippy::unnecessary_literal_bound
 )]
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
@@ -66,10 +67,17 @@ impl ForensicParser for RecycleBinParser {
             |p| p.to_string_lossy().into_owned(),
         );
 
-        // STUB: real $I decode + event emission lands in the GREEN commit.
-        let _ = &bytes[..off as usize];
-        let _ = artifact_path;
-        let events: Vec<TimelineEvent> = Vec::new();
+        // A malformed/truncated $I is not fatal to the ingest: decline it (no
+        // events, Unsupported) rather than aborting the whole run.
+        let Ok(index) = recyclebin_core::parse_index(&bytes[..off as usize]) else {
+            stats.completion = ParseCompletion::Unsupported;
+            return Ok(stats);
+        };
+
+        let mut events = Vec::with_capacity(1);
+        if let Some(event) = delete_event(&index, &artifact_path) {
+            events.push(event);
+        }
 
         stats.events_emitted = events.len() as u64;
         if !events.is_empty() {
@@ -86,6 +94,45 @@ impl ForensicParser for RecycleBinParser {
             deterministic: true,
         }
     }
+}
+
+/// Build a `FileDelete` [`TimelineEvent`] from a decoded `$I` index.
+///
+/// Returns `None` when the recorded deletion `FILETIME` is zero/out of range
+/// (`deleted_at == None`): without a deletion timestamp there is no timeline
+/// anchor for the event, so it is dropped rather than emitted at epoch 0.
+fn delete_event(
+    index: &recyclebin_core::RecycleBinIndex,
+    artifact_path: &str,
+) -> Option<TimelineEvent> {
+    let ts_ns = index.deleted_at?.timestamp_nanos_opt()?;
+
+    let description = format!(
+        "Deleted file: {} ({} bytes)",
+        index.original_path, index.original_size
+    );
+
+    let event = TimelineEvent::new(
+        ts_ns,
+        String::new(),
+        EventType::FileDelete,
+        ArtifactType::RecycleBin,
+        artifact_path.to_string(),
+        description,
+        "recyclebin-evidence".to_string(),
+    )
+    .with_activity_category(issen_core::ActivityCategory::AntiForensics)
+    .with_metadata("original_size", serde_json::json!(index.original_size))
+    .with_metadata(
+        "original_path",
+        serde_json::json!(index.original_path.clone()),
+    )
+    .with_metadata(
+        "index_version",
+        serde_json::json!(format!("{:?}", index.version)),
+    );
+
+    Some(event)
 }
 
 // Compile-time registration with the parser inventory.
@@ -186,12 +233,16 @@ mod tests {
             ev.description
         );
         assert_eq!(
-            ev.metadata.get("original_size").and_then(|v| v.as_u64()),
+            ev.metadata
+                .get("original_size")
+                .and_then(serde_json::Value::as_u64),
             Some(4096),
             "original_size metadata must be present"
         );
         assert_eq!(
-            ev.metadata.get("original_path").and_then(|v| v.as_str()),
+            ev.metadata
+                .get("original_path")
+                .and_then(serde_json::Value::as_str),
             Some(path),
             "original_path metadata must be present"
         );
