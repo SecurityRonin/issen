@@ -208,4 +208,16 @@ mod tests {
     fn artifact_type_from_debug_str_unknown_is_none() {
         assert_eq!(ArtifactType::from_debug_str("NotARealArtifact"), None);
     }
+
+    #[test]
+    fn recycle_bin_display_and_debug_roundtrip() {
+        // The Recycle Bin `$I` index artifact (deleted-file metadata).
+        assert_eq!(format!("{}", ArtifactType::RecycleBin), "Recycle Bin");
+        let debug = format!("{:?}", ArtifactType::RecycleBin);
+        assert_eq!(
+            ArtifactType::from_debug_str(&debug),
+            Some(ArtifactType::RecycleBin),
+            "from_debug_str must round-trip RecycleBin"
+        );
+    }
 }
