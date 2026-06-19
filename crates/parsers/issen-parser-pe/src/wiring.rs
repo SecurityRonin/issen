@@ -38,9 +38,6 @@ pub fn pe_events_from_info(
     artifact_path: &str,
     source_id: &str,
 ) -> Vec<TimelineEvent> {
-    let _ = (pe, artifact_path, source_id);
-    return Vec::new(); // RED stub
-    #[allow(unreachable_code)]
     let ts_ns = i64::from(pe.compile_timestamp) * 1_000_000_000;
     let wx = pe.sections.iter().any(|s| s.is_executable && s.is_writable);
     let kind = if pe.is_dll { "DLL" } else { "EXE" };
