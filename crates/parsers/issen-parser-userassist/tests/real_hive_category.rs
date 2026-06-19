@@ -2,7 +2,7 @@
 //! `NTUSER.DAT` hive and assert every emitted UserAssist event carries the
 //! `Execution` activity category.
 //!
-//! Fixture (gitignored): extract `DC01-ProtectedFiles.zip` → `tests/data/case001-hives/`
+//! Fixture (gitignored): extract `DC01-ProtectedFiles.zip` → `tests/data/dfirmadness-szechuan-sauce/extracted/szechuan-sauce-hives/`
 //! (see `docs/corpus-catalog.md`). The test skips cleanly when the hive is absent
 //! (e.g. CI without the corpus), so it only asserts where real data exists.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 fn hive(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../tests/data/case001-hives")
+        .join("../../../tests/data/dfirmadness-szechuan-sauce/extracted/szechuan-sauce-hives")
         .join(name)
 }
 
@@ -25,7 +25,7 @@ fn userassist_real_ntuser_hive_tagged_execution() {
         );
         return;
     }
-    let events = issen_parser_userassist::parse_userassist(&path, "case001-DC01-NTUSER")
+    let events = issen_parser_userassist::parse_userassist(&path, "szechuan-sauce-DC01-NTUSER")
         .expect("parse_userassist must decode a real NTUSER.DAT hive");
     assert!(
         !events.is_empty(),

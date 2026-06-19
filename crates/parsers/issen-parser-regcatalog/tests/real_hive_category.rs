@@ -4,7 +4,7 @@
 //! classifier), not one uniform tag. Drives the Case-001 hives and asserts the
 //! representative families land in their correct, DISTINCT categories.
 //!
-//! Fixtures (gitignored): `tests/data/case001-hives/{SOFTWARE,SYSTEM,NTUSER.DAT,SAM,SECURITY}`
+//! Fixtures (gitignored): `tests/data/dfirmadness-szechuan-sauce/extracted/szechuan-sauce-hives/{SOFTWARE,SYSTEM,NTUSER.DAT,SAM,SECURITY}`
 //! (extract from `DC01-ProtectedFiles.zip`, see `docs/corpus-catalog.md` §A3b).
 //! Skips when absent.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 fn case001_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../tests/data/case001-hives")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../tests/data/dfirmadness-szechuan-sauce/extracted/szechuan-sauce-hives")
 }
 
 /// Map every emitted event's `catalog_id` → its CADET category code.
@@ -24,7 +24,7 @@ fn category_by_catalog_id() -> HashMap<String, String> {
         if !p.exists() {
             continue;
         }
-        let events = issen_parser_regcatalog::parse_regcatalog(&p, "case001").expect("parse");
+        let events = issen_parser_regcatalog::parse_regcatalog(&p, "szechuan-sauce").expect("parse");
         for e in events {
             if let Some(cid) = e.metadata.get("catalog_id").and_then(|v| v.as_str()) {
                 let cat = e
@@ -41,7 +41,7 @@ fn category_by_catalog_id() -> HashMap<String, String> {
 #[test]
 fn regcatalog_tags_each_hit_with_its_own_category() {
     if !case001_dir().join("SOFTWARE").exists() {
-        eprintln!("SKIP: case001-hives absent (see docs/corpus-catalog.md §A3b)");
+        eprintln!("SKIP: szechuan-sauce-hives absent (see docs/corpus-catalog.md §A3b)");
         return;
     }
     let cats = category_by_catalog_id();
@@ -77,7 +77,7 @@ fn regcatalog_tags_each_hit_with_its_own_category() {
 #[test]
 fn regcatalog_events_carry_real_last_write_time() {
     if !case001_dir().join("SOFTWARE").exists() {
-        eprintln!("SKIP: case001-hives absent (see docs/corpus-catalog.md §A3b)");
+        eprintln!("SKIP: szechuan-sauce-hives absent (see docs/corpus-catalog.md §A3b)");
         return;
     }
     // Catalog hits resolve against a real key whose LastWriteTime is the event's
@@ -89,7 +89,7 @@ fn regcatalog_events_carry_real_last_write_time() {
         if !p.exists() {
             continue;
         }
-        let events = issen_parser_regcatalog::parse_regcatalog(&p, "case001").expect("parse");
+        let events = issen_parser_regcatalog::parse_regcatalog(&p, "szechuan-sauce").expect("parse");
         if events.iter().any(|e| e.timestamp_ns > 0) {
             any_ts = true;
             break;

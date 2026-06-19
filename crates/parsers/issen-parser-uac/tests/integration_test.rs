@@ -4,7 +4,7 @@ use issen_unpack::{CollectionProvider, Confidence};
 
 #[test]
 fn test_probe_real_uac_collection() {
-    let path = Path::new("../../tests/data/Hal Linux DFIR Challenge/uac-vbox-linux-20260324193807.tar.gz");
+    let path = Path::new("../../tests/data/hal-linux-dfir-challenge/uac-vbox-linux-20260324193807.tar.gz");
     if !path.exists() {
         eprintln!("Skipping: test data not found at {}", path.display());
         return;
@@ -17,7 +17,7 @@ fn test_probe_real_uac_collection() {
 
 #[test]
 fn test_open_real_uac_collection() {
-    let path = Path::new("../../tests/data/Hal Linux DFIR Challenge/uac-vbox-linux-20260324193807.tar.gz");
+    let path = Path::new("../../tests/data/hal-linux-dfir-challenge/uac-vbox-linux-20260324193807.tar.gz");
     if !path.exists() {
         eprintln!("Skipping: test data not found at {}", path.display());
         return;
@@ -41,7 +41,7 @@ fn test_open_real_uac_collection() {
 
 #[test]
 fn test_parse_real_uac_categories() {
-    let path = Path::new("../../tests/data/Hal Linux DFIR Challenge/uac-vbox-linux-20260324193807.tar.gz");
+    let path = Path::new("../../tests/data/hal-linux-dfir-challenge/uac-vbox-linux-20260324193807.tar.gz");
     if !path.exists() {
         eprintln!("Skipping: test data not found at {}", path.display());
         return;

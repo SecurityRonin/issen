@@ -2,7 +2,7 @@
 //! (carved from `DESKTOP-E01`) and assert every program-execution event carries
 //! the `Execution` category.
 //!
-//! Fixture (gitignored): `tests/data/case001-hives/Amcache.hve` (carve via the
+//! Fixture (gitignored): `tests/data/dfirmadness-szechuan-sauce/extracted/szechuan-sauce-hives/Amcache.hve` (carve via the
 //! `extract_amcache` issen-disk example, see `docs/corpus-catalog.md` §A3b).
 //! Skips if absent.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 fn hive(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../tests/data/case001-hives")
+        .join("../../../tests/data/dfirmadness-szechuan-sauce/extracted/szechuan-sauce-hives")
         .join(name)
 }
 
@@ -25,7 +25,7 @@ fn amcache_real_hive_tagged_execution() {
         );
         return;
     }
-    let events = issen_parser_amcache::parse_amcache(&path, "case001-Desktop-Amcache")
+    let events = issen_parser_amcache::parse_amcache(&path, "szechuan-sauce-Desktop-Amcache")
         .expect("parse_amcache must decode a real Amcache.hve");
     assert!(
         !events.is_empty(),

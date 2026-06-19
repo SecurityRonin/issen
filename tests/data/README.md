@@ -13,19 +13,19 @@ inventory (every repo, real vs synthetic, provenance + licenses) see
 tests/data/
 ├── CyberDefenders/
 │   └── 78-DeepDive.zip                              (537 MB)
-├── CyberSpace CTF 2024/
+├── cyberspace-ctf-2024/
 │   └── csctf-2024_forensics_memory.zip             (671 MB)
-├── DEF CON DFIR CTF 2018/
+├── defcon-dfir-ctf-2018/
 │   └── MaxPowersCDrive.E01                          (29 GB)
-├── DFIR Madness "Stolen Szechuan Sauce" Case 001 — Windows 10/   (full case, both hosts)
+├── dfirmadness-szechuan-sauce/   (full case, both hosts)
 │   ├── DC01-E01.zip / DC01-memory.zip / DC01-pagefile.zip          (Server 2012 R2)
 │   ├── DESKTOP-E01.zip / DESKTOP-SDN1RPT-memory.zip / …-pagefile.zip  (Windows 10)
 │   ├── {DC01,DESKTOP-SDN1RPT}-autorunsc.zip + *Protected*Files*.zip ×2
 │   └── case001-pcap.zip
-├── Hal Linux DFIR Challenge/
+├── hal-linux-dfir-challenge/
 │   ├── uac-vbox-linux-20260324193807.tar.gz        (143 MB — no memory dump)
 │   └── uac-vbox-linux-20260324234043.tar.gz        (5.9 GB — includes avml.lime)
-├── Magnet Virtual Summit 2023 CTF — Windows 11/
+├── magnet-summit-2023-ctf/
 │   └── PC-MUS-001.E01                               (49 GB)
 ├── SecurityNik/
 │   └── TOTAL_RECALL_memory_forensics_CHALLENGE.zip (1.2 GB)
@@ -36,7 +36,7 @@ tests/data/
 
 ## Files
 
-### DEF CON DFIR CTF 2018/
+### defcon-dfir-ctf-2018/
 
 #### MaxPowersCDrive.E01
 
@@ -49,7 +49,7 @@ tests/data/
 - **MD5:** `10c1fbc9c01d969789ada1c67211b89f`
 - **Notable contents:** Has `pagefile.sys` and `swapfile.sys` but NO `hiberfil.sys` (hibernation was disabled)
 
-### DFIR Madness "Stolen Szechuan Sauce" Case 001 — Windows 10/
+### dfirmadness-szechuan-sauce/
 
 **Full case present — both hosts** (the folder name predates the DC host): CitadelDC01
 (Server 2012 R2) and DESKTOP-SDN1RPT (Windows 10), each with disk E01 + memory + pagefile, plus
@@ -65,7 +65,7 @@ the PCAP, autoruns, and protected-files bundles.
   protected-files downloaded for completeness but excluded from the lab) and `usnjrnl-forensic`
   integration tests (desktop E01).
 
-### Hal Linux DFIR Challenge/
+### hal-linux-dfir-challenge/
 
 Used by automated tests in `rt-parser-uac` and `rt-navigator`. The small archive runs in CI; the large one is `#[ignore]`d unless explicitly requested.
 
@@ -83,11 +83,11 @@ Used by automated tests in `rt-parser-uac` and `rt-navigator`. The small archive
 - **Contents:** Full UAC collection including `memory_dump/avml.lime` (~5.5 GB AVML-format memory dump)
 - **Use case:** End-to-end UAC pipeline tests including memory dump detection, AVML format provider, Linux process/module/network walking
 
-### Magnet Virtual Summit 2023 CTF — Windows 11/
+### magnet-summit-2023-ctf/
 
 #### PC-MUS-001.E01 (50 GB)
 
-- **Source:** Magnet Virtual Summit 2023 CTF — Windows 11 challenge
+- **Source:** magnet-summit-2023-ctf challenge
 - **Created by:** Jessica Hyde and Champlain College Digital Forensic Association (DFA) for Magnet Forensics
 - **EWF metadata:** Case "1", evidence "PhysicalDrive0", EnCase 6 format, acquired Jan 7, 2023
 - **Writeups:**
@@ -105,11 +105,11 @@ Used by automated tests in `rt-parser-uac` and `rt-navigator`. The small archive
 - **Contents:** `banking-malware.vmem` (2.0 GB) — Win7 SP1 x64 memory image of an **Emotet** banking-trojan infection (DKOM-hidden process `vds_ps.exe`). *Confirmed by inspecting the archive (2026-06-09).*
 - **Redistribution:** CyberDefenders educational license — verify before redistribution.
 
-### CyberSpace CTF 2024/
+### cyberspace-ctf-2024/
 
 #### csctf-2024_forensics_memory.zip (671 MB)
 
-- **Source:** **CyberSpace CTF 2024**, "Memory" forensics challenge (30 Aug–01 Sep 2024; CTFtime event #2428)
+- **Source:** **cyberspace-ctf-2024**, "Memory" forensics challenge (30 Aug–01 Sep 2024; CTFtime event #2428)
 - **Contents:** `mem.dmp` (2.0 GB) — MS Windows 64-bit crash dump; recover-deleted-`flag.jpg` via PowerShell/AES/environment-variables. *Confirmed by inspecting the archive + write-ups (2026-06-09).*
 - **Redistribution:** Verify CyberSpace CTF terms.
 
@@ -160,7 +160,7 @@ fls -i ewf -o 1026048 MaxPowersCDrive.E01 | grep -i hiberfil
 icat -i ewf -o 239616 PC-MUS-001.E01 54-128-1 > hiberfil.sys
 ```
 
-#### Josh Hickman iOS 17 (Biome SEGB)/iOS_17_Public_Image.tar.gz (22 GB)
+#### josh-hickman-ios17-biome-segb/iOS_17_Public_Image.tar.gz (22 GB)
 
 - **Source:** Joshua Hickman ("The Binary Hick"), hosted by DigitalCorpora — public iOS forensic
   reference image, freely licensed for training/education/testing/research.
@@ -202,6 +202,6 @@ If you add a new file or subfolder, update the corresponding integration test an
 
 | Test file | Archive referenced |
 |-----------|-------------------|
-| `crates/parsers/rt-parser-uac/tests/integration_test.rs` | `Hal Linux DFIR Challenge/uac-vbox-linux-20260324193807.tar.gz` |
+| `crates/parsers/rt-parser-uac/tests/integration_test.rs` | `hal-linux-dfir-challenge/uac-vbox-linux-20260324193807.tar.gz` |
 | `crates/parsers/rt-parser-velociraptor/tests/integration_test.rs` | `Collection-A380_localdomain-2025-08-10T03_41_20Z.zip` |
 | `crates/rt-navigator/tests/collection_loading.rs` | Both of the above |

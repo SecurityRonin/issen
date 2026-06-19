@@ -3,7 +3,7 @@
 //! The non-empty result also proves real `Policy\Secrets` enumeration end-to-end
 //! ($MACHINE.ACC / DPAPI_SYSTEM / NL$KM are present in Case-001).
 //!
-//! Fixture (gitignored): `tests/data/case001-hives/SECURITY` (extract from
+//! Fixture (gitignored): `tests/data/dfirmadness-szechuan-sauce/extracted/szechuan-sauce-hives/SECURITY` (extract from
 //! `DC01-ProtectedFiles.zip`, see `docs/corpus-catalog.md` §A3b). Skips if absent.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 fn hive(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../tests/data/case001-hives")
+        .join("../../../tests/data/dfirmadness-szechuan-sauce/extracted/szechuan-sauce-hives")
         .join(name)
 }
 
@@ -25,7 +25,7 @@ fn lsasecrets_real_security_hive_tagged_account_activity() {
         );
         return;
     }
-    let events = issen_parser_lsasecrets::parse_lsasecrets(&path, "case001-DC-SECURITY")
+    let events = issen_parser_lsasecrets::parse_lsasecrets(&path, "szechuan-sauce-DC-SECURITY")
         .expect("parse_lsasecrets must decode a real SECURITY hive");
     assert!(
         !events.is_empty(),

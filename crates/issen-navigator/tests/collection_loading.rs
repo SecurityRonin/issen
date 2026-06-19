@@ -22,7 +22,7 @@ use issen_unpack::registry::open_collection;
 /// Path to the UAC test archive (143 MB).
 const UAC_ARCHIVE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../tests/data/Hal Linux DFIR Challenge/uac-vbox-linux-20260324193807.tar.gz"
+    "/../../tests/data/hal-linux-dfir-challenge/uac-vbox-linux-20260324193807.tar.gz"
 );
 
 /// Path to the Velociraptor test archive (2.2 GB).
