@@ -146,6 +146,14 @@ pub fn detect_artifact_type(path: &Path) -> Option<ArtifactType> {
         return Some(ArtifactType::Lnk);
     }
 
+    // Recycle Bin `$I` index → RecycleBinParser. Gate on BOTH the `$i` basename
+    // prefix AND the `$recycle.bin` path component (both already lowercased) so a
+    // stray `$I…`-named file elsewhere is not mis-classified. The paired `$R…`
+    // content file holds only data (no metadata) and is intentionally skipped.
+    if name.starts_with("$i") && full.contains("$recycle.bin") {
+        return Some(ArtifactType::RecycleBin);
+    }
+
     // Linux syslog → system info (matches LinuxSyslogParser::can_parse).
     if name == "syslog" || name.starts_with("syslog.") {
         return Some(ArtifactType::SystemInfo);
