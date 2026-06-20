@@ -8,7 +8,7 @@ use std::path::Path;
 use issen_core::artifacts::ArtifactType;
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use winreg_artifacts::registry_keys::walk_keys;
-use winreg_artifacts::{run_keys, typed_urls};
+use winreg_artifacts::{run_keys, typed_urls, userassist};
 use winreg_core::hive::Hive;
 
 /// Parse a Windows registry hive file and emit [`TimelineEvent`]s.
@@ -82,7 +82,48 @@ fn events_from_hive(
     events.extend(extract_named_values(hive, hive_name, source_id));
     events.extend(extract_run_keys(hive, hive_name, source_id));
     events.extend(extract_typed_urls(hive, hive_name, source_id));
+    events.extend(extract_userassist(hive, hive_name, source_id));
     events
+}
+
+/// Decode `UserAssist` (Explorer-launched GUI program execution, ROT13-obscured)
+/// via `winreg-artifacts::userassist` and emit one Execution event per program,
+/// keyed on its last-run time, carrying the run count. This is among the
+/// strongest interactive-execution artifacts (it records what a logged-in user
+/// actually launched). Self-filters: a hive with no UserAssist values yields none.
+fn extract_userassist(
+    hive: &Hive<Cursor<Vec<u8>>>,
+    hive_name: &str,
+    source_id: &str,
+) -> Vec<TimelineEvent> {
+    userassist::parse(hive)
+        .into_iter()
+        .map(|u| {
+            let (ts_ns, ts_display) = match &u.last_run {
+                Some(s) => (iso_to_ns(s), s.clone()),
+                None => (0, String::new()),
+            };
+            TimelineEvent::new(
+                ts_ns,
+                ts_display,
+                EventType::ProcessExec,
+                ArtifactType::Registry,
+                u.program.clone(),
+                format!(
+                    "UserAssist execution: {} (run count {})",
+                    u.program, u.run_count
+                ),
+                source_id.to_string(),
+            )
+            .with_activity_category(issen_core::ActivityCategory::Execution)
+            .with_tag("userassist")
+            .with_metadata("hive", serde_json::json!(hive_name))
+            .with_metadata("program", serde_json::json!(u.program))
+            .with_metadata("run_count", serde_json::json!(u.run_count))
+            .with_metadata("focus_count", serde_json::json!(u.focus_count))
+            .with_metadata("focus_duration_ms", serde_json::json!(u.focus_duration_ms))
+        })
+        .collect()
 }
 
 /// Decode IE/Explorer `TypedURLs` (hand-typed addresses) via
