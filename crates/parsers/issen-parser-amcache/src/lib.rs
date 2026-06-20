@@ -53,9 +53,8 @@ pub fn parse_amcache(path: &Path, source_id: &str) -> anyhow::Result<Vec<Timelin
 /// (`DataSource` bytes). Empty on any parse error / corrupt hive.
 #[must_use]
 pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<TimelineEvent> {
-    let hive = match winreg_core::hive::Hive::from_bytes(bytes.to_vec()) {
-        Ok(h) => h,
-        Err(_) => return Vec::new(),
+    let Ok(hive) = winreg_core::hive::Hive::from_bytes(bytes.to_vec()) else {
+        return Vec::new();
     };
 
     winreg_artifacts::amcache::parse(&hive)
@@ -115,7 +114,7 @@ impl AmcacheParser {
 }
 
 impl ForensicParser for AmcacheParser {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "AmCache Parser"
     }
 

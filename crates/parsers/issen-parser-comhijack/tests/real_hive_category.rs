@@ -6,7 +6,7 @@
 //!
 //! Fixture (gitignored): `tests/data/case001-hives/UsrClass.dat` (carve from
 //! `DESKTOP-E01.zip`, see `docs/corpus-catalog.md` §A3b). Skips if absent.
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::redundant_closure_for_method_calls)]
 
 use std::path::PathBuf;
 

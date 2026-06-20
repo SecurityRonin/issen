@@ -108,7 +108,7 @@ impl SrumParser {
 }
 
 impl ForensicParser for SrumParser {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "SRUM Parser"
     }
 
@@ -191,9 +191,8 @@ mod tests {
         // The srum-parser lib returns Err for invalid ESE; our wrapper must not panic.
         let result = parser.parse_path(tmp.path());
         // Acceptable: Ok(empty) or Err — must not panic.
-        match result {
-            Ok(events) => assert!(events.is_empty(), "empty file should yield no events"),
-            Err(_) => {} // also acceptable — file is not a valid ESE DB
-        }
+        if let Ok(events) = result {
+            assert!(events.is_empty(), "empty file should yield no events");
+        } // Err is also acceptable — file is not a valid ESE DB
     }
 }

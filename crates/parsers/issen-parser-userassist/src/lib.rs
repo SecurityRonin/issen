@@ -49,9 +49,8 @@ pub fn parse_userassist(path: &Path, source_id: &str) -> anyhow::Result<Vec<Time
 /// [`parse_userassist`] (path) and the `ForensicParser::parse` ingest path.
 #[must_use]
 pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<TimelineEvent> {
-    let hive = match winreg_core::hive::Hive::from_bytes(bytes.to_vec()) {
-        Ok(h) => h,
-        Err(_) => return Vec::new(),
+    let Ok(hive) = winreg_core::hive::Hive::from_bytes(bytes.to_vec()) else {
+        return Vec::new();
     };
 
     winreg_artifacts::userassist::parse(&hive)
@@ -107,7 +106,7 @@ impl UserAssistParser {
 }
 
 impl ForensicParser for UserAssistParser {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "UserAssist Parser"
     }
 

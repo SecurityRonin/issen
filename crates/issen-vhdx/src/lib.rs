@@ -59,7 +59,7 @@ impl std::fmt::Debug for VhdxDataSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("VhdxDataSource")
             .field("size", &self.size)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -107,7 +107,7 @@ use issen_unpack::{CollectionManifest, CollectionMetadata, CollectionProvider, C
 pub struct VhdxProvider;
 
 impl CollectionProvider for VhdxProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "VHDX"
     }
 

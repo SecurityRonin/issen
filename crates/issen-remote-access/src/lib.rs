@@ -35,6 +35,7 @@
     clippy::manual_contains,
     clippy::unnecessary_literal_bound
 )]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 //! Remote access detection crate — public scan API.
 //!
 //! Orchestrates the LOLRMM/custom rule engine and category scanners,

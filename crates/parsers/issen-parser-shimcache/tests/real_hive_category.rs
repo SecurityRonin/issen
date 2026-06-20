@@ -5,7 +5,7 @@
 //! Fixture (gitignored): extract `DC01-ProtectedFiles.zip` → `tests/data/case001-hives/`
 //! (see `docs/corpus-catalog.md`). The test skips cleanly when the hive is absent
 //! (e.g. CI without the corpus), so it only asserts where real data exists.
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::redundant_closure_for_method_calls)]
 
 use std::path::PathBuf;
 

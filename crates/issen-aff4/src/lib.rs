@@ -45,7 +45,7 @@ pub struct Aff4DataSource {
 
 impl std::fmt::Debug for Aff4DataSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Aff4DataSource").field("size", &self.size).finish()
+        f.debug_struct("Aff4DataSource").field("size", &self.size).finish_non_exhaustive()
     }
 }
 

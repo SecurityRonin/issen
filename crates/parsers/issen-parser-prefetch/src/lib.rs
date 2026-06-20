@@ -35,7 +35,7 @@ impl PrefetchParser {
 }
 
 impl ForensicParser for PrefetchParser {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "Prefetch Parser"
     }
 

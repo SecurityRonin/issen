@@ -208,8 +208,7 @@ mod tests {
         let result = parser::parse_hive(tmp.path(), "test-source");
         assert!(
             result.is_ok(),
-            "parse_hive should return Ok for an empty/zero-byte file, got: {:?}",
-            result
+            "parse_hive should return Ok for an empty/zero-byte file, got: {result:?}"
         );
     }
 

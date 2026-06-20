@@ -3,7 +3,7 @@
 //! event carries the category matching its kind — SRUM is a *mixed* source:
 //! network-usage records are `NetworkActivity`, app-usage records are `Execution`.
 //! Skips cleanly when the sibling fixture is absent (CI without the corpus).
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::redundant_closure_for_method_calls)]
 
 use std::path::{Path, PathBuf};
 

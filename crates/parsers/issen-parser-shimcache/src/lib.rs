@@ -50,9 +50,8 @@ pub fn parse_shimcache(path: &Path, source_id: &str) -> anyhow::Result<Vec<Timel
 /// [`parse_shimcache`] (path) and the `ForensicParser::parse` ingest path.
 #[must_use]
 pub fn events_from_bytes(bytes: &[u8], hive_name: &str, source_id: &str) -> Vec<TimelineEvent> {
-    let hive = match winreg_core::hive::Hive::from_bytes(bytes.to_vec()) {
-        Ok(h) => h,
-        Err(_) => return Vec::new(),
+    let Ok(hive) = winreg_core::hive::Hive::from_bytes(bytes.to_vec()) else {
+        return Vec::new();
     };
     let artifact_path = format!("{hive_name}\\AppCompatCache");
 
@@ -107,7 +106,7 @@ impl ShimcacheParser {
 }
 
 impl ForensicParser for ShimcacheParser {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "Shimcache Parser"
     }
 

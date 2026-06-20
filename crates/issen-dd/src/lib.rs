@@ -38,7 +38,7 @@ impl std::fmt::Debug for DdDataSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DdDataSource")
             .field("size", &self.size)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -88,7 +88,7 @@ use issen_unpack::{
 pub struct DdProvider;
 
 impl CollectionProvider for DdProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "DD"
     }
 

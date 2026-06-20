@@ -47,9 +47,8 @@ pub fn parse_prefetch(path: &Path, source_id: &str) -> anyhow::Result<Vec<Timeli
 /// yields an empty vec.
 #[must_use]
 pub fn events_from_bytes(bytes: &[u8], source_id: &str) -> Vec<TimelineEvent> {
-    let (rec, anomalies) = match prefetch_forensic::audit_bytes(bytes) {
-        Ok(parsed) => parsed,
-        Err(_) => return Vec::new(),
+    let Ok((rec, anomalies)) = prefetch_forensic::audit_bytes(bytes) else {
+        return Vec::new();
     };
 
     // Carry the masquerade / suspicious-path signal on the timeline as the
