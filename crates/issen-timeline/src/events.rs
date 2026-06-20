@@ -307,7 +307,7 @@ impl TimelineStore {
             sql.push_str(" AND entity_refs LIKE ?");
             params.push(Box::new(format!("%{fragment}%")));
         }
-        sql.push_str(" ORDER BY timestamp_ns ASC");
+        sql.push_str(" ORDER BY timestamp_ns ASC, record_hash ASC");
         // The unbounded sentinel (correlation full-scan) omits the cap entirely;
         // every other query keeps its row limit so it can never full-scan.
         if !q.is_unbounded() {
@@ -368,7 +368,7 @@ impl TimelineStore {
             "SELECT id, timestamp_ns, timestamp_display, event_type, source,
                     artifact_path, description, user_account, hostname, tags,
                     evidence_source, entity_refs, activity_category
-             FROM timeline ORDER BY timestamp_ns ASC",
+             FROM timeline ORDER BY timestamp_ns ASC, record_hash ASC",
         )?;
         let raw_rows = stmt.query_map([], |row| {
             Ok(RawTimelineRow {

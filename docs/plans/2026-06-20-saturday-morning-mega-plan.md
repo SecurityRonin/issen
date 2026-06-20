@@ -129,7 +129,7 @@ Detail: `archive/2026-06-20-registry-derived-extraction-design.md`.
 
 **Correctness-first do-next (Codex elevated these above features):**
 1. **ParseCompletion on commit — ✅ core DONE** (`f585856`): incomplete units re-parse on resume.
-   **Hardening follow-ups (Codex review of the fix):** **(HIGH)** `--refresh` re-parsing a previously-`complete`
+   **Hardening follow-ups (Codex review of the fix):** **(HIGH ✅ DONE 13cfdb1)** `--refresh` re-parsing a previously-`complete`
    unit that now returns incomplete deletes the good rows and downgrades to `incomplete` (data loss) —
    guard: reject complete→incomplete downgrade (or gate behind an explicit destructive flag) + test;
    **(MED)** don't collapse `ParseCompletion` to `bool` — `Unsupported`/`CorruptFatal` (not-valid / unparseable)

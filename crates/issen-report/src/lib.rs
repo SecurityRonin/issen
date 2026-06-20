@@ -229,7 +229,7 @@ pub fn collect_repoissen_data(
         let mut stmt = conn.prepare(
             "SELECT timestamp_display, event_type, source, artifact_path, description, tags
              FROM timeline
-             ORDER BY timestamp_ns
+             ORDER BY timestamp_ns, record_hash
              LIMIT ?",
         )?;
         let rows = stmt.query_map([limit], |row| {

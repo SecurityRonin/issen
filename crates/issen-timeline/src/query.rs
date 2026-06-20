@@ -131,7 +131,12 @@ impl TimelineStore {
         }
 
         let order = if q.ascending { "ASC" } else { "DESC" };
-        sql.push_str(&format!(" ORDER BY timestamp_ns {order}"));
+        // `record_hash` is a STABLE tie-break for equal timestamps — without it the
+        // order is SQL-undefined (insertion-derived), so exports/narrative would be
+        // nondeterministic and a parallel ingest could reorder the timeline.
+        sql.push_str(&format!(
+            " ORDER BY timestamp_ns {order}, record_hash {order}"
+        ));
 
         if let Some(limit) = q.limit {
             sql.push_str(&format!(" LIMIT {limit}"));
@@ -228,6 +233,43 @@ mod tests {
         assert_eq!(rows.len(), 4);
         // Default ordering is ascending by timestamp.
         assert!(rows[0].timestamp_ns < rows[3].timestamp_ns);
+    }
+
+    #[test]
+    fn equal_timestamp_rows_have_a_stable_record_hash_tiebreak() {
+        // Forensic reproducibility: rows with the SAME timestamp must come back in
+        // a STABLE order (by record_hash), not SQL-undefined insertion order — so
+        // exports/narrative are deterministic and a future parallel ingest (which
+        // inserts in nondeterministic order) cannot reorder the timeline.
+        let store = TimelineStore::in_memory().expect("store");
+        let mut events: Vec<TimelineEvent> = (0..6)
+            .map(|i| {
+                TimelineEvent::new(
+                    1_000_000_000, // identical timestamp for every event
+                    "ts".into(),
+                    EventType::FileCreate,
+                    ArtifactType::Mft,
+                    "p".into(),
+                    format!("evt-{i}"),
+                    "ev".into(),
+                )
+            })
+            .collect();
+        // Insert in REVERSE record_hash order so insertion order != sorted order
+        // (without the tie-break the query returns insertion order → RED).
+        events.sort_by(|a, b| b.record_hash.cmp(&a.record_hash));
+        let unit = crate::ingest::IngestUnit::new("CASE", "Mft", "/C/$MFT", "MFT Parser", 0);
+        store.commit_unit(&unit, &events).expect("commit");
+
+        let rows = store.query(&TimelineQuery::new()).expect("query");
+        let got: Vec<&str> = rows.iter().map(|r| r.record_hash.as_str()).collect();
+        let mut want = got.clone();
+        want.sort_unstable();
+        assert_eq!(
+            got, want,
+            "equal-timestamp rows must be ordered by record_hash (stable tie-break), \
+             not insertion order"
+        );
     }
 
     #[test]
