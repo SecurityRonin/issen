@@ -133,6 +133,11 @@ pub const WINDOWS_TRIAGE_PATHS: &[&str] = &[
     r"\Windows\System32\winevt\Logs\Microsoft-Windows-Sysmon%4Operational.evtx",
     r"\Windows\System32\sru\SRUDB.dat",
     r"\Windows\AppCompat\Programs\Amcache.hve",
+    // Device-install / setup history (USB & driver provenance). Parsed to
+    // DeviceInstall; the current logs live in \Windows\INF (rotated
+    // setupapi.dev.*.log are a future prefix-glob enhancement).
+    r"\Windows\INF\setupapi.dev.log",
+    r"\Windows\INF\setupapi.setup.log",
 ];
 
 /// A directory whose children matching a suffix should all be collected — for
