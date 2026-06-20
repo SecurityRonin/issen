@@ -108,7 +108,7 @@ mod tests {
         file[52..56].copy_from_slice(b"SEGB");
         file.extend_from_slice(&rec);
         file.extend_from_slice(&payload);
-        while file.len() % 8 != 0 {
+        while !file.len().is_multiple_of(8) {
             file.push(0);
         }
         file

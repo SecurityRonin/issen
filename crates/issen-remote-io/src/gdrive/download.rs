@@ -2,6 +2,8 @@
 //!
 //! Downloads a file by ID, streaming bytes to a [`std::io::Write`] sink.
 
+
+#[cfg(feature = "remote")]
 use crate::gdrive::auth::GDriveAuthMode;
 
 /// Download a Google Drive file, streaming bytes to `sink`.

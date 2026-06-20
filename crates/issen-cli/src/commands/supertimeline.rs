@@ -22,6 +22,7 @@ use issen_fswalker::progress::ProgressReporter;
 /// # Errors
 ///
 /// Returns an error if the collection cannot be opened.
+#[allow(clippy::unnecessary_wraps)] // Result<()> matches the command-dispatch signature
 pub fn run(collection: &Path, format: &str) -> Result<()> {
     // ── 1. Parse the collection via the full pipeline ─────────────────────
     // `run_auto` auto-detects directory vs archive (UAC tar.gz / zip), extracts
@@ -148,10 +149,7 @@ mod tests {
     /// Minimal synthetic USN V2 record (filename + FILE_CREATE reason) — mirrors
     /// the `$J` fixture used by the integration tests.
     fn usn_v2_create(filename: &str) -> Vec<u8> {
-        let name: Vec<u8> = filename
-            .encode_utf16()
-            .flat_map(|c| c.to_le_bytes())
-            .collect();
+        let name: Vec<u8> = filename.encode_utf16().flat_map(u16::to_le_bytes).collect();
         let fno: u16 = 60;
         let len = fno as usize + name.len();
         let padded = (len + 7) & !7;

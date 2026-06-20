@@ -68,9 +68,10 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
 
     let root = &manifest.extracted_root;
     let hostname = manifest.metadata.hostname.as_deref().unwrap_or("(unknown)");
-    let collected_at = manifest
-        .metadata
-        .collection_time.map_or_else(|| "(unknown)".to_string(), |t| t.format("%Y-%m-%d %H:%M:%S UTC").to_string());
+    let collected_at = manifest.metadata.collection_time.map_or_else(
+        || "(unknown)".to_string(),
+        |t| t.format("%Y-%m-%d %H:%M:%S UTC").to_string(),
+    );
 
     println!(
         "{}",
@@ -403,7 +404,9 @@ pub fn run(collection_path: &Path) -> anyhow::Result<()> {
                     _ => "hash",
                 };
                 let provenance =
-                    if parsers::packages::find_unpackaged_paths(&[h.path.clone()]).is_empty() {
+                    if parsers::packages::find_unpackaged_paths(std::slice::from_ref(&h.path))
+                        .is_empty()
+                    {
                         "system path"
                     } else {
                         "UNPACKAGED"
@@ -492,6 +495,125 @@ fn build_narrative(findings: &[issen_correlation::model::Finding]) {
     }
 }
 
+fn wrap_text(text: &str, width: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut current = String::new();
+    for word in text.split_whitespace() {
+        if current.is_empty() {
+            current.push_str(word);
+        } else if current.len() + 1 + word.len() <= width {
+            current.push(' ');
+            current.push_str(word);
+        } else {
+            lines.push(current.clone());
+            current = word.to_string();
+        }
+    }
+    if !current.is_empty() {
+        lines.push(current);
+    }
+    lines
+}
+
+/// Replace well-known service names in an addr string with port numbers
+/// so `:ssh` and `:22` produce the same dedup key.
+fn normalize_port_names(addr: &str) -> String {
+    const MAP: &[(&str, &str)] = &[
+        (":ssh", ":22"),
+        (":http", ":80"),
+        (":https", ":443"),
+        (":bootpc", ":68"),
+        (":bootps", ":67"),
+        (":domain", ":53"),
+        (":ftp", ":21"),
+        (":smtp", ":25"),
+    ];
+    let mut s = addr.to_string();
+    for (name, num) in MAP {
+        if s.ends_with(name) {
+            s = format!("{}{}", &s[..s.len() - name.len()], num);
+            break;
+        }
+    }
+    s
+}
+
+// ── STORAGE MEDIUM BREAKDOWN ──────────────────────────────────────────────────
+
+/// Counts of timeline events grouped by `drive_type:*` tag.
+#[allow(dead_code)] // built-but-unwired storage-medium breakdown; kept for future wiring
+pub struct DriveBreakdown {
+    pub fixed: usize,
+    pub removable: usize,
+    pub network: usize,
+    pub unknown: usize,
+}
+
+#[allow(dead_code)] // built-but-unwired storage-medium breakdown methods
+impl DriveBreakdown {
+    /// Total events across all drive types.
+    pub fn total(&self) -> usize {
+        self.fixed + self.removable + self.network + self.unknown
+    }
+
+    /// Returns `true` if any removable/USB events are present.
+    pub fn has_removable(&self) -> bool {
+        self.removable > 0
+    }
+
+    /// Returns `true` if any network drive events are present.
+    pub fn has_network(&self) -> bool {
+        self.network > 0
+    }
+
+    /// Render the STORAGE MEDIUM BREAKDOWN section for display.
+    pub fn render(&self) -> String {
+        let removable_suffix = if self.has_removable() {
+            "  \u{2190} potential exfiltration"
+        } else {
+            ""
+        };
+        format!(
+            "\u{250c}\u{2500} STORAGE MEDIUM BREAKDOWN \u{2500}{bar}\n\
+             \u{2502}  Fixed disk:    {fixed:>4} events\n\
+             \u{2502}  Removable/USB: {removable:>4} events{removable_suffix}\n\
+             \u{2502}  Network:       {network:>4} events\n\
+             \u{2502}  Unknown:       {unknown:>4} events\n\
+             \u{2502}  Total:         {total:>4} LNK events",
+            bar = "\u{2500}".repeat(21),
+            fixed = self.fixed,
+            removable = self.removable,
+            removable_suffix = removable_suffix,
+            network = self.network,
+            unknown = self.unknown,
+            total = self.total(),
+        )
+    }
+}
+
+/// Aggregate timeline events by `drive_type:*` tag and return a [`DriveBreakdown`].
+#[allow(dead_code)] // built-but-unwired storage-medium breakdown helper
+pub fn drive_breakdown(events: &[issen_core::timeline::event::TimelineEvent]) -> DriveBreakdown {
+    DriveBreakdown {
+        fixed: events
+            .iter()
+            .filter(|e| e.tags.iter().any(|t| t == "drive_type:fixed"))
+            .count(),
+        removable: events
+            .iter()
+            .filter(|e| e.tags.iter().any(|t| t == "drive_type:removable"))
+            .count(),
+        network: events
+            .iter()
+            .filter(|e| e.tags.iter().any(|t| t == "drive_type:network"))
+            .count(),
+        unknown: events
+            .iter()
+            .filter(|e| !e.tags.iter().any(|t| t.starts_with("drive_type:")))
+            .count(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -569,121 +691,5 @@ mod tests {
         let hidden = hidden_with_pids(&[939]);
         let v = compute_verdict(&[], &hidden, &[]);
         assert_eq!(v, Verdict::LikelyCompromised);
-    }
-}
-
-fn wrap_text(text: &str, width: usize) -> Vec<String> {
-    let mut lines = Vec::new();
-    let mut current = String::new();
-    for word in text.split_whitespace() {
-        if current.is_empty() {
-            current.push_str(word);
-        } else if current.len() + 1 + word.len() <= width {
-            current.push(' ');
-            current.push_str(word);
-        } else {
-            lines.push(current.clone());
-            current = word.to_string();
-        }
-    }
-    if !current.is_empty() {
-        lines.push(current);
-    }
-    lines
-}
-
-/// Replace well-known service names in an addr string with port numbers
-/// so `:ssh` and `:22` produce the same dedup key.
-fn normalize_port_names(addr: &str) -> String {
-    const MAP: &[(&str, &str)] = &[
-        (":ssh", ":22"),
-        (":http", ":80"),
-        (":https", ":443"),
-        (":bootpc", ":68"),
-        (":bootps", ":67"),
-        (":domain", ":53"),
-        (":ftp", ":21"),
-        (":smtp", ":25"),
-    ];
-    let mut s = addr.to_string();
-    for (name, num) in MAP {
-        if s.ends_with(name) {
-            s = format!("{}{}", &s[..s.len() - name.len()], num);
-            break;
-        }
-    }
-    s
-}
-
-// ── STORAGE MEDIUM BREAKDOWN ──────────────────────────────────────────────────
-
-/// Counts of timeline events grouped by `drive_type:*` tag.
-pub struct DriveBreakdown {
-    pub fixed: usize,
-    pub removable: usize,
-    pub network: usize,
-    pub unknown: usize,
-}
-
-impl DriveBreakdown {
-    /// Total events across all drive types.
-    pub fn total(&self) -> usize {
-        self.fixed + self.removable + self.network + self.unknown
-    }
-
-    /// Returns `true` if any removable/USB events are present.
-    pub fn has_removable(&self) -> bool {
-        self.removable > 0
-    }
-
-    /// Returns `true` if any network drive events are present.
-    pub fn has_network(&self) -> bool {
-        self.network > 0
-    }
-
-    /// Render the STORAGE MEDIUM BREAKDOWN section for display.
-    pub fn render(&self) -> String {
-        let removable_suffix = if self.has_removable() {
-            "  \u{2190} potential exfiltration"
-        } else {
-            ""
-        };
-        format!(
-            "\u{250c}\u{2500} STORAGE MEDIUM BREAKDOWN \u{2500}{bar}\n\
-             \u{2502}  Fixed disk:    {fixed:>4} events\n\
-             \u{2502}  Removable/USB: {removable:>4} events{removable_suffix}\n\
-             \u{2502}  Network:       {network:>4} events\n\
-             \u{2502}  Unknown:       {unknown:>4} events\n\
-             \u{2502}  Total:         {total:>4} LNK events",
-            bar = "\u{2500}".repeat(21),
-            fixed = self.fixed,
-            removable = self.removable,
-            removable_suffix = removable_suffix,
-            network = self.network,
-            unknown = self.unknown,
-            total = self.total(),
-        )
-    }
-}
-
-/// Aggregate timeline events by `drive_type:*` tag and return a [`DriveBreakdown`].
-pub fn drive_breakdown(events: &[issen_core::timeline::event::TimelineEvent]) -> DriveBreakdown {
-    DriveBreakdown {
-        fixed: events
-            .iter()
-            .filter(|e| e.tags.iter().any(|t| t == "drive_type:fixed"))
-            .count(),
-        removable: events
-            .iter()
-            .filter(|e| e.tags.iter().any(|t| t == "drive_type:removable"))
-            .count(),
-        network: events
-            .iter()
-            .filter(|e| e.tags.iter().any(|t| t == "drive_type:network"))
-            .count(),
-        unknown: events
-            .iter()
-            .filter(|e| !e.tags.iter().any(|t| t.starts_with("drive_type:")))
-            .count(),
     }
 }

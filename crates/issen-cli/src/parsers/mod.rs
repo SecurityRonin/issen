@@ -1,7 +1,5 @@
-//! Built-in parser implementations (MFT and USN Journal).
+//! Built-in parser registrations.
 //!
-//! These register themselves via `inventory::submit!` at link time,
-//! replacing the removed `rt-parser-mft` and `rt-parser-usnjrnl` crates.
-
-pub mod mft;
-pub mod usnjrnl;
+//! The former in-crate MFT and USN Journal parsers were removed in favor of the
+//! `issen-parser-*` plugin crates, which self-register via `inventory::submit!`
+//! at link time (see the `extern crate` lines in `main.rs`).

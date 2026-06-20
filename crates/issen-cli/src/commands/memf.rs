@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow::Result;
 use issen_mem::cmd_memf::{MemfArgs, MemfCommand};
@@ -42,7 +42,7 @@ pub fn parse_cr3_hex(s: &str) -> Result<u64, String> {
 
 /// Run the `rt memf` subcommand.
 pub fn run(
-    dump_path: &PathBuf,
+    dump_path: &Path,
     profile: Option<&str>,
     command: &str,
     format: &str,
@@ -50,7 +50,7 @@ pub fn run(
     cr3: Option<u64>,
 ) -> Result<()> {
     let args = MemfArgs {
-        dump_path: dump_path.clone(),
+        dump_path: dump_path.to_path_buf(),
         profile: profile.map(str::to_string),
         command: parse_memf_command(command),
         output: parse_output_format(format),

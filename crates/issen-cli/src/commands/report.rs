@@ -16,7 +16,10 @@ pub fn run(
         .with_context(|| format!("Failed to open database: {}", db_path.display()))?;
 
     let config = ReportConfig {
-        title: case_id.map_or_else(|| "Issen Report".to_string(), |id| format!("Issen Report — {id}")),
+        title: case_id.map_or_else(
+            || "Issen Report".to_string(),
+            |id| format!("Issen Report — {id}"),
+        ),
         case_id: case_id.map(String::from),
         examiner: examiner.map(String::from),
         max_events: max_events.or(Some(10_000)),

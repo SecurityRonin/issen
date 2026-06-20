@@ -35,14 +35,41 @@
     clippy::manual_contains,
     clippy::unnecessary_literal_bound
 )]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 //! rt-cli library entry point.
 //!
 //! Exposes the built-in parser modules so that integration test binaries
 //! can link them and trigger their `inventory::submit!` registrations.
 
 // Force-link the external parser crates so their `inventory::submit!`
-// registrations are pulled into the binary (and the lib test harness).
+// registrations are pulled into the binary AND the lib test harness — without
+// these the linker drops the registrations and pipeline tests see zero events.
+extern crate issen_parser_amcache as _;
+extern crate issen_parser_comhijack as _;
+extern crate issen_parser_dcc2 as _;
+extern crate issen_parser_evtx as _;
+extern crate issen_parser_linux as _;
+extern crate issen_parser_lnk as _;
+extern crate issen_parser_lsasecrets as _;
+extern crate issen_parser_lxss as _;
+extern crate issen_parser_macos as _;
+extern crate issen_parser_mft as _;
+extern crate issen_parser_pe as _;
+extern crate issen_parser_prefetch as _;
+extern crate issen_parser_regcatalog as _;
 extern crate issen_parser_registry as _;
+extern crate issen_parser_runkeys as _;
+extern crate issen_parser_sam as _;
+extern crate issen_parser_setupapi as _;
+extern crate issen_parser_shellbags as _;
+extern crate issen_parser_shimcache as _;
+extern crate issen_parser_srum as _;
+extern crate issen_parser_svcdiff as _;
+extern crate issen_parser_typedurls as _;
+extern crate issen_parser_uac as _;
+extern crate issen_parser_userassist as _;
+extern crate issen_parser_usnjrnl as _;
+extern crate issen_parser_velociraptor as _;
 
 pub mod commands;
 pub mod parsers;

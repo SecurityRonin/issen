@@ -97,13 +97,9 @@ pub fn token_cache_path() -> PathBuf {
         .unwrap_or_else(|_| PathBuf::from("."));
 
     #[cfg(not(target_os = "windows"))]
-    let base = std::env::var("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            std::env::var("HOME")
-                .map(|h| PathBuf::from(h).join(".config"))
-                .unwrap_or_else(|_| PathBuf::from(".config"))
-        });
+    let base = std::env::var("XDG_CONFIG_HOME").map_or_else(|_| {
+            std::env::var("HOME").map_or_else(|_| PathBuf::from(".config"), |h| PathBuf::from(h).join(".config"))
+        }, PathBuf::from);
 
     base.join("issen").join("gdrive_token.json")
 }
@@ -227,7 +223,7 @@ pub fn initiate_browser_auth() -> anyhow::Result<String> {
     eprintln!("Waiting for browser redirect on port {port}…");
 
     let (stream, _) = listener.accept()?;
-    let code = read_code_from_callback(stream)?;
+    let code = read_code_from_callback(&stream)?;
 
     let token = exchange_code_for_token(
         &client_id,
@@ -247,8 +243,8 @@ pub fn initiate_browser_auth() -> anyhow::Result<String> {
 
 /// Read the authorization code from the browser's `GET /callback?code=…` request.
 #[cfg(feature = "remote")]
-fn read_code_from_callback(stream: TcpStream) -> anyhow::Result<String> {
-    let mut reader = BufReader::new(&stream);
+fn read_code_from_callback(stream: &TcpStream) -> anyhow::Result<String> {
+    let mut reader = BufReader::new(stream);
     let mut request_line = String::new();
     reader.read_line(&mut request_line)?;
 
@@ -268,8 +264,8 @@ fn read_code_from_callback(stream: TcpStream) -> anyhow::Result<String> {
          Content-Length: {}\r\nConnection: close\r\n\r\n",
         html.len()
     );
-    (&stream).write_all(response.as_bytes())?;
-    (&stream).write_all(html)?;
+    (&mut &*stream).write_all(response.as_bytes())?;
+    (&mut &*stream).write_all(html)?;
 
     Ok(code)
 }

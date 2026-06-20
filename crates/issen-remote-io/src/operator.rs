@@ -717,15 +717,12 @@ mod tests {
     fn sftp_uri_returns_ok() {
         let result = operator_for_uri("sftp://user@host:22/data");
         // Must NOT be an unsupported-scheme error — scheme is recognised
-        match &result {
-            Err(e) => {
+        if let Err(e) = &result {
                 let msg = e.to_string();
                 assert!(
                     !msg.contains("Unsupported URI scheme"),
                     "expected sftp to be a supported scheme, got: {msg}"
                 );
-            }
-            Ok(_) => {}
         }
     }
 
@@ -747,15 +744,12 @@ mod tests {
     #[test]
     fn hdfs_uri_returns_ok() {
         let result = operator_for_uri("hdfs://namenode:9000/user/data");
-        match &result {
-            Err(e) => {
+        if let Err(e) = &result {
                 let msg = e.to_string();
                 assert!(
                     !msg.contains("Unsupported URI scheme"),
                     "expected hdfs to be a supported scheme, got: {msg}"
                 );
-            }
-            Ok(_) => {}
         }
     }
 
@@ -777,15 +771,12 @@ mod tests {
     #[test]
     fn webhdfs_uri_returns_ok() {
         let result = operator_for_uri("webhdfs://namenode:50070/user/data");
-        match &result {
-            Err(e) => {
+        if let Err(e) = &result {
                 let msg = e.to_string();
                 assert!(
                     !msg.contains("Unsupported URI scheme"),
                     "expected webhdfs to be a supported scheme, got: {msg}"
                 );
-            }
-            Ok(_) => {}
         }
     }
 
@@ -811,14 +802,13 @@ mod tests {
             #[test]
             fn $name() {
                 let result = operator_for_uri($uri);
-                match &result {
-                    Err(e) => assert!(
+                if let Err(e) = &result {
+                    assert!(
                         !e.to_string().contains("Unsupported URI scheme"),
                         "expected {} to be a supported scheme, got: {}",
                         $uri,
                         e
-                    ),
-                    Ok(_) => {}
+                    );
                 }
             }
         };

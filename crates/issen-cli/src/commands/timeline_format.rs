@@ -34,6 +34,7 @@ pub fn write_csv(events: &[TimelineRow], out: &mut impl Write) -> Result<()> {
 ///
 /// Format: 0|<path>|0|----------|0|0|0|<atime>|<mtime>|<ctime>|<crtime>
 /// Timestamp fields use Unix epoch seconds (0 when not applicable).
+#[allow(clippy::similar_names)] // atime/mtime/ctime/crtime are canonical MACB field names
 pub fn write_bodyfile(events: &[TimelineRow], out: &mut impl Write) -> Result<()> {
     for row in events {
         let epoch = ns_to_epoch(row.timestamp_ns);

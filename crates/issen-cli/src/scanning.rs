@@ -423,7 +423,7 @@ mod tests {
         assert_eq!(map.get("EventType").unwrap(), "LogonFailure");
         assert_eq!(map.get("Source").unwrap(), "Event Log");
         assert_eq!(map.get("Description").unwrap(), "Failed logon attempt");
-        assert!(map.get("User").is_none());
+        assert!(!map.contains_key("User"));
     }
 
     #[test]
@@ -502,7 +502,7 @@ mod tests {
         let mut sigma = SigmaEngine::new();
         sigma
             .load_rule(
-                r#"
+                r"
 title: Failed Logon Detected
 id: test-sigma-001
 level: high
@@ -510,7 +510,7 @@ detection:
     selection:
         EventType: LogonFailure
     condition: selection
-"#,
+",
             )
             .unwrap();
 
@@ -538,7 +538,7 @@ detection:
         let mut sigma = SigmaEngine::new();
         sigma
             .load_rule(
-                r#"
+                r"
 title: Failed Logon Attempt (Possible Brute Force)
 id: 11111111-0000-0000-0000-000000004625
 level: high
@@ -549,7 +549,7 @@ detection:
 tags:
     - attack.initial_access
     - attack.t1110
-"#,
+",
             )
             .unwrap();
 
@@ -580,14 +580,14 @@ tags:
         let mut sigma = SigmaEngine::new();
         sigma
             .load_rule(
-                r#"
+                r"
 title: Failed Logon Detected
 level: high
 detection:
     selection:
         EventType: LogonFailure
     condition: selection
-"#,
+",
             )
             .unwrap();
 
@@ -679,14 +679,14 @@ detection:
         let mut sigma = SigmaEngine::new();
         sigma
             .load_rule(
-                r#"
+                r"
 title: Suspicious Exec
 level: critical
 detection:
     selection:
         EventType: ProcessExec
     condition: selection
-"#,
+",
             )
             .unwrap();
 
@@ -1023,14 +1023,14 @@ detection:
         let mut sigma = SigmaEngine::new();
         sigma
             .load_rule(
-                r#"
+                r"
 title: Suspicious Connection
 level: high
 detection:
     selection:
         EventType: NetworkConnect
     condition: selection
-"#,
+",
             )
             .unwrap();
 

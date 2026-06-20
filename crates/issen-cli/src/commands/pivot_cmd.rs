@@ -75,6 +75,7 @@ pub fn run_sync(cache_dir: &Path) -> anyhow::Result<()> {
 ///
 /// # Errors
 /// Never errors — a missing rules dir is silently ignored.
+#[allow(clippy::unnecessary_wraps)] // Result<()> matches the command-dispatch signature
 pub fn run_rules(rules_dir: Option<&Path>) -> anyhow::Result<()> {
     let mut rules = bundled_rules();
     if let Some(dir) = rules_dir {

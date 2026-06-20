@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Full end-to-end integration test:
 //! Synthetic USN records → pipeline discovery → parser → DuckDB → query → SQLite export.
 //!
@@ -24,7 +25,7 @@ fn build_usn_v2_record(
 ) -> Vec<u8> {
     let name_utf16: Vec<u8> = filename
         .encode_utf16()
-        .flat_map(|c| c.to_le_bytes())
+        .flat_map(u16::to_le_bytes)
         .collect();
     let file_name_offset: u16 = 60;
     let file_name_length = name_utf16.len() as u16;
@@ -73,7 +74,7 @@ fn test_full_pipeline_usnjrnl_to_duckdb() {
     ));
     journal_data.extend(build_usn_v2_record(
         "evidence.docx",
-        0x80000000, // CLOSE
+        0x8000_0000, // CLOSE
         2002,
         600,
         300,

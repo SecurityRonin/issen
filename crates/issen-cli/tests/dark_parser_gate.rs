@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Dark-parser gate (issen #114, silent-omission killer — complements
 //! `producer_coverage`).
 //!

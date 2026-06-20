@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use assert_cmd::Command;
 use predicates::prelude::*;
 use tempfile::TempDir;
@@ -260,7 +261,7 @@ fn build_usn_v2_record(
 ) -> Vec<u8> {
     let name_utf16: Vec<u8> = filename
         .encode_utf16()
-        .flat_map(|c| c.to_le_bytes())
+        .flat_map(u16::to_le_bytes)
         .collect();
     let file_name_offset: u16 = 60;
     let file_name_length = name_utf16.len() as u16;
@@ -440,6 +441,7 @@ fn test_scan_with_yara_no_match() {
 
 #[test]
 fn test_scan_with_hash_iocs() {
+    use sha2::{Digest, Sha256};
     let dir = TempDir::new().unwrap();
 
     // Write target file.
@@ -448,11 +450,10 @@ fn test_scan_with_hash_iocs() {
     std::fs::write(&target_path, data).unwrap();
 
     // Compute SHA-256 of the target and write IOC file.
-    use sha2::{Digest, Sha256};
     let hash = format!("{:x}", Sha256::digest(data));
 
     let ioc_path = dir.path().join("bad_hashes.txt");
-    std::fs::write(&ioc_path, format!("# Bad hashes\n{}\n", hash)).unwrap();
+    std::fs::write(&ioc_path, format!("# Bad hashes\n{hash}\n")).unwrap();
 
     issen_cmd()
         .args([
@@ -785,7 +786,7 @@ fn test_ingest_with_sigma_scan() {
     std::fs::create_dir(&sigma_dir).unwrap();
     std::fs::write(
         sigma_dir.join("test.yml"),
-        r#"
+        r"
 title: Test Sigma Rule
 id: test-ingest-sigma-001
 level: medium
@@ -793,7 +794,7 @@ detection:
     selection:
         EventType: FileCreate
     condition: selection
-"#,
+",
     )
     .unwrap();
 
@@ -1298,7 +1299,7 @@ fn all_subcommands_help_exits_success() {
         "scan",
         "remote-access",
         "report",
-        "memf",
+        "memory",
     ] {
         issen_cmd().args([sub, "--help"]).assert().success();
     }
@@ -1601,7 +1602,7 @@ fn remote_access_json_output_is_valid_json() {
 #[test]
 fn memf_help_exits_success() {
     issen_cmd()
-        .args(["memf", "--help"])
+        .args(["memory", "--help"])
         .assert()
         .success()
         .stdout(predicate::str::contains("DUMP_PATH"));
@@ -1610,7 +1611,7 @@ fn memf_help_exits_success() {
 #[test]
 fn memf_help_shows_cr3_flag() {
     issen_cmd()
-        .args(["memf", "--help"])
+        .args(["memory", "--help"])
         .assert()
         .success()
         .stdout(predicate::str::contains("--cr3"));
@@ -1619,7 +1620,7 @@ fn memf_help_shows_cr3_flag() {
 #[test]
 fn memf_nonexistent_dump_shows_error() {
     issen_cmd()
-        .args(["memf", "/nonexistent/memory.lime"])
+        .args(["memory", "/nonexistent/memory.lime"])
         .assert()
         .failure()
         .stderr(predicate::str::contains("Error"));

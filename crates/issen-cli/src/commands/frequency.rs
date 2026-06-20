@@ -13,6 +13,7 @@ use issen_evtx::{
 /// times — a port of the Events Ripper posh600.pl technique.
 ///
 /// Returns `Ok(())` even when no EVTX files are found.
+#[allow(clippy::unnecessary_wraps)] // Result<()> matches the command-dispatch signature
 pub fn run(
     dirs: &[PathBuf],
     files: &[PathBuf],

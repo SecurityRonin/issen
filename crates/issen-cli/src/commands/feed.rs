@@ -45,6 +45,7 @@ pub enum FeedAction {
 }
 
 /// List all configured feeds with their status.
+#[allow(clippy::unnecessary_wraps)] // signature must match sibling run_* arms in the dispatch match
 fn run_list(registry: &FeedRegistry, cache: &FeedCache) -> Result<()> {
     println!(
         "{:<35} {:<8} {:<12} {:<10} Name",
