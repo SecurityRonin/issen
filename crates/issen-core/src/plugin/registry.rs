@@ -1,5 +1,8 @@
+use std::path::Path;
+
 use super::selector::ArtifactSelector;
 use super::traits::ForensicParser;
+use crate::artifacts::ArtifactType;
 
 /// Registration entry for the parser inventory.
 ///
@@ -29,6 +32,20 @@ pub fn all_parsers() -> Vec<Box<dyn ForensicParser>> {
         .into_iter()
         .map(|reg| (reg.create)())
         .collect()
+}
+
+/// Classify a path by the registered parsers' selectors: of every selector whose
+/// `matches` accepts `path`, return the highest-`priority` one's `artifact_type`.
+///
+/// This is the registry-derived classifier that will replace the hand-written
+/// `detect_artifact_type`. It is only meaningful where parser crates are linked
+/// (the `issen` binary / a test that force-links the anchors); with no parsers
+/// linked the inventory is empty and it returns `None`.
+#[must_use]
+pub fn detect_from_registry(path: &Path) -> Option<ArtifactType> {
+    // Stage-2 stub: the differential test drives the real implementation.
+    let _ = path;
+    None
 }
 
 #[cfg(test)]
