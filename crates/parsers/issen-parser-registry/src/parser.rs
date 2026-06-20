@@ -593,6 +593,33 @@ mod tests {
         assert!(blob.contains("500"), "RID 500 surfaced: {blob}");
     }
 
+    /// Real DC SECURITY hive: the LSA-secrets decoder must surface which secrets
+    /// are stored — `$MACHINE.ACC` (machine account), `DefaultPassword`
+    /// (autologon), `DPAPI_SYSTEM`, `NL$KM` (cached-cred key) — the credential
+    /// material a responder pivots from. Names alone are key names the generic
+    /// walk emits, so target the decoder's "LSA secret:" event (presence + sizes,
+    /// NOT plaintext — decryption needs the SYSTEM boot key).
+    #[test]
+    fn real_security_hive_surfaces_lsa_secrets() {
+        let p = hive("SECURITY");
+        if !p.exists() {
+            eprintln!("SKIP: SECURITY hive absent");
+            return;
+        }
+        let events = parse_hive(&p, "dc01-SECURITY").unwrap();
+        let secret = events
+            .iter()
+            .find(|e| {
+                e.description.starts_with("LSA secret:") && e.description.contains("$MACHINE.ACC")
+            })
+            .expect("LSA secret $MACHINE.ACC event");
+        assert_eq!(
+            secret.activity_category,
+            Some(issen_core::ActivityCategory::SystemState),
+            "LSA secrets are host security-state inventory"
+        );
+    }
+
     /// Real DC SYSTEM hive: timezone (F3: Pacific — the clock-skew root cause)
     /// resolved through Select\Current -> ControlSet00N.
     #[test]
