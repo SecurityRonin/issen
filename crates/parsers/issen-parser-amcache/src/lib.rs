@@ -165,7 +165,7 @@ impl ForensicParser for AmcacheParser {
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(AmcacheParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(AmcacheParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::Amcache,
             matches: classify::amcache,
             priority: 90,
@@ -173,7 +173,7 @@ inventory::submit! {
                 sel::DiskSource::Ntfs(sel::NtfsLoc::FixedPath(r"\Windows\AppCompat\Programs\Amcache.hve")),
             ],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ---------------------------------------------------------------------------

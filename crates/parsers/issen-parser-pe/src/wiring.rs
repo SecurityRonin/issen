@@ -156,13 +156,13 @@ impl ForensicParser for PeParser {
 }
 
 inventory::submit! {
-    ParserRegistration { create: || Box::new(PeParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(PeParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::Pe,
             matches: classify::pe_suspicious,
             priority: 10,
             disk_sources: &[],
             cost: sel::CostTier::OptIn,
-        }) }
+        } }
 }
 
 #[cfg(test)]

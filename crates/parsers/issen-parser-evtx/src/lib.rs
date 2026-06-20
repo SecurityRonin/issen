@@ -511,7 +511,7 @@ impl ForensicParser for EvtxFileParser {
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(EvtxFileParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(EvtxFileParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::EventLog,
             matches: classify::evtx,
             priority: 98,
@@ -519,7 +519,7 @@ inventory::submit! {
                 sel::DiskSource::Ntfs(sel::NtfsLoc::DirSuffix { dir: r"\Windows\System32\winevt\Logs", suffix: ".evtx" }),
             ],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ---------------------------------------------------------------------------

@@ -110,7 +110,7 @@ impl ForensicParser for RegistryHiveParser {
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(RegistryHiveParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(RegistryHiveParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::Registry,
             matches: classify::registry_hive,
             priority: 96,
@@ -124,7 +124,7 @@ inventory::submit! {
                 sel::DiskSource::Ntfs(sel::NtfsLoc::PerUserFile(r"AppData\Local\Microsoft\Windows\UsrClass.dat")),
             ],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ---------------------------------------------------------------------------

@@ -98,7 +98,7 @@ impl ForensicParser for LnkParser {
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(LnkParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(LnkParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::Lnk,
             matches: classify::lnk,
             priority: 80,
@@ -107,7 +107,7 @@ inventory::submit! {
                 sel::DiskSource::Ntfs(sel::NtfsLoc::PerSubdirSweep { parent: r"\Users", rel: r"Desktop", name: sel::NameMatch::Suffix(".lnk") }),
             ],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ---------------------------------------------------------------------------

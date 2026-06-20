@@ -88,13 +88,13 @@ impl ForensicParser for MacosUnifiedLogParser {
 }
 
 inventory::submit! {
-    ParserRegistration { create: || Box::new(MacosUnifiedLogParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(MacosUnifiedLogParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::SystemInfo,
             matches: classify::macos_log,
             priority: 50,
             disk_sources: &[],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ── MacosFsEventsParser ───────────────────────────────────────────────────────
@@ -163,13 +163,13 @@ impl ForensicParser for MacosFsEventsParser {
 }
 
 inventory::submit! {
-    ParserRegistration { create: || Box::new(MacosFsEventsParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(MacosFsEventsParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::SystemInfo,
             matches: classify::fsevents,
             priority: 50,
             disk_sources: &[],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

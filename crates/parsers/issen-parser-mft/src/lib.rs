@@ -404,7 +404,7 @@ impl ForensicParser for MftFileParser {
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(MftFileParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(MftFileParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::Mft,
             matches: classify::mft,
             priority: 99,
@@ -412,7 +412,7 @@ inventory::submit! {
                 sel::DiskSource::Ntfs(sel::NtfsLoc::FixedPath(r"\$MFT")),
             ],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ---------------------------------------------------------------------------

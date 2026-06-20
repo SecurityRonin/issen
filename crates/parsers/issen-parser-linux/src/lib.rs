@@ -103,13 +103,13 @@ impl ForensicParser for LinuxAuthLogParser {
 }
 
 inventory::submit! {
-    ParserRegistration { create: || Box::new(LinuxAuthLogParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(LinuxAuthLogParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::LoginHistory,
             matches: classify::auth_log,
             priority: 60,
             disk_sources: &[],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ── LinuxSyslogParser ─────────────────────────────────────────────────────────
@@ -166,13 +166,13 @@ impl ForensicParser for LinuxSyslogParser {
 }
 
 inventory::submit! {
-    ParserRegistration { create: || Box::new(LinuxSyslogParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(LinuxSyslogParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::SystemInfo,
             matches: classify::syslog,
             priority: 55,
             disk_sources: &[],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ── LinuxCronParser ───────────────────────────────────────────────────────────
@@ -229,13 +229,13 @@ impl ForensicParser for LinuxCronParser {
 }
 
 inventory::submit! {
-    ParserRegistration { create: || Box::new(LinuxCronParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(LinuxCronParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::CrontabConfig,
             matches: classify::cron,
             priority: 55,
             disk_sources: &[],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ── LinuxBashHistoryParser ────────────────────────────────────────────────────
@@ -292,13 +292,13 @@ impl ForensicParser for LinuxBashHistoryParser {
 }
 
 inventory::submit! {
-    ParserRegistration { create: || Box::new(LinuxBashHistoryParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(LinuxBashHistoryParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::LoginHistory,
             matches: classify::bash_history,
             priority: 60,
             disk_sources: &[],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

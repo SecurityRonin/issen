@@ -153,7 +153,7 @@ impl ForensicParser for SrumParser {
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(SrumParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(SrumParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::Srum,
             matches: classify::srum,
             priority: 90,
@@ -161,7 +161,7 @@ inventory::submit! {
                 sel::DiskSource::Ntfs(sel::NtfsLoc::FixedPath(r"\Windows\System32\sru\SRUDB.dat")),
             ],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 #[cfg(test)]

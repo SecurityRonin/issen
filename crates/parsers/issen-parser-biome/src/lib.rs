@@ -145,13 +145,13 @@ impl ForensicParser for BiomeParser {
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(BiomeParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(BiomeParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::BiomeMenuItem,
             matches: classify::segb,
             priority: 40,
             disk_sources: &[],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 #[cfg(test)]

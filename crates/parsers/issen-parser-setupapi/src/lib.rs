@@ -252,7 +252,7 @@ impl ForensicParser for SetupApiParser {
 }
 
 inventory::submit! {
-    ParserRegistration { create: || Box::new(SetupApiParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(SetupApiParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::DeviceInstall,
             matches: classify::setupapi,
             priority: 70,
@@ -261,7 +261,7 @@ inventory::submit! {
                 sel::DiskSource::Ntfs(sel::NtfsLoc::FixedPath(r"\Windows\INF\setupapi.setup.log")),
             ],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ---------------------------------------------------------------------------

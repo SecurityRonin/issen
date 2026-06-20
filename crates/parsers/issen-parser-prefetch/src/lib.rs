@@ -104,7 +104,7 @@ impl ForensicParser for PrefetchParser {
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(PrefetchParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(PrefetchParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::Prefetch,
             matches: classify::prefetch,
             priority: 97,
@@ -112,7 +112,7 @@ inventory::submit! {
                 sel::DiskSource::Ntfs(sel::NtfsLoc::DirSuffix { dir: r"\Windows\Prefetch", suffix: ".pf" }),
             ],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ---------------------------------------------------------------------------

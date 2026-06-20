@@ -404,7 +404,7 @@ fn record_to_event(record: &UsnRecordV2, evidence_source_id: &str) -> TimelineEv
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(UsnJrnlParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(UsnJrnlParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::UsnJournal,
             matches: classify::usn,
             priority: 100,
@@ -412,7 +412,7 @@ inventory::submit! {
                 sel::DiskSource::Ntfs(sel::NtfsLoc::NamedStream { path: r"\$Extend\$UsnJrnl", stream: "$J" }),
             ],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 #[cfg(test)]

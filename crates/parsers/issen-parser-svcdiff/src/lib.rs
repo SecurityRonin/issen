@@ -160,13 +160,13 @@ impl ForensicParser for SvcDiffParser {
 
 // Compile-time registration with the parser inventory.
 inventory::submit! {
-    ParserRegistration { create: || Box::new(SvcDiffParser), selector: Some(sel::ArtifactSelector {
+    ParserRegistration { create: || Box::new(SvcDiffParser), selector: sel::ArtifactSelector {
             artifact_type: issen_core::artifacts::ArtifactType::Registry,
             matches: classify::registry_hive,
             priority: 96,
             disk_sources: &[],
             cost: sel::CostTier::Default,
-        }) }
+        } }
 }
 
 // ---------------------------------------------------------------------------

@@ -24,29 +24,24 @@ fn every_parser_declares_a_consistent_selector() {
         regs.len()
     );
 
-    let mut missing = Vec::new();
+    // Presence is now compiler-enforced (selector is a required field); this gate
+    // checks the remaining invariant: the declared artifact_type is one the parser
+    // actually advertises.
     let mut inconsistent = Vec::new();
     for reg in regs {
         let parser = (reg.create)();
-        let name = parser.name();
-        match &reg.selector {
-            None => missing.push(name.to_string()),
-            Some(sel) => {
-                if !parser.supported_artifacts().contains(&sel.artifact_type) {
-                    inconsistent.push(format!(
-                        "{name}: selector type {:?} not in supported_artifacts {:?}",
-                        sel.artifact_type,
-                        parser.supported_artifacts()
-                    ));
-                }
-            }
+        if !parser
+            .supported_artifacts()
+            .contains(&reg.selector.artifact_type)
+        {
+            inconsistent.push(format!(
+                "{}: selector type {:?} not in supported_artifacts {:?}",
+                parser.name(),
+                reg.selector.artifact_type,
+                parser.supported_artifacts()
+            ));
         }
     }
-
-    assert!(
-        missing.is_empty(),
-        "parsers with no ArtifactSelector (Stage 1 incomplete): {missing:?}"
-    );
     assert!(
         inconsistent.is_empty(),
         "selector artifact_type not advertised by the parser: {inconsistent:?}"

@@ -10,10 +10,10 @@ pub struct ParserRegistration {
     /// The artifact this parser consumes — the single source of truth the
     /// pipeline derives classification and disk collection from.
     ///
-    /// `Option` only during the Stage-1 incremental population; hardened to a
-    /// required field once every parser declares one (so the compiler enforces
-    /// presence and a new parser cannot be added without a selector).
-    pub selector: Option<ArtifactSelector>,
+    /// Required: the compiler enforces that no parser can register without a
+    /// selector, so "registered but unclassified/uncollected" is structurally
+    /// impossible — the exact drift the dark-parser bugs came from.
+    pub selector: ArtifactSelector,
 }
 
 inventory::collect!(ParserRegistration);
@@ -78,7 +78,13 @@ mod tests {
 
         let reg = ParserRegistration {
             create: || Box::new(TestParser),
-            selector: None,
+            selector: ArtifactSelector {
+                artifact_type: ArtifactType::Mft,
+                matches: crate::classify::mft,
+                priority: 0,
+                disk_sources: &[],
+                cost: crate::plugin::selector::CostTier::Default,
+            },
         };
         let parser = (reg.create)();
         assert_eq!(parser.name(), "Test Parser");
