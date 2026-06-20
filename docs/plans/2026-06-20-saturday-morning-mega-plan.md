@@ -120,14 +120,18 @@ Detail: `archive/2026-06-20-registry-derived-extraction-design.md`.
 
 ### Phase 5 — Remaining forensic gaps + carry-forward
 - **Shimcache wiring** — linked + SYSTEM hive extracted, 0 events; wire AppCompatCache decode.
-- **LNK parser depth (capability-built-not-surfaced, 2026-06-20).** `issen-parser-lnk` reads only the
-  76-byte header → 3 target MAC times + size/flags; the event description is the `.lnk`'s *own* name,
-  **not** the target. The owned `lnk-forensic` core already parses the full richness — target/local-base
-  path, volume serial, `CommonNetworkRelativeLink` (UNC/host), birth-droid GUIDs + **NetBIOS** machine
-  name (cross-machine origin attribution), command-line args (weaponized-LNK lead), JumpLists. Surface
-  these as multiple `TimelineEvent`s + `ActivityCategory` (file-access vs USB-usage vs origin vs
-  execution-lead) — one decoder, many meanings. **Orthogonal to the selector refactor** (this is parser
-  depth, not wiring); validate on the real Szechuan `.lnk` corpus. Same pattern applies to JumpLists.
+- **Parser Output Depth — SYSTEMIC (capability-built-not-surfaced, researched 2026-06-20).** Not an LNK
+  one-off: a 14-parser survey found **11/14 wrappers materially shallow** — they surface a fraction of the
+  forensic richness their **owned core already parses** (MFT is the lone DEEP one, proving it's discipline,
+  not capability). Verified anchors: `issen-parser-registry` base calls 1 of **13** decoder modules; srum
+  2 of **7** tables; biome *"does not CRC-validate"* while segb-core exposes `crc_ok()` (drops tamper
+  evidence); prefetch keeps a run count vs the core's 8 run times + loaded-file list; lnk drops target
+  path/drive-serial/UNC/birth-droid NetBIOS. **Full plan + ranked backlog + the "depth gate" design now
+  live in the Companion Track of**
+  [`2026-06-20-registry-driven-artifact-selector-design.md`](2026-06-20-registry-driven-artifact-selector-design.md).
+  Same capability-inventory theme as the selector refactor, **separate execution** (changing *what* a
+  parser emits cannot ride the wiring refactor's differential gate). Ranked #1 registry-base catalog,
+  #2 lnk, #3 biome CRC/anomaly, #4 prefetch — gate-first-then-ratchet, validate on real corpora.
 - **Timestomp `$FN`** — MFT is `$SI`-only; add `$FN` parsing + `$SI`<`$FN` detector (keep **Info** — FP-prone).
 - *(G1 execution DONE via Prefetch+Amcache; G3 registry values largely DONE, minor DWORD-render bug.)*
 

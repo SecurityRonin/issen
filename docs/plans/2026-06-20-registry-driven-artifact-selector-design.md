@@ -160,6 +160,36 @@ Each stage is independently shippable and TDD'd (RED/GREEN). The differential te
 | `fn`-pointer matchers aren't statically introspectable by the gate | Gates run the matcher over the real-path corpus (runtime), which is what we want anyway |
 | Big-bang risk across ~30 parser crates | Staged; Stages 1–2 are additive and reversible; only Stage 4 removes code |
 
+## Companion track — Parser Output Depth (systemic; same theme, separate execution)
+
+The selector refactor above fixes **wiring** ("capability built, not surfaced" at the *routing* layer). Research on 2026-06-20 (14-parser survey, two anchors independently verified) found the **same disease one layer deeper, at the *output* layer**: a wrapper that *is* wired still surfaces only a fraction of the forensic richness its **owned core already parses**. This is **systemic, not LNK-specific** — **11 of 14** sampled wrappers are materially shallow; **MFT is the lone DEEP one**, proving it is a discipline gap, not a capability gap.
+
+Verified anchors: `issen-parser-registry`'s base path calls only `registry_keys::walk_keys` against a **13-module** artifact crate; `issen-parser-srum` calls **2 of 7** table parsers; `issen-parser-biome` comments *"does not CRC-validate"* while `segb-core` exposes `crc_ok()`/`stored_crc32()`/`computed_crc32()` — **dropping tamper evidence**; `issen-parser-prefetch` keeps a run count where the core has all 8 run times + the loaded-file list; `issen-parser-lnk` (the trigger) drops target path, drive serial, UNC, and birth-droid NetBIOS.
+
+These two tracks share the **capability-inventory theme** but **must execute separately**: the selector refactor's safety rests on a differential test (*same events out*), so changing *what* a parser emits cannot ride in the same step as changing *how* it is routed. Depth is its own phase, ordered by forensic value, landed **after or beside** the wiring refactor.
+
+### The depth gate (sibling to the wiring gates)
+
+`reachability_gate`/`disk_collection_gate` prove a parser is *reached*; nothing proves it surfaces its core's *richness*, so every dropped field is invisible — no error, no failing test, the parser looks done. That invisibility is why 11/14 drifted shallow. The fix is a **lightweight, declarative depth gate**, modeled on `reachability_gate` but asserting *capability surfaced*:
+
+- Each parser declares a small **manifest of required output keys** it must surface (e.g. lnk ⊃ `{drive_serial, net_name, machine_netbios}`; prefetch ⊃ `{loaded_files: list, device_path}`; biome ⊃ `{crc_ok}`).
+- One workspace test drives each parser over its **existing real-data fixture** (reuse the corpus the other gates use) and asserts every declared key appears in the emitted `TimelineEvent` metadata.
+- The manifest is a curated, human-judged *minimum depth* — **not** an automated "emit every core field."
+
+**Land the gate first declaring the current (shallow) state, then ratchet**: each depth backlog item adds its keys to the manifest as it ships, so the contract is visible and regression-proof — exactly how the wiring gates work.
+
+**Over-engineering traps to avoid** (explicit): no generic reflection framework diffing core struct fields vs output (brittle, over-couples, forces low-value fields like MFT `sequence_number`); no percentage gate ("surface ≥70% of fields") — forensic value isn't uniform per field, a curated value-ranked allowlist beats a coverage ratio (coverage is a backstop, not a target).
+
+### Depth backlog, ranked by forensic value
+
+1. **registry (base) → wire the 13-module artifact catalog** (highest leverage; the *per-artifact* wrappers already call their decoders — this is the generic base path reducing everything to "key modified").
+2. **lnk → drive serial + CommonNetworkRelativeLink + droid NetBIOS** (USB origin, network-exec, cross-machine provenance).
+3. **biome → CRC validation + timestamp-order anomaly Findings** (anti-forensic evidence currently dropped).
+4. **prefetch → all 8 run times + loaded-file list + device_path** (execution timeline + DLL-load evidence).
+5. **amcache → size + version strings**; **6. userassist → focus_duration_ms**; **7. srum → 5 unused tables**; **8. shimcache → insertion_flags** (cached vs executed); **9. usnjrnl → security_id + source_info** (near-zero-cost, already parsed); **10. trash → $R content_path**.
+
+(evtx = a wiring decision: depend on `winevt-forensic` for ATT&CK semantics. setupapi = small regex split for USB VID/PID/serial.)
+
 ## Explicitly out of scope (follow-ups)
 
 - Building the **ext4 / APFS image extractors** — the `Ext4`/`Apfs` `DiskSource` variants are declared so Linux/macOS parsers can name their image location, but they stay dormant until those extractors exist. Until then those parsers remain loose-file-only — now *declared* as such, not silently dark.
