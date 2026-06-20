@@ -160,6 +160,12 @@ Detail: `archive/2026-06-20-registry-derived-extraction-design.md`.
   Same capability-inventory theme as the selector refactor, **separate execution** (changing *what* a
   parser emits cannot ride the wiring refactor's differential gate). Ranked #1 registry-base catalog,
   #2 lnk, #3 biome CRC/anomaly, #4 prefetch — gate-first-then-ratchet, validate on real corpora.
+  **PROGRESS: #2 lnk PARTIALLY DONE (RED ad78504 / GREEN 3944384)** — issen-parser-lnk now uses
+  lnk-core (stopped hand-rolling) and surfaces target_path + drive_serial + drive_type + volume_label
+  (TDD on the real removable_media.lnk: `E:\payload.exe` on KINGSTON USB, serial 0xDEADBEEF). lnk follow-ups:
+  network UNC (CommonNetworkRelativeLink), birth-droid NetBIOS origin, command-line args, JumpLists.
+  First depth-track fix landed — proves the pattern. The DEPTH GATE (declare-current-then-ratchet) is
+  still TODO.
 - **Timestomp `$FN`** — MFT is `$SI`-only; add `$FN` parsing + `$SI`<`$FN` detector (keep **Info** — FP-prone).
 - *(G1 execution DONE via Prefetch+Amcache; G3 registry values largely DONE, minor DWORD-render bug.)*
 
