@@ -13,15 +13,16 @@
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 pub mod drive_type;
+pub mod jumplist;
 pub mod parser;
 
 use std::path::Path;
 
 use issen_core::artifacts::ArtifactType;
 use issen_core::classify;
-use issen_core::plugin::selector as sel;
 use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
+use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
     DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
 };
@@ -328,7 +329,10 @@ mod tests {
 
         // Check metadata present
         assert_eq!(
-            create_ev.metadata.get("file_size").and_then(serde_json::Value::as_u64),
+            create_ev
+                .metadata
+                .get("file_size")
+                .and_then(serde_json::Value::as_u64),
             Some(1234),
             "metadata file_size should be 1234"
         );
