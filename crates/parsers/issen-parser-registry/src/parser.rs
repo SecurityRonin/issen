@@ -8,7 +8,7 @@ use std::path::Path;
 use issen_core::artifacts::ArtifactType;
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use winreg_artifacts::registry_keys::walk_keys;
-use winreg_artifacts::{run_keys, typed_urls, userassist};
+use winreg_artifacts::{run_keys, shimcache, typed_urls, userassist};
 use winreg_core::hive::Hive;
 
 /// Parse a Windows registry hive file and emit [`TimelineEvent`]s.
@@ -83,7 +83,44 @@ fn events_from_hive(
     events.extend(extract_run_keys(hive, hive_name, source_id));
     events.extend(extract_typed_urls(hive, hive_name, source_id));
     events.extend(extract_userassist(hive, hive_name, source_id));
+    events.extend(extract_shimcache(hive, hive_name, source_id));
     events
+}
+
+/// Decode `AppCompatCache` (Shimcache) via `winreg-artifacts::shimcache` and
+/// emit one Execution event per cached binary. Shimcache records that a binary
+/// was *present* on the host (with its file last-modified time, NOT a run time)
+/// — strong presence/execution-candidacy evidence that survives binary deletion.
+/// Lives in the SYSTEM hive's current ControlSet; self-filters elsewhere.
+fn extract_shimcache(
+    hive: &Hive<Cursor<Vec<u8>>>,
+    hive_name: &str,
+    source_id: &str,
+) -> Vec<TimelineEvent> {
+    shimcache::parse(hive)
+        .into_iter()
+        .map(|e| {
+            let (ts_ns, ts_display) = match &e.last_modified {
+                Some(s) => (iso_to_ns(s), s.clone()),
+                None => (0, String::new()),
+            };
+            TimelineEvent::new(
+                ts_ns,
+                ts_display,
+                EventType::ProcessExec,
+                ArtifactType::Registry,
+                e.path.clone(),
+                format!("Shimcache (AppCompatCache) entry: {}", e.path),
+                source_id.to_string(),
+            )
+            .with_activity_category(issen_core::ActivityCategory::Execution)
+            .with_tag("shimcache")
+            .with_metadata("hive", serde_json::json!(hive_name))
+            .with_metadata("path", serde_json::json!(e.path))
+            .with_metadata("entry_index", serde_json::json!(e.entry_index))
+            .with_metadata("file_last_modified", serde_json::json!(e.last_modified))
+        })
+        .collect()
 }
 
 /// Decode `UserAssist` (Explorer-launched GUI program execution, ROT13-obscured)
