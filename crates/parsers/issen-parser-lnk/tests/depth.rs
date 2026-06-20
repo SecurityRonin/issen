@@ -43,3 +43,34 @@ fn surfaces_drive_serial_join_key() {
          device); got: {blob}"
     );
 }
+
+/// Fixture `network_share.lnk` targets a UNC share `\\SERVER\share` mapped to
+/// device `Z:` via a `CommonNetworkRelativeLink`. The UNC origin is the
+/// lateral-movement / network-share join key the wrapper previously dropped
+/// (it surfaced only the local `VolumeID`, never the network link).
+const NETWORK: &[u8] = include_bytes!("data/network_share.lnk");
+
+#[test]
+fn surfaces_unc_network_share_target() {
+    let events = parse_lnk_bytes(NETWORK, "/Users/beth/Recent/Share.lnk", "ev");
+    assert!(
+        !events.is_empty(),
+        "the network .lnk parses to at least one event"
+    );
+    let blob = searchable(&events).to_uppercase();
+    assert!(
+        blob.contains(r"\\SERVER\SHARE"),
+        "must surface the UNC network share the shortcut points to \
+         (\\\\SERVER\\share); got: {blob}"
+    );
+}
+
+#[test]
+fn surfaces_mapped_network_device() {
+    let events = parse_lnk_bytes(NETWORK, "/Users/beth/Recent/Share.lnk", "ev");
+    let blob = searchable(&events).to_uppercase();
+    assert!(
+        blob.contains("Z:"),
+        "must surface the local device the share was mapped to (Z:); got: {blob}"
+    );
+}

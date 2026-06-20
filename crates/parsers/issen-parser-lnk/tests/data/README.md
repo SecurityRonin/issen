@@ -10,4 +10,14 @@
   fields the wrapper must surface.
 - **Used by**: `tests/depth.rs` (the LNK parser-depth regression).
 
+#### network_share.lnk
+- **Source**: `lnk-forensic` test corpus (SecurityRonin/`h4x0r`), `tests/data/network_share.lnk`.
+- **Provenance**: SYNTHETIC, spec-exact hand-authored per [MS-SHLLINK] (a macOS host
+  cannot author a real Windows Shell Link); validated by `lnk-core`'s own tests.
+- **MD5**: `547e0d2686e6652d8d144fb1b767bf9a`
+- **Contents**: a `.lnk` whose `LinkInfo` carries a `CommonNetworkRelativeLink`
+  (`NetName = \\SERVER\share`, `DeviceName = Z:`) — exercises the UNC network-share
+  origin (lateral-movement join key) the wrapper must surface.
+- **Used by**: `tests/depth.rs` (the LNK parser-depth regression).
+
 Cross-reference: [`issen/docs/corpus-catalog.md`](../../../../../docs/corpus-catalog.md).
