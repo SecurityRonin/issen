@@ -65,6 +65,16 @@ pub fn humanize_bytes(n: u64) -> String {
     }
 }
 
+/// Whether to draw a live progress bar: only on an interactive terminal and not
+/// in `--verbose` mode (where scrolling logs replace the bar). A non-terminal
+/// (pipe, redirect, CI) must fall back to plain output — indicatif on a
+/// non-terminal emits control-code spam. The caller passes
+/// `std::io::stderr().is_terminal()` (bars draw to stderr) for `is_tty`.
+#[must_use]
+pub fn should_render_bar(is_tty: bool, verbose: bool) -> bool {
+    is_tty && !verbose
+}
+
 /// Human label for a pipeline phase.
 #[must_use]
 pub fn phase_label(phase: Phase) -> &'static str {
@@ -210,5 +220,22 @@ mod tests {
             !line.contains('%'),
             "no percent before the total is known: {line}"
         );
+    }
+
+    #[test]
+    fn bar_renders_only_on_an_interactive_terminal_and_not_in_verbose() {
+        assert!(
+            should_render_bar(true, false),
+            "interactive + normal → live bar"
+        );
+        assert!(
+            !should_render_bar(false, false),
+            "piped/redirected/CI → no bar (indicatif would spam control codes)"
+        );
+        assert!(
+            !should_render_bar(true, true),
+            "--verbose → scrolling logs, not a bar"
+        );
+        assert!(!should_render_bar(false, true));
     }
 }
