@@ -907,6 +907,24 @@ mod tests {
     }
 
     #[test]
+    fn run_pipeline_drives_phase_and_total_for_the_display() {
+        use crate::progress::Phase;
+        // discovery classifies $J → 1 artifact even with no parsers linked.
+        let dir = tempfile::tempdir().expect("tmpdir");
+        std::fs::write(dir.path().join("$J"), b"fake data").expect("write");
+
+        let progress = ProgressReporter::new();
+        let _ = run_pipeline(dir.path(), &progress).expect("pipeline");
+
+        assert_eq!(progress.phase(), Phase::Done, "phase ends at Done");
+        assert_eq!(
+            progress.artifacts_total(),
+            1,
+            "total is set to the discovered artifact count (for a determinate bar)"
+        );
+    }
+
+    #[test]
     fn test_run_collection_pipeline_unsupported_format() {
         let dir = tempfile::tempdir().expect("tmpdir");
         let path = dir.path().join("random.bin");
