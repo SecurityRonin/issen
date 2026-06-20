@@ -49,6 +49,7 @@ pub enum CostTier {
 /// Only `Ntfs` exists today; `Ext4`/`Apfs` variants are added when those image
 /// extractors exist. A Linux/macOS parser therefore declares empty
 /// `disk_sources` for now — loose-file-only until its extractor lands.
+#[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub enum DiskSource {
     /// A location on an NTFS volume.
@@ -57,6 +58,7 @@ pub enum DiskSource {
 
 /// An NTFS collection shape — one variant per `issen_disk::extract_*` primitive,
 /// so the derived extractor (Stage 3) is a thin dispatch over trusted code.
+#[derive(Debug, Clone, Copy)]
 pub enum NtfsLoc {
     /// A fixed path, e.g. `\$MFT` or `\Windows\System32\config\SYSTEM`.
     FixedPath(&'static str),
@@ -89,6 +91,7 @@ pub enum NtfsLoc {
 }
 
 /// Filename rule for a [`NtfsLoc::PerSubdirSweep`].
+#[derive(Debug, Clone, Copy)]
 pub enum NameMatch {
     /// Case-insensitive suffix, e.g. `.lnk`.
     Suffix(&'static str),

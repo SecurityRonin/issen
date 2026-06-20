@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use super::selector::ArtifactSelector;
+use super::selector::{ArtifactSelector, NtfsLoc};
 use super::traits::ForensicParser;
 use crate::artifacts::ArtifactType;
 
@@ -48,6 +48,16 @@ pub fn detect_from_registry(path: &Path) -> Option<ArtifactType> {
         .filter(|reg| (reg.selector.matches)(path))
         .max_by_key(|reg| reg.selector.priority)
         .map(|reg| reg.selector.artifact_type)
+}
+
+/// The NTFS disk-collection locations every default-cost parser declares — the
+/// registry-derived replacement for `issen_disk`'s hand-maintained `WINDOWS_*`
+/// triage lists. `CostTier::OptIn` artifacts (e.g. PE) are excluded from default
+/// triage. Only meaningful where parser crates are linked (empty otherwise).
+#[must_use]
+pub fn triage_ntfs_sources() -> Vec<NtfsLoc> {
+    // Stage-3 stub: the collection differential drives the real implementation.
+    Vec::new()
 }
 
 #[cfg(test)]
