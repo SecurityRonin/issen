@@ -10,7 +10,7 @@ use rayon::prelude::*;
 
 use crate::isolate::{run_isolated, Isolated};
 use crate::layers::layer0_storage::FileDataSource;
-use crate::progress::ProgressReporter;
+use crate::progress::{Phase, ProgressReporter};
 
 /// Discovered artifact in the evidence tree.
 #[derive(Debug)]
@@ -308,11 +308,15 @@ pub fn run_pipeline(
     // partial events (atomic unit — the old shared emitter kept them), and (2)
     // `total_events` counts ACTUAL emitted events, not the parser's self-reported
     // `stats.events_emitted`. For honest parsers the output is identical.
+    progress.set_phase(Phase::Discovering);
     let artifacts = discover_artifacts(evidence_path)?;
+    progress.set_artifacts_total(artifacts.len() as u64);
+    progress.set_phase(Phase::Parsing);
     let (units, errors, _skipped) =
         parse_units(&artifacts, &all_parsers(), progress, &|_, _, _| false);
     let result = ingest_result(&artifacts, &units, errors);
     let events = units.into_iter().flat_map(|u| u.events).collect();
+    progress.set_phase(Phase::Done);
     Ok((events, result))
 }
 
@@ -378,11 +382,15 @@ pub fn run_auto_units(
 ) -> Result<(Vec<ParsedUnit>, IngestResult, usize), RtError> {
     // `with_evidence` keeps the collection manifest's TempDir alive across the
     // parse (parsers open the extracted files by path).
+    progress.set_phase(Phase::Extracting);
     let (units, result, skipped) = with_evidence(path, |artifacts| {
+        progress.set_artifacts_total(artifacts.len() as u64);
+        progress.set_phase(Phase::Parsing);
         let (units, errors, skipped) = parse_units(artifacts, &all_parsers(), progress, skip);
         let result = ingest_result(artifacts, &units, errors);
         (units, result, skipped)
     })?;
+    progress.set_phase(Phase::Done);
     Ok((units, result, skipped))
 }
 
@@ -568,11 +576,15 @@ pub fn run_pipeline_parallel(
 ) -> Result<(Vec<TimelineEvent>, IngestResult), RtError> {
     // Flat view over the PARALLEL per-unit core — mirrors `run_pipeline` exactly,
     // only `parse_units_parallel` instead of `parse_units`.
+    progress.set_phase(Phase::Discovering);
     let artifacts = discover_artifacts(evidence_path)?;
+    progress.set_artifacts_total(artifacts.len() as u64);
+    progress.set_phase(Phase::Parsing);
     let (units, errors, _skipped) =
         parse_units_parallel(&artifacts, &all_parsers(), progress, &|_, _, _| false);
     let result = ingest_result(&artifacts, &units, errors);
     let events = units.into_iter().flat_map(|u| u.events).collect();
+    progress.set_phase(Phase::Done);
     Ok((events, result))
 }
 
