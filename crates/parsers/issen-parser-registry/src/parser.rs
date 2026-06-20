@@ -8,7 +8,7 @@ use std::path::Path;
 use issen_core::artifacts::ArtifactType;
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use winreg_artifacts::registry_keys::walk_keys;
-use winreg_artifacts::{run_keys, sam, shimcache, typed_urls, userassist};
+use winreg_artifacts::{lsadump, run_keys, sam, shimcache, typed_urls, userassist};
 use winreg_core::hive::Hive;
 
 /// Parse a Windows registry hive file and emit [`TimelineEvent`]s.
@@ -85,7 +85,59 @@ fn events_from_hive(
     events.extend(extract_userassist(hive, hive_name, source_id));
     events.extend(extract_shimcache(hive, hive_name, source_id));
     events.extend(extract_sam_accounts(hive, hive_name, source_id));
+    events.extend(extract_lsa_secrets(hive, hive_name, source_id));
     events
+}
+
+/// Enumerate the LSA secrets stored in a SECURITY hive via
+/// `winreg-artifacts::lsadump` — which credential material exists
+/// (`$MACHINE.ACC`, `DefaultPassword`, `DPAPI_SYSTEM`, `NL$KM`, …), with current
+/// /old presence and ciphertext sizes. This surfaces the secret INVENTORY a
+/// responder pivots from; it does NOT decrypt (plaintext needs the SYSTEM boot
+/// key, out of scope here). Self-filters: a non-SECURITY hive yields none.
+fn extract_lsa_secrets(
+    hive: &Hive<Cursor<Vec<u8>>>,
+    hive_name: &str,
+    source_id: &str,
+) -> Vec<TimelineEvent> {
+    lsadump::parse_secrets(hive)
+        .into_iter()
+        .map(|s| {
+            let (ts_ns, ts_display) = s.last_written.map_or((0, String::new()), |dt| {
+                (
+                    dt.timestamp_nanos_opt().unwrap_or(0),
+                    dt.format("%Y-%m-%dT%H:%M:%S").to_string(),
+                )
+            });
+            let presence = match (s.has_current, s.has_old) {
+                (true, true) => "current+old",
+                (true, false) => "current",
+                (false, true) => "old",
+                (false, false) => "none",
+            };
+            let mut event = TimelineEvent::new(
+                ts_ns,
+                ts_display,
+                EventType::Other("lsa-secret".into()),
+                ArtifactType::Registry,
+                format!(r"Policy\Secrets\{}", s.name),
+                format!("LSA secret: {} ({presence} present)", s.name),
+                source_id.to_string(),
+            )
+            .with_activity_category(issen_core::ActivityCategory::SystemState)
+            .with_tag("lsa-secret")
+            .with_metadata("hive", serde_json::json!(hive_name))
+            .with_metadata("secret_name", serde_json::json!(s.name))
+            .with_metadata("has_current", serde_json::json!(s.has_current))
+            .with_metadata("has_old", serde_json::json!(s.has_old))
+            .with_metadata("current_size", serde_json::json!(s.curr_size))
+            .with_metadata("old_size", serde_json::json!(s.old_size));
+            if s.is_interesting {
+                event = event.with_tag("credential-material");
+            }
+            event
+        })
+        .collect()
 }
 
 /// Decode local user accounts from a SAM hive via `winreg-artifacts::sam` and
