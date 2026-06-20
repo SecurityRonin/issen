@@ -13,6 +13,21 @@ use issen_fswalker::progress::ProgressReporter;
 
 use crate::progress_view::status_line;
 
+/// Install a one-shot SIGINT (Ctrl-C) handler that clears the live bars before
+/// exiting, so an interrupted ingest leaves a clean terminal (not a half-drawn
+/// bar or hidden cursor) instead of corrupting the prompt. Exits `130`
+/// (128 + SIGINT); per-unit commits are atomic, so the partial DB is consistent
+/// and resumable. Best-effort and idempotent — a second install (e.g. a nested
+/// correlate→ingest) is ignored. Untestable signal shell.
+pub fn install_sigint_cleanup(mp: &MultiProgress) {
+    let mp = mp.clone();
+    let _ = ctrlc::set_handler(move || {
+        let _ = mp.clear();
+        let _ = std::io::Write::flush(&mut std::io::stderr());
+        std::process::exit(130);
+    });
+}
+
 /// A live per-source progress surface. Owns the `ProgressReporter` the pipeline
 /// updates; a background thread renders its snapshots. With `render == false`
 /// (non-terminal or `--verbose`) it draws nothing but still hands back a working

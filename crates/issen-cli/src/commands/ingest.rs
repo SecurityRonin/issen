@@ -115,6 +115,10 @@ pub fn run(
     // stderr, so the TTY check is on stderr.
     let render = crate::progress_view::should_render_bar(std::io::stderr().is_terminal(), verbose);
     let mp = indicatif::MultiProgress::new();
+    if render {
+        // Restore the terminal if the analyst Ctrl-C's mid-ingest.
+        crate::ingest_progress::install_sigint_cleanup(&mp);
+    }
     let mut inserted = 0u64;
     // The committed events, kept flat for the optional signature-scan phase.
     let mut events = Vec::new();

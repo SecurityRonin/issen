@@ -16,6 +16,7 @@ name = "issen_cli"
 path = "src/lib.rs"
 
 [dependencies]
+ctrlc = { workspace = true }
 indicatif = { workspace = true }
 forensic-pivot = { workspace = true }
 issen-core = { workspace = true }
