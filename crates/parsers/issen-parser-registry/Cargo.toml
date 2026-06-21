@@ -10,6 +10,10 @@ issen-core = { workspace = true }
 issen-plugin-sdk = { workspace = true }
 winreg-core = { workspace = true }
 winreg-artifacts = { workspace = true }
+# Targeted 0.6 dep (workspace is still on 0.5 — fleet not yet migrated): this
+# crate uses only the free `services::is_known_service_binary` fn, no forensicnomicon
+# report/Observation traits, so the two coexisting versions never cross types.
+forensicnomicon = "0.6"
 anyhow = { workspace = true }
 chrono = { workspace = true }
 inventory = { workspace = true }

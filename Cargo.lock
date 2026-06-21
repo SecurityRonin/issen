@@ -3054,6 +3054,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "forensicnomicon"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14202f4c5cb92ee0bfe85f1c2958352a6fcce96086815f297502a96b97759a29"
+
+[[package]]
 name = "form_urlencoded"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4690,7 +4696,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4719,7 +4725,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4734,7 +4740,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4801,7 +4807,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4816,7 +4822,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4884,7 +4890,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4894,12 +4900,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "forensicnomicon 0.6.0",
  "inventory",
  "issen-core",
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4914,7 +4921,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4929,7 +4936,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4958,7 +4965,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -4973,7 +4980,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -5003,7 +5010,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -5028,7 +5035,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -5061,7 +5068,7 @@ dependencies = [
  "issen-plugin-sdk",
  "serde_json",
  "tempfile",
- "winreg-artifacts",
+ "winreg-artifacts 0.2.0",
  "winreg-core",
 ]
 
@@ -10723,7 +10730,7 @@ dependencies = [
  "shellhist-core",
  "srum-core",
  "srum-parser",
- "winreg-artifacts",
+ "winreg-artifacts 0.1.4",
 ]
 
 [[package]]
@@ -11683,6 +11690,21 @@ name = "winreg-artifacts"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ff087662bf3f21728d5854ee21bec4ccd723fd369afd1e94b019ef4f24bbbe7"
+dependencies = [
+ "chrono",
+ "forensicnomicon 0.5.8",
+ "serde",
+ "shellitem",
+ "winreg-core",
+ "winreg-discover",
+ "winreg-format",
+]
+
+[[package]]
+name = "winreg-artifacts"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11ccd50da331c49a85910a069e74141bed8d60bca88f83e9aeb0e17dbdfa9797"
 dependencies = [
  "chrono",
  "forensicnomicon 0.5.8",

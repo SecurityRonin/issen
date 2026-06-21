@@ -202,11 +202,13 @@ fn extract_sam_accounts(
 }
 
 /// Decode Windows services via `winreg-artifacts::svc_diff` and emit one
-/// `ServiceInstall` event per service, carrying its `ImagePath` (the binary the
-/// service runs — the VALUE the generic key walk drops), start type, account,
-/// and anomaly classification. Keyed on the service key's `LastWrite` time
-/// (≈ the install/modify time). A service is a primary persistence mechanism, so
-/// the category is `Persistence`; anomalous services carry a `suspicious` tag.
+/// `ServiceInstall` event ONLY for services that look like genuine persistence
+/// anomalies ([`service_signal`]) — never the benign baseline flood (453
+/// services on DC01, 303 of them svc_diff empty-`ObjectName` false positives).
+/// The event carries the `ImagePath` (the VALUE the generic key walk drops),
+/// start type, account, `ServiceDll`/`FailureCommand` when present, and an
+/// `anomaly_reason`. Keyed on the service key's `LastWrite` time (≈ install
+/// time). The category is `Persistence`.
 ///
 /// `svc_diff` resolves the live `ControlSet00N` from `Select\Current` (there is
 /// no `CurrentControlSet` link in an offline SYSTEM hive), so it self-filters:
@@ -218,7 +220,11 @@ fn extract_services(
 ) -> Vec<TimelineEvent> {
     svc_diff::parse(hive)
         .into_iter()
-        .map(|s| {
+        .filter_map(|s| {
+            // Signal-only: emit a timeline event ONLY for a genuine persistence
+            // anomaly, never the hundreds of benign baseline services (the 453 on
+            // DC01, 303 of them svc_diff empty-ObjectName false positives).
+            let anomaly = service_signal(&s.image_path, s.start_type, s.service_type)?;
             let (ts_ns, ts_display) = s.last_written.map_or((0, String::new()), |dt| {
                 (
                     dt.timestamp_nanos_opt().unwrap_or(0),
@@ -236,11 +242,15 @@ fn extract_services(
                 EventType::ServiceInstall,
                 ArtifactType::Registry,
                 format!(r"Services\{}", s.name),
-                format!("Service: {label} -> {}", s.image_path),
+                format!(
+                    "Suspicious service: {label} -> {} [{anomaly}]",
+                    s.image_path
+                ),
                 source_id.to_string(),
             )
             .with_activity_category(issen_core::ActivityCategory::Persistence)
             .with_tag("service")
+            .with_tag("suspicious")
             .with_metadata("hive", serde_json::json!(hive_name))
             .with_metadata("service_name", serde_json::json!(s.name))
             .with_metadata("display_name", serde_json::json!(s.display_name))
@@ -249,16 +259,108 @@ fn extract_services(
             .with_metadata("service_type", serde_json::json!(s.service_type))
             .with_metadata("object_name", serde_json::json!(s.object_name))
             .with_metadata("description", serde_json::json!(s.description))
-            .with_metadata("suspicious", serde_json::json!(s.is_suspicious));
-            if s.is_suspicious {
-                event = event.with_tag("suspicious");
-                if let Some(reason) = &s.suspicious_reason {
-                    event = event.with_metadata("suspicious_reason", serde_json::json!(reason));
-                }
+            .with_metadata("anomaly_reason", serde_json::json!(anomaly));
+            // ServiceDll / FailureCommand (winreg-artifacts 0.2) — surface when
+            // present (svchost-hosted persistence + recovery-command persistence).
+            if let Some(dll) = &s.service_dll {
+                event = event.with_metadata("service_dll", serde_json::json!(dll));
             }
-            event
+            if let Some(fc) = &s.failure_command {
+                event = event.with_metadata("failure_command", serde_json::json!(fc));
+            }
+            Some(event)
         })
         .collect()
+}
+
+/// Decide whether a service's configuration is a forensic *persistence anomaly*
+/// worth a timeline event, vs benign baseline config — returning the anomaly
+/// reason when it is signal, `None` when baseline.
+///
+/// Deliberately does NOT use `svc_diff`'s bundled `is_suspicious`, whose
+/// empty-`ObjectName` rule false-flags 303 of 453 services on the real DC01 hive
+/// (an empty `ObjectName` defaults to `LocalSystem`). The three low-FP rules:
+/// 1. binary staged in a user-writable directory (a malware drop, T1543.003);
+/// 2. a LOLBin / script-interpreter service image (fileless persistence);
+/// 3. a `System32`-root own-process auto-start service whose binary is NOT a
+///    known Windows service binary (`forensicnomicon::services`) — a masquerade
+///    LEAD (T1036.005). Rule 3 surfaces the DC01 `coreupdater.exe` implant,
+///    which hides in `System32` with a normal config and evades rules 1-2.
+fn service_signal(image_path: &str, start_type: u32, service_type: u32) -> Option<String> {
+    let lower = image_path
+        .trim()
+        .trim_start_matches(r"\??\")
+        .to_ascii_lowercase();
+
+    for dir in [
+        r"\temp\",
+        r"\tmp\",
+        r"\appdata\",
+        r"\users\public\",
+        r"\programdata\",
+        r"\downloads\",
+        r"\$recycle.bin\",
+    ] {
+        if lower.contains(dir) {
+            return Some(format!(
+                "service binary staged in user-writable directory ({})",
+                dir.trim_matches('\\')
+            ));
+        }
+    }
+    for lol in [
+        "powershell",
+        "pwsh",
+        "cmd.exe",
+        "wscript",
+        "cscript",
+        "mshta",
+        "rundll32",
+        "regsvr32",
+        "msbuild",
+        "installutil",
+        "bitsadmin",
+    ] {
+        if lower.contains(lol) {
+            return Some(format!(
+                "service image is a script interpreter / LOLBin ({lol})"
+            ));
+        }
+    }
+    // service_type 16 = SERVICE_WIN32_OWN_PROCESS; start 0/1/2 = boot/system/auto.
+    if service_type == 16 && matches!(start_type, 0..=2) {
+        if let Some(base) = system_root_exe_basename(&lower) {
+            if !forensicnomicon::services::is_known_service_binary(&base) {
+                return Some(format!(
+                    "auto-start own-process service binary '{base}' in System32 is not a known \
+                     Windows service binary (possible masquerade, MITRE T1036.005)"
+                ));
+            }
+        }
+    }
+    None
+}
+
+/// If `lower` (a lowercased `ImagePath`) is a bare `.exe` directly in the
+/// `System32`/`SysWOW64` root (no further subdirectory), return its basename.
+/// Handles `system32\drivers\x.sys` (rejected — subdir + `.sys`), quoted paths,
+/// and trailing `svchost.exe -k <group>` args, so only a true root-level
+/// own-process executable matches.
+fn system_root_exe_basename(lower: &str) -> Option<String> {
+    for marker in [r"\system32\", "system32\\", r"\syswow64\", "syswow64\\"] {
+        if let Some(idx) = lower.rfind(marker) {
+            let tail = &lower[idx + marker.len()..];
+            let exe = tail.split([' ', '"']).next().unwrap_or(tail);
+            // `lower` is already lowercased, so the literal ".exe" suffix match is
+            // case-insensitive by construction (the clippy lint is a false positive).
+            #[allow(clippy::case_sensitive_file_extension_comparisons)]
+            let is_bare_exe = exe.ends_with(".exe") && !exe.contains('\\') && !exe.is_empty();
+            if is_bare_exe {
+                return Some(exe.to_string());
+            }
+        }
+    }
+    None
 }
 
 /// Decode `AppCompatCache` (Shimcache) via `winreg-artifacts::shimcache` and
@@ -781,6 +883,37 @@ mod tests {
             blob.contains("anomaly_reason"),
             "anomaly_reason metadata key must be present: {blob}"
         );
+    }
+
+    #[test]
+    fn service_signal_flags_anomalies_not_baseline() {
+        // Rule 1 — user-writable staging directory.
+        assert!(service_signal(r"C:\Users\Public\evil.exe", 2, 16)
+            .unwrap()
+            .contains("user-writable"));
+        assert!(service_signal(r"C:\Windows\Temp\x.exe", 2, 16).is_some());
+        // Rule 2 — LOLBin / interpreter image.
+        assert!(
+            service_signal(r"C:\Windows\System32\cmd.exe /c evil", 2, 16)
+                .unwrap()
+                .contains("LOLBin")
+        );
+        assert!(service_signal("powershell -enc AAAA", 2, 16).is_some());
+        // Rule 3 — System32 masquerade flagged; known/non-qualifying ones are not.
+        assert!(
+            service_signal(r"C:\Windows\System32\coreupdater.exe", 2, 16)
+                .unwrap()
+                .contains("masquerade")
+        );
+        assert!(service_signal(r"%SystemRoot%\System32\msdtc.exe", 2, 16).is_none());
+        assert!(service_signal(r"C:\Windows\System32\spoolsv.exe", 2, 16).is_none());
+        // ShareProcess (type 32) svchost is not an own-process masquerade.
+        assert!(service_signal(r"C:\Windows\System32\svchost.exe -k netsvcs", 2, 32).is_none());
+        // A driver in system32\drivers (subdir, .sys) and an empty path don't qualify.
+        assert!(service_signal(r"system32\drivers\peauth.sys", 2, 16).is_none());
+        assert!(service_signal("", 2, 16).is_none());
+        // Manual-start (3) own-process System32 unknown is NOT auto-start → no lead.
+        assert!(service_signal(r"C:\Windows\System32\coreupdater.exe", 3, 16).is_none());
     }
 
     /// Real DC SYSTEM hive: timezone (F3: Pacific — the clock-skew root cause)
