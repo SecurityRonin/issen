@@ -273,3 +273,37 @@ fn flags_dropped_metadata_key() {
         "a fully-surfaced manifest must pass"
     );
 }
+
+/// Ratchet: the depth manifest must lock the *custom*-destinations Jump List form
+/// alongside the automatic one. Custom `.customDestinations-ms` files have no
+/// DestList (no `hostname`/`pinned`), so their depth is a distinct slice — the
+/// per-application target + the `Custom` kind discriminator + the AppID. This
+/// fails until a custom case is added, so a refactor that silently drops custom
+/// support (or merges it into the automatic case and loses the kind) regresses
+/// here.
+#[test]
+fn manifest_locks_custom_jumplist_depth() {
+    let custom = manifest()
+        .into_iter()
+        .find(|c| c.fixture.ends_with(".customDestinations-ms"))
+        .expect("depth manifest must declare a *custom*-destinations Jump List case");
+
+    assert!(
+        custom.committed,
+        "the custom Jump List case must be backed by a committed fixture (real CI teeth)"
+    );
+    for k in ["target_path", "jumplist_kind", "app_id"] {
+        assert!(
+            custom.required_keys.contains(&k),
+            "custom Jump List depth must lock the '{k}' field"
+        );
+    }
+    assert!(
+        custom
+            .required_iocs
+            .iter()
+            .any(|i| i.eq_ignore_ascii_case("Custom")),
+        "custom Jump List depth must assert the 'Custom' kind discriminator reaches the event \
+         (distinguishes it from the automatic form)"
+    );
+}
