@@ -672,6 +672,48 @@ mod tests {
         );
     }
 
+    /// Real DC SYSTEM hive: the service decoder (`svc_diff`) must surface the
+    /// implant's service-based persistence `coreupdater`
+    /// (`C:\Windows\System32\coreupdater.exe`, auto-start) as a `ServiceInstall`
+    /// Persistence event with its image path — a registry VALUE the generic key
+    /// walk drops. `svc_diff` resolves `Select\Current` -> `ControlSet00N`
+    /// (there is no live `CurrentControlSet` link in an offline SYSTEM hive), so
+    /// this only fires on the real DC hive, never a synthetic one missing that
+    /// indirection.
+    #[test]
+    fn real_system_hive_surfaces_service_persistence() {
+        let p = hive("SYSTEM");
+        if !p.exists() {
+            eprintln!("SKIP: SYSTEM hive absent");
+            return;
+        }
+        let events = parse_hive(&p, "dc01-SYSTEM").unwrap();
+        let svc = events
+            .iter()
+            .find(|e| {
+                e.description.starts_with("Service:") && e.description.contains("coreupdater")
+            })
+            .expect("coreupdater service-persistence event");
+        assert_eq!(
+            svc.activity_category,
+            Some(issen_core::ActivityCategory::Persistence),
+            "a service install is a Persistence activity"
+        );
+        assert!(matches!(&svc.event_type, EventType::ServiceInstall));
+        // The ImagePath (the command the service runs) must reach metadata — the
+        // hollow-shell failure is surfacing the service NAME but dropping the
+        // binary path under it.
+        let blob = format!("{} {:?}", svc.description, svc.metadata).to_lowercase();
+        assert!(
+            blob.contains(r"coreupdater.exe"),
+            "the service image path must be surfaced: {blob}"
+        );
+        assert!(
+            blob.contains("image_path"),
+            "image_path metadata key must be present: {blob}"
+        );
+    }
+
     /// Real DC SYSTEM hive: timezone (F3: Pacific — the clock-skew root cause)
     /// resolved through Select\Current -> ControlSet00N.
     #[test]

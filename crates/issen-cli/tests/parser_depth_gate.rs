@@ -195,6 +195,19 @@ fn manifest() -> Vec<DepthCase> {
             required_keys: &["secret_name", "has_current", "has_old"],
             required_iocs: &["$MACHINE.ACC"],
         },
+        // Services (svc_diff) over the live ControlSet (resolved from
+        // Select\Current — no CurrentControlSet link offline). The implant's
+        // `coreupdater` service-based persistence — auto-start, ImagePath
+        // C:\Windows\System32\coreupdater.exe — is a VALUE under
+        // ControlSet00N\Services that the generic key walk drops.
+        DepthCase {
+            label: "registry SYSTEM: service persistence (coreupdater)",
+            fixture: "SYSTEM",
+            committed: false,
+            drive: drive_hive,
+            required_keys: &["service_name", "image_path", "start_type"],
+            required_iocs: &["coreupdater"],
+        },
     ]
 }
 
