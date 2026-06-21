@@ -23,6 +23,7 @@ use issen_core::plugin::traits::{
     DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
+use std::collections::HashMap;
 use std::path::Path;
 
 /// SRUM parser — ingests `SRUDB.dat` ESE database files.
@@ -130,8 +131,65 @@ impl SrumParser {
             events.push(event);
         }
 
+        // Network connectivity records — when the host was attached to a network
+        // and for how long (placement / timeline evidence).
+        events.extend(connectivity_events(
+            srum_parser::parse_network_connectivity(path)?,
+            &id_map,
+            &evidence_source,
+        ));
+
         Ok(events)
     }
+}
+
+/// Resolve a `SruDbIdMapTable` index to a non-empty name (best-effort).
+fn resolve_name(id_map: &HashMap<i32, String>, id: i32) -> Option<String> {
+    id_map.get(&id).filter(|n| !n.is_empty()).cloned()
+}
+
+/// Map SRUM NetworkConnectivity rows (connection intervals) to `NetworkActivity`
+/// events. `profile_id` resolves through the same id map (per `enrich_connectivity`).
+fn connectivity_events(
+    records: Vec<srum_core::NetworkConnectivityRecord>,
+    id_map: &HashMap<i32, String>,
+    evidence_source: &str,
+) -> Vec<TimelineEvent> {
+    records
+        .into_iter()
+        .map(|record| {
+            let ts_ns = record.timestamp.timestamp_nanos_opt().unwrap_or(0);
+            let app_name = resolve_name(id_map, record.app_id);
+            let profile_name = resolve_name(id_map, record.profile_id);
+            let app_label = app_name
+                .clone()
+                .unwrap_or_else(|| format!("app_id={}", record.app_id));
+            let mut event = TimelineEvent::new(
+                ts_ns,
+                record.timestamp.to_rfc3339(),
+                EventType::Other("NetworkConnectivity".into()),
+                ArtifactType::Srum,
+                evidence_source.to_string(),
+                format!(
+                    "SRUM NetworkConnectivity: {app_label} connected {}s",
+                    record.connected_time
+                ),
+                evidence_source.to_string(),
+            )
+            .with_activity_category(issen_core::ActivityCategory::NetworkActivity)
+            .with_metadata("connected_time", serde_json::json!(record.connected_time))
+            .with_metadata("app_id", serde_json::json!(record.app_id))
+            .with_metadata("profile_id", serde_json::json!(record.profile_id))
+            .with_metadata("user_id", serde_json::json!(record.user_id));
+            if let Some(name) = &app_name {
+                event = event.with_metadata("app_name", serde_json::json!(name));
+            }
+            if let Some(name) = &profile_name {
+                event = event.with_metadata("profile_name", serde_json::json!(name));
+            }
+            event
+        })
+        .collect()
 }
 
 impl ForensicParser for SrumParser {

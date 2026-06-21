@@ -2,7 +2,11 @@
 //! was connected to a network and for how long — placement/timeline evidence the
 //! wrapper dropped (only NetworkUsage + AppUsage were wired). `chainsaw_SRUDB.dat`
 //! has 6 connectivity rows. Skips cleanly when the corpus is absent.
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::redundant_closure_for_method_calls
+)]
 
 use std::path::{Path, PathBuf};
 
