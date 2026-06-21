@@ -707,11 +707,36 @@ fn rt_to_io(e: RtError) -> std::io::Error {
 /// the extracted set here rather than in a single-file parser.
 #[must_use]
 pub fn mft_mirror_integrity_events(
-    _mft: &[u8],
-    _mftmirr: &[u8],
-    _source_id: &str,
+    mft: &[u8],
+    mftmirr: &[u8],
+    source_id: &str,
 ) -> Vec<issen_core::timeline::event::TimelineEvent> {
-    Vec::new() // stub — RED
+    use issen_core::timeline::event::{EventType, TimelineEvent};
+    ntfs_forensic::audit_mft_mirror(mft, mftmirr)
+        .into_iter()
+        .map(|anomaly| {
+            TimelineEvent::new(
+                0,
+                String::new(),
+                EventType::Other("integrity".into()),
+                issen_core::artifacts::ArtifactType::Mft,
+                r"\$MFTMirr".to_string(),
+                format!(
+                    "$MFTMirr integrity: {} — {}",
+                    anomaly.code(),
+                    anomaly.note()
+                ),
+                source_id.to_string(),
+            )
+            .with_activity_category(issen_core::ActivityCategory::Integrity)
+            .with_tag("integrity")
+            .with_metadata("code", serde_json::json!(anomaly.code()))
+            .with_metadata(
+                "severity",
+                serde_json::json!(format!("{:?}", anomaly.severity())),
+            )
+        })
+        .collect()
 }
 
 #[cfg(test)]
