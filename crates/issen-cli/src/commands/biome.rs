@@ -119,11 +119,17 @@ mod tests {
         let mut tmp = tempfile::NamedTempFile::new().expect("tempfile");
         tmp.write_all(&synthetic_segb()).expect("write");
         let events = collect_events(tmp.path()).expect("collect");
-        assert_eq!(events.len(), 1, "one Written App.MenuItem -> one event");
+        // The synthetic record stores crc=0 over a real payload, so it also yields
+        // a SEGB-CRC-MISMATCH integrity event — assert the MENU event specifically.
+        let menu: Vec<_> = events
+            .iter()
+            .filter(|e| e.description.contains("Move to Trash"))
+            .collect();
+        assert_eq!(menu.len(), 1, "one Written App.MenuItem -> one menu event");
         assert!(
-            events[0].description.contains("Finder: Move to Trash"),
+            menu[0].description.contains("Finder: Move to Trash"),
             "description was: {}",
-            events[0].description
+            menu[0].description
         );
     }
 

@@ -111,6 +111,91 @@ inventory::submit! {
         } }
 }
 
+/// Jump List parser — surfaces `*.{automatic,custom}Destinations-ms` recent/pinned
+/// file history. Registered separately from [`LnkParser`] (a distinct artifact type
+/// and file forms); both wrap the `lnk-core` reader family.
+pub struct JumpListParser;
+
+impl ForensicParser for JumpListParser {
+    fn name(&self) -> &str {
+        "Jump List Parser"
+    }
+
+    fn supported_artifacts(&self) -> &[ArtifactType] {
+        &[ArtifactType::JumpLists]
+    }
+
+    fn parse(
+        &self,
+        input: &dyn DataSource,
+        emitter: &dyn EventEmitter,
+    ) -> Result<ParseStats, RtError> {
+        let mut stats = ParseStats::new();
+        let len = input.len();
+        if len == 0 {
+            stats.completion = ParseCompletion::Unsupported;
+            return Ok(stats);
+        }
+
+        let mut bytes = vec![0u8; len as usize];
+        let mut off = 0u64;
+        while off < len {
+            let n = input.read_at(off, &mut bytes[off as usize..])?;
+            if n == 0 {
+                break;
+            }
+            off += n as u64;
+        }
+        stats.bytes_processed = off;
+
+        // The filename selects the Jump List form (auto vs custom); byte-only
+        // sources fall back to a generic label (and parse to nothing).
+        let (filename, source) = input.source_path().map_or_else(
+            || {
+                (
+                    "jumplist-evidence".to_string(),
+                    "jumplist-evidence".to_string(),
+                )
+            },
+            |p| {
+                let fname = p.file_name().map_or_else(
+                    || "jumplist-evidence".to_string(),
+                    |n| n.to_string_lossy().into_owned(),
+                );
+                (fname, p.to_string_lossy().into_owned())
+            },
+        );
+        let events = jumplist::parse_jumplist_bytes(&bytes[..off as usize], &filename, &source);
+        stats.events_emitted = events.len() as u64;
+        if !events.is_empty() {
+            emitter.emit_batch(events)?;
+        }
+        stats.completion = ParseCompletion::Complete;
+        Ok(stats)
+    }
+
+    fn capabilities(&self) -> ParserCapabilities {
+        ParserCapabilities {
+            max_memory_bytes: Some(64 * 1024 * 1024),
+            streaming: false,
+            deterministic: true,
+        }
+    }
+}
+
+inventory::submit! {
+    ParserRegistration { create: || Box::new(JumpListParser), selector: sel::ArtifactSelector {
+            artifact_type: issen_core::artifacts::ArtifactType::JumpLists,
+            matches: classify::jumplist,
+            priority: 80,
+            disk_sources: &[
+                sel::DiskSource::Ntfs(sel::NtfsLoc::PerSubdirSweep { parent: r"\Users", rel: r"AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations", name: sel::NameMatch::Suffix(".automaticDestinations-ms") }),
+                sel::DiskSource::Ntfs(sel::NtfsLoc::PerSubdirSweep { parent: r"\Users", rel: r"AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations", name: sel::NameMatch::Suffix(".customDestinations-ms") }),
+            ],
+            cost: sel::CostTier::Default,
+        } }
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

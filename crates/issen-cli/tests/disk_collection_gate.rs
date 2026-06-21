@@ -20,14 +20,10 @@
 //! must be empty.
 
 use std::collections::BTreeSet;
-use std::path::Path;
 
 use issen_cli as _;
-use issen_core::plugin::registry::{detect_from_registry, ParserRegistration};
-use issen_disk::{
-    WINDOWS_TRIAGE_GLOBS, WINDOWS_TRIAGE_PATHS, WINDOWS_TRIAGE_STREAMS, WINDOWS_USER_FILES,
-    WINDOWS_USER_LNK_DIRS,
-};
+use issen_core::plugin::registry::ParserRegistration;
+use issen_core::plugin::selector::CostTier;
 
 /// Types the filename classifier can discover but that disk-image triage
 /// intentionally does NOT collect — each with the reason it is exempt:
@@ -54,37 +50,17 @@ fn classified_types() -> BTreeSet<String> {
         .collect()
 }
 
-/// The `ArtifactType`s actually COLLECTED off an NTFS image, derived by running
-/// every real `WINDOWS_*` extraction target through the classifier.
+/// The `ArtifactType`s actually COLLECTED off an NTFS image. Collection is now
+/// fully selector-driven (`extract_triage` → `collect_sources(triage_ntfs_sources())`),
+/// so a type is collected iff its selector declares at least one Default-cost NTFS
+/// `disk_source`. Deriving the set from the selectors — the single source of truth —
+/// rather than the legacy `WINDOWS_*` consts removes the const-drift this gate
+/// previously risked (the consts are now only a test oracle for `issen-disk`).
 fn collected_types() -> BTreeSet<String> {
-    let mut paths: Vec<String> = Vec::new();
-    for p in WINDOWS_TRIAGE_PATHS {
-        paths.push((*p).to_string());
-    }
-    for g in WINDOWS_TRIAGE_GLOBS {
-        paths.push(format!(r"{}\sample{}", g.dir, g.suffix));
-    }
-    for c in WINDOWS_USER_FILES {
-        paths.push(format!(r"\Users\u\{c}"));
-    }
-    for rel in WINDOWS_USER_LNK_DIRS {
-        paths.push(format!(r"\Users\u\{rel}\sample.lnk"));
-    }
-    for (p, _stream) in WINDOWS_TRIAGE_STREAMS {
-        paths.push((*p).to_string());
-    }
-    // Code sweeps not expressible as a const: the per-SID `$Recycle.Bin\$I*`.
-    paths.push(r"\$Recycle.Bin\S-1-5-21-1-1-1-500\$ISAMPLE.txt".to_string());
-
-    // Extraction writes a `/`-separated temp tree, so the classifier sees real
-    // basenames. Mirror that: a `\`-path on a Unix host would not split, making
-    // `file_name()` return the whole string and breaking every exact-name arm.
-    paths
-        .iter()
-        .filter_map(|p| {
-            let unix = format!("/img/{}", p.replace('\\', "/").trim_start_matches('/'));
-            detect_from_registry(Path::new(&unix)).map(|t| format!("{t:?}"))
-        })
+    inventory::iter::<ParserRegistration>
+        .into_iter()
+        .filter(|r| r.selector.cost == CostTier::Default && !r.selector.disk_sources.is_empty())
+        .map(|r| format!("{:?}", r.selector.artifact_type))
         .collect()
 }
 

@@ -109,6 +109,15 @@ pub fn lnk(path: &Path) -> bool {
     name_full(path).is_some_and(|(name, _)| name.ends_with(".lnk"))
 }
 
+/// Jump List file — `*.automaticDestinations-ms` (OLE/CFB) or
+/// `*.customDestinations-ms` (flat). `name` is pre-lowercased.
+#[must_use]
+pub fn jumplist(path: &Path) -> bool {
+    name_full(path).is_some_and(|(name, _)| {
+        name.ends_with(".automaticdestinations-ms") || name.ends_with(".customdestinations-ms")
+    })
+}
+
 /// Recycle-bin `$I` index file (gated on the `$recycle.bin` path component).
 #[must_use]
 pub fn recycle_i(path: &Path) -> bool {

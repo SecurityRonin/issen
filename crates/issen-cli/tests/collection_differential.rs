@@ -76,6 +76,19 @@ fn hardcoded_keys() -> BTreeSet<String> {
     for (path, stream) in WINDOWS_TRIAGE_STREAMS {
         keys.insert(format!("stream:{path}:{stream}"));
     }
+    // Jump Lists: collected ONLY via the JumpLists selector's disk_sources — there
+    // is no legacy `WINDOWS_*` const because Jump Lists were never collected before
+    // the selector model. Post-migration the selector is the single source of truth
+    // and `extract_triage` is fully selector-driven, so a new collection target is
+    // added here (the expected set), not to a frozen const list.
+    keys.insert(
+        r"sweep:\Users:AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations:suffix:.automaticDestinations-ms"
+            .to_string(),
+    );
+    keys.insert(
+        r"sweep:\Users:AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations:suffix:.customDestinations-ms"
+            .to_string(),
+    );
     keys
 }
 
