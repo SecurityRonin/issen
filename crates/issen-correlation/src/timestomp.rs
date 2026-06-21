@@ -398,4 +398,53 @@ mod tests {
             .with_metadata("fn_created", serde_json::json!("not-a-timestamp"));
         assert!(detect_timestomp(&event, DAY_NS).is_none());
     }
+
+    // ── Sub-second-zeroing corroborator survives a sub-tolerance back-date ──────
+    // Real-data shape from the DFIRMadness "Szechuan Sauce" DC ($MFT entry 87111,
+    // \FileShare\Secret\Beth_Secret.txt): $SI.created was stomped to a WHOLE second
+    // ~4 h BEFORE the kernel-set $FN.created, which still carries true 100 ns
+    // precision. The back-date (≈4 h) is SMALLER than the one-day clock-skew
+    // tolerance, yet the zeroed $SI sub-second against a non-zeroed $FN is the
+    // classic naive-stomp tell (Velociraptor `USecZeros`; analyzeMFT). The lead
+    // must still fire — the tolerance guards only the ordering-ONLY (no-corroborator)
+    // path, not an ordering anomaly that an independent corroborator already backs.
+    #[test]
+    fn subsecond_zeroing_fires_below_tolerance() {
+        // $FN.created — non-zeroed, true precision.
+        let fn_c = T + 4 * 3_600_000_000_000 + 970_445_000; // +4h, +0.970445000s
+                                                            // $SI.created — zeroed sub-second (whole second), only ~4 h before $FN
+                                                            // (well inside the one-day tolerance), and $SI.modified after $SI.created
+                                                            // (no copy/volume-move modifier).
+        let si_c = T; // whole second
+        let si_m = T + 90_000_000_000; // +90 s, after created (no copy pattern)
+        let si_a = T; // accessed == created (no volume-move)
+        let e = fc(si_c, si_m, si_a, fn_c, "FileShare/Secret/Beth_Secret.txt");
+        let f = detect_timestomp(&e, DAY_NS)
+            .expect("zeroed $SI sub-second vs non-zeroed $FN must fire below tolerance");
+        assert_eq!(f.code, TIMESTOMP_CODE);
+        // Info-grade lead — single-event tier, FP-prone (the project discipline:
+        // $SI<$FN is a LEAD, never graded High here).
+        assert_eq!(f.severity, Some(Severity::Info));
+        assert!(f
+            .context
+            .external_refs
+            .iter()
+            .any(|r| r.id.contains("T1070.006")));
+    }
+
+    // Guard the discriminator: a genuine sub-tolerance clock skew where BOTH $SI
+    // and $FN carry real (non-zeroed) sub-seconds is NOT a stomp — no corroborator,
+    // so the tolerance still suppresses it (no false positive from the fix above).
+    #[test]
+    fn subsecond_present_below_tolerance_stays_none() {
+        let fn_c = T + 4 * 3_600_000_000_000 + 970_445_000; // non-zeroed
+        let si_c = T + 3_600_000_000_000 + SUB; // 1 h before fn, NON-zeroed sub-second
+        let si_m = T + 5 * 3_600_000_000_000 + SUB;
+        let si_a = T + 5 * 3_600_000_000_000 + SUB;
+        let e = fc(si_c, si_m, si_a, fn_c, "Users/a/x.txt");
+        assert!(
+            detect_timestomp(&e, DAY_NS).is_none(),
+            "non-zeroed $SI within tolerance is clock-skew noise, not a stomp"
+        );
+    }
 }
