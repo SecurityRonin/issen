@@ -484,9 +484,18 @@ Inputs are synthetic so the fixtures are freely redistributable. The decoder was
 against the 25 real macOS 26.5 type-8 blocks above (C4b `tahoe_type8.*`) vs the same Apple oracle. Generator
 in `lzvn/docs/validation.md`; fuzz target `decode` (clean over 1.37M runs).
 
-### C9 · gpt- / mbr-partition-forensic, ntfs/usnjrnl records · SYNTHETIC ✓
+### C9 · gpt-partition-forensic — `tests/data/gpt_real_3part.img` (8 MiB) · REAL-self ✓
+Real GPT disk image, **minted by `sgdisk` (GPT fdisk 1.0.10)** and independently re-decoded by
+**TSK `mmls` 4.12.1** (separate codebases — the cross-tool oracle). MD5 `cbda08767efb84203c5f02b827fc2a94`.
+3 partitions (BASICDATA/Microsoft-basic-data, LINUXFS/Linux-filesystem, EFISYSTEM/EFI-system) with
+distinct type + unique GUIDs; whole 8 MiB committed so primary **and** backup GPT are present.
+Generator (verbatim) + captured oracle output in `gpt-partition-forensic/tests/data/README.md`;
+consumed by `forensic/tests/real_gpt_oracle.rs` (Tier-1 structural-parse differential).
+
+### C9b · mbr-partition-forensic, ntfs/usnjrnl records · SYNTHETIC ✓
 No committed images — fixtures are constructed **byte-by-byte by Rust builders in the tests** (no
-shell): gpt `header_sector()`/`entry_bytes()`/`build()` (`forensic/tests/reconcile_tests.rs`), mbr
+shell): gpt anomaly-**detector** fixtures `header_sector()`/`entry_bytes()`/`build()`
+(`forensic/tests/reconcile_tests.rs`; need deliberately corrupted bytes no tool mints), mbr
 `windows7_boot()`/`disk_with_boot_and_serial()` (`forensic/tests/disk_signature_tests.rs`), and the
 ntfs/usnjrnl USN+MFT record constructors in unit tests. Fuzz corpora harness-seeded.
 
@@ -681,5 +690,6 @@ so these are recorded here. Verify a download with `md5 <file>` (macOS) / `md5su
 | `CyberSpace CTF 2024/csctf-2024_forensics_memory.zip` | 703693665 | `c4821afa54754127a3a2161bafccea90` |
 | `SecurityNik/TOTAL_RECALL_memory_forensics_CHALLENGE.zip` | 1317299287 | `7dceb1fcae2ed8beacc8f81f85bf935c` |
 | `Volatility/cridex_memdump.zip` | 40352364 | `ebcbb798f7fa5df87375dbc4ee329209` |
+| `gpt-partition-forensic/tests/data/gpt_real_3part.img` (committed, §C9) | 8388608 | `cbda08767efb84203c5f02b827fc2a94` |
 
 (The inner `…-235706.dmp` carries its own published SHA256 — see §A6.)
