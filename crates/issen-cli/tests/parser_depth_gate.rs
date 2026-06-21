@@ -201,12 +201,12 @@ fn manifest() -> Vec<DepthCase> {
         // C:\Windows\System32\coreupdater.exe — is a VALUE under
         // ControlSet00N\Services that the generic key walk drops.
         DepthCase {
-            label: "registry SYSTEM: service persistence (coreupdater)",
+            label: "registry SYSTEM: service masquerade lead (coreupdater)",
             fixture: "SYSTEM",
             committed: false,
             drive: drive_hive,
-            required_keys: &["service_name", "image_path", "start_type"],
-            required_iocs: &["coreupdater"],
+            required_keys: &["service_name", "image_path", "anomaly_reason"],
+            required_iocs: &["coreupdater", "masquerade"],
         },
     ]
 }

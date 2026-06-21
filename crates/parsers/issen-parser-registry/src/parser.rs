@@ -742,36 +742,44 @@ mod tests {
     /// this only fires on the real DC hive, never a synthetic one missing that
     /// indirection.
     #[test]
-    fn real_system_hive_surfaces_service_persistence() {
+    fn real_system_hive_emits_only_signal_services_incl_coreupdater_masquerade() {
         let p = hive("SYSTEM");
         if !p.exists() {
             eprintln!("SKIP: SYSTEM hive absent");
             return;
         }
         let events = parse_hive(&p, "dc01-SYSTEM").unwrap();
-        let svc = events
+        let svc: Vec<_> = events
             .iter()
-            .find(|e| {
-                e.description.starts_with("Service:") && e.description.contains("coreupdater")
-            })
-            .expect("coreupdater service-persistence event");
-        assert_eq!(
-            svc.activity_category,
-            Some(issen_core::ActivityCategory::Persistence),
-            "a service install is a Persistence activity"
+            .filter(|e| matches!(e.event_type, EventType::ServiceInstall))
+            .collect();
+        // Signal-only: the 453-service flood (303 empty-ObjectName FPs, benign
+        // baseline services) must NOT be emitted — only genuine anomalies.
+        assert!(
+            svc.len() <= 5,
+            "signal-only filter: expected a handful of service events, got {} (flood not filtered)",
+            svc.len()
         );
-        assert!(matches!(&svc.event_type, EventType::ServiceInstall));
-        // The ImagePath (the command the service runs) must reach metadata — the
-        // hollow-shell failure is surfacing the service NAME but dropping the
-        // binary path under it.
-        let blob = format!("{} {:?}", svc.description, svc.metadata).to_lowercase();
+        // The implant `coreupdater.exe` is a System32 masquerade (svc_diff does
+        // not flag it; it evades path/interpreter rules). It must surface via the
+        // known-good-catalog masquerade rule, with its image path + reason.
+        let cu = svc
+            .iter()
+            .find(|e| e.description.to_lowercase().contains("coreupdater"))
+            .expect("coreupdater masquerade service event");
+        assert!(matches!(cu.event_type, EventType::ServiceInstall));
+        let blob = format!("{} {:?}", cu.description, cu.metadata).to_lowercase();
+        assert!(
+            blob.contains("masquerade"),
+            "coreupdater must be flagged as a masquerade lead: {blob}"
+        );
         assert!(
             blob.contains(r"coreupdater.exe"),
             "the service image path must be surfaced: {blob}"
         );
         assert!(
-            blob.contains("image_path"),
-            "image_path metadata key must be present: {blob}"
+            blob.contains("anomaly_reason"),
+            "anomaly_reason metadata key must be present: {blob}"
         );
     }
 
