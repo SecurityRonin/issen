@@ -441,8 +441,18 @@ Apple `COMPRESSION_LZVN` (`0x900`) + the kernel's transparent read. Exposed 2 bu
 fixtures masked — type-8 strict-trailing reject (fixed via the `lzvn` crate) and type-9 unstripped
 marker — taking real-sample decoding from **0/35 → 35/35**.
 
-### C5 · apm-partition-forensic — `forensic/tests/data/apm_map.bin` (2 KB) · REAL-self ✓
-Apple Partition Map + DDM from an `hdiutil` HFS+ image (2 partitions). `forensic/tests/map.rs`.
+### C5 · apm-partition-forensic — `tests/data/apm_map{,_32k}.bin` · REAL-self ✓
+Apple Partition Map + DDM from `hdiutil` HFS+ images (2 partitions: `Apple_partition_map` +
+`Apple_HFS`, block size 512). `apm_map.bin` (2 KB, md5 `5d87d4730a865a763f49180a7949b8e2`)
+drives `forensic/tests/map.rs` + `analyse_tests.rs`. **`apm_map_32k.bin`** (32 KB, md5
+`cf93a0aa136bd22b36b5f397dca942a2`) is the **Tier-1 oracle differential** in
+`forensic/tests/real_apm_oracle.rs` — re-decoded by `mmls -t mac` (TSK) AND `pdisk -dump`
+(Apple), reconciling entry count/type/start/count. 32 KB = smallest head both oracles fully
+decode. Generator:
+```bash
+hdiutil create -size 8m -layout SPUD -fs HFS+ -volname OracleTest /tmp/apm_oracle
+dd if=/tmp/apm_oracle.dmg of=tests/data/apm_map_32k.bin bs=1024 count=32
+```
 
 ### C6 · usnjrnl-forensic — feature-gated `tests/data/` · REAL-ext ✓ (external)
 Uses the **Szechuan Sauce desktop E01** (A3) for `image_integration.rs` / `precision_recall.rs`
