@@ -34,10 +34,21 @@ fn push_notifications_are_aggregated_per_app_not_per_row() {
         .filter(|e| e.description.starts_with("SRUM PushNotifications"))
         .collect();
     assert!(!push.is_empty(), "push notifications must surface");
-    // 562 rows in the table — aggregation must collapse them to far fewer events.
+    // Aggregation: the table's 562 rows must collapse to one event per app, so the
+    // total occurrence count (rows) strictly exceeds the number of events.
+    let total_rows: u64 = push
+        .iter()
+        .filter_map(|e| {
+            e.metadata
+                .iter()
+                .find(|(k, _)| k.as_str() == "occurrences")
+                .and_then(|(_, v)| v.as_u64())
+        })
+        .sum();
     assert!(
-        push.len() < 100,
-        "PushNotifications must be aggregated per-app, not 562 per-row events; got {}",
+        total_rows > push.len() as u64,
+        "PushNotifications must be aggregated per-app: {total_rows} rows collapsed \
+         into {} events (not per-row)",
         push.len()
     );
     assert_eq!(

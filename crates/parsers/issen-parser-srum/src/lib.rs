@@ -14,6 +14,7 @@
     clippy::must_use_candidate
 )]
 
+use chrono::{DateTime, Utc};
 use issen_core::artifacts::ArtifactType;
 use issen_core::classify;
 use issen_core::error::RtError;
@@ -23,7 +24,7 @@ use issen_core::plugin::traits::{
     DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 /// SRUM parser — ingests `SRUDB.dat` ESE database files.
@@ -147,8 +148,86 @@ impl SrumParser {
             &evidence_source,
         ));
 
+        // Push notifications — high-volume / low-signal: AGGREGATE per app (one
+        // summary event with an occurrence count + time range) rather than emit
+        // hundreds of per-row events that would flood the timeline.
+        events.extend(push_aggregate_events(
+            srum_parser::parse_push_notifications(path)?,
+            &id_map,
+            &evidence_source,
+        ));
+
         Ok(events)
     }
+}
+
+/// Per-app push-notification rollup: how many records, total notifications, and
+/// the time span over which they occurred.
+#[derive(Default)]
+struct PushAgg {
+    occurrences: u64,
+    total_count: u64,
+    total_fg_cycle: u64,
+    first: Option<DateTime<Utc>>,
+    last: Option<DateTime<Utc>>,
+}
+
+/// Aggregate SRUM PushNotifications per app into one `NetworkActivity` event each,
+/// keyed on the app's last-seen time — collapsing a high-volume table into
+/// per-app summaries instead of flooding the timeline with per-row events.
+fn push_aggregate_events(
+    records: Vec<srum_core::PushNotificationRecord>,
+    id_map: &HashMap<i32, String>,
+    evidence_source: &str,
+) -> Vec<TimelineEvent> {
+    let mut by_app: BTreeMap<i32, PushAgg> = BTreeMap::new();
+    for r in records {
+        let a = by_app.entry(r.app_id).or_default();
+        a.occurrences += 1;
+        a.total_count += u64::from(r.count);
+        a.total_fg_cycle += r.foreground_cycle_time;
+        a.first = Some(a.first.map_or(r.timestamp, |f| f.min(r.timestamp)));
+        a.last = Some(a.last.map_or(r.timestamp, |l| l.max(r.timestamp)));
+    }
+    by_app
+        .into_iter()
+        .filter_map(|(app_id, agg)| {
+            let last = agg.last?;
+            let app_name = resolve_name(id_map, app_id);
+            let app_label = app_name
+                .clone()
+                .unwrap_or_else(|| format!("app_id={app_id}"));
+            let mut event = TimelineEvent::new(
+                last.timestamp_nanos_opt().unwrap_or(0),
+                last.to_rfc3339(),
+                EventType::Other("PushNotifications".into()),
+                ArtifactType::Srum,
+                evidence_source.to_string(),
+                format!(
+                    "SRUM PushNotifications: {app_label} ({} records, {} notifications)",
+                    agg.occurrences, agg.total_count
+                ),
+                evidence_source.to_string(),
+            )
+            .with_activity_category(issen_core::ActivityCategory::NetworkActivity)
+            .with_metadata("occurrences", serde_json::json!(agg.occurrences))
+            .with_metadata("total_notifications", serde_json::json!(agg.total_count))
+            .with_metadata(
+                "total_foreground_cycle_time",
+                serde_json::json!(agg.total_fg_cycle),
+            )
+            .with_metadata("app_id", serde_json::json!(app_id))
+            .with_metadata(
+                "first_seen",
+                serde_json::json!(agg.first.map(|t| t.to_rfc3339())),
+            )
+            .with_metadata("last_seen", serde_json::json!(last.to_rfc3339()));
+            if let Some(name) = &app_name {
+                event = event.with_metadata("app_name", serde_json::json!(name));
+            }
+            Some(event)
+        })
+        .collect()
 }
 
 /// Resolve a `SruDbIdMapTable` index to a non-empty name (best-effort).
