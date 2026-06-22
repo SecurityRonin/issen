@@ -85,7 +85,9 @@ mod tests {
     fn test_parser_registration_struct() {
         use crate::artifacts::ArtifactType;
         use crate::error::RtError;
-        use crate::plugin::traits::{DataSource, EventEmitter, ParseStats, ParserCapabilities};
+        use crate::plugin::traits::{
+            DataSource, EventEmitter, ParseOptions, ParseStats, ParserCapabilities,
+        };
         struct TestParser;
 
         impl ForensicParser for TestParser {
@@ -99,6 +101,7 @@ mod tests {
                 &self,
                 _input: &dyn DataSource,
                 _emitter: &dyn EventEmitter,
+                _opts: &ParseOptions,
             ) -> Result<ParseStats, RtError> {
                 Ok(ParseStats::new())
             }

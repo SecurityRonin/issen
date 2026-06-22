@@ -131,7 +131,11 @@ fn chainsaw_srudb_parse_trait_emits_network_events() {
         events: Mutex::new(Vec::new()),
     };
     let stats = SrumParser
-        .parse(&source, &emitter)
+        .parse(
+            &source,
+            &emitter,
+            &issen_core::plugin::ParseOptions::default(),
+        )
         .expect("parse() must succeed on a path-bearing DataSource");
 
     let events = emitter.events.into_inner().expect("lock");

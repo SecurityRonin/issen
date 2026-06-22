@@ -24,7 +24,8 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseOptions, ParseStats,
+    ParserCapabilities,
 };
 
 /// Windows LNK (Shell Link) shortcut file parser.
@@ -52,6 +53,7 @@ impl ForensicParser for LnkParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let len = input.len();
@@ -129,6 +131,7 @@ impl ForensicParser for JumpListParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let len = input.len();
@@ -260,7 +263,11 @@ mod tests {
         let source = MemSource(data);
         let collector = Collector::default();
         let stats = LnkParser
-            .parse(&source, &collector)
+            .parse(
+                &source,
+                &collector,
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse must not Err on a valid header");
 
         assert_eq!(

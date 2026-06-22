@@ -46,7 +46,13 @@ fn run_auto_is_sorted_flatten_of_run_auto_units() {
 
     let progress = ProgressReporter::new();
     let (flat, r_flat) = run_auto(dir.path(), &progress).unwrap();
-    let (units, r_units, _) = run_auto_units(dir.path(), &progress, &|_, _, _| false).unwrap();
+    let (units, r_units, _) = run_auto_units(
+        dir.path(),
+        &progress,
+        &|_, _, _| false,
+        &issen_core::plugin::ParseOptions::default(),
+    )
+    .unwrap();
 
     // Flatten + sort by the SAME key run_auto uses (timestamp_ns, record_hash).
     let mut from_units: Vec<_> = units.into_iter().flat_map(|u| u.events).collect();

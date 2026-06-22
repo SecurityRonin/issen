@@ -23,7 +23,7 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseOptions, ParseStats, ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use segb::common::EntryState;
@@ -162,6 +162,7 @@ impl ForensicParser for BiomeParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         // A SEGB read needs the whole container in hand. Prefer the file path
         // when the source exposes one (the orchestrator's FileDataSource does);
@@ -453,7 +454,9 @@ mod tests {
         let segb = synthetic_segb_one_menu_item();
         let src = ByteSource(segb);
         let sink = CollectingEmitter::default();
-        let stats = BiomeParser.parse(&src, &sink).expect("parse ok");
+        let stats = BiomeParser
+            .parse(&src, &sink, &issen_core::plugin::ParseOptions::default())
+            .expect("parse ok");
         assert_eq!(stats.events_emitted, 1);
         assert_eq!(sink.events.lock().unwrap().len(), 1);
     }

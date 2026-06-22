@@ -35,7 +35,7 @@ fn default_feed_cache_dir() -> PathBuf {
 /// - `sigma_rules`: path to Sigma rules directory
 /// - `hash_iocs`: hash IOC files (one hash per line)
 /// - `network_iocs`: network IOC files (IPs/domains/CIDRs)
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
 pub fn run(
     evidence_paths: &[PathBuf],
     output: &Path,
@@ -48,6 +48,7 @@ pub fn run(
     network_iocs: Option<&[PathBuf]>,
     refresh: bool,
     verbose: bool,
+    verbose_rows: bool,
 ) -> Result<()> {
     // Remote source URI dispatch.
     if let Some(uri) = source_uri {
@@ -181,8 +182,10 @@ pub fn run(
             .unit_id;
             completed.contains(&unit_id)
         };
-        let (units, result, skipped) =
-            run_auto_units(&src.path, sp.reporter(), &skip).context("Pipeline execution failed")?;
+        let parse_opts =
+            issen_core::plugin::ParseOptions::default().with_verbose_rows(verbose_rows);
+        let (units, result, skipped) = run_auto_units(&src.path, sp.reporter(), &skip, &parse_opts)
+            .context("Pipeline execution failed")?;
 
         // Every returned unit is pending (completed ones were skipped before
         // parse), so each is committed unconditionally.

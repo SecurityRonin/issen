@@ -17,7 +17,11 @@
 //!   museum_rathbunvm_win11_SRUDB.dat  — 13 EnergyUsage rows
 //! Both tests skip gracefully when the corpus checkout is absent.
 
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::redundant_closure_for_method_calls
+)]
 
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -135,7 +139,7 @@ fn push_default_aggregates_but_verbose_emits_per_row() {
         .into_iter()
         .filter(|e| e.description.starts_with("SRUM PushNotifications"))
         .collect();
-    let verbose_push: Vec<_> = parse_with(&path, &ParseOptions { verbose_rows: true })
+    let verbose_push: Vec<_> = parse_with(&path, &ParseOptions::default().with_verbose_rows(true))
         .into_iter()
         .filter(|e| e.description.starts_with("SRUM PushNotifications"))
         .collect();
@@ -191,10 +195,11 @@ fn energy_default_aggregates_but_verbose_emits_per_row() {
         .into_iter()
         .filter(|e| e.description.starts_with("SRUM EnergyUsage:"))
         .collect();
-    let verbose_energy: Vec<_> = parse_with(&path, &ParseOptions { verbose_rows: true })
-        .into_iter()
-        .filter(|e| e.description.starts_with("SRUM EnergyUsage:"))
-        .collect();
+    let verbose_energy: Vec<_> =
+        parse_with(&path, &ParseOptions::default().with_verbose_rows(true))
+            .into_iter()
+            .filter(|e| e.description.starts_with("SRUM EnergyUsage:"))
+            .collect();
 
     assert!(
         !default_energy.is_empty(),

@@ -18,7 +18,7 @@ use issen_core::artifacts::ArtifactType;
 use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseOptions, ParseStats, ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use issen_fswalker::orchestrator::run_auto_units;
@@ -92,6 +92,7 @@ impl ForensicParser for MftTouchParser {
         &self,
         _input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         emitter.emit(TimelineEvent::new(
             0,
@@ -136,7 +137,8 @@ fn run_auto_units_keeps_collection_files_alive_through_parse() {
     let progress = ProgressReporter::new();
     let no_skip = |_: &ArtifactType, _: &Path, _: &str| false;
     let (units, result, skipped) =
-        run_auto_units(&collection, &progress, &no_skip).expect("run_auto_units");
+        run_auto_units(&collection, &progress, &no_skip, &ParseOptions::default())
+            .expect("run_auto_units");
 
     assert_eq!(skipped, 0, "nothing is pre-completed");
     assert!(
