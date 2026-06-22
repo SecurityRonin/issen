@@ -5,7 +5,6 @@
 
 use std::collections::BTreeMap;
 
-use issen_core::artifacts::ArtifactType;
 use issen_core::coverage::{CoverageEntry, CoverageManifest, CoverageStatus};
 
 /// Merge per-source coverage manifests into one run-wide manifest.
@@ -14,12 +13,27 @@ use issen_core::coverage::{CoverageEntry, CoverageManifest, CoverageStatus};
 /// `parsed` counts sum across sources. Classes are emitted in a deterministic
 /// order (by `Debug` token) so the summary is stable run-to-run.
 #[must_use]
-pub fn merge_coverage(_manifests: &[CoverageManifest]) -> CoverageManifest {
-    // RED stub — real merge lands in the GREEN commit.
-    CoverageManifest::default()
+pub fn merge_coverage(manifests: &[CoverageManifest]) -> CoverageManifest {
+    let mut by_type: BTreeMap<String, CoverageEntry> = BTreeMap::new();
+    for m in manifests {
+        for e in &m.entries {
+            let key = format!("{:?}", e.artifact_type);
+            let acc = by_type.entry(key).or_insert(CoverageEntry {
+                artifact_type: e.artifact_type,
+                searched: false,
+                found: 0,
+                parsed: 0,
+            });
+            acc.searched |= e.searched;
+            acc.found += e.found;
+            acc.parsed += e.parsed;
+        }
+    }
+    CoverageManifest {
+        entries: by_type.into_values().collect(),
+    }
 }
 
-#[allow(dead_code)]
 fn class_names(coverage: &CoverageManifest, status: CoverageStatus) -> Vec<String> {
     coverage
         .entries
@@ -37,14 +51,33 @@ fn class_names(coverage: &CoverageManifest, status: CoverageStatus) -> Vec<Strin
 /// looked, it isn't there") and the classes *discovered with no parser* (a
 /// coverage gap, not a clean negative).
 #[must_use]
-pub fn format_coverage_summary(_coverage: &CoverageManifest) -> String {
-    // RED stub — real formatting lands in the GREEN commit.
-    String::new()
+pub fn format_coverage_summary(coverage: &CoverageManifest) -> String {
+    let count = |s: CoverageStatus| coverage.entries.iter().filter(|e| e.status() == s).count();
+    let parsed = count(CoverageStatus::Parsed);
+    let found_unparsed = count(CoverageStatus::FoundUnparsed);
+    let searched_absent = count(CoverageStatus::SearchedAbsent);
+    let not_searched = count(CoverageStatus::NotSearched);
+
+    let mut out = format!(
+        "Coverage:         {parsed} parsed · {found_unparsed} found-unparsed · \
+         {searched_absent} searched-absent · {not_searched} not-searched"
+    );
+
+    let absent = class_names(coverage, CoverageStatus::SearchedAbsent);
+    if !absent.is_empty() {
+        out.push_str(&format!("\nSearched, absent: {}", absent.join(", ")));
+    }
+    let gaps = class_names(coverage, CoverageStatus::NotSearched);
+    if !gaps.is_empty() {
+        out.push_str(&format!("\nNo parser (gap):  {}", gaps.join(", ")));
+    }
+    out
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use issen_core::artifacts::ArtifactType;
 
     fn manifest(
         searched: &[ArtifactType],

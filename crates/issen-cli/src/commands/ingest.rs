@@ -128,6 +128,9 @@ pub fn run(
     let mut t_bytes = 0u64;
     let mut t_skipped = 0usize;
     let mut all_errors: Vec<String> = Vec::new();
+    // Per-source coverage manifests, merged into one run-wide summary at the end
+    // (an empty result is never silently indistinguishable from a clean input).
+    let mut coverages: Vec<issen_core::coverage::CoverageManifest> = Vec::new();
 
     for src in &sources {
         let source_id = src.source_id.as_str();
@@ -218,6 +221,7 @@ pub fn run(
         t_events += result.total_events;
         t_bytes += result.total_bytes;
         t_skipped += skipped;
+        coverages.push(result.coverage.clone());
         let (n_parsed, n_events, n_errors) = (
             result.artifacts_parsed,
             result.total_events,
@@ -246,6 +250,14 @@ pub fn run(
     }
     println!("Bytes processed:  {}", format_bytes(t_bytes));
     println!("Database:         {}", output.display());
+    // Run-coverage: what was searched / found-unparsed / searched-absent / gap.
+    let coverage = crate::commands::coverage_summary::merge_coverage(&coverages);
+    if !coverage.entries.is_empty() {
+        println!(
+            "{}",
+            crate::commands::coverage_summary::format_coverage_summary(&coverage)
+        );
+    }
 
     if !all_errors.is_empty() {
         eprintln!("\n{} error(s) during parsing:", all_errors.len());
