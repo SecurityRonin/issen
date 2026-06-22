@@ -3040,12 +3040,6 @@ dependencies = [
 
 [[package]]
 name = "forensicnomicon"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f66c898c0f3813cb476c7d1f9e78919566e753b8ce5d581ca8d0f364a55b04b5"
-
-[[package]]
-name = "forensicnomicon"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "005a0dacb6ccfb071cbff1ef2ce802abc40e049e125f0b4ab57821c8ca0eac20"
@@ -4462,7 +4456,7 @@ dependencies = [
  "issen-timeline",
  "issen-unpack",
  "mft",
- "ntfs-core 0.8.1",
+ "ntfs-core",
  "predicates",
  "serde_json",
  "sha2",
@@ -4532,7 +4526,7 @@ dependencies = [
  "issen-core",
  "issen-ewf",
  "issen-unpack",
- "ntfs-core 0.8.1",
+ "ntfs-core",
  "ntfs-forensic",
  "serde_json",
  "tempfile",
@@ -4653,7 +4647,7 @@ dependencies = [
  "issen-parser-velociraptor",
  "issen-signatures",
  "issen-unpack",
- "ntfs-core 0.8.1",
+ "ntfs-core",
  "ratatui",
  "shrinkpath",
  "tempfile",
@@ -4766,7 +4760,7 @@ dependencies = [
  "anyhow",
  "inventory",
  "issen-core",
- "ntfs-core 0.8.1",
+ "ntfs-core",
  "ntfs-forensic",
  "serde_json",
 ]
@@ -5215,7 +5209,7 @@ dependencies = [
  "issen-correlation",
  "issen-mft-tree",
  "md-5",
- "ntfs-core 0.8.1",
+ "ntfs-core",
  "regex",
  "reqwest",
  "serde",
@@ -6527,18 +6521,6 @@ checksum = "61807f77802ff30975e01f4f071c8ba10c022052f98b3294119f3e615d13e5be"
 
 [[package]]
 name = "ntfs-core"
-version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddddaf517a1827782d5eee74c5c456a993223c58ee7f8e66a6a0e6cfea47e62d"
-dependencies = [
- "bitflags 2.13.0",
- "chrono",
- "forensicnomicon 0.3.1",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ntfs-core"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0479eec4f720adc60b2eef244a1feada50873574aa170f7ad92bacfc7a0528de"
@@ -6552,13 +6534,13 @@ dependencies = [
 
 [[package]]
 name = "ntfs-forensic"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9e03eb6242cf8495d2563c14952b0142af6e015290bc4ea3b6f579e62960826"
+checksum = "2c2496b660905121c5b687d10a8d43413605783d4b7e9dae6368e20bab861787"
 dependencies = [
  "chrono",
- "forensicnomicon 0.3.1",
- "ntfs-core 0.7.2",
+ "forensicnomicon 0.5.8",
+ "ntfs-core",
  "regex",
 ]
 
