@@ -48,10 +48,12 @@ jobs:
         with:
           toolchain: nightly
           components: rust-src
-      - run: cargo install cargo-fuzz
+      - run: cargo install cargo-fuzz --locked
       - name: Fuzz ${{ matrix.target }} (45s smoke)
         working-directory: fuzz
-        run: cargo fuzz run "${{ matrix.target }}" -- -max_total_time=45 -rss_limit_mb=4096
+        # `+nightly` overrides the repo's rust-toolchain.toml pin (stable 1.96.0);
+        # cargo-fuzz needs nightly for its `-Z` sanitizer/build-std flags.
+        run: cargo +nightly fuzz run "${{ matrix.target }}" -- -max_total_time=45 -rss_limit_mb=4096
       - name: Upload crash artifacts
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

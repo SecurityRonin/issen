@@ -10,6 +10,12 @@ no-default-features = false
 # Advisories — check against the RustSec advisory database
 # ---------------------------------------------------------------------------
 [advisories]
+# Only flag unmaintained crates that are DIRECT workspace dependencies; purely
+# transitive unmaintained crates (async-std, fxhash, kuchiki, number_prefix,
+# proc-macro-error, rustls-pemfile — reached via opendal/printpdf/indicatif)
+# cannot be upgraded independently and are tracked via this policy rather than
+# per-ID.
+unmaintained = "workspace"
 ignore = [
     # All transitive via yara-x / evtx / mft — we cannot upgrade independently.
     { id = "RUSTSEC-2026-0021", reason = "wasmtime via yara-x; awaiting yara-x update" },
@@ -20,6 +26,24 @@ ignore = [
     { id = "RUSTSEC-2024-0436", reason = "paste via wasmtime via yara-x; awaiting yara-x update" },
     { id = "RUSTSEC-2023-0071", reason = "rsa via yara-x; awaiting yara-x update" },
     { id = "RUSTSEC-2021-0153", reason = "encoding via evtx/mft; awaiting upstream update" },
+    # wasmtime 26.x advisory batch (transitive via yara-x) — awaiting yara-x bump.
+    { id = "RUSTSEC-2026-0085", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0086", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0087", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0088", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0089", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0091", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0092", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0093", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0094", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0095", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    { id = "RUSTSEC-2026-0096", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    # rustls-webpki 0.101.7 pinned by the old rustls 0.21 stack (tonic 0.10 ->
+    # tikv-client -> opendal -> issen-remote-io); cannot bump without an opendal/
+    # tonic update. Affects only the remote-IO TLS path.
+    { id = "RUSTSEC-2026-0098", reason = "rustls-webpki 0.101 via tonic/tikv-client/opendal; awaiting opendal update" },
+    { id = "RUSTSEC-2026-0099", reason = "rustls-webpki 0.101 via tonic/tikv-client/opendal; awaiting opendal update" },
+    { id = "RUSTSEC-2026-0104", reason = "rustls-webpki 0.101 via tonic/tikv-client/opendal; awaiting opendal update" },
 ]
 
 # ---------------------------------------------------------------------------

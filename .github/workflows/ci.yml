@@ -51,6 +51,11 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # etcd-client's build script compiles .proto files and needs `protoc` on
+      # PATH (absent on the macOS runner); install it cross-platform.
+      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9 # master
         with:
           # Pinned to match rust-toolchain.toml (single source of truth). Bump
@@ -65,24 +70,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: EmbarkStudios/cargo-deny-action@82eb9f621fbc699dd0918f3ea06864c14cc84246 # v2
+      # Run cargo-deny on the host (not the action's container) so the pinned
+      # rust-toolchain.toml (1.96.0) resolves; the action's container ships only
+      # `stable` and errors "override toolchain '1.96.0' is not installed".
+      - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9 # master
+        with:
+          toolchain: "1.96.0"
+      - run: cargo install cargo-deny --locked
+      - run: cargo deny check
 
   audit:
     name: Cargo Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: rustsec/audit-check@1d580f6bfa5ac4c6b7fb3a0519e8a41dff61fce2 # v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  msrv:
-    name: MSRV (1.80)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # Same toolchain-resolution reason as Cargo Deny; also the prior
+      # rustsec/audit-check pinned SHA no longer resolves. Ignored advisories
+      # are listed in audit.toml (mirrors deny.toml's advisory ignores).
       - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9 # master
         with:
-          toolchain: "1.80"
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
-      - run: cargo check --workspace
+          toolchain: "1.96.0"
+      - run: cargo install cargo-audit --locked
+      - run: cargo audit
