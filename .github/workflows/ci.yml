@@ -11,6 +11,11 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  # Drop debug symbols to shrink build artifacts — the bundled DuckDB C++
+  # amalgamation (libduckdb-sys) otherwise fills the ubuntu runner's disk
+  # ("No space left on device"). Does not affect debug-assertions or behavior.
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
 
 jobs:
   fmt:
@@ -32,6 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # Reclaim ~30 GB so the bundled-DuckDB C++ build (via --bins) fits on disk.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
       # `--bins` compiles issen-cli, whose etcd-client build dep needs `protoc`.
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
         with:
@@ -55,6 +63,10 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # Reclaim ~30 GB on the Linux runner so the bundled-DuckDB C++ build fits.
+      - name: Free disk space
+        if: runner.os == 'Linux'
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
       # etcd-client's build script compiles .proto files and needs `protoc` on
       # PATH (absent on the macOS runner); install it cross-platform.
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
