@@ -1,0 +1,61 @@
+name: Fuzz (smoke)
+
+# Builds every issen wrapper-parser fuzz target and runs a short smoke pass per
+# target, asserting "must not panic" on attacker-controllable bytes. Runs on
+# changes to the fuzz harness or the parsed surfaces, and on demand. Deep fuzzing
+# is left to a scheduled job / local `cargo fuzz run`.
+#
+# CI runs on Linux, where `inventory`-based static parser registration links
+# cleanly under the cargo-fuzz ASan build. On macOS (aarch64) the ASan + ld64
+# `-dead_strip` combination cannot link the inventory targets (logfile, usnjrnl,
+# pe, fuzz_pipeline) — build/run those locally with `--sanitizer none`.
+on:
+  pull_request:
+    paths:
+      - "fuzz/**"
+      - "crates/**"
+      - ".github/workflows/fuzz.yml"
+  push:
+    branches: [main]
+    paths:
+      - "fuzz/**"
+      - "crates/**"
+      - ".github/workflows/fuzz.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: Fuzz ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - logfile
+          - usnjrnl
+          - pe
+          - mft_logfile
+          - mft_mirror
+          - fish_history
+          - magic_table
+          - fuzz_pipeline
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # nightly
+        with:
+          toolchain: nightly
+          components: rust-src
+      - run: cargo install cargo-fuzz
+      - name: Fuzz ${{ matrix.target }} (45s smoke)
+        working-directory: fuzz
+        run: cargo fuzz run "${{ matrix.target }}" -- -max_total_time=45 -rss_limit_mb=4096
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fuzz-crash-${{ matrix.target }}
+          path: fuzz/artifacts/
+          if-no-files-found: ignore

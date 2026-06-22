@@ -1,0 +1,105 @@
+[package]
+name = "issen-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+# Standalone workspace: the fuzz crate must NOT be pulled into the parent issen
+# workspace (whose virtual root manifest is not a package, builds on stable, and
+# must not depend on libfuzzer / a nightly sanitizer runtime).
+#
+# macOS note: the targets that link an `inventory`-registered parser crate
+# (logfile, usnjrnl, pe, fuzz_pipeline) cannot link under cargo-fuzz's default
+# ASan build on aarch64-apple-darwin — ld64 `-dead_strip` drops the inventory
+# section ("initializer pointer has no target"). Build/run those locally with
+# `cargo +nightly fuzz run <target> --sanitizer none`. Linux CI links all
+# targets under ASan normally (inventory is link-compatible there).
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+# The fuzzed surfaces are issen's OWN untrusted-byte wrapper parsers. The
+# underlying *-core readers (ntfs-core, winreg-core, lnk-core, segb-core,
+# prefetch-core, …) are already fleet-fuzzed in their own repos — these targets
+# exercise only the parse/interpretation logic issen itself performs on
+# attacker-controllable bytes.
+[dependencies.issen-parser-logfile]
+path = "../crates/parsers/issen-parser-logfile"
+
+[dependencies.issen-parser-usnjrnl]
+path = "../crates/parsers/issen-parser-usnjrnl"
+
+[dependencies.issen-parser-pe]
+path = "../crates/parsers/issen-parser-pe"
+
+[dependencies.issen-mft-tree]
+path = "../crates/issen-mft-tree"
+
+[dependencies.issen-wsl]
+path = "../crates/issen-wsl"
+
+[dependencies.issen-signatures]
+path = "../crates/issen-signatures"
+
+[[bin]]
+name = "logfile"
+path = "fuzz_targets/logfile.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "usnjrnl"
+path = "fuzz_targets/usnjrnl.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "pe"
+path = "fuzz_targets/pe.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "mft_logfile"
+path = "fuzz_targets/mft_logfile.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "mft_mirror"
+path = "fuzz_targets/mft_mirror.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fish_history"
+path = "fuzz_targets/fish_history.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "magic_table"
+path = "fuzz_targets/magic_table.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_pipeline"
+path = "fuzz_targets/fuzz_pipeline.rs"
+test = false
+doc = false
+bench = false
+
+[profile.release]
+debug = 1
