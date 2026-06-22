@@ -4,8 +4,9 @@
 //! [`ParserRegistration`](crate::plugin::registry::ParserRegistration). The
 //! pipeline derives both classification (which parser reads a file) and disk
 //! collection (which files to pull off an image) from this one registry, so the
-//! two can no longer drift apart by hand. Stage 1 only *declares* selectors —
-//! nothing reads them yet.
+//! two can no longer drift apart by hand: `registry::detect_from_registry`
+//! derives classification and `registry::triage_ntfs_sources` derives disk
+//! collection from these declarations.
 
 use std::path::Path;
 
