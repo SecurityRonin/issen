@@ -4747,7 +4747,7 @@ dependencies = [
  "forensicnomicon 0.5.8",
  "inventory",
  "issen-core",
- "lnk-core 0.3.0",
+ "lnk-core",
  "serde",
  "serde_json",
  "tempfile",
@@ -5716,15 +5716,6 @@ checksum = "ade8b13b9dcdbed167a358dad01572423abc36eaa9ae23aaac56f4e7c70c0fa7"
 dependencies = [
  "forensicnomicon 0.5.8",
  "livedisk-core",
-]
-
-[[package]]
-name = "lnk-core"
-version = "0.3.0"
-dependencies = [
- "cfb",
- "forensicnomicon 0.5.8",
- "shellitem",
 ]
 
 [[package]]
@@ -9407,6 +9398,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b9b39299b249ad65f3b7e96443bad61c02ca5cd3589f46cb6d610a0fd6c0d6a"
 
 [[package]]
+name = "sqlite-core"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb19a932f56da05134f955006bbdee37cd67e3815542d8d50bfbf0c66764a80f"
+dependencies = [
+ "forensicnomicon 0.5.8",
+]
+
+[[package]]
 name = "sqlx"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10572,9 +10572,13 @@ dependencies = [
 
 [[package]]
 name = "trash-core"
-version = "0.1.0"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18206c60c6d40fc21be6ff50382baa927fdfe44e8dc6c7a7cc3060009c8c8379"
 dependencies = [
  "chrono",
+ "percent-encoding",
+ "sqlite-core",
  "thiserror 2.0.18",
 ]
 
@@ -10802,7 +10806,7 @@ checksum = "15f34578a931293cc6b9da313f03cd28a179a523de633033754fd298dd87f868"
 dependencies = [
  "chrono",
  "forensicnomicon 0.5.8",
- "lnk-core 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lnk-core",
  "peripheral-core",
  "segb-core",
  "shellhist-core",

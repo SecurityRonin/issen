@@ -8,7 +8,7 @@ license.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 issen-core = { path = "../../issen-core" }
-lnk-core = { path = "../../../../lnk-forensic/core" }
+lnk-core = "0.3"
 forensicnomicon = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }
