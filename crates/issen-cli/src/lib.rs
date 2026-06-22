@@ -158,6 +158,14 @@ pub enum Commands {
         /// source are skipped (issen #115).
         #[arg(long)]
         refresh: bool,
+
+        /// Emit full per-row events for high-volume parser tables instead of the
+        /// default aggregate-per-app summary. Currently affects SRUM's
+        /// PushNotifications/EnergyUsage tables (hundreds of low-signal rows are
+        /// otherwise collapsed into one summary event per app). Off by default to
+        /// keep the timeline flood-resistant.
+        #[arg(long)]
+        verbose_rows: bool,
     },
 
     /// Query and export the timeline.
@@ -532,6 +540,7 @@ pub fn run() -> ExitCode {
             hash_iocs,
             network_iocs,
             refresh,
+            verbose_rows,
         } => {
             // No -o → auto-name `issen-ingested-<UTC>Z.duckdb` in the cwd.
             let output =
@@ -548,6 +557,7 @@ pub fn run() -> ExitCode {
                 network_iocs.as_deref(),
                 refresh,
                 cli.verbose,
+                verbose_rows,
             )
         }
         Commands::Timeline {

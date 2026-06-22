@@ -138,7 +138,11 @@ fn detector_flags_beth_secret_timestomp_on_real_dc_mft() {
     // Parse the real $MFT through the issen MFT parser → timeline events.
     let emitter = Collect(Mutex::new(Vec::new()));
     MftFileParser
-        .parse(&Bytes(mft), &emitter)
+        .parse(
+            &Bytes(mft),
+            &emitter,
+            &issen_core::plugin::ParseOptions::default(),
+        )
         .expect("parse real $MFT");
     let events = emitter.0.into_inner().unwrap();
     assert!(

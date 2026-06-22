@@ -48,7 +48,8 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseOptions, ParseStats,
+    ParserCapabilities,
 };
 use issen_core::timeline::event::{EntityRef, EventType, TimelineEvent};
 use serde_json::Value;
@@ -385,6 +386,7 @@ impl ForensicParser for EvtxFileParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         /// Minimum size for a valid EVTX file (header is 4 KiB).
         const EVTX_MIN_HEADER_SIZE: usize = 4096;
@@ -1255,7 +1257,13 @@ mod tests {
         let emitter = CollectingEmitter::new();
         let parser = EvtxFileParser;
 
-        let stats = parser.parse(&source, &emitter).expect("parse empty input");
+        let stats = parser
+            .parse(
+                &source,
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse empty input");
         assert_eq!(stats.events_emitted, 0);
         assert_eq!(stats.bytes_processed, 0);
 
@@ -1276,7 +1284,11 @@ mod tests {
             SliceSource(garbage),                      // big enough, but not EVTX
         ] {
             let stats = parser
-                .parse(&source, &CollectingEmitter::new())
+                .parse(
+                    &source,
+                    &CollectingEmitter::new(),
+                    &issen_core::plugin::ParseOptions::default(),
+                )
                 .expect("ok");
             assert_eq!(
                 stats.completion,
@@ -1294,7 +1306,13 @@ mod tests {
         let emitter = CollectingEmitter::new();
         let parser = EvtxFileParser;
 
-        let stats = parser.parse(&source, &emitter).expect("parse tiny input");
+        let stats = parser
+            .parse(
+                &source,
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse tiny input");
         assert_eq!(stats.events_emitted, 0);
 
         let events = emitter.into_events();
@@ -1310,7 +1328,11 @@ mod tests {
         let parser = EvtxFileParser;
 
         let stats = parser
-            .parse(&source, &emitter)
+            .parse(
+                &source,
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse garbage gracefully");
         assert_eq!(stats.events_emitted, 0);
 

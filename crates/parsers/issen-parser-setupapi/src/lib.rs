@@ -33,7 +33,8 @@ use issen_core::classify;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseOptions, ParseStats,
+    ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use regex::Regex;
@@ -208,6 +209,7 @@ impl ForensicParser for SetupApiParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, issen_core::error::RtError> {
         let mut stats = ParseStats::new();
         let len = input.len();
@@ -312,7 +314,11 @@ mod tests {
         let source = MemSource(log.as_bytes().to_vec());
         let collector = Collector::default();
         let stats = SetupApiParser
-            .parse(&source, &collector)
+            .parse(
+                &source,
+                &collector,
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse must not Err on a valid log");
 
         assert_eq!(stats.events_emitted, 1, "one device-install event emitted");

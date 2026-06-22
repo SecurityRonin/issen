@@ -2,6 +2,10 @@ use crate::artifacts::ArtifactType;
 use crate::error::RtError;
 use crate::timeline::event::TimelineEvent;
 
+// Re-exported so impls that `use issen_core::plugin::traits::{...}` can name the
+// options type alongside the trait. Canonical path: `issen_core::plugin::ParseOptions`.
+pub use crate::plugin::options::ParseOptions;
+
 /// Capabilities advertised by a parser for orchestration decisions.
 #[derive(Debug, Clone)]
 pub struct ParserCapabilities {
@@ -149,6 +153,11 @@ pub trait ForensicParser: Send + Sync {
 
     /// Parse the data source, emitting events through the emitter.
     ///
+    /// `opts` carries parser-agnostic [`ParseOptions`] (e.g. `verbose_rows`).
+    /// Most parsers ignore it — they have one natural output shape — but a parser
+    /// with a high-volume table consults it to choose between an aggregate
+    /// summary and full per-row events.
+    ///
     /// # Errors
     /// Returns `RtError` on unrecoverable parse failures.
     /// Recoverable errors should be logged and counted in `ParseStats`.
@@ -156,6 +165,7 @@ pub trait ForensicParser: Send + Sync {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        opts: &ParseOptions,
     ) -> Result<ParseStats, RtError>;
 
     /// Advertise parser capabilities for orchestration decisions.
@@ -273,6 +283,7 @@ mod tests {
             &self,
             input: &dyn DataSource,
             emitter: &dyn EventEmitter,
+            _opts: &ParseOptions,
         ) -> Result<ParseStats, RtError> {
             let start = std::time::Instant::now();
             let mut stats = ParseStats::new();
@@ -405,7 +416,9 @@ mod tests {
         let source = MemorySource::new(vec![0; 3]);
         let emitter = CollectingEmitter::new();
 
-        let stats = parser.parse(&source, &emitter).expect("parse");
+        let stats = parser
+            .parse(&source, &emitter, &ParseOptions::default())
+            .expect("parse");
         assert_eq!(stats.events_emitted, 3);
         assert_eq!(stats.bytes_processed, 3);
         assert_eq!(stats.errors_recovered, 0);

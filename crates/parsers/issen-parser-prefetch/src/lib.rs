@@ -21,7 +21,8 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseOptions, ParseStats,
+    ParserCapabilities,
 };
 
 /// Windows Prefetch file parser.
@@ -49,6 +50,7 @@ impl ForensicParser for PrefetchParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let len = input.len();
@@ -228,16 +230,34 @@ mod tests {
 
         let parser = PrefetchParser;
         // Empty -> Unsupported.
-        let s = parser.parse(&Bytes(vec![]), &Noop).expect("ok");
+        let s = parser
+            .parse(
+                &Bytes(vec![]),
+                &Noop,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("ok");
         assert_eq!(s.completion, ParseCompletion::Unsupported);
         // Bad signature (non-empty, zero events) -> Unsupported.
         let mut junk = vec![0u8; 84];
         junk[0..4].copy_from_slice(b"JUNK");
-        let s = parser.parse(&Bytes(junk), &Noop).expect("ok");
+        let s = parser
+            .parse(
+                &Bytes(junk),
+                &Noop,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("ok");
         assert_eq!(s.completion, ParseCompletion::Unsupported);
         // A valid SCCA consumed cleanly -> Complete.
         let scca = minimal_scca("NOTEPAD.EXE", 132_449_604_494_103_203, 3);
-        let s = parser.parse(&Bytes(scca), &Noop).expect("ok");
+        let s = parser
+            .parse(
+                &Bytes(scca),
+                &Noop,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("ok");
         assert_eq!(s.completion, ParseCompletion::Complete);
     }
 
@@ -344,7 +364,11 @@ mod tests {
         let source = MemSource(data);
         let collector = Collector::default();
         let stats = PrefetchParser
-            .parse(&source, &collector)
+            .parse(
+                &source,
+                &collector,
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse must not Err");
 
         assert_eq!(stats.events_emitted, 1);

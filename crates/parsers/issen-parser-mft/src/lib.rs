@@ -50,7 +50,8 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseOptions, ParseStats,
+    ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use mft::attribute::x10::StandardInfoAttr;
@@ -276,6 +277,7 @@ impl ForensicParser for MftFileParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let start = std::time::Instant::now();
         let mut stats = ParseStats::new();
@@ -682,7 +684,13 @@ mod tests {
         let emitter = CollectingEmitter::new();
         let parser = MftFileParser;
 
-        let stats = parser.parse(&source, &emitter).expect("parse empty input");
+        let stats = parser
+            .parse(
+                &source,
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse empty input");
         assert_eq!(stats.events_emitted, 0);
         assert_eq!(stats.bytes_processed, 0);
 
@@ -697,7 +705,13 @@ mod tests {
         let emitter = CollectingEmitter::new();
         let parser = MftFileParser;
 
-        let stats = parser.parse(&source, &emitter).expect("parse tiny input");
+        let stats = parser
+            .parse(
+                &source,
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse tiny input");
         assert_eq!(stats.events_emitted, 0);
 
         let events = emitter.into_events();
@@ -716,7 +730,13 @@ mod tests {
             SliceSource(vec![0x46, 0x49, 0x4C, 0x45]), // too small
         ] {
             let emitter = CollectingEmitter::new();
-            let stats = parser.parse(&source, &emitter).expect("Ok");
+            let stats = parser
+                .parse(
+                    &source,
+                    &emitter,
+                    &issen_core::plugin::ParseOptions::default(),
+                )
+                .expect("Ok");
             assert_eq!(
                 stats.completion,
                 ParseCompletion::Unsupported,
@@ -737,7 +757,11 @@ mod tests {
         let parser = MftFileParser;
 
         let stats = parser
-            .parse(&source, &emitter)
+            .parse(
+                &source,
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse garbage gracefully");
         // Should not crash; may produce 0 events or handle error gracefully.
         let events = emitter.into_events();

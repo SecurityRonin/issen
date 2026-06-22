@@ -13,7 +13,8 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseOptions, ParseStats,
+    ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use issen_core::ActivityCategory;
@@ -115,6 +116,7 @@ impl ForensicParser for PeParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let len = input.len();

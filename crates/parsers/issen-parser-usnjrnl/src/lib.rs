@@ -43,7 +43,8 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseOptions, ParseStats,
+    ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
 
@@ -268,6 +269,7 @@ impl ForensicParser for UsnJrnlParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let start = std::time::Instant::now();
         let mut stats = ParseStats::new();
@@ -627,7 +629,13 @@ mod tests {
         let emitter = CollectingEmitter::new();
         let parser = UsnJrnlParser;
 
-        let stats = parser.parse(&source, &emitter).expect("parse");
+        let stats = parser
+            .parse(
+                &source,
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse");
         assert_eq!(stats.events_emitted, 2);
         assert_eq!(stats.errors_recovered, 0);
 
@@ -659,7 +667,13 @@ mod tests {
         let emitter = CollectingEmitter::new();
         let parser = UsnJrnlParser;
 
-        let stats = parser.parse(&source, &emitter).expect("parse");
+        let stats = parser
+            .parse(
+                &source,
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse");
         assert_eq!(
             stats.events_emitted, 1,
             "Should skip padding and find the record"
@@ -672,7 +686,13 @@ mod tests {
         let emitter = CollectingEmitter::new();
         let parser = UsnJrnlParser;
 
-        let stats = parser.parse(&source, &emitter).expect("parse");
+        let stats = parser
+            .parse(
+                &source,
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse");
         assert_eq!(stats.events_emitted, 0);
         assert_eq!(stats.bytes_processed, 0);
     }
@@ -684,7 +704,11 @@ mod tests {
 
         // Empty input is not a journal -> Unsupported (not a silent complete).
         let stats = parser
-            .parse(&SliceSource(vec![]), &CollectingEmitter::new())
+            .parse(
+                &SliceSource(vec![]),
+                &CollectingEmitter::new(),
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse");
         assert_eq!(stats.completion, ParseCompletion::Unsupported);
 
@@ -698,7 +722,11 @@ mod tests {
             1000,
         );
         let stats = parser
-            .parse(&SliceSource(data), &CollectingEmitter::new())
+            .parse(
+                &SliceSource(data),
+                &CollectingEmitter::new(),
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse");
         assert_eq!(stats.errors_recovered, 0);
         assert_eq!(stats.completion, ParseCompletion::Complete);

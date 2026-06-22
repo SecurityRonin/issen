@@ -23,7 +23,8 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseOptions, ParseStats,
+    ParserCapabilities,
 };
 
 // ── MacosUnifiedLogParser ─────────────────────────────────────────────────────
@@ -61,6 +62,7 @@ impl ForensicParser for MacosUnifiedLogParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let Some(path) = input.source_path() else {
@@ -136,6 +138,7 @@ impl ForensicParser for MacosFsEventsParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let Some(path) = input.source_path() else {
@@ -280,7 +283,11 @@ mod tests {
         let src = FileSrc(tmp.path().to_path_buf());
         let collector = Collector::default();
         let stats = MacosUnifiedLogParser
-            .parse(&src, &collector)
+            .parse(
+                &src,
+                &collector,
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse");
         assert!(stats.events_emitted >= 1, "wired parser must emit");
         assert!(!collector.0.lock().expect("lock").is_empty());
@@ -297,7 +304,13 @@ mod tests {
         tmp.flush().expect("flush");
         let src = FileSrc(tmp.path().to_path_buf());
         let collector = Collector::default();
-        let stats = MacosFsEventsParser.parse(&src, &collector).expect("parse");
+        let stats = MacosFsEventsParser
+            .parse(
+                &src,
+                &collector,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse");
         assert!(stats.events_emitted >= 1, "wired parser must emit");
         assert!(!collector.0.lock().expect("lock").is_empty());
     }

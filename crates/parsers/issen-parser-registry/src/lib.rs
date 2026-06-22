@@ -24,7 +24,7 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseOptions, ParseStats, ParserCapabilities,
 };
 
 /// Registry hive filenames (case-insensitive basename match) that this
@@ -67,6 +67,7 @@ impl ForensicParser for RegistryHiveParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let len = input.len();
@@ -212,7 +213,7 @@ mod tests {
         let src = BytesSource { data: data.clone() };
         let emitter = CountingEmitter::default();
         let stats = RegistryHiveParser
-            .parse(&src, &emitter)
+            .parse(&src, &emitter, &issen_core::plugin::ParseOptions::default())
             .expect("parse returns Ok");
         assert_eq!(
             stats.bytes_processed,

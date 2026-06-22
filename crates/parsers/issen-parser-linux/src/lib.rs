@@ -27,7 +27,8 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseCompletion, ParseOptions, ParseStats,
+    ParserCapabilities,
 };
 
 // ── LinuxAuthLogParser ────────────────────────────────────────────────────────
@@ -57,6 +58,7 @@ impl ForensicParser for LinuxAuthLogParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let len = input.len();
@@ -139,6 +141,7 @@ impl ForensicParser for LinuxSyslogParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let Some(path) = input.source_path() else {
@@ -202,6 +205,7 @@ impl ForensicParser for LinuxCronParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let Some(path) = input.source_path() else {
@@ -265,6 +269,7 @@ impl ForensicParser for LinuxBashHistoryParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        _opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         let mut stats = ParseStats::new();
         let Some(path) = input.source_path() else {
@@ -347,7 +352,11 @@ mod tests {
         let source = MemSource(log.as_bytes().to_vec());
         let collector = Collector::default();
         let stats = LinuxAuthLogParser
-            .parse(&source, &collector)
+            .parse(
+                &source,
+                &collector,
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse must not Err on a valid auth.log");
 
         assert_eq!(stats.events_emitted, 1, "one SSH login event emitted");
@@ -441,7 +450,13 @@ mod tests {
         tmp.flush().expect("flush");
         let src = FileSrc(tmp.path().to_path_buf());
         let collector = Collector::default();
-        let stats = LinuxSyslogParser.parse(&src, &collector).expect("parse");
+        let stats = LinuxSyslogParser
+            .parse(
+                &src,
+                &collector,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse");
         assert!(stats.events_emitted >= 1, "wired parser must emit");
         assert!(!collector.0.lock().expect("lock").is_empty());
     }
@@ -457,7 +472,13 @@ mod tests {
         tmp.flush().expect("flush");
         let src = FileSrc(tmp.path().to_path_buf());
         let collector = Collector::default();
-        let stats = LinuxCronParser.parse(&src, &collector).expect("parse");
+        let stats = LinuxCronParser
+            .parse(
+                &src,
+                &collector,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse");
         assert!(stats.events_emitted >= 1, "wired parser must emit");
         assert!(!collector.0.lock().expect("lock").is_empty());
     }
@@ -471,7 +492,11 @@ mod tests {
         let src = FileSrc(tmp.path().to_path_buf());
         let collector = Collector::default();
         let stats = LinuxBashHistoryParser
-            .parse(&src, &collector)
+            .parse(
+                &src,
+                &collector,
+                &issen_core::plugin::ParseOptions::default(),
+            )
             .expect("parse");
         assert!(stats.events_emitted >= 1, "wired parser must emit");
         assert!(!collector.0.lock().expect("lock").is_empty());

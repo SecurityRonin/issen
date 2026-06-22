@@ -21,7 +21,7 @@ use issen_core::error::RtError;
 use issen_core::plugin::registry::ParserRegistration;
 use issen_core::plugin::selector as sel;
 use issen_core::plugin::traits::{
-    DataSource, EventEmitter, ForensicParser, ParseStats, ParserCapabilities,
+    DataSource, EventEmitter, ForensicParser, ParseOptions, ParseStats, ParserCapabilities,
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use std::collections::{BTreeMap, HashMap};
@@ -38,14 +38,35 @@ impl SrumParser {
             .is_some_and(|name| name.eq_ignore_ascii_case("SRUDB.dat"))
     }
 
-    /// Parse a SRUDB.dat file and return timeline events.
+    /// Parse a SRUDB.dat file and return timeline events (aggregate default).
     ///
     /// Drives `srum-parser`'s real ESE B-tree leaf traversal for the network-
     /// usage and app-resource-usage tables and converts each row into a
     /// [`TimelineEvent`]. A table absent from the catalog yields no events.
     ///
+    /// Equivalent to [`parse_path_with_opts`](Self::parse_path_with_opts) with
+    /// [`ParseOptions::default()`] — the high-volume PushNotifications/EnergyUsage
+    /// tables are aggregated per-app.
+    ///
     /// Returns `Err` if the file cannot be read or is not a valid ESE database.
     pub fn parse_path(&self, path: &Path) -> anyhow::Result<Vec<TimelineEvent>> {
+        self.parse_path_with_opts(path, &ParseOptions::default())
+    }
+
+    /// Parse a SRUDB.dat file under explicit [`ParseOptions`].
+    ///
+    /// Identical to [`parse_path`](Self::parse_path) for every table EXCEPT the
+    /// high-volume PushNotifications and EnergyUsage tables: by default they are
+    /// aggregated per-app (one summary event carrying an `occurrences` count), but
+    /// when `opts.verbose_rows` is set they emit full per-row events instead — the
+    /// full-fidelity view, at the cost of a larger timeline.
+    ///
+    /// Returns `Err` if the file cannot be read or is not a valid ESE database.
+    pub fn parse_path_with_opts(
+        &self,
+        path: &Path,
+        opts: &ParseOptions,
+    ) -> anyhow::Result<Vec<TimelineEvent>> {
         let evidence_source = path.to_string_lossy().into_owned();
         let mut events = Vec::new();
 
@@ -86,29 +107,44 @@ impl SrumParser {
             &evidence_source,
         ));
 
-        // Push notifications — high-volume / low-signal: AGGREGATE per app (one
-        // summary event with an occurrence count + time range) rather than emit
-        // hundreds of per-row events that would flood the timeline.
-        events.extend(push_aggregate_events(
-            srum_parser::parse_push_notifications(path)?,
-            &id_map,
-            &evidence_source,
-        ));
-
-        // Energy usage (+ long-term) — an app drawing power ⇒ it ran. Same
-        // aggregate-per-app treatment (low-signal; avoids a per-row flood).
-        events.extend(energy_aggregate_events(
-            srum_parser::parse_energy_usage(path)?,
-            &id_map,
-            &evidence_source,
-            "EnergyUsage",
-        ));
-        events.extend(energy_aggregate_events(
-            srum_parser::parse_energy_lt(path)?,
-            &id_map,
-            &evidence_source,
-            "EnergyUsageLT",
-        ));
+        // Push notifications + Energy usage are high-volume / low-signal. By
+        // default they are AGGREGATED per app (one summary event with an
+        // occurrence count + time range) rather than emitting hundreds of per-row
+        // events that would flood the timeline. `opts.verbose_rows` opts into the
+        // full per-row view instead — same enrichment and CADET tagging, one event
+        // per record.
+        let push = srum_parser::parse_push_notifications(path)?;
+        let energy = srum_parser::parse_energy_usage(path)?;
+        let energy_lt = srum_parser::parse_energy_lt(path)?;
+        if opts.verbose_rows {
+            events.extend(push_per_row_events(push, &id_map, &evidence_source));
+            events.extend(energy_per_row_events(
+                energy,
+                &id_map,
+                &evidence_source,
+                "EnergyUsage",
+            ));
+            events.extend(energy_per_row_events(
+                energy_lt,
+                &id_map,
+                &evidence_source,
+                "EnergyUsageLT",
+            ));
+        } else {
+            events.extend(push_aggregate_events(push, &id_map, &evidence_source));
+            events.extend(energy_aggregate_events(
+                energy,
+                &id_map,
+                &evidence_source,
+                "EnergyUsage",
+            ));
+            events.extend(energy_aggregate_events(
+                energy_lt,
+                &id_map,
+                &evidence_source,
+                "EnergyUsageLT",
+            ));
+        }
 
         Ok(events)
     }
@@ -248,6 +284,85 @@ fn push_aggregate_events(
                 event = event.with_metadata("app_name", serde_json::json!(name));
             }
             Some(event)
+        })
+        .collect()
+}
+
+/// Per-row variant of [`energy_aggregate_events`]: one `Execution` event per
+/// EnergyUsage record (an app drawing power ⇒ it ran), with the same app-name
+/// enrichment and CADET tagging. Emitted only under `ParseOptions::verbose_rows`.
+fn energy_per_row_events(
+    records: Vec<srum_core::EnergyUsageRecord>,
+    id_map: &HashMap<i32, String>,
+    evidence_source: &str,
+    kind: &str,
+) -> Vec<TimelineEvent> {
+    records
+        .into_iter()
+        .map(|record| {
+            let app_name = resolve_name(id_map, record.app_id);
+            let app_label = app_name
+                .clone()
+                .unwrap_or_else(|| format!("app_id={}", record.app_id));
+            let mut event = TimelineEvent::new(
+                record.timestamp.timestamp_nanos_opt().unwrap_or(0),
+                record.timestamp.to_rfc3339(),
+                EventType::Other(kind.to_string()),
+                ArtifactType::Srum,
+                evidence_source.to_string(),
+                format!(
+                    "SRUM {kind}: {app_label} energy_consumed={} charge_level={}",
+                    record.energy_consumed, record.charge_level
+                ),
+                evidence_source.to_string(),
+            )
+            .with_activity_category(issen_core::ActivityCategory::Execution)
+            .with_metadata("energy_consumed", serde_json::json!(record.energy_consumed))
+            .with_metadata("charge_level", serde_json::json!(record.charge_level))
+            .with_metadata("app_id", serde_json::json!(record.app_id));
+            if let Some(name) = &app_name {
+                event = event.with_metadata("app_name", serde_json::json!(name));
+            }
+            event
+        })
+        .collect()
+}
+
+/// Per-row variant of [`push_aggregate_events`]: one `NetworkActivity` event per
+/// PushNotifications record, with the same app-name enrichment and CADET tagging.
+/// Emitted only under `ParseOptions::verbose_rows`.
+fn push_per_row_events(
+    records: Vec<srum_core::PushNotificationRecord>,
+    id_map: &HashMap<i32, String>,
+    evidence_source: &str,
+) -> Vec<TimelineEvent> {
+    records
+        .into_iter()
+        .map(|record| {
+            let app_name = resolve_name(id_map, record.app_id);
+            let app_label = app_name
+                .clone()
+                .unwrap_or_else(|| format!("app_id={}", record.app_id));
+            let mut event = TimelineEvent::new(
+                record.timestamp.timestamp_nanos_opt().unwrap_or(0),
+                record.timestamp.to_rfc3339(),
+                EventType::Other("PushNotifications".into()),
+                ArtifactType::Srum,
+                evidence_source.to_string(),
+                format!("SRUM PushNotifications: {app_label} count={}", record.count),
+                evidence_source.to_string(),
+            )
+            .with_activity_category(issen_core::ActivityCategory::NetworkActivity)
+            .with_metadata("count", serde_json::json!(record.count))
+            .with_metadata(
+                "foreground_cycle_time",
+                serde_json::json!(record.foreground_cycle_time),
+            )
+            .with_metadata("app_id", serde_json::json!(record.app_id));
+            if let Some(name) = &app_name {
+                event = event.with_metadata("app_name", serde_json::json!(name));
+            }
+            event
         })
         .collect()
 }
@@ -440,6 +555,7 @@ impl ForensicParser for SrumParser {
         &self,
         input: &dyn DataSource,
         emitter: &dyn EventEmitter,
+        opts: &ParseOptions,
     ) -> Result<ParseStats, RtError> {
         // SRUM is an ESE database: the parser seeks across B-tree pages, so it
         // needs random-access *file* semantics, not the streaming byte view.
@@ -451,7 +567,7 @@ impl ForensicParser for SrumParser {
         };
 
         let events = self
-            .parse_path(path)
+            .parse_path_with_opts(path, opts)
             .map_err(|e| RtError::InvalidData(format!("SRUM parse failed: {e}")))?;
         let mut stats = ParseStats::new();
         stats.events_emitted = events.len() as u64;
