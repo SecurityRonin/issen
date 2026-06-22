@@ -61,6 +61,7 @@ use is_terminal::IsTerminal;
 extern crate issen_parsers as _;
 extern crate issen_providers as _;
 
+pub mod banner;
 pub mod commands;
 pub mod ingest_progress;
 pub mod parsers;
@@ -81,7 +82,7 @@ pub enum ColorChoice {
 
 /// Issen — fast forensic triage for incident responders.
 #[derive(Parser, Debug)]
-#[command(name = "issen", version, about)]
+#[command(name = "issen", version, about, before_help = banner::BANNER)]
 pub struct Cli {
     /// Enable verbose/debug logging.
     #[arg(short, long, global = true)]
