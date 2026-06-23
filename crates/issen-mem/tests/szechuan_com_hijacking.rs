@@ -152,3 +152,77 @@ fn szechuan_com_hijacking_matches_volatility() {
          walk_com_hijacking must not fabricate hits, got: {hijacks:?}"
     );
 }
+
+/// Locate the DESKTOP-SDN1RPT workstation image via `SDN1RPT_MEM`, falling back
+/// to the in-repo corpus path.
+fn sdn1rpt_mem() -> Option<PathBuf> {
+    if let Some(p) = std::env::var("SDN1RPT_MEM").ok().map(PathBuf::from) {
+        if p.exists() {
+            return Some(p);
+        }
+    }
+    let local =
+        Path::new("../../tests/data/dfirmadness-szechuan-sauce/extracted/DESKTOP-SDN1RPT.mem");
+    if local.exists() {
+        Some(local.to_path_buf())
+    } else {
+        None
+    }
+}
+
+/// Extended true-negative coverage on the DESKTOP-SDN1RPT workstation (Windows
+/// 10 build 19041, a different kernel from the DC's 9600), across every real
+/// per-user hive. Volatility confirms each user's `Software\Classes\CLSID` is
+/// empty (the box has no COM-hijack persistence — the Szechuan attack chain is
+/// Cobalt Strike + scheduled tasks, not T1546.015). The walker must enumerate
+/// real per-user NTUSER hives without crashing and without fabricating hits.
+///
+/// Volatility ground truth (`windows.registry.hivelist` + `printkey`):
+/// ```text
+///   0xcf0482bb0000  \??\C:\Users\ricksanchez\ntuser.dat   Software\Classes\CLSID -> empty
+///   0xcf048126f000  \??\C:\Users\Admin\ntuser.dat         Software\Classes\CLSID -> empty
+///   0xcf0482c47000  \??\C:\Users\Administrator\ntuser.dat Software\Classes\CLSID -> empty
+/// ```
+#[test]
+#[ignore = "needs the 2 GB DFIR Madness DESKTOP-SDN1RPT.mem; set SDN1RPT_MEM"]
+fn sdn1rpt_com_hijacking_no_fabrication() {
+    let Some(dump) = sdn1rpt_mem() else {
+        eprintln!("DESKTOP-SDN1RPT.mem not found; skipping (set SDN1RPT_MEM)");
+        return;
+    };
+    let (_fmt, reader) = build_reader(&dump, None, None).expect("build reader from dump");
+
+    let hives = memf_windows::registry::walk_hive_list(&reader).expect("walk_hive_list");
+
+    // Every real user NTUSER.DAT (under \Users\, not the service-profile hives).
+    let user_hives: Vec<_> = hives
+        .iter()
+        .filter(|h| {
+            let p = h.file_user_name.to_ascii_uppercase();
+            let p = p.trim_end_matches('\0');
+            p.contains("\\USERS\\") && p.ends_with("NTUSER.DAT")
+        })
+        .collect();
+    eprintln!("workstation: {} user NTUSER.DAT hives", user_hives.len());
+    assert!(
+        !user_hives.is_empty(),
+        "expected at least one \\Users\\*\\ntuser.dat on the workstation image"
+    );
+
+    for h in &user_hives {
+        let hijacks = memf_windows::com_hijacking::walk_com_hijacking(&reader, h.base_addr, 0)
+            .expect("walk_com_hijacking");
+        eprintln!(
+            "  {} (base {:#x}) -> {} hit(s)",
+            h.file_user_name.trim_end_matches('\0'),
+            h.base_addr,
+            hijacks.len()
+        );
+        assert!(
+            hijacks.is_empty(),
+            "Volatility shows {} HKCU\\Software\\Classes\\CLSID empty; \
+             walk_com_hijacking must not fabricate, got: {hijacks:?}",
+            h.file_user_name.trim_end_matches('\0')
+        );
+    }
+}
