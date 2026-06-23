@@ -259,8 +259,36 @@ filenames). Not yet referenced by a committed test.
   <https://github.com/volatilityfoundation/volatility/wiki/Memory-Samples> (Cridex row; original
   `files.sempersecurus.org` mirror now returns 403).
 
+Nine further **memory-forensic-owned** corpora live in `memory-forensic/tests/data/` (full
+provenance in [`memory-forensic/tests/data/README.md`](../../memory-forensic/tests/data/README.md));
+all gitignored + downloaded manually. MD5s for most are pending (download-then-hash):
+
+- **13Cubed Mini Memory CTF** (1.3 GB zip, `13cubed-mini-memory-ctf/`): Win7 SP1 x86 (build 7601,
+  profile `Win7SP1x86`). By Richard Davis. **Download:**
+  <https://cdn.13cubed.com/downloads/mini_memory_ctf.zip> · solutions guide
+  <https://cdn.13cubed.com/downloads/mini_memory_ctf_solutions_guide.pdf>.
+- **13Cubed Windows Memory Forensics Challenge** (1.4 GB zip, `13cubed-windows-memory-forensics-challenge/`):
+  Win10 x64 (build TBD — run `imageinfo`). By Richard Davis. **Info:** <https://www.13cubed.com/>.
+- **Houseplant CTF 2020 — Imagery** (584 MB 7z, `houseplant-ctf-2020-imagery/`): Win10 (`win10`
+  Volatility profile). **Info:** <https://ctftime.org/event/1041>.
+- **InCTF International 2019 — NotchItUp** (342 MB 7z, `inctf-2019-notchitup/`): Win7 SP1 x64
+  (build 7601, `Win7SP1x64`). By bi0s. **Write-up:**
+  <https://blog.bi0s.in/2019/09/24/Forensics/InCTFi19-NotchItUp/>.
+- **MemLabs Lab1 — Beginner's Luck** (151 MB 7z, `memlabs-lab1-beginners-luck/`): Win7 SP1 x64
+  (build 7601). By stuxnet0 (MIT). **Source:** <https://github.com/stuxnet0/MemLabs>.
+- **MemLabs Lab3 — The Evil's Den** (242 MB 7z, `memlabs-lab3-the-evils-den/`): Win7 SP1 x86
+  (build 7601, `Win7SP1x86_23418`). By stuxnet0 (MIT). **Source:** <https://github.com/stuxnet0/MemLabs>.
+- **OtterCTF 2018** (484 MB 7z, `otterctf-2018/`): Win7 SP1 x64 (build 7601). **Walkthrough:**
+  <https://tcert.net/otterctf-2018-memory-forensic-walkthrough/>.
+- **Sam Bowne CNIT 121 Project P5** (124 MB 7z, `samsclass-volatility-project/`): WinXP SP2 x86
+  (build 2600, `WinXPSP2x86`). **Source:** <https://samsclass.info/121/proj/p5-Vol.htm>.
+- **WannaCry memory analysis** (42 MB 7z, `wannacry-memory-analysis/`): Win7 x86 (build 7601) with an
+  active WannaCry infection. By null0x4d5a. **Write-up:**
+  <https://www.null0x4d5a.com/2017/05/memory-analsyis-of-wannacry-ransomware.html>.
+
 Redistribution: SecurityNik & Volatility public; CyberDefenders educational license; CyberSpace CTF
-event terms — verify before redistribution.
+event terms; 13Cubed / InCTF / OtterCTF / Houseplant / samsclass / WannaCry public-educational;
+MemLabs MIT — verify before redistribution.
 
 ---
 
@@ -434,10 +462,20 @@ mkfs.ext4 -F -L forensic-test -O has_journal,metadata_csum,64bit,extents -b 4096
 # mount → write files + symlinks + setfattr xattrs → create deleted-file.txt/deleted-large.txt,
 # save their inode #s to deleted-ino.txt (stat -c %i), then rm them and umount  (deleted-inode recovery)
 ```
+`forensic.img` also backs the `forensic::findings` `EXT4-*` `Observation` adapter, whose engine
+outputs are cross-checked (Tier 2) against **The Sleuth Kit** on the same image: `fls -rd` →
+deleted inodes 21/22 (`EXT4-DELETED-INODE`), `fsstat` → 1 block group / no SB backups
+(`EXT4-SUPERBLOCK-BACKUP-MISMATCH` empty), `jls` → journal commit order. See
+`ext4fs-forensic/docs/validation.md` § "Finding adapter".
 
 ### C4 · hfsplus-forensic — `tests/data/hfs_plus_*.bin` (1.6 MB) · REAL-self ✓
 HFS+ volumes created via macOS `hdiutil create -layout SPUD`; real Apple filesystem structures
-with known files (`HELLO.TXT` = "hello hfs"). Asserted in `tests/catalog.rs`.
+with known files (`HELLO.TXT` = "hello hfs"). Asserted in `tests/catalog.rs`. These same images
+(plus C4b's `hfs_decmpfs_volume.bin`) also back the **HFS+ anomaly analyzer** (`findings::audit`,
+`tests/findings.rs`): clean-volume true-negatives are cross-checked against **The Sleuth Kit**
+`fsstat`/`istat`/`fls` (2 files/3 folders, block size 4096, comp.bin compressed w/ resource fork
+present — all agree, 0 anomalies); positives are crafted in-test by flipping real volume bytes
+(no new committed fixtures).
 
 ### C4b · hfsplus-forensic decmpfs — `tests/data/decmpfs/` (~4.3 MB) · REAL-self ✓
 HFS+/APFS transparent-compression (`decmpfs`) fixtures — **every codec validated against REAL
@@ -521,7 +559,7 @@ ntfs/usnjrnl USN+MFT record constructors in unit tests. Fuzz corpora harness-see
 ### C10 · 4n6mount — `fuzz/corpus/session_deserialize/` (23 MB) · FUZZ
 Coverage-guided session-deserialization corpus; no curated seeds.
 
-### C11 · apfs-forensic — `tests/data/apfs_{nxsb_head,container_chain,fstree}.bin` · REAL-self ✓
+### C11 · apfs-forensic — `tests/data/apfs_{nxsb_head,container_chain,fstree,content}.bin` · REAL-self ✓
 Real APFS container partitions minted by Apple's own `hdiutil` (`hdiutil create -size {64,128}m
 -fs APFS -volname APFSORACLE -layout GPTSPUD`), carved with `dd … bs=4096` from the attached
 `/dev/diskNs1` (Apple_APFS slice), so every on-disk structure incl. the stored Fletcher-64
@@ -546,8 +584,21 @@ checksums is Apple-authored.
   numbers, sizes, mode, uid/gid, and ns-timestamps reconcile per file (e.g. Beth.txt create
   `1782060082608648902`, access `…733745215`, both matching `istat`); volume count cross-checked by
   Apple `diskutil`/TSK `pstat` (one volume `APFSP3`, APSB block 371, oid 1026, xid 6).
+- **`apfs_content.bin`** (1.73 MiB, 442 blocks; MD5 `edb98667c10e8457d9ed6a4eb97d111f`): a
+  self-minted image (`hdiutil create -size 128m -fs APFS -volname APFSP4 -layout GPTSPUD`) carrying
+  **known content for every file-read path** — a plain file, a **sparse** file (64 KiB hole + tail),
+  a **transparently-compressed** file (`ditto --hfsCompression` → decmpfs **type 8 LZVN resource
+  fork**, 180000 B), a file with **custom xattrs**, and a **symlink** — carved (blocks 0–441) to
+  reach the live APSB(438)→volume omap(433/434)→fs-tree leaf(432) plus every file's data extents +
+  resource fork (345–426). **P4** (file byte read, sparse holes, decmpfs decompression, xattrs,
+  symlink). **Independent oracle = macOS `cp`/`shasum -a 256` byte-identical**: `read_data`'s
+  assembled bytes hash-match macOS for plain (`289af0a0…`), sparse (`fe0fc4fa…`), nested (`ee7c2682…`)
+  and the **decompressed** type-8 file (`3f58a418…`); xattrs match `xattr -l`
+  (`com.example.tag`/`user.note`), symlink target matches `readlink` (`Dir1/Beth.txt`). decmpfs codec
+  stack REUSED from `forensicnomicon::decmpfs` + `flate2`/`lzvn-core`/`lzfse_rust` (validated 25/25 on
+  real macOS in hfsplus-forensic).
 Generators (verbatim) + captured oracle output in `apfs-forensic/tests/data/README.md`; consumed by
-`apfs-forensic/core/tests/{object,container,checkpoint,container_open,omap,btree,btree_descend,volume_resolve,volume,fsrecord,inode,dir}.rs`.
+`apfs-forensic/core/tests/{object,container,checkpoint,container_open,omap,btree,btree_descend,volume_resolve,volume,fsrecord,inode,dir,extent,compression,xattr}.rs`.
 
 ---
 
