@@ -6,9 +6,9 @@
 
 /// The rendered startup banner (katana + wordmark + tagline + footer).
 pub const BANNER: &str = r"
-   (=|=|=|=[+]::::::::::::::::::::::::::::::::::::::::::::::::::::>
-
        i s s e n   ·   a single flash of the blade
+
+   (=|=|=|=[+]::::::::::::::::::::::::::::::::::::::::::::::::::::>
 
        One command. One output. The full attack narrative.
        Fast forensic triage for incident responders.
