@@ -37,11 +37,13 @@ jobs:
         shell: bash
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      # issen has no rust-toolchain.toml, so the action's toolchain is used
-      # directly (no override) and the cross-target lands on it correctly.
+      # rust-toolchain.toml pins 1.96.0, which overrides whatever the action
+      # installs; the cross-target must be added to THAT pinned toolchain (not
+      # the action's default `stable`), or cargo builds with 1.96.0 minus the
+      # target -> E0463 "can't find crate for core".
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
-          toolchain: stable
+          toolchain: 1.96.0
           targets: ${{ matrix.target }}
 
       - name: Install musl tools (Linux)
@@ -53,6 +55,17 @@ jobs:
             sudo apt-get install -y gcc-aarch64-linux-gnu
             echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
           fi
+
+      # etcd-client's build script invokes protoc to compile its .proto files;
+      # it is not preinstalled on the runners, so every target needs it.
+      - name: Install protoc
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            macOS)   brew install protobuf ;;
+            Linux)   sudo apt-get update && sudo apt-get install -y protobuf-compiler ;;
+            Windows) choco install protoc ;;
+          esac
 
       - name: Build issen
         run: cargo build --release -p issen-cli --target ${{ matrix.target }}
