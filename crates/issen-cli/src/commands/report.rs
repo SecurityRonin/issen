@@ -31,3 +31,40 @@ pub fn run(
     println!("Report written to {}", output.display());
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use issen_timeline::findings::{create_findings_table, inseissen_findings, FindingRow};
+
+    #[test]
+    fn attack_navigator_format_writes_layer_with_technique() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let db = dir.path().join("case.duckdb");
+        {
+            let store = TimelineStore::open(&db).expect("open store");
+            create_findings_table(store.connection()).expect("create findings table");
+            inseissen_findings(
+                store.connection(),
+                &[FindingRow {
+                    evidence_source_id: "case-001".into(),
+                    artifact_path: "Security.evtx".into(),
+                    engine: "Sigma".into(),
+                    severity: "high".into(),
+                    rule_name: "RDP-BRUTE".into(),
+                    description: "Failed-logon burst".into(),
+                    matched_indicator: None,
+                    tags: r#"["attack.t1110"]"#.into(),
+                }],
+            )
+            .expect("insert findings");
+        }
+        let out = dir.path().join("layer.json");
+        run(&db, &out, Some("case-001"), None, None, "attack-navigator").expect("run report");
+        let layer = std::fs::read_to_string(&out).expect("read layer");
+        assert!(
+            layer.contains(r#""techniqueID": "T1110""#),
+            "layer missing technique: {layer}"
+        );
+    }
+}
