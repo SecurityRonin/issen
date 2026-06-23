@@ -36,7 +36,8 @@ from matplotlib.patches import Patch
 REPOS = [
     "issen", "memory-forensic", "forensicnomicon", "sqlite-forensic",
     "iso9660-forensic", "srum-forensic", "winevt-forensic", "browser-forensic",
-    "vmdk-forensic", "ntfs-forensic", "winreg-forensic", "disk-forensic",
+    "vmdk-forensic", "ntfs-forensic", "usnjrnl-forensic", "winreg-forensic",
+    "disk-forensic",
     "gpt-partition-forensic", "vhdx-forensic", "qcow2-forensic",
     "apm-partition-forensic", "mbr-partition-forensic", "ewf", "lnk-forensic",
     "segb-forensic", "trash-forensic", "useract-forensic", "prefetch-forensic",
