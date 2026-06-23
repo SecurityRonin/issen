@@ -77,6 +77,13 @@ jobs:
           tar czf ../../../issen-${{ steps.version.outputs.version }}-${{ matrix.target }}.tar.gz issen
           cd ../../..
 
+      # Standalone .exe (zipped) in addition to the MSI installer, so users can
+      # grab the bare executable without running the installer.
+      - name: Package exe (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path target/${{ matrix.target }}/release/issen.exe -DestinationPath issen-${{ steps.version.outputs.version }}-${{ matrix.target }}.zip
+
       - name: Install cargo-wix (Windows)
         if: runner.os == 'Windows'
         run: cargo install cargo-wix --version 0.3.9 --locked
@@ -86,12 +93,16 @@ jobs:
       # binary from the Build step above.
       - name: Build MSI (Windows)
         if: runner.os == 'Windows'
-        run: cargo wix --no-build --package issen-cli --target ${{ matrix.target }} --output issen-${{ steps.version.outputs.version }}-${{ matrix.target }}.msi wix/main.wxs
+        run: cargo wix --no-build --package issen-cli --include wix/main.wxs --target ${{ matrix.target }} --output issen-${{ steps.version.outputs.version }}-${{ matrix.target }}.msi
 
+      # always(): upload whatever artifacts exist (the .exe zip, the tar, the MSI)
+      # even if a later step in this job failed — so a good binary still ships.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
         with:
           name: issen-${{ steps.version.outputs.version }}-${{ matrix.target }}
           path: issen-${{ steps.version.outputs.version }}-${{ matrix.target }}.*
+          if-no-files-found: ignore
 
   release:
     needs: build
