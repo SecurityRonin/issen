@@ -22,7 +22,7 @@
 
 **BSidesHK 2026 · Blue-Team Workshop · 3 hours, hands-on**
 
-Albert Hui — Security Ronin · TA: Josiah Wu
+Albert Hui — Security Ronin · IR Validation: Eliza Wan · TA: Josiah Wu
 
 *Case 001 — "The Stolen Szechuan Sauce" · disk + RAM only · two real Windows hosts*
 
@@ -1318,6 +1318,7 @@ flowchart LR
 ![Scan for slides, toolchain & contact](https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=https%3A%2F%2Flinktr.ee%2F4n6h4x0r)
 
 **Author:** [Albert Hui](https://linktr.ee/4n6h4x0r)
+**IR Validation:** [Eliza Wan](https://www.linkedin.com/in/eliwan/)
 **QA:** [Josiah Wu](https://jwu29-blog.com/)
 
 *Scan the code for the slides, the Issen toolchain, and a way to reach me — then bring your own cases.*
