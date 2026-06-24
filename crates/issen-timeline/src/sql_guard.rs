@@ -41,8 +41,24 @@ const FORBIDDEN: &[&str] = &[
 /// and **whole-word** (so a column named `updated_at` or `created` does not trip
 /// `UPDATE`/`CREATE`).
 pub fn check_query_safe(sql: &str) -> Result<(), SqlGuardError> {
-    let _ = sql;
-    // RED stub: real implementation rejects forbidden keywords.
+    if sql.trim().is_empty() {
+        return Err(SqlGuardError::Empty);
+    }
+    // Tokenize on any non-alphanumeric/underscore boundary so a forbidden
+    // keyword is matched only as a whole word — `updated_at`/`created` tokenize
+    // to `updated_at`/`created`, never to `UPDATE`/`CREATE`. A trailing
+    // `; DROP …` tokenizes `DROP` on its own and is caught.
+    for token in sql.split(|c: char| !c.is_ascii_alphanumeric() && c != '_') {
+        if token.is_empty() {
+            continue;
+        }
+        let upper = token.to_ascii_uppercase();
+        if let Some(kw) = FORBIDDEN.iter().find(|f| **f == upper) {
+            return Err(SqlGuardError::ForbiddenKeyword {
+                keyword: (*kw).to_string(),
+            });
+        }
+    }
     Ok(())
 }
 
