@@ -1367,6 +1367,146 @@ flowchart LR
 
 ---
 
+# Beyond the Question Set — What Else Issen Surfaces
+
+The official rubric is **21 questions**. The union answer key runs to **F1–F44** — a real report documents what the *graded* set never asks. Five extras, each measured on the real DC image today:
+
+- Multiple attacker **sessions** (re-login after logoff)
+- **Dual persistence** — Run key *and* service
+- **Rare-source frequency** analysis (the outlier login finds itself)
+- **LNK** staging artifacts (what they opened)
+- **DPAPI** credential infrastructure + acquisition **provenance**
+
+> The questions are the floor, not the ceiling. Depth is what separates a checklist from an investigation.
+
+```mermaid
+flowchart LR
+  Q["21 official questions"] --> U["F1–F44 union key"]
+  U --> X["extras issen surfaces:<br/>sessions · dual-persist · frequency · LNK · DPAPI"]
+```
+
+---
+
+# Extra · How many times did they log in?
+
+**Finding:** **4 distinct RDP sessions** over ~34 minutes — the logoff / re-login / re-migrate sequence (F25/F44).
+
+```bash
+duckdb dc01.duckdb -c "SELECT count(DISTINCT json_extract_string(metadata,'\$.TargetLogonId')) AS sessions,
+  min(timestamp_display) AS first, max(timestamp_display) AS last
+  FROM timeline WHERE event_type='LogonSuccess' AND metadata LIKE '%194.61.24.102%';"
+```
+
+**Output** *(MEASURED-BY-ISSEN):*
+
+```
+4 | 2020-09-19T03:21:48Z | 2020-09-19T03:56:04Z
+```
+
+**Make sense of it:** "the attacker logged in" hides that they did it **four times** — *consistent with* logging off (killing an un-migrated Meterpreter session) and re-establishing access. Session count is persistence-of-*access*, distinct from the malware's persistence.
+
+```mermaid
+flowchart LR
+  S["LogonId count · 194.61.24.102"] --> N["4 sessions<br/>03:21:48 → 03:56:04"] --> R["consistent with<br/>logoff → re-login"]
+```
+
+---
+
+# Extra · Dual persistence — Run key AND service
+
+**Finding:** `coreupdater` is registered as a **7045 service** *and* a **Run key** — two independent IOCs.
+
+```bash
+duckdb dc01.duckdb -c "SELECT count(*) FROM timeline WHERE source='Registry'
+  AND lower(artifact_path) LIKE '%currentversion%run%' AND lower(metadata) LIKE '%coreupdater%';"
+```
+
+**Output** *(MEASURED-BY-ISSEN):*
+
+```
+1   ← coreupdater in …\CurrentVersion\Run   (plus the 7045 ServiceInstall from Q6.9)
+```
+
+**Make sense of it:** the official Q6.9 asks "persistence?" — singular. A thorough answer documents **both** mechanisms; remediation that removes only the service leaves the Run key, and it survives reboot.
+
+```mermaid
+flowchart LR
+  CU["coreupdater"] --> SVC["7045 service"]
+  CU --> RUN["…\CurrentVersion\Run key"]
+  SVC --> P["remove BOTH<br/>or it persists"]
+  RUN --> P
+```
+
+---
+
+# Extra · The outlier login (frequency analysis)
+
+**Finding:** the rare-event technique (`issen frequency`, Events-Ripper posh600) flags `194.61.24.102` as a **statistical outlier** — no prior IOC needed.
+
+```bash
+duckdb dc01.duckdb -c "SELECT json_extract_string(metadata,'\$.IpAddress') ip, count(*) c
+  FROM timeline WHERE event_type='LogonSuccess' GROUP BY ip ORDER BY c ASC;"
+```
+
+**Output** *(MEASURED-BY-ISSEN):*
+
+```
+194.61.24.102   4    ← rare = suspicious
+10.42.85.10     127
+10.42.85.115    197
+```
+
+**Make sense of it:** you don't need the attacker's IP in advance — **rarity finds it.** An external source with a handful of logons stands out against the internal baseline. This is how you triage with zero starting indicators.
+
+```mermaid
+flowchart LR
+  ALL["all logon source IPs"] --> SORT["sort by frequency"] --> OUT["194.61.24.102 · 4<br/>= outlier"]
+```
+
+---
+
+# Extra · What did they open? (LNK artifacts)
+
+**Finding:** issen recovers **LNK** shortcuts — direct evidence of which sensitive files the attacker opened/staged.
+
+```bash
+duckdb dc01.duckdb -c "SELECT DISTINCT regexp_extract(artifact_path,'[^/\\\\]+\$') f
+  FROM timeline WHERE lower(artifact_path) LIKE '%.lnk'
+  AND (lower(artifact_path) LIKE '%secret%' OR lower(artifact_path) LIKE '%szechuan%' OR lower(artifact_path) LIKE '%beth%');"
+```
+
+**Output** *(MEASURED-BY-ISSEN):*
+
+```
+Secret.lnk · Szechuan Sauce.lnk · Beth_Secret.lnk · SECRET_beth.lnk
+```
+
+**Make sense of it:** an LNK exists because the file was **opened**. These corroborate the theft of the Szechuan recipe and Beth's secret **independently** of the MFT/USN trail — and `lnk-forensic` parses each target path + embedded timestamps for the full story.
+
+```mermaid
+flowchart LR
+  MFT["$MFT"] --> LNK["Secret.lnk · Szechuan Sauce.lnk · Beth_Secret.lnk"] --> O["files the attacker opened<br/>(independent corroboration)"]
+```
+
+---
+
+# Extra · Credentials infra + acquisition provenance
+
+Two more a careful report notes:
+
+- **DPAPI** — `Microsoft-Windows-Crypto-DPAPI` logs + `BackUpKeySvc` artifacts are present on the image; the new **`dpapi-forensic`** crate decrypts the master keys / blobs behind saved credentials. ◐
+- **Acquisition provenance** — `issen memory ps` shows **`FTK Imager.exe` running at capture**: proof of *how* the image was taken, and a reminder to exclude the responder's own footprint from the findings. ✅
+
+> Provenance is a finding too — knowing the acquisition tool ran (and when) is part of a defensible chain of custody, and the deck's three-layer discipline applies to it as much as to the attack.
+
+```mermaid
+flowchart LR
+  DP["Crypto-DPAPI logs · BackUpKeySvc"] --> DPF["dpapi-forensic<br/>decrypt blobs"]
+  PS["memory ps"] --> FTK["FTK Imager.exe at capture<br/>= acquisition provenance"]
+```
+
+---
+
 # 8 · Correlation — One Timeline, Many Sources
 
 Each layer above produces events in **its own** address space. Correlation **merges them into one super-timeline** — with **per-event source attribution**.
