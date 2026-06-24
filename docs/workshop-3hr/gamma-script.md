@@ -1198,6 +1198,134 @@ flowchart LR
 
 ---
 
+# Advanced & Bonus Questions
+
+The official set doesn't stop at the timeline — it pushes into **who, recover, and prevent.**
+
+- **B1–B3** · Controls / architecture / policy that would have stopped it
+- **B4–B5** · Which users *actually* logged on (DC / Desktop)
+- **B6** · Domain passwords
+- **B7** · Recover Beth's original file — name + contents
+- **B8** · Which file was timestomped
+
+> These separate "I read the timeline" from "I can advise the client and recover the evidence."
+
+```mermaid
+flowchart LR
+  WHO["B4–B5 who logged on"] --> MEAS["measured"]
+  REC["B7–B8 recover / timestomp"] --> MEAS
+  PREV["B1–B3 controls"] --> JUDGE["analyst judgement"]
+  B6["B6 passwords"] --> LAB["offline lab"]
+```
+
+---
+
+# B4 / B5 · Who actually logged on?
+
+**Ground truth:** DC → `Administrator`; Desktop → `Administrator` + `Rick Sanchez`.
+
+**Command:**
+
+```bash
+duckdb dc01.duckdb -c "SELECT DISTINCT json_extract_string(metadata,'\$.TargetUserName') u
+  FROM timeline WHERE event_type='LogonSuccess'
+  AND json_extract_string(metadata,'\$.LogonType') IN ('2','10','11')
+  AND u NOT LIKE '%\$' ORDER BY u;"
+# (repeat on desktop.duckdb)
+```
+
+**Output** *(MEASURED-BY-ISSEN):*
+
+```
+DC      : Administrator
+Desktop : Administrator · ricksanchez · mortysmith  (+ local Admin, defaultuser0)
+```
+
+**Make sense of it:** filter interactive/RDP logon types and drop machine (`$`) accounts → the **real humans**. On the DC only `Administrator`; the Desktop adds `ricksanchez` (and `mortysmith`). *Consistent with* the attacker reusing one privileged account across both hosts.
+
+```mermaid
+flowchart LR
+  LOGON["LogonSuccess · type 2/10/11<br/>minus machine accounts"] --> DCU["DC: Administrator"]
+  LOGON --> WSU["Desktop: Administrator · ricksanchez · mortysmith"]
+```
+
+---
+
+# B6 · What are the domain passwords?
+
+**Ground truth:** `Administrator` = `)&Denver89` (+ six more users in the key).
+
+**Command** *(extract the hives; crack **offline** — not a live tool step):*
+
+```bash
+issen ingest "$DC_E01" -o dc01.duckdb     # SAM + SYSTEM hives are extracted & ingested
+# → carve SAM/SYSTEM → NTLM hashes → hashcat/john, offline in the lab
+```
+
+**Output** *(○ — out of the tool's reach by design):*
+
+```
+SAM + SYSTEM hives recovered from the image (registry events ingested).
+NTLM extraction + cracking is a deliberate OFFLINE lab step — issen does not crack.
+```
+
+**Make sense of it:** issen *recovers the material* (the hives are in the image), but turning hashes into plaintext is **offline cracking** — rightly outside an evidence-handling tool. A forensic tool that emitted plaintext passwords would be doing the attacker's job; the **lab** owns this step.
+
+```mermaid
+flowchart LR
+  IMG["disk image"] --> H["SAM + SYSTEM hives<br/>(recovered)"] --> NT["NTLM hashes"] --> CK["crack OFFLINE<br/>hashcat / john"]
+```
+
+---
+
+# B7 / B8 · Recover Beth's file, and which was timestomped?
+
+**Ground truth:** original `SECRET_beth.txt` ("Earth Beth is the real Beth."); the planted `Beth_Secret.txt` was **timestomped** to match `PortalGunPlans.txt`.
+
+**Command:**
+
+```bash
+duckdb dc01.duckdb -c "SELECT DISTINCT regexp_extract(artifact_path,'[^/\\\\]+\$') fname
+  FROM timeline WHERE lower(artifact_path) LIKE '%beth%' OR lower(artifact_path) LIKE '%secret%';"
+```
+
+**Output** *(MEASURED-BY-ISSEN — names recovered from MFT):*
+
+```
+SECRET_beth.txt   ← original (B7)        Beth_Secret.txt   ← planted / timestomped (B8)
+SECRET_beth.lnk · Beth_Secret.lnk · PortalGunPlans.txt   (the timestamp donor)
+```
+
+**Make sense of it:** issen recovers the **filenames** straight from the MFT — the original `SECRET_beth.txt`, the planted `Beth_Secret.txt`, and `PortalGunPlans.txt` whose `$SI` times the attacker copied (**B8**). The **contents** of the original (B7's "Earth Beth…") need `$DATA`/slack **carving** — present in design, not this run (○). Names: ✅; contents: ○.
+
+```mermaid
+flowchart LR
+  MFT["$MFT names"] --> O["SECRET_beth.txt<br/>(original · B7)"]
+  MFT --> P["Beth_Secret.txt<br/>(timestomped · B8)"]
+  P -.->|"$SI copied from"| D["PortalGunPlans.txt"]
+```
+
+---
+
+# B1–B3 · What would have prevented this?
+
+**Not a tool output — the advisory layer.** issen gives the evidence; you map it to controls.
+
+| # | Question | Grounded answer |
+|---|---|---|
+| B1 | CIS / SANS Controls | **CIS 4** secure config (no internet-facing RDP) · **CIS 5/6** account & access mgmt (MFA, no shared admin) · **CIS 8** audit logs · **CIS 13** network monitoring (egress) |
+| B2 | Major architecture change | Put RDP behind a **VPN/MFA bastion**; the DC was reachable for a direct brute force |
+| B3 | Policy / controls | Tiered admin (no one `Administrator` across hosts), account-lockout, service-creation (7045) alerting, egress filtering on `:443` |
+
+> Tie each back to a **measured** finding (the 4625 brute force, the cross-host reuse, the 7045 install, the C2 egress) — recommendations earn their weight from evidence.
+
+```mermaid
+flowchart LR
+  EVID["measured findings"] --> MAP["map to CIS/SANS"] --> CTRL["RDP MFA bastion · tiered admin<br/>7045 alerting · egress filter"]
+```
+
+---
+
 # Scorecard — All 13, Measured Against Real Images (2026-06-24)
 
 | # | Question | issen surface | Verdict |
@@ -1221,8 +1349,13 @@ flowchart LR
 | 11 | Szechuan sauce · time | MFT + secret.zip | ◐ |
 | 12 | Other files + timestomp | MFT · `$SI`/`$FN` | ✅ / ◐ |
 | 13 | Last contact | logoff + live C2 | ◐ |
+| B4–B5 | Who logged on (DC / Desktop) | logon-user query | ✅ |
+| B6 | Domain passwords | hives recovered → crack offline | ○ lab |
+| B7 | Recover Beth's original | MFT name ✅ · contents carve | ✅ / ○ |
+| B8 | Which file timestomped | MFT `$SI`/`$FN` | ✅ name · ◐ flag |
+| B1–B3 | Controls / architecture / policy | analyst judgement | ○ advice |
 
-> **~14 of 19 sub-questions fall out of two commands.** The rest are honest ◐ (WIP) or ○ (PCAP/OSINT/advice) — never faked. The minute they took back, the moat is yours: weaving these into one defensible narrative.
+> **~16 of 27 questions fall out of two commands.** The rest are honest ◐ (WIP) or ○ (PCAP / OSINT / offline-lab / advice) — never faked. The minute they took back, the moat is yours: weaving these into one defensible narrative.
 
 ```mermaid
 flowchart LR
