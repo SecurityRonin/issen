@@ -23,16 +23,22 @@ pub const FIRST_SEGMENT_IMAGE_EXTS: &[&str] = &[
 /// truly a container is confirmed downstream by magic-byte probing
 /// (`open_collection`'s provider registry).
 #[must_use]
-pub fn is_container_first_segment(_path: &Path) -> bool {
-    false // RED stub
+pub fn is_container_first_segment(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase)
+        .is_some_and(|ext| FIRST_SEGMENT_IMAGE_EXTS.contains(&ext.as_str()))
 }
 
 /// Recursively collect disk-image container first-segment files under `dir`,
 /// sorted for deterministic ordering. An unreadable directory contributes
 /// nothing (never panics).
 #[must_use]
-pub fn collect_container_first_segments(_dir: &Path) -> Vec<PathBuf> {
-    Vec::new() // RED stub
+pub fn collect_container_first_segments(dir: &Path) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    walk(dir, &mut out);
+    out.sort();
+    out
 }
 
 fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
