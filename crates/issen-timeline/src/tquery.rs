@@ -137,6 +137,45 @@ pub enum FieldOp {
     Ne,
     /// `~` substring (contains).
     Contains,
+    /// `>=` numeric (the JSON string value is `TRY_CAST` to an integer).
+    Ge,
+    /// `<=` numeric.
+    Le,
+    /// `>` numeric.
+    Gt,
+    /// `<` numeric.
+    Lt,
+}
+
+impl FieldOp {
+    /// `true` for the numeric range comparators (`>=`, `<=`, `>`, `<`).
+    #[must_use]
+    pub fn is_range(self) -> bool {
+        matches!(self, FieldOp::Ge | FieldOp::Le | FieldOp::Gt | FieldOp::Lt)
+    }
+
+    /// The SQL comparison symbol for a range op (panics for non-range ops; only
+    /// reachable for a range op by construction in [`TypedQuery::build_where`]).
+    fn range_sql(self) -> &'static str {
+        match self {
+            FieldOp::Ge => ">=",
+            FieldOp::Le => "<=",
+            FieldOp::Gt => ">",
+            FieldOp::Lt => "<",
+            // cov:unreachable: build_where only calls this in the range arm
+            FieldOp::Eq | FieldOp::Ne | FieldOp::Contains => "=",
+        }
+    }
+}
+
+/// A set-membership filter (`FIELD IN (v1, v2, …)`); each value binds as a
+/// parameter. Used by the `logons` intent verb (`LogonType IN ('2','10','11')`).
+#[derive(Debug, Clone)]
+pub struct FieldInFilter {
+    /// Registry field (already resolved at construction).
+    pub field: &'static Field,
+    /// The candidate values (OR-combined); each binds as a parameter.
+    pub values: Vec<String>,
 }
 
 /// A single typed metadata filter (`--field NAME OP VAL`, or its `--ip` sugar).
@@ -188,6 +227,8 @@ pub struct TypedQuery {
     pub path: Option<String>,
     /// Typed metadata filters (AND-combined).
     pub fields: Vec<FieldFilter>,
+    /// Set-membership filters (`FIELD IN (…)`, AND-combined with everything else).
+    pub in_filters: Vec<FieldInFilter>,
     /// Drop `user` values ending in `$` (machine accounts).
     pub exclude_machine_accounts: bool,
     /// Sort ascending by timestamp (rows / group-by ordering).
@@ -205,6 +246,7 @@ impl Default for TypedQuery {
             sources: Vec::new(),
             path: None,
             fields: Vec::new(),
+            in_filters: Vec::new(),
             exclude_machine_accounts: false,
             ascending: true,
             limit: None,
@@ -372,6 +414,31 @@ impl TypedQuery {
                     clauses.push(format!("{expr} LIKE ? ESCAPE '\\'"));
                     params.push(DuckValue::Text(format!("%{}%", like_escape(&f.value))));
                 }
+                FieldOp::Ge | FieldOp::Le | FieldOp::Gt | FieldOp::Lt => {
+                    // Numeric range: the JSON value is a string ("2"); TRY_CAST
+                    // it to a BIGINT so the comparison is numeric, and bind the
+                    // bound as an integer parameter. A non-numeric/absent value
+                    // yields NULL and is excluded (never a panic, never a match).
+                    let sym = f.op.range_sql();
+                    let bound = f.value.trim().parse::<i64>().unwrap_or(0);
+                    clauses.push(format!("TRY_CAST({expr} AS BIGINT) {sym} ?"));
+                    params.push(DuckValue::BigInt(bound));
+                }
+            }
+        }
+        for inf in &self.in_filters {
+            if inf.values.is_empty() {
+                // An empty IN-set matches nothing; emit a constant-false clause
+                // rather than invalid `IN ()` SQL.
+                clauses.push("1=0".to_string());
+                continue;
+            }
+            let expr = field_expr();
+            params.push(DuckValue::Text(inf.field.json_key.to_string()));
+            let placeholders = vec!["?"; inf.values.len()].join(", ");
+            clauses.push(format!("{expr} IN ({placeholders})"));
+            for v in &inf.values {
+                params.push(DuckValue::Text(v.clone()));
             }
         }
         if self.exclude_machine_accounts {
@@ -411,6 +478,13 @@ impl TypedQuery {
         for f in &self.fields {
             let populated = field_is_populated(conn, f.field.json_key)?;
             out.push((f.field.name.to_string(), populated));
+        }
+        for inf in &self.in_filters {
+            if out.iter().any(|(n, _)| n == inf.field.name) {
+                continue;
+            }
+            let populated = field_is_populated(conn, inf.field.json_key)?;
+            out.push((inf.field.name.to_string(), populated));
         }
         Ok(out)
     }
@@ -628,6 +702,80 @@ impl TypedQuery {
             out.push(r?);
         }
         Ok(out)
+    }
+}
+
+/// Intent-verb presets (design Phase 2): each returns a [`TypedQuery`] whose
+/// event-type set, default mode, and baseline filters encode one analyst
+/// question. CLI verbs layer their per-run flags (`--service`, `--host`, `--ip`,
+/// `--path`, …) on top of these defaults — the preset is the *floor*, never a
+/// special case. All values are constants here; analyst input still binds as a
+/// parameter when it reaches [`TypedQuery::run`].
+pub mod presets {
+    use super::{FieldInFilter, FieldRegistry, Mode, TypedQuery};
+
+    fn ev(types: &[&str]) -> Vec<String> {
+        types.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    /// `logons`: interactive/remote-interactive/cached logons, machine accounts
+    /// dropped, distinct users. `LogonType IN (2, 10, 11)` (interactive, RDP,
+    /// cached-interactive). Mirrors the deck's B4/B5 question.
+    #[must_use]
+    pub fn logons() -> TypedQuery {
+        TypedQuery {
+            event_types: ev(&["LogonSuccess"]),
+            in_filters: vec![FieldInFilter {
+                field: FieldRegistry::resolve("logon-type")
+                    .expect("logon-type is a registry field"),
+                values: ev(&["2", "10", "11"]),
+            }],
+            exclude_machine_accounts: true,
+            mode: Mode::Distinct {
+                target: "user".to_string(),
+            },
+            ..TypedQuery::default()
+        }
+    }
+
+    /// `files`: filesystem activity (create/modify/delete/rename) — the analyst
+    /// adds `--path`/`--first`/`--last`. Default mode is rows.
+    #[must_use]
+    pub fn files() -> TypedQuery {
+        TypedQuery {
+            event_types: ev(&["FileCreate", "FileModify", "FileDelete", "FileRename"]),
+            ..TypedQuery::default()
+        }
+    }
+
+    /// `persistence`: service install/start, registry modification, scheduled
+    /// task — the analyst narrows with `--service`/`--registry-key`. Rows mode.
+    #[must_use]
+    pub fn persistence() -> TypedQuery {
+        TypedQuery {
+            event_types: ev(&[
+                "ServiceInstall",
+                "ServiceStart",
+                "RegistryModify",
+                "ScheduledTaskRun",
+            ]),
+            ..TypedQuery::default()
+        }
+    }
+
+    /// `hosts`: network/lateral-movement events keyed by remote host — the
+    /// analyst adds `--host`/`--port`. Rows mode.
+    #[must_use]
+    pub fn hosts() -> TypedQuery {
+        TypedQuery {
+            event_types: ev(&[
+                "NetworkConnectionIPv4",
+                "NetworkConnectionIPv6",
+                "LogonSuccess",
+                "SMBConnect",
+            ]),
+            ..TypedQuery::default()
+        }
     }
 }
 
