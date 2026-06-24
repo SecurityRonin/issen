@@ -251,6 +251,16 @@ outside the tempdir. Tests in `~/src/issen/crates/issen-archive/`:
   **byte-identical to the system `7z x`** (`autorunsc-citadel-dc01.csv`, SHA-256
   `2a2ea036…78482`, 1 068 150 bytes) — a third-party artifact decoded the same way by
   an independent tool.
+- **Archive-wrapped disk image — Tier 2 (real data).** A disk-image container found
+  inside an extracted archive is recursed through the disk pipeline (`open_collection`
+  re-dispatches the first-segment container, cracking the NTFS volume), so
+  `issen ingest DC01-E01.zip` works directly on the *downloaded* evidence archive — no
+  manual unzip. Validated end-to-end on the real DFIR Madness `DC01-E01.zip` (4.5 GB zip
+  wrapping the split `…CDrive.E01/.E02`): **139 artifacts → 727 393 events**, and the
+  documented marker `--ip 10.42.85.115` returns **197** — *the same value measured on the
+  bare-E01 ingest* — confirming the archive-wrapped image cracks to identical forensic
+  content. The recursion itself is also covered hermetically by
+  `crates/issen-unpack/tests/nested_container.rs` (mock providers, no fixture).
 - **7z — Tier 2.** `extract_7z_matches_system_oracle` builds a `.7z` with the system
   `7z` (p7zip 17.05) and asserts `sevenz-rust`'s extracted tree matches `7z x`
   byte-for-byte (independent oracle).
@@ -261,8 +271,11 @@ outside the tempdir. Tests in `~/src/issen/crates/issen-archive/`:
   is *structural*: `safe_join` rejects any `..`/absolute/drive component on every entry of
   every format; zip uses `enclosed_name()` **and** explicitly refuses symlink entries
   (matching tar), so a future zip-crate change cannot reintroduce an escaping symlink.
-- **Decompression bomb — security.** `zip_bomb_errors_with_bound_no_oom`: `write_capped`
-  errors at the `MAX_TOTAL_UNCOMPRESSED` bound, never OOMs.
+- **Decompression bomb — security.** The cap is **ratio-based** —
+  `cap_for_archive_size = max(4 GiB floor, 100× compressed size)` (`cap_*` unit tests) —
+  because a bomb is a *ratio* attack (1000×+), while a forensic disk image barely
+  compresses (~1.1×) and so must be admitted. `zip_bomb_errors_with_bound_no_oom`:
+  `write_capped` still errors at the (now per-archive) bound, never OOMs.
 
 The slip/bomb fixtures are Tier-3 (hand-authored hostile archives, emitted via raw `ustar`
 headers / `add_symlink` the way real malicious archives are built); the 7z and real-zip

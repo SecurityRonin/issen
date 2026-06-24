@@ -13,12 +13,34 @@ use std::path::{Component, Path, PathBuf};
 
 use issen_core::error::RtError;
 
-/// Upper bound on total uncompressed bytes extracted from a single archive.
-///
-/// Caps a decompression bomb: a tiny archive that expands past this errors out
-/// instead of filling the disk / RAM. Generous enough for real triage
-/// collections (4 GiB) while still bounding a hostile tiny input.
+/// Floor for the per-archive uncompressed-size cap: any archive may expand to at
+/// least this (4 GiB) regardless of its compressed size, so small triage
+/// collections are never falsely flagged.
 pub const MAX_TOTAL_UNCOMPRESSED: u64 = 4 * 1024 * 1024 * 1024;
+
+/// Maximum tolerated expansion ratio (uncompressed / compressed). A decompression
+/// bomb is a *ratio* attack — a tiny archive that explodes to gigabytes
+/// (ratios of 1000×–1,000,000×). Legitimate evidence sits far below this: text/log
+/// triage zips ~5–20×, and a forensic disk image (E01/raw) barely compresses
+/// (~1–2×). Capping the ratio lets a multi-gigabyte disk image through while a
+/// bomb still trips almost immediately.
+pub const MAX_EXPANSION_RATIO: u64 = 100;
+
+/// The uncompressed-size cap for an archive of `compressed` bytes:
+/// `max(floor, ratio × compressed)`. The floor keeps small archives unrestricted;
+/// the ratio term scales the allowance to genuinely large inputs (disk images)
+/// without ever admitting a high-ratio bomb.
+#[must_use]
+pub fn cap_for_archive_size(compressed: u64) -> u64 {
+    MAX_TOTAL_UNCOMPRESSED.max(compressed.saturating_mul(MAX_EXPANSION_RATIO))
+}
+
+/// The bomb cap for a concrete archive file, from its on-disk (compressed) size.
+/// An unreadable size falls back to the floor.
+fn bomb_cap(archive_path: &Path) -> u64 {
+    let compressed = std::fs::metadata(archive_path).map_or(0, |m| m.len());
+    cap_for_archive_size(compressed)
+}
 
 /// Read chunk size while streaming an entry to disk (also the bomb-check
 /// granularity, so the running total is checked before each chunk lands).
@@ -95,9 +117,9 @@ fn bomb_error(cap: u64) -> RtError {
     ))
 }
 
-/// Safe-extract a zip archive into `dest` (uses [`MAX_TOTAL_UNCOMPRESSED`]).
+/// Safe-extract a zip archive into `dest` (cap via [`cap_for_archive_size`]).
 pub fn extract_zip(archive_path: &Path, dest: &Path) -> Result<ExtractReport, RtError> {
-    extract_zip_capped(archive_path, dest, MAX_TOTAL_UNCOMPRESSED)
+    extract_zip_capped(archive_path, dest, bomb_cap(archive_path))
 }
 
 /// Safe-extract a zip archive into `dest`, bounding total uncompressed bytes by
@@ -158,9 +180,9 @@ pub fn extract_zip_capped(
 }
 
 /// Safe-extract a gzip-compressed tar (`.tar.gz`) into `dest`
-/// (uses [`MAX_TOTAL_UNCOMPRESSED`]).
+/// (cap via [`cap_for_archive_size`]).
 pub fn extract_tar_gz(archive_path: &Path, dest: &Path) -> Result<ExtractReport, RtError> {
-    extract_tar_gz_capped(archive_path, dest, MAX_TOTAL_UNCOMPRESSED)
+    extract_tar_gz_capped(archive_path, dest, bomb_cap(archive_path))
 }
 
 /// Safe-extract a gzip-compressed tar into `dest`, bounding uncompressed bytes.
@@ -216,9 +238,9 @@ pub fn extract_tar_gz_capped(
     Ok(report)
 }
 
-/// Safe-extract a 7z archive into `dest` (uses [`MAX_TOTAL_UNCOMPRESSED`]).
+/// Safe-extract a 7z archive into `dest` (cap via [`cap_for_archive_size`]).
 pub fn extract_7z(archive_path: &Path, dest: &Path) -> Result<ExtractReport, RtError> {
-    extract_7z_capped(archive_path, dest, MAX_TOTAL_UNCOMPRESSED)
+    extract_7z_capped(archive_path, dest, bomb_cap(archive_path))
 }
 
 /// Safe-extract a 7z archive into `dest`, bounding uncompressed bytes.

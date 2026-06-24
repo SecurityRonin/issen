@@ -365,7 +365,7 @@ flowchart LR
 - **E01 carries its own hashes.** Acquisition stored an MD5/SHA. Verify it before you trust a single byte — chain of custody starts here.
 - **Compression is transparent.** EWF is zlib-compressed under the hood; the reader inflates on the fly. You address sectors, not compressed blocks.
 
-`issen ingest <first.E01>` opens the container for you — the rest of the pipeline never sees EWF again.
+`issen ingest <first.E01>` opens the container for you — the rest of the pipeline never sees EWF again. And because issen reads **zip / 7z / tar.gz** natively, you can point it straight at the evidence archive you downloaded (`issen ingest DC01-E01.zip`) — it unwraps the archive *and* cracks the split E01 inside, no manual unzip.
 
 ```mermaid
 block-beta
@@ -681,9 +681,15 @@ flowchart LR
 We answer the **official DFIR Madness question set** — all 13 + the Advanced/Bonus set — **grouped by the issen command that answers them**, so you master one tool surface at a time. Two commands carry most of it:
 
 ```bash
-issen ingest "$DC_E01" -o dc01.duckdb     # disk → one timeline DB
-issen memory "$DC_MEM" --command all      # memory → processes, C2, creds
+# issen reads the download archive directly — zip / 7z / tar.gz, no manual unzip
+issen ingest DC01-E01.zip -o dc01.duckdb     # disk → one timeline DB
+issen memory citadeldc01.mem --command all   # memory → processes, C2, creds
 ```
+
+> **One thing you still extract:** the **memory dump**. `issen ingest` unwraps the archive,
+> cracks the **E01 disk image inside it**, and walks the filesystem — all from the `.zip` you
+> downloaded. But the memory walker reads a *raw page stream*, so unzip the memory archive to
+> `citadeldc01.mem` first. Everything disk-side ingests the `.zip` as-is.
 
 Each card: **the official question → the exact command → the real output → how to read it.** Drill-downs use `issen timeline`'s **native typed query** (`--ip`, `--path`, `--first`, `--group-by`, `--distinct`, …) — one tool, no raw SQL.
 
@@ -692,8 +698,8 @@ Each card: **the official question → the exact command → the real output →
 
 ```mermaid
 flowchart LR
-  DISK["$DC_E01"] --> ING["issen ingest"] --> DB["dc01.duckdb"]
-  MEM["$DC_MEM"] --> MM["issen memory --command all"] --> ANS["answers"]
+  DISK["DC01-E01.zip"] --> ING["issen ingest<br/>(reads zip, cracks E01)"] --> DB["dc01.duckdb"]
+  MEM["citadeldc01.mem"] --> MM["issen memory --command all"] --> ANS["answers"]
   DB --> ANS
 ```
 
@@ -1371,7 +1377,7 @@ flowchart LR
 **Command** *(extract the hives; crack **offline** — not a live tool step):*
 
 ```bash
-issen ingest "$DC_E01" -o dc01.duckdb     # SAM + SYSTEM hives are extracted & ingested
+issen ingest DC01-E01.zip -o dc01.duckdb  # SAM + SYSTEM hives extracted from the archive & ingested
 # → carve SAM/SYSTEM → NTLM hashes → hashcat/john, offline in the lab
 ```
 

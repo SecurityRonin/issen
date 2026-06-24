@@ -6,7 +6,10 @@ use std::process::Command;
 
 use issen_unpack::{CollectionProvider, Confidence};
 
-use super::extract::{extract_7z, extract_tar_gz, extract_zip, safe_join, MAX_TOTAL_UNCOMPRESSED};
+use super::extract::{
+    cap_for_archive_size, extract_7z, extract_tar_gz, extract_zip, safe_join, MAX_EXPANSION_RATIO,
+    MAX_TOTAL_UNCOMPRESSED,
+};
 use super::{detect_kind, ArchiveKind, ArchiveProvider};
 
 const DFIRMADNESS_ZIP: &str =
@@ -546,4 +549,36 @@ fn archive_provider_registered_in_inventory() {
         names.contains(&"Archive".to_string()),
         "ArchiveProvider must be registered; got: {names:?}"
     );
+}
+
+// ── bomb cap: ratio-based, disk-image-friendly ───────────────────────────
+
+#[test]
+fn cap_is_floor_for_small_archives() {
+    // 100× a 1 MiB archive is 100 MiB, below the 4 GiB floor → floor governs, so
+    // small triage collections are never falsely flagged.
+    assert_eq!(cap_for_archive_size(1024 * 1024), MAX_TOTAL_UNCOMPRESSED);
+    assert_eq!(cap_for_archive_size(0), MAX_TOTAL_UNCOMPRESSED);
+}
+
+#[test]
+fn cap_scales_by_ratio_for_large_archives() {
+    // The real case: DC01-E01.zip is ~4.5 GB compressed and ~4.87 GB uncompressed
+    // (a split E01, ratio ~1.1×). The ratio term must lift the cap above that so
+    // the disk image extracts, while a bomb's far higher ratio still trips.
+    let compressed = 4_500_000_000u64;
+    assert_eq!(
+        cap_for_archive_size(compressed),
+        compressed * MAX_EXPANSION_RATIO
+    );
+    assert!(
+        cap_for_archive_size(compressed) > 4_870_000_000,
+        "cap must clear the ~4.87 GB uncompressed disk image"
+    );
+}
+
+#[test]
+fn cap_saturates_without_overflow() {
+    // A pathologically huge compressed size must not overflow u64.
+    assert_eq!(cap_for_archive_size(u64::MAX), u64::MAX);
 }

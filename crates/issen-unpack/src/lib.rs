@@ -93,6 +93,13 @@ pub struct CollectionManifest {
     pub metadata: CollectionMetadata,
     /// Handle to the temp directory — dropped when manifest is dropped.
     _tempdir: tempfile::TempDir,
+    /// Upstream collections kept alive for this manifest's lifetime. Populated
+    /// when `open_collection` cracks a disk image out of an archive: callers walk
+    /// the cracked filesystem (this manifest), but the archive's extraction dir —
+    /// which held the raw image — must outlive parsing. Holding the whole upstream
+    /// manifest keeps its `TempDir` alive without reaching into private fields.
+    /// Empty for a directly opened collection.
+    keepalive: Vec<CollectionManifest>,
 }
 
 impl CollectionManifest {
@@ -110,7 +117,17 @@ impl CollectionManifest {
             artifacts,
             metadata,
             _tempdir: tempdir,
+            keepalive: Vec::new(),
         }
+    }
+
+    /// Keep another opened collection's extraction dir(s) alive for as long as
+    /// this manifest lives. Used when `open_collection` cracks a disk image out
+    /// of an archive: the cracked filesystem (`self`) is what callers walk, but
+    /// the archive's extraction dir (which held the raw image) must not be
+    /// removed until parsing finishes.
+    pub fn keep_alive(&mut self, other: CollectionManifest) {
+        self.keepalive.push(other);
     }
 }
 
