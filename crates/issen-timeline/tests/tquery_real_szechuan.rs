@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use duckdb::Connection;
 use issen_timeline::tquery::{
-    open_read_only, FieldFilter, FieldOp, FieldRegistry, Mode, TypedQuery,
+    open_read_only, presets, FieldFilter, FieldInFilter, FieldOp, FieldRegistry, Mode, TypedQuery,
 };
 
 const DEFAULT_DB: &str =
@@ -235,4 +235,173 @@ fn injection_value_is_bound_not_interpolated_on_real_db() {
         })
         .expect("timeline table must still exist");
     assert_ne!(still, "0", "timeline must survive the injection attempt");
+}
+
+// --- Phase 2: intent-verb presets vs the raw-SQL oracle ------------------
+//
+// Each verb's preset (plus the per-run flags the CLI verb would add) must
+// reproduce the equivalent raw IN-list / WHERE SQL on the SAME real DB.
+
+/// `logons` verb: `LogonType IN (2,10,11)`, machine accounts excluded, distinct
+/// user — one single typed query (the in_filters set), equal to the raw oracle.
+#[test]
+fn verb_logons_distinct_interactive_users() {
+    let Some(conn) = conn() else {
+        eprintln!("skipping: dc01.duckdb absent");
+        return;
+    };
+    let q = presets::logons();
+    let got = q.run(&conn).expect("logons distinct user");
+    let oracle = raw_column(
+        &conn,
+        "SELECT DISTINCT json_extract_string(metadata,'$.TargetUserName') v \
+         FROM timeline WHERE event_type='LogonSuccess' \
+         AND json_extract_string(metadata,'$.LogonType') IN ('2','10','11') \
+         AND (json_extract_string(metadata,'$.TargetUserName') IS NULL \
+              OR json_extract_string(metadata,'$.TargetUserName') NOT LIKE '%\\$' ESCAPE '\\') \
+         ORDER BY v",
+    );
+    assert_eq!(
+        got.columns[0].values, oracle,
+        "logons verb must equal the raw IN-list oracle"
+    );
+}
+
+/// `files` verb + `--path '*coreupdater*'` `--count`: filesystem events whose
+/// path matches the glob, equal to the raw File*-IN-list oracle.
+#[test]
+fn verb_files_path_count() {
+    let Some(conn) = conn() else {
+        eprintln!("skipping: dc01.duckdb absent");
+        return;
+    };
+    let mut q = presets::files();
+    q.path = Some("*coreupdater*".into());
+    q.mode = Mode::Count;
+    let got = q.run(&conn).expect("files count");
+    let oracle = raw_scalar(
+        &conn,
+        "SELECT count(*) FROM timeline \
+         WHERE event_type IN ('FileCreate','FileModify','FileDelete','FileRename') \
+         AND artifact_path LIKE '%coreupdater%'",
+    );
+    assert_eq!(
+        got.columns[0].values[0], oracle,
+        "files verb path count must equal the raw-SQL oracle"
+    );
+}
+
+/// `persistence` verb + `--service coreupdater` `--count`: service/registry/task
+/// persistence events for the named service, equal to the raw oracle.
+#[test]
+fn verb_persistence_service_count() {
+    let Some(conn) = conn() else {
+        eprintln!("skipping: dc01.duckdb absent");
+        return;
+    };
+    let mut q = presets::persistence();
+    q.fields.push(FieldFilter {
+        field: FieldRegistry::resolve("service").expect("service field"),
+        op: FieldOp::Eq,
+        value: "coreupdater".into(),
+    });
+    q.mode = Mode::Count;
+    let got = q.run(&conn).expect("persistence count");
+    let oracle = raw_scalar(
+        &conn,
+        "SELECT count(*) FROM timeline \
+         WHERE event_type IN ('ServiceInstall','ServiceStart','RegistryModify','ScheduledTaskRun') \
+         AND json_extract_string(metadata,'$.ServiceName')='coreupdater'",
+    );
+    assert_eq!(
+        got.columns[0].values[0], oracle,
+        "persistence verb service count must equal the raw-SQL oracle"
+    );
+}
+
+/// `hosts` verb + `--host 194.61.24.102` `--count`: network/logon events keyed
+/// by the remote host (IpAddress), equal to the raw oracle.
+#[test]
+fn verb_hosts_ip_count() {
+    let Some(conn) = conn() else {
+        eprintln!("skipping: dc01.duckdb absent");
+        return;
+    };
+    let mut q = presets::hosts();
+    q.fields.push(FieldFilter {
+        field: FieldRegistry::resolve("ip").expect("ip field"),
+        op: FieldOp::Eq,
+        value: "194.61.24.102".into(),
+    });
+    q.mode = Mode::Count;
+    let got = q.run(&conn).expect("hosts count");
+    let oracle = raw_scalar(
+        &conn,
+        "SELECT count(*) FROM timeline \
+         WHERE event_type IN ('NetworkConnectionIPv4','NetworkConnectionIPv6','LogonSuccess','SMBConnect') \
+         AND json_extract_string(metadata,'$.IpAddress')='194.61.24.102'",
+    );
+    assert_eq!(
+        got.columns[0].values[0], oracle,
+        "hosts verb ip count must equal the raw-SQL oracle"
+    );
+}
+
+/// A `FieldOp::Ge` range filter on logon-type reproduces the numeric `>=` oracle
+/// (the new range op, validated on real data).
+#[test]
+fn range_op_logon_type_ge_matches_oracle() {
+    let Some(conn) = conn() else {
+        eprintln!("skipping: dc01.duckdb absent");
+        return;
+    };
+    let q = TypedQuery {
+        event_types: vec!["LogonSuccess".into()],
+        fields: vec![FieldFilter {
+            field: FieldRegistry::resolve("logon-type").expect("logon-type"),
+            op: FieldOp::Ge,
+            value: "10".into(),
+        }],
+        mode: Mode::Count,
+        ..Default::default()
+    };
+    let got = q.run(&conn).expect("range count");
+    let oracle = raw_scalar(
+        &conn,
+        "SELECT count(*) FROM timeline WHERE event_type='LogonSuccess' \
+         AND TRY_CAST(json_extract_string(metadata,'$.LogonType') AS BIGINT) >= 10",
+    );
+    assert_eq!(
+        got.columns[0].values[0], oracle,
+        "logon-type >= 10 must equal the numeric raw-SQL oracle"
+    );
+}
+
+/// The set-membership `in_filters` (LogonType IN (2,10,11)) as a single typed
+/// query reproduces the raw IN-list count oracle.
+#[test]
+fn in_filter_logon_type_set_matches_oracle() {
+    let Some(conn) = conn() else {
+        eprintln!("skipping: dc01.duckdb absent");
+        return;
+    };
+    let q = TypedQuery {
+        event_types: vec!["LogonSuccess".into()],
+        in_filters: vec![FieldInFilter {
+            field: FieldRegistry::resolve("logon-type").expect("logon-type"),
+            values: vec!["2".into(), "10".into(), "11".into()],
+        }],
+        mode: Mode::Count,
+        ..Default::default()
+    };
+    let got = q.run(&conn).expect("in count");
+    let oracle = raw_scalar(
+        &conn,
+        "SELECT count(*) FROM timeline WHERE event_type='LogonSuccess' \
+         AND json_extract_string(metadata,'$.LogonType') IN ('2','10','11')",
+    );
+    assert_eq!(
+        got.columns[0].values[0], oracle,
+        "logon-type IN (2,10,11) must equal the raw-SQL oracle"
+    );
 }
