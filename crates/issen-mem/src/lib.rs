@@ -44,6 +44,7 @@ pub mod hashdb;
 pub mod mem_ingest;
 pub mod open;
 pub mod output;
+pub mod provider;
 pub mod strings;
 pub mod timeline;
 

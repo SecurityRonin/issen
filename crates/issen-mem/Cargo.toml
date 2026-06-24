@@ -18,6 +18,8 @@ memf-correlate = { workspace = true }
 forensic-hashdb = { workspace = true }
 issen-core     = { workspace = true }
 issen-timeline = { workspace = true }
+issen-unpack   = { workspace = true }
+inventory      = { workspace = true }
 chrono       = { workspace = true }
 serde        = { workspace = true }
 serde_json   = { workspace = true }
