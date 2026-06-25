@@ -92,10 +92,38 @@ impl Action {
 /// - prior `Done` and fingerprint matches → `Skip` …
 /// - …unless an upstream dependency is itself running → `Run(UpstreamRerun)`.
 #[must_use]
-pub fn plan(prior: &[StageRecord], current_fp: &HashMap<Stage, String>) -> Vec<(Stage, Action)> {
-    // STUB (RED): not yet implemented.
-    let _ = (prior, current_fp);
-    Vec::new()
+pub fn plan<S: std::hash::BuildHasher>(
+    prior: &[StageRecord],
+    current_fp: &HashMap<Stage, String, S>,
+) -> Vec<(Stage, Action)> {
+    let prior_by: HashMap<Stage, &StageRecord> = prior.iter().map(|r| (r.stage, r)).collect();
+    let mut running: HashSet<Stage> = HashSet::new();
+    let mut out: Vec<(Stage, Action)> = Vec::new();
+    for stage in Stage::ORDER {
+        // A stage with no current fingerprint is not applicable to this case
+        // (e.g. the memory stage when there are no dumps) — leave it out entirely.
+        let Some(cur) = current_fp.get(&stage) else {
+            continue;
+        };
+        let base = match prior_by.get(&stage) {
+            None => Action::Run(Reason::Missing),
+            Some(r) if r.status == Status::Incomplete => Action::Run(Reason::Incomplete),
+            Some(r) if &r.fingerprint != cur => Action::Run(Reason::Stale),
+            Some(_) => Action::Skip,
+        };
+        // Cascade: a stage that would otherwise skip must re-run when one of its
+        // upstream dependencies is re-running, because its input will change.
+        let action = if base == Action::Skip && stage.deps().iter().any(|d| running.contains(d)) {
+            Action::Run(Reason::UpstreamRerun)
+        } else {
+            base
+        };
+        if action.is_run() {
+            running.insert(stage);
+        }
+        out.push((stage, action));
+    }
+    out
 }
 
 #[cfg(test)]
@@ -280,9 +308,8 @@ mod tests {
         assert_eq!(order, Stage::ORDER.to_vec());
     }
 
-    // Silence unused-import warnings in the stub (RED) state.
     #[test]
-    fn types_compile() {
+    fn action_is_run_predicate() {
         let _: HashSet<Stage> = HashSet::new();
         assert!(Action::Run(Reason::Missing).is_run());
         assert!(!Action::Skip.is_run());
