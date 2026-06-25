@@ -718,6 +718,35 @@ mod tests {
         assert!(events.is_empty());
     }
 
+    /// Real WinSxS component record (DC01 `$MFT` entry 74419) whose `$SI`
+    /// Modified FILETIME ends in a non-zero 100 ns digit. TSK `istat`
+    /// (independent oracle) reports `2013-06-18T15:02:18.305856600Z`; the
+    /// `mft` crate's `winstructs` truncates 100 ns → µs, rendering
+    /// `.305856000Z` in the timeline (the `bug1.jpg` report). Guards full
+    /// precision on the ingested `FileModify` event.
+    #[test]
+    fn parse_preserves_100ns_si_precision() {
+        const REC: &[u8] = include_bytes!("../tests/data/dc01_mft_record_74419.bin");
+        let emitter = CollectingEmitter::new();
+        MftFileParser
+            .parse(
+                &SliceSource(REC.to_vec()),
+                &emitter,
+                &issen_core::plugin::ParseOptions::default(),
+            )
+            .expect("parse single record");
+
+        let events = emitter.into_events();
+        let fm = events
+            .iter()
+            .find(|e| e.event_type == EventType::FileModify)
+            .expect("FileModify event present");
+        assert_eq!(
+            fm.timestamp_display, "2013-06-18T15:02:18.305856600Z",
+            "timeline $SI Modified lost 100 ns precision (TSK istat oracle)"
+        );
+    }
+
     #[test]
     fn invalid_inputs_declare_unsupported_not_complete() {
         // issen #115 step 1: a lenient Ok on non-MFT input must declare
