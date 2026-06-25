@@ -126,9 +126,83 @@ pub fn plan<S: std::hash::BuildHasher>(
     out
 }
 
+/// Stable, order-independent fingerprint of a set of self-describing input
+/// parts. Same inputs (any order) → same string; any change → different string.
+/// STUB (RED).
+#[must_use]
+pub fn fingerprint(parts: &[String]) -> String {
+    let _ = parts;
+    String::new()
+}
+
+/// Ingest-stage fingerprint from the evidence set (path, byte-size). STUB (RED).
+#[must_use]
+pub fn ingest_fingerprint(evidence: &[(String, u64)]) -> String {
+    let _ = evidence;
+    String::new()
+}
+
+/// Correlate-stage fingerprint from the correlation ruleset version. STUB (RED).
+#[must_use]
+pub fn correlate_fingerprint(ruleset_version: &str) -> String {
+    let _ = ruleset_version;
+    String::new()
+}
+
+/// Scan-stage fingerprint from the ruleset version and the feed snapshot. STUB (RED).
+#[must_use]
+pub fn scan_fingerprint(ruleset_version: &str, feed_snapshot: &str) -> String {
+    let _ = (ruleset_version, feed_snapshot);
+    String::new()
+}
+
+/// Memory-stage fingerprint from the dump set (path, byte-size). STUB (RED).
+#[must_use]
+pub fn memory_fingerprint(dumps: &[(String, u64)]) -> String {
+    let _ = dumps;
+    String::new()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fingerprint_is_deterministic_and_order_independent() {
+        let a = fingerprint(&["x".into(), "y".into()]);
+        let b = fingerprint(&["y".into(), "x".into()]);
+        assert_eq!(a, b);
+        assert!(!a.is_empty());
+    }
+
+    #[test]
+    fn fingerprint_changes_when_a_part_changes() {
+        let a = fingerprint(&["x".into(), "y".into()]);
+        let b = fingerprint(&["x".into(), "z".into()]);
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn ingest_fingerprint_is_set_based() {
+        let a = ingest_fingerprint(&[("a.E01".into(), 10), ("b.E01".into(), 20)]);
+        let b = ingest_fingerprint(&[("b.E01".into(), 20), ("a.E01".into(), 10)]);
+        assert_eq!(a, b, "evidence is a set — order independent");
+        let c = ingest_fingerprint(&[("a.E01".into(), 11), ("b.E01".into(), 20)]);
+        assert_ne!(a, c, "a size change re-fingerprints");
+    }
+
+    #[test]
+    fn scan_fingerprint_separates_rules_and_feeds() {
+        let base = scan_fingerprint("r1", "f1");
+        assert_ne!(base, scan_fingerprint("r2", "f1"), "rule change");
+        assert_ne!(base, scan_fingerprint("r1", "f2"), "feed change");
+    }
+
+    #[test]
+    fn stage_fingerprints_do_not_collide_across_stages() {
+        let same = [("x".to_string(), 1u64)];
+        assert_ne!(ingest_fingerprint(&same), memory_fingerprint(&same));
+    }
 
     fn fp(pairs: &[(Stage, &str)]) -> HashMap<Stage, String> {
         pairs.iter().map(|(s, f)| (*s, (*f).to_string())).collect()
