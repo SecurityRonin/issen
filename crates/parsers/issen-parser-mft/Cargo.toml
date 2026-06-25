@@ -10,6 +10,7 @@ repository.workspace = true
 [dependencies]
 issen-core = { workspace = true }
 mft = { workspace = true }
+ntfs-core = { workspace = true }
 inventory = { workspace = true }
 tracing = { workspace = true }
 chrono = { workspace = true }

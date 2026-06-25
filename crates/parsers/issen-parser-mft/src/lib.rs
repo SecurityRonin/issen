@@ -59,10 +59,33 @@ use mft::attribute::x30::FileNameAttr;
 use mft::attribute::MftAttributeContent;
 use mft::attribute::MftAttributeType;
 use mft::MftParser;
+use ntfs_core::MftData;
 use tracing::warn;
 
 /// NTFS Master File Table parser.
 pub struct MftFileParser;
+
+/// The four `$FILE_NAME` MACE timestamps, decoupled from the `mft` crate's
+/// `FileNameAttr` so full-precision (ntfs-core) values can be substituted for
+/// the truncated ones. `From<&FileNameAttr>` preserves the mft-crate path.
+#[derive(Clone, Copy)]
+struct FnTimestamps {
+    created: DateTime<Utc>,
+    modified: DateTime<Utc>,
+    accessed: DateTime<Utc>,
+    mft_modified: DateTime<Utc>,
+}
+
+impl From<&FileNameAttr> for FnTimestamps {
+    fn from(f: &FileNameAttr) -> Self {
+        Self {
+            created: f.created,
+            modified: f.modified,
+            accessed: f.accessed,
+            mft_modified: f.mft_modified,
+        }
+    }
+}
 
 /// Convert a Windows FILETIME (100-nanosecond intervals since 1601-01-01) to
 /// nanoseconds since the Unix epoch.
@@ -171,7 +194,7 @@ fn emit_mace_timestamps(
     full_path: &str,
     is_dir: bool,
     source_id: &str,
-    fn_attr: Option<&FileNameAttr>,
+    fn_ts: Option<FnTimestamps>,
 ) {
     batch.push(mace_event(
         modified,
@@ -217,7 +240,7 @@ fn emit_mace_timestamps(
             "si_mft_changed",
             serde_json::json!(datetime_to_display(mft_modified)),
         );
-    if let Some(fname) = fn_attr {
+    if let Some(fname) = fn_ts {
         create_event = create_event
             .with_metadata(
                 "fn_created",
@@ -303,6 +326,13 @@ impl ForensicParser for MftFileParser {
         let buffer = read_all(input)?;
         stats.bytes_processed = buffer.len() as u64;
 
+        // Full-precision $SI/$FN FILETIMEs. The mft crate converts via
+        // winstructs (`ticks / 10`, 100 ns → µs, dropping the final tick);
+        // ntfs-core preserves the full 100 ns. Parse the same buffer once and
+        // override the timestamps per record, degrading to the mft-crate value
+        // when a record is absent (no regression, just less precision).
+        let precise = MftData::parse(&buffer).ok();
+
         // Parse via the mft crate.
         let mut parser = match MftParser::from_buffer(buffer) {
             Ok(p) => p,
@@ -346,6 +376,28 @@ impl ForensicParser for MftFileParser {
             let is_dir = entry.is_dir();
             let entry_id = entry.header.record_number;
 
+            // On-disk MFT entry number (record header @ 0x2C). The mft crate's
+            // `record_number` is the iteration index, which coincides with the
+            // on-disk number only for a full, position-aligned $MFT; ntfs-core
+            // keys `by_entry` by the on-disk number, so read it directly
+            // (bounds-checked) to align the two parsers for any input.
+            let ondisk_entry = entry
+                .data
+                .get(0x2C..0x30)
+                .and_then(|b| <[u8; 4]>::try_from(b).ok())
+                .map_or(entry_id, |b| u64::from(u32::from_le_bytes(b)));
+            let pe = precise.as_ref().and_then(|d| d.get_by_entry(ondisk_entry));
+
+            // Full-precision $FN MACE (fall back to the mft crate per field).
+            let fn_ts = FnTimestamps {
+                created: pe.and_then(|e| e.fn_created).unwrap_or(file_name.created),
+                modified: pe.and_then(|e| e.fn_modified).unwrap_or(file_name.modified),
+                accessed: pe.and_then(|e| e.fn_accessed).unwrap_or(file_name.accessed),
+                mft_modified: pe
+                    .and_then(|e| e.fn_mft_modified)
+                    .unwrap_or(file_name.mft_modified),
+            };
+
             // Prefer $STANDARD_INFORMATION timestamps; fall back to $FILE_NAME.
             // When $SI drives the timestamps, surface the co-existing $FN
             // timestamps onto the FileCreate event so a timestomp detector can
@@ -353,23 +405,24 @@ impl ForensicParser for MftFileParser {
             if let Some(si) = extract_standard_info(&entry) {
                 emit_mace_timestamps(
                     &mut batch,
-                    &si.modified,
-                    &si.accessed,
-                    &si.created,
-                    &si.mft_modified,
+                    &pe.and_then(|e| e.si_modified).unwrap_or(si.modified),
+                    &pe.and_then(|e| e.si_accessed).unwrap_or(si.accessed),
+                    &pe.and_then(|e| e.si_created).unwrap_or(si.created),
+                    &pe.and_then(|e| e.si_mft_modified)
+                        .unwrap_or(si.mft_modified),
                     entry_id,
                     &full_path,
                     is_dir,
                     source_id,
-                    Some(&file_name),
+                    Some(fn_ts),
                 );
             } else {
                 emit_mace_timestamps(
                     &mut batch,
-                    &file_name.modified,
-                    &file_name.accessed,
-                    &file_name.created,
-                    &file_name.mft_modified,
+                    &fn_ts.modified,
+                    &fn_ts.accessed,
+                    &fn_ts.created,
+                    &fn_ts.mft_modified,
                     entry_id,
                     &full_path,
                     is_dir,
@@ -862,7 +915,7 @@ mod tests {
             "Users/analyst/report.docx",
             false,
             "evidence-001",
-            Some(&fn_attr),
+            Some((&fn_attr).into()),
         );
 
         let create = batch
