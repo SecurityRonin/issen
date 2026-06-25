@@ -210,10 +210,11 @@ icat -o 718848 "$E01" 0 | dd bs=1024 skip=74419 count=1 of=dc01_mft_record_74419
 
 | File | Bytes | MD5 | Location |
 |---|---|---|---|
-| `dc01_mft_record_74419.bin` | 1024 | `4c911975cff69016c3095553ed4540c6` | `issen/crates/issen-mft-tree/tests/data/` |
+| `dc01_mft_record_74419.bin` | 1024 | `4c911975cff69016c3095553ed4540c6` | `issen/crates/issen-mft-tree/tests/data/` **and** `issen/crates/parsers/issen-parser-mft/tests/data/` (two-repo pattern, like A3a) |
 
-Consumed by `from_mft_preserves_100ns_filetime_precision` (`issen-mft-tree/src/parse.rs`); per-repo
-detail in [`issen/crates/issen-mft-tree/tests/data/README.md`](../crates/issen-mft-tree/tests/data/README.md).
+Consumed by `from_mft_preserves_100ns_filetime_precision` (`issen-mft-tree/src/parse.rs`, the file
+tree) and `parse_preserves_100ns_si_precision` (`issen-parser-mft/src/lib.rs`, the timeline ingester);
+per-repo detail in [`issen-mft-tree/tests/data/README.md`](../crates/issen-mft-tree/tests/data/README.md).
 
 #### A3a · Prefetch fixtures derived from A3 (committed in two repos) · SYNTHETIC-from-REAL ✓
 
