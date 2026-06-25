@@ -194,6 +194,27 @@ DC-only E01.)
 |---|---|---|
 | `$IU2L112.txt` (raw v1 `$I` index, icat inode 87102) | 544 | `ba140375cf27bf63268784cd71a18827` |
 
+#### A3e · Single `$MFT` record from A3's DC01 C: drive (FILETIME 100 ns-precision guard) · REAL-ext ✓
+
+One 1024-byte `$MFT` FILE record carved from A3's **DC01 C: drive** E01 to guard `issen-mft-tree`'s
+FILETIME precision (the `mft` crate's `winstructs` truncates 100 ns → µs). Entry **74419** (seq 1):
+`Classic_{37E2F32E-C821-4094-B429-2B4E8EA810AA}.settingcontent-ms` — a benign WinSxS component-store
+record. NTFS partition at sector **offset 718848**. **TSK `istat` is the independent oracle**: `$SI`
+Modified `2013-06-18T15:02:18.305856600Z`, Created/Accessed `2013-08-22T06:57:33.897202300Z` — each
+trailing 100 ns digit (`600`, `300`) is what a microsecond-truncating converter drops to `…000`.
+
+```sh
+E01=".../E01-DC01/20200918_0347_CDrive.E01"
+icat -o 718848 "$E01" 0 | dd bs=1024 skip=74419 count=1 of=dc01_mft_record_74419.bin
+```
+
+| File | Bytes | MD5 | Location |
+|---|---|---|---|
+| `dc01_mft_record_74419.bin` | 1024 | `4c911975cff69016c3095553ed4540c6` | `issen/crates/issen-mft-tree/tests/data/` |
+
+Consumed by `from_mft_preserves_100ns_filetime_precision` (`issen-mft-tree/src/parse.rs`); per-repo
+detail in [`issen/crates/issen-mft-tree/tests/data/README.md`](../crates/issen-mft-tree/tests/data/README.md).
+
 #### A3a · Prefetch fixtures derived from A3 (committed in two repos) · SYNTHETIC-from-REAL ✓
 
 Three Win10 `.pf` files extracted from the Case 001 **Desktop** image above, small enough to commit
