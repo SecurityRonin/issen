@@ -99,6 +99,13 @@ const FIELDS: &[Field] = &[
         ftype: FieldType::Id,
         populated_by: "LogonSuccess/Logoff (EventLog)",
     },
+    Field {
+        name: "port",
+        aliases: &["ip-port", "remote-port"],
+        json_key: "Port",
+        ftype: FieldType::Text,
+        populated_by: "NetworkConnection/LogonSuccess (EventLog)",
+    },
 ];
 
 impl FieldRegistry {
@@ -137,6 +144,45 @@ pub enum FieldOp {
     Ne,
     /// `~` substring (contains).
     Contains,
+    /// `>=` numeric (the JSON string value is `TRY_CAST` to an integer).
+    Ge,
+    /// `<=` numeric.
+    Le,
+    /// `>` numeric.
+    Gt,
+    /// `<` numeric.
+    Lt,
+}
+
+impl FieldOp {
+    /// `true` for the numeric range comparators (`>=`, `<=`, `>`, `<`).
+    #[must_use]
+    pub fn is_range(self) -> bool {
+        matches!(self, FieldOp::Ge | FieldOp::Le | FieldOp::Gt | FieldOp::Lt)
+    }
+
+    /// The SQL comparison symbol for a range op (panics for non-range ops; only
+    /// reachable for a range op by construction in [`TypedQuery::build_where`]).
+    fn range_sql(self) -> &'static str {
+        match self {
+            FieldOp::Ge => ">=",
+            FieldOp::Le => "<=",
+            FieldOp::Gt => ">",
+            FieldOp::Lt => "<",
+            // cov:unreachable: build_where only calls this in the range arm
+            FieldOp::Eq | FieldOp::Ne | FieldOp::Contains => "=",
+        }
+    }
+}
+
+/// A set-membership filter (`FIELD IN (v1, v2, …)`); each value binds as a
+/// parameter. Used by the `logons` intent verb (`LogonType IN ('2','10','11')`).
+#[derive(Debug, Clone)]
+pub struct FieldInFilter {
+    /// Registry field (already resolved at construction).
+    pub field: &'static Field,
+    /// The candidate values (OR-combined); each binds as a parameter.
+    pub values: Vec<String>,
 }
 
 /// A single typed metadata filter (`--field NAME OP VAL`, or its `--ip` sugar).
@@ -188,6 +234,8 @@ pub struct TypedQuery {
     pub path: Option<String>,
     /// Typed metadata filters (AND-combined).
     pub fields: Vec<FieldFilter>,
+    /// Set-membership filters (`FIELD IN (…)`, AND-combined with everything else).
+    pub in_filters: Vec<FieldInFilter>,
     /// Drop `user` values ending in `$` (machine accounts).
     pub exclude_machine_accounts: bool,
     /// Sort ascending by timestamp (rows / group-by ordering).
@@ -205,6 +253,7 @@ impl Default for TypedQuery {
             sources: Vec::new(),
             path: None,
             fields: Vec::new(),
+            in_filters: Vec::new(),
             exclude_machine_accounts: false,
             ascending: true,
             limit: None,
@@ -372,6 +421,31 @@ impl TypedQuery {
                     clauses.push(format!("{expr} LIKE ? ESCAPE '\\'"));
                     params.push(DuckValue::Text(format!("%{}%", like_escape(&f.value))));
                 }
+                FieldOp::Ge | FieldOp::Le | FieldOp::Gt | FieldOp::Lt => {
+                    // Numeric range: the JSON value is a string ("2"); TRY_CAST
+                    // it to a BIGINT so the comparison is numeric, and bind the
+                    // bound as an integer parameter. A non-numeric/absent value
+                    // yields NULL and is excluded (never a panic, never a match).
+                    let sym = f.op.range_sql();
+                    let bound = f.value.trim().parse::<i64>().unwrap_or(0);
+                    clauses.push(format!("TRY_CAST({expr} AS BIGINT) {sym} ?"));
+                    params.push(DuckValue::BigInt(bound));
+                }
+            }
+        }
+        for inf in &self.in_filters {
+            if inf.values.is_empty() {
+                // An empty IN-set matches nothing; emit a constant-false clause
+                // rather than invalid `IN ()` SQL.
+                clauses.push("1=0".to_string());
+                continue;
+            }
+            let expr = field_expr();
+            params.push(DuckValue::Text(inf.field.json_key.to_string()));
+            let placeholders = vec!["?"; inf.values.len()].join(", ");
+            clauses.push(format!("{expr} IN ({placeholders})"));
+            for v in &inf.values {
+                params.push(DuckValue::Text(v.clone()));
             }
         }
         if self.exclude_machine_accounts {
@@ -411,6 +485,13 @@ impl TypedQuery {
         for f in &self.fields {
             let populated = field_is_populated(conn, f.field.json_key)?;
             out.push((f.field.name.to_string(), populated));
+        }
+        for inf in &self.in_filters {
+            if out.iter().any(|(n, _)| n == inf.field.name) {
+                continue;
+            }
+            let populated = field_is_populated(conn, inf.field.json_key)?;
+            out.push((inf.field.name.to_string(), populated));
         }
         Ok(out)
     }
@@ -628,6 +709,80 @@ impl TypedQuery {
             out.push(r?);
         }
         Ok(out)
+    }
+}
+
+/// Intent-verb presets (design Phase 2): each returns a [`TypedQuery`] whose
+/// event-type set, default mode, and baseline filters encode one analyst
+/// question. CLI verbs layer their per-run flags (`--service`, `--host`, `--ip`,
+/// `--path`, …) on top of these defaults — the preset is the *floor*, never a
+/// special case. All values are constants here; analyst input still binds as a
+/// parameter when it reaches [`TypedQuery::run`].
+pub mod presets {
+    use super::{FieldInFilter, FieldRegistry, Mode, TypedQuery};
+
+    fn ev(types: &[&str]) -> Vec<String> {
+        types.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    /// `logons`: interactive/remote-interactive/cached logons, machine accounts
+    /// dropped, distinct users. `LogonType IN (2, 10, 11)` (interactive, RDP,
+    /// cached-interactive). Mirrors the deck's B4/B5 question.
+    #[must_use]
+    pub fn logons() -> TypedQuery {
+        TypedQuery {
+            event_types: ev(&["LogonSuccess"]),
+            in_filters: vec![FieldInFilter {
+                field: FieldRegistry::resolve("logon-type")
+                    .expect("logon-type is a registry field"),
+                values: ev(&["2", "10", "11"]),
+            }],
+            exclude_machine_accounts: true,
+            mode: Mode::Distinct {
+                target: "user".to_string(),
+            },
+            ..TypedQuery::default()
+        }
+    }
+
+    /// `files`: filesystem activity (create/modify/delete/rename) — the analyst
+    /// adds `--path`/`--first`/`--last`. Default mode is rows.
+    #[must_use]
+    pub fn files() -> TypedQuery {
+        TypedQuery {
+            event_types: ev(&["FileCreate", "FileModify", "FileDelete", "FileRename"]),
+            ..TypedQuery::default()
+        }
+    }
+
+    /// `persistence`: service install/start, registry modification, scheduled
+    /// task — the analyst narrows with `--service`/`--registry-key`. Rows mode.
+    #[must_use]
+    pub fn persistence() -> TypedQuery {
+        TypedQuery {
+            event_types: ev(&[
+                "ServiceInstall",
+                "ServiceStart",
+                "RegistryModify",
+                "ScheduledTaskRun",
+            ]),
+            ..TypedQuery::default()
+        }
+    }
+
+    /// `hosts`: network/lateral-movement events keyed by remote host — the
+    /// analyst adds `--host`/`--port`. Rows mode.
+    #[must_use]
+    pub fn hosts() -> TypedQuery {
+        TypedQuery {
+            event_types: ev(&[
+                "NetworkConnectionIPv4",
+                "NetworkConnectionIPv6",
+                "LogonSuccess",
+                "SMBConnect",
+            ]),
+            ..TypedQuery::default()
+        }
     }
 }
 
@@ -939,5 +1094,151 @@ mod tests {
             .position(|v| v.contains("LogonSuccess"))
             .expect("logon bucket");
         assert_eq!(r.columns[1].values[logon_idx], "2");
+    }
+
+    // --- Phase 2: range op + set-membership filters -----------------------
+
+    #[test]
+    fn range_op_filters_numeric_logon_type() {
+        // The seed has two LogonType=2 logons. `logon-type >= 2` (Range::Ge)
+        // must compare numerically (TRY_CAST), matching both. `>= 3` matches
+        // none (both are exactly 2).
+        let store = seeded();
+        let ge2 = TypedQuery {
+            event_types: event_type_is("LogonSuccess"),
+            fields: vec![FieldFilter {
+                field: FieldRegistry::resolve("logon-type").expect("logon-type"),
+                op: FieldOp::Ge,
+                value: "2".into(),
+            }],
+            mode: Mode::Count,
+            ..Default::default()
+        };
+        assert_eq!(
+            ge2.run(store.connection()).expect("ge2").columns[0].values[0],
+            "2"
+        );
+
+        let gt2 = TypedQuery {
+            event_types: event_type_is("LogonSuccess"),
+            fields: vec![FieldFilter {
+                field: FieldRegistry::resolve("logon-type").expect("logon-type"),
+                op: FieldOp::Gt,
+                value: "2".into(),
+            }],
+            mode: Mode::Count,
+            ..Default::default()
+        };
+        assert_eq!(
+            gt2.run(store.connection()).expect("gt2").columns[0].values[0],
+            "0"
+        );
+    }
+
+    #[test]
+    fn in_filter_set_membership_binds_each_value() {
+        // LogonType IN ('2') matches the two type-2 logons; IN ('10','11')
+        // matches none in this seed. Each value binds as a parameter.
+        let store = seeded();
+        let in2 = TypedQuery {
+            event_types: event_type_is("LogonSuccess"),
+            in_filters: vec![FieldInFilter {
+                field: FieldRegistry::resolve("logon-type").expect("logon-type"),
+                values: vec!["2".into()],
+            }],
+            mode: Mode::Count,
+            ..Default::default()
+        };
+        assert_eq!(
+            in2.run(store.connection()).expect("in2").columns[0].values[0],
+            "2"
+        );
+
+        let in10 = TypedQuery {
+            event_types: event_type_is("LogonSuccess"),
+            in_filters: vec![FieldInFilter {
+                field: FieldRegistry::resolve("logon-type").expect("logon-type"),
+                values: vec!["10".into(), "11".into()],
+            }],
+            mode: Mode::Count,
+            ..Default::default()
+        };
+        assert_eq!(
+            in10.run(store.connection()).expect("in10").columns[0].values[0],
+            "0"
+        );
+    }
+
+    #[test]
+    fn in_filter_injection_value_binds_not_interpolated() {
+        let store = seeded();
+        let q = TypedQuery {
+            in_filters: vec![FieldInFilter {
+                field: FieldRegistry::resolve("logon-type").expect("logon-type"),
+                values: vec!["2') OR 1=1 --".into()],
+            }],
+            mode: Mode::Count,
+            ..Default::default()
+        };
+        // The payload binds as a literal value → matches nothing, never injects.
+        assert_eq!(
+            q.run(store.connection()).expect("bound").columns[0].values[0],
+            "0"
+        );
+        let n: i64 = store
+            .connection()
+            .query_row("SELECT count(*) FROM timeline", [], |r| r.get(0))
+            .expect("table survives");
+        assert_eq!(n, 3);
+    }
+
+    #[test]
+    fn preset_logons_shape() {
+        let q = presets::logons();
+        assert_eq!(q.event_types, vec!["LogonSuccess".to_string()]);
+        assert!(q.exclude_machine_accounts);
+        assert_eq!(q.in_filters.len(), 1);
+        assert_eq!(q.in_filters[0].field.name, "logon-type");
+        assert_eq!(q.in_filters[0].values, vec!["2", "10", "11"]);
+        assert!(matches!(q.mode, Mode::Distinct { ref target } if target == "user"));
+    }
+
+    #[test]
+    fn preset_files_shape() {
+        let q = presets::files();
+        assert_eq!(
+            q.event_types,
+            vec!["FileCreate", "FileModify", "FileDelete", "FileRename"]
+        );
+        assert!(matches!(q.mode, Mode::Rows { .. }));
+    }
+
+    #[test]
+    fn preset_persistence_shape() {
+        let q = presets::persistence();
+        assert_eq!(
+            q.event_types,
+            vec![
+                "ServiceInstall",
+                "ServiceStart",
+                "RegistryModify",
+                "ScheduledTaskRun"
+            ]
+        );
+        assert!(matches!(q.mode, Mode::Rows { .. }));
+    }
+
+    #[test]
+    fn preset_hosts_shape() {
+        let q = presets::hosts();
+        assert_eq!(
+            q.event_types,
+            vec![
+                "NetworkConnectionIPv4",
+                "NetworkConnectionIPv6",
+                "LogonSuccess",
+                "SMBConnect"
+            ]
+        );
     }
 }

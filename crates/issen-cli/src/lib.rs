@@ -46,7 +46,7 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use is_terminal::IsTerminal;
 
 // Force-link every parser + container-provider crate so their `inventory::submit!`
@@ -95,6 +95,22 @@ fn should_use_ansi(color: ColorChoice, stdout_is_tty: bool, ansi_capable: bool) 
     }
 }
 
+/// Lower the shared verb flags ([`VerbCli`]) into the command layer's
+/// [`commands::timeline_verbs::VerbCommon`] (the verb-agnostic aggregation bag).
+fn verb_common(args: VerbCli) -> commands::timeline_verbs::VerbCommon {
+    commands::timeline_verbs::VerbCommon {
+        count: args.count,
+        distinct: args.distinct,
+        group_by: args.group_by,
+        first: args.first,
+        last: args.last,
+        show: args.show,
+        sort_desc: args.descending,
+        limit: args.limit,
+        format: args.format,
+    }
+}
+
 /// Issen — fast forensic triage for incident responders.
 #[derive(Parser, Debug)]
 #[command(name = "issen", version, about, before_help = banner::BANNER)]
@@ -111,6 +127,12 @@ pub struct Cli {
     command: Commands,
 }
 
+// The top-level dispatch enum is constructed exactly once per process (clap
+// parses argv into a single value), so the stack-vs-heap concern behind
+// `large_enum_variant` does not apply here — boxing every wide subcommand would
+// only add indirection to a one-shot value. The variants are intentionally flat
+// argument bags.
+#[allow(clippy::large_enum_variant)]
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Rapid triage of a UAC or supported collection — rootkits, hidden processes, network.
@@ -283,6 +305,56 @@ pub enum Commands {
         /// Aggregation: the latest (max-timestamp) matching row.
         #[arg(long)]
         last: bool,
+
+        /// Run a guarded read-only raw SQL query (SELECT/WITH only). Mutating
+        /// keywords are refused; the handle is read-only regardless.
+        #[arg(long, value_name = "QUERY")]
+        sql: Option<String>,
+    },
+
+    /// Interactive/remote logons (LogonType IN 2,10,11), machine accounts dropped.
+    Logons {
+        #[command(flatten)]
+        args: VerbCli,
+        /// Restrict to a single user (TargetUserName).
+        #[arg(long)]
+        user: Option<String>,
+        /// Restrict to a source IP (IpAddress).
+        #[arg(long)]
+        ip: Option<String>,
+    },
+
+    /// Filesystem activity (create/modify/delete/rename).
+    Files {
+        #[command(flatten)]
+        args: VerbCli,
+        /// Filter artifact_path by a glob (e.g. '*coreupdater*', '*.lnk').
+        #[arg(long, value_name = "GLOB")]
+        path: Option<String>,
+    },
+
+    /// Persistence (service install/start, registry modify, scheduled task).
+    Persistence {
+        #[command(flatten)]
+        args: VerbCli,
+        /// Restrict to a named service (ServiceName).
+        #[arg(long)]
+        service: Option<String>,
+        /// Restrict to a registry key path (matches artifact_path glob).
+        #[arg(long = "registry-key", value_name = "GLOB")]
+        registry_key: Option<String>,
+    },
+
+    /// Network/lateral-movement events keyed by remote host.
+    Hosts {
+        #[command(flatten)]
+        args: VerbCli,
+        /// Remote host IP (IpAddress).
+        #[arg(long)]
+        host: Option<String>,
+        /// Remote port (Port).
+        #[arg(long)]
+        port: Option<String>,
     },
 
     /// Show information about a timeline database.
@@ -513,6 +585,53 @@ pub enum Commands {
     },
 }
 
+/// Shared flags for the Tier-2 intent verbs (`logons`/`files`/`persistence`/
+/// `hosts`): the DB path plus the aggregation/projection toggles. The verb's own
+/// filters (`--user`, `--service`, …) live on each subcommand.
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Args, Debug)]
+pub struct VerbCli {
+    /// Path to the DuckDB database.
+    #[arg(value_name = "DB_PATH")]
+    pub db_path: PathBuf,
+
+    /// Aggregation: total matching rows.
+    #[arg(long)]
+    pub count: bool,
+
+    /// Aggregation: distinct values of a column/field.
+    #[arg(long, value_name = "COL")]
+    pub distinct: Option<String>,
+
+    /// Aggregation: histogram (value, count) grouped by a column/field.
+    #[arg(long = "group-by", value_name = "COL")]
+    pub group_by: Option<String>,
+
+    /// Aggregation: the earliest (min-timestamp) matching row.
+    #[arg(long)]
+    pub first: bool,
+
+    /// Aggregation: the latest (max-timestamp) matching row.
+    #[arg(long)]
+    pub last: bool,
+
+    /// Projection: columns/fields to show (comma-separated).
+    #[arg(long, value_name = "COLS")]
+    pub show: Option<String>,
+
+    /// Sort newest first.
+    #[arg(long)]
+    pub descending: bool,
+
+    /// Maximum number of events to display.
+    #[arg(short = 'n', long)]
+    pub limit: Option<u64>,
+
+    /// Output format: text or json.
+    #[arg(long, default_value = "text")]
+    pub format: String,
+}
+
 #[derive(Subcommand, Debug)]
 pub enum FeedAction {
     /// Show all configured feeds and their cache status.
@@ -673,11 +792,18 @@ pub fn run() -> ExitCode {
             group_by,
             first,
             last,
+            sql,
         } => {
             // --list-fields is a pure registry dump; no DB required.
             if list_fields {
                 commands::timeline_query::list_fields();
                 Ok(())
+            } else if let Some(sql) = sql {
+                // Guarded read-only raw SQL escape hatch.
+                match db_path {
+                    Some(db) => commands::timeline_verbs::run_sql(&db, &sql, &format),
+                    None => Err(anyhow::anyhow!("a DB_PATH is required for --sql")),
+                }
             } else {
                 // Route to the Tier-1 typed-query path when any typed flag is
                 // set; the legacy export/flagged/narrative path keeps its own
@@ -741,6 +867,53 @@ pub fn run() -> ExitCode {
                     ),
                 }
             }
+        }
+        Commands::Logons { args, user, ip } => {
+            let db = args.db_path.clone();
+            commands::timeline_verbs::run_logons(
+                &db,
+                &commands::timeline_verbs::LogonsArgs {
+                    user,
+                    ip,
+                    common: verb_common(args),
+                },
+            )
+        }
+        Commands::Files { args, path } => {
+            let db = args.db_path.clone();
+            commands::timeline_verbs::run_files(
+                &db,
+                &commands::timeline_verbs::FilesArgs {
+                    path,
+                    common: verb_common(args),
+                },
+            )
+        }
+        Commands::Persistence {
+            args,
+            service,
+            registry_key,
+        } => {
+            let db = args.db_path.clone();
+            commands::timeline_verbs::run_persistence(
+                &db,
+                &commands::timeline_verbs::PersistenceArgs {
+                    service,
+                    registry_key,
+                    common: verb_common(args),
+                },
+            )
+        }
+        Commands::Hosts { args, host, port } => {
+            let db = args.db_path.clone();
+            commands::timeline_verbs::run_hosts(
+                &db,
+                &commands::timeline_verbs::HostsArgs {
+                    host,
+                    port,
+                    common: verb_common(args),
+                },
+            )
         }
         Commands::Info { db_path } => commands::info::run(&db_path),
         Commands::Feed { action } => commands::feed::run(&action.to_lib_action()),

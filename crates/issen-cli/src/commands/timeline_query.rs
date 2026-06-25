@@ -66,17 +66,26 @@ pub fn list_fields() {
 /// Parse one `--field NAME<OP>VAL` into a [`FieldFilter`], failing loud on an
 /// unknown field (listing the valid set) — never a silent empty result.
 fn parse_field(spec: &str) -> Result<FieldFilter> {
-    // Order matters: check the two-char `!=` before the one-char `=`.
+    // Order matters: check two-char operators (`!=`, `>=`, `<=`) before the
+    // one-char ones (`=`, `>`, `<`) so the longer match wins.
     let (name, op, value) = if let Some((n, v)) = spec.split_once("!=") {
         (n, FieldOp::Ne, v)
+    } else if let Some((n, v)) = spec.split_once(">=") {
+        (n, FieldOp::Ge, v)
+    } else if let Some((n, v)) = spec.split_once("<=") {
+        (n, FieldOp::Le, v)
     } else if let Some((n, v)) = spec.split_once('~') {
         (n, FieldOp::Contains, v)
+    } else if let Some((n, v)) = spec.split_once('>') {
+        (n, FieldOp::Gt, v)
+    } else if let Some((n, v)) = spec.split_once('<') {
+        (n, FieldOp::Lt, v)
     } else if let Some((n, v)) = spec.split_once('=') {
         (n, FieldOp::Eq, v)
     } else {
         bail!(
-            "invalid --field '{spec}': expected NAME=VAL, NAME!=VAL, or NAME~VAL. \
-             Valid fields: {}",
+            "invalid --field '{spec}': expected NAME=VAL, NAME!=VAL, NAME~VAL, \
+             or a range NAME>=VAL/NAME<=VAL/NAME>VAL/NAME<VAL. Valid fields: {}",
             FieldRegistry::valid_names()
         );
     };
@@ -202,6 +211,7 @@ fn build_query(args: &QueryArgs) -> Result<(TypedQuery, Vec<String>)> {
         sources: args.sources.clone(),
         path: args.path.clone(),
         fields,
+        in_filters: Vec::new(),
         exclude_machine_accounts: args.exclude_machine_accounts,
         ascending: !args.sort_desc,
         limit: args.limit,
@@ -215,6 +225,10 @@ fn op_str(op: FieldOp) -> &'static str {
         FieldOp::Eq => "=",
         FieldOp::Ne => "!=",
         FieldOp::Contains => "~",
+        FieldOp::Ge => ">=",
+        FieldOp::Le => "<=",
+        FieldOp::Gt => ">",
+        FieldOp::Lt => "<",
     }
 }
 

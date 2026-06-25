@@ -43,6 +43,7 @@ pub mod export;
 pub mod findings;
 pub mod ingest;
 pub mod query;
+pub mod sql_guard;
 pub mod stats;
 pub mod store;
 pub mod temporal;
