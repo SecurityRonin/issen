@@ -142,6 +142,16 @@ impl TimelineStore {
                 ON ingest_log (evidence_key, status);
             CREATE INDEX IF NOT EXISTS idx_timeline_ingest_unit
                 ON timeline (ingest_unit_id);
+
+            -- Unified front door (resumable pipeline): per-stage completion state
+            -- so a re-run of `issen <evidence>` can plan which stages to re-run.
+            -- One row per stage, upserted on each stage attempt/completion.
+            CREATE TABLE IF NOT EXISTS pipeline_state (
+                stage        VARCHAR PRIMARY KEY,
+                status       VARCHAR NOT NULL,
+                fingerprint  VARCHAR NOT NULL,
+                updated_at   TIMESTAMP DEFAULT current_timestamp
+            );
             ",
         )?;
         Ok(())
@@ -192,13 +202,38 @@ impl TimelineStore {
         status: &str,
         fingerprint: &str,
     ) -> Result<(), TimelineStoreError> {
-        let _ = (stage, status, fingerprint);
+        // Upsert keyed on the PRIMARY KEY `stage`: DELETE+INSERT is robust across
+        // DuckDB versions (avoids ON CONFLICT quirks) and the table has one row
+        // per stage, so this is a point operation.
+        self.conn.execute(
+            "DELETE FROM pipeline_state WHERE stage = ?",
+            duckdb::params![stage],
+        )?;
+        self.conn.execute(
+            "INSERT INTO pipeline_state (stage, status, fingerprint, updated_at)
+             VALUES (?, ?, ?, current_timestamp)",
+            duckdb::params![stage, status, fingerprint],
+        )?;
         Ok(())
     }
 
-    /// Load all persisted pipeline stage-state rows. STUB (RED).
+    /// Load all persisted pipeline stage-state rows.
     pub fn load_stage_states(&self) -> Result<Vec<StoredStageState>, TimelineStoreError> {
-        Ok(Vec::new())
+        let mut stmt = self
+            .conn
+            .prepare("SELECT stage, status, fingerprint FROM pipeline_state")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(StoredStageState {
+                stage: row.get(0)?,
+                status: row.get(1)?,
+                fingerprint: row.get(2)?,
+            })
+        })?;
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row?);
+        }
+        Ok(out)
     }
 }
 
