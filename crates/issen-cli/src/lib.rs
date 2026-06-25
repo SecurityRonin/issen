@@ -65,6 +65,7 @@ pub mod banner;
 pub mod commands;
 pub mod ingest_progress;
 pub mod parsers;
+pub mod pipeline;
 pub mod progress_view;
 pub mod scanning;
 
