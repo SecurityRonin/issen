@@ -956,6 +956,36 @@ mod tests {
         assert!(cli.evidence.is_empty());
     }
 
+    #[test]
+    fn timeline_query_verbs_moved_under_timeline() {
+        // The query shortcuts are no longer top-level verbs…
+        assert!(Cli::try_parse_from(["issen", "logons", "db.duckdb"]).is_err());
+        assert!(Cli::try_parse_from(["issen", "files", "db.duckdb"]).is_err());
+        assert!(Cli::try_parse_from(["issen", "persistence", "db.duckdb"]).is_err());
+        assert!(Cli::try_parse_from(["issen", "hosts", "db.duckdb"]).is_err());
+        // …they are subcommands of `timeline`.
+        assert!(Cli::try_parse_from([
+            "issen",
+            "timeline",
+            "logons",
+            "db.duckdb",
+            "--user",
+            "alice"
+        ])
+        .is_ok());
+        assert!(Cli::try_parse_from([
+            "issen",
+            "timeline",
+            "hosts",
+            "db.duckdb",
+            "--host",
+            "10.0.0.1"
+        ])
+        .is_ok());
+        // …while the flat timeline query still works.
+        assert!(Cli::try_parse_from(["issen", "timeline", "db.duckdb", "--count"]).is_ok());
+    }
+
     // ── should_use_ansi (FIX 4) ──────────────────────────────────────────
     // Never => false regardless; Always => true regardless; Auto gates on
     // (stdout is a tty) AND (the terminal actually renders ANSI). The second
