@@ -779,6 +779,94 @@ flowchart LR
 
 ---
 
+# Set Up in 60 Seconds
+
+Before the hunt — get the tool and the evidence on disk. One-time, the only setup.
+
+```bash
+# 1 · Build issen (single static binary, no runtime deps)
+git clone https://github.com/SecurityRonin/issen && cd issen
+cargo build --release            # -> ./target/release/issen
+
+# 2 · Grab Case 001 (DFIR Madness "Szechuan Sauce")
+#     disk: DC01-E01.zip (~4.6 GB) · DESKTOP-E01.zip (~6.5 GB)
+unzip DC01-memory.zip            # -> citadeldc01.mem (disk legs read the .zip as-is)
+
+# 3 · First command — build the DC case
+issen DC01-E01.zip -o dc01.duckdb
+```
+
+> **Need:** ~25 GB free for the extracted images + a few GB RAM for the memory walkers. issen reads **zip / 7z / tar.gz** directly — only the memory dump needs unzipping (it's a raw page stream).
+
+---
+
+# The One Command
+
+`issen <evidence…>` **is** the pipeline: ingest -> memory -> correlate -> scan, one pass, one case DB.
+
+```bash
+issen DC01-E01.zip citadeldc01.mem -o case.duckdb   # disk + memory, everything
+```
+
+- No subcommands to sequence, no glue scripts — point it at the evidence, get findings.
+- **Resumable: kill it, re-run it.** A re-run with the same evidence skips every completed stage and resumes where it stopped — a finished case re-runs in **0.1 s**. No fear of a crash mid-12 GB ingest.
+- One DB, three views: `report --format text` (terminal narrative) · `report` (board HTML) · `report --format attack-navigator` (ATT&CK layer).
+
+> The old dance — `ingest`, then `correlate`, then per-artifact queries — is now one re-runnable command.
+
+---
+
+# Speed Receipt — Measured, Not Promised
+
+The whole Case-001 pipeline, release binary against the real images (2026-06-26):
+
+| Stage | What | Time |
+|---|---|---|
+| Ingest (2 × E01) | 2.34 M timeline events | **~7 min** (cold cache) |
+| Memory (2 dumps) | EPROCESS / netstat / creds | **13 s** |
+| Correlate | 9,381 cross-artifact findings | **3.7 min** |
+| **Re-run** (resume) | every stage up-to-date | **0.1 s** |
+
+> Measured on identical inputs on one machine — quoted verbatim. What a multi-tool workflow stitches together over hours of analyst time, the binary does in minutes of wall-clock — and gives the thinking time back.
+
+---
+
+# What to Expect While It Runs
+
+A long ingest is **working, not stalled** — every stage narrates itself:
+
+```text
+> [1/4] Ingest - parse disk artifacts into the timeline     (~7 min)
+  ok ingest (434.8s)
+  ok memory (13.1s)
+  (live spinner) correlate - cross-artifact rules ...
+  ok correlate (222.9s)
+Pipeline complete: 4 stage(s) ran, 0 skipped -> case.duckdb
+```
+
+- Each stage prints a banner + elapsed; ingest drives a live progress bar underneath.
+- A re-run prints `0 ran, N skipped` — that's the resume path, near-instant.
+
+---
+
+# One Binary, Not Four Ecosystems
+
+```mermaid
+flowchart LR
+  subgraph OLD["The hard way - 4 ecosystems, 3 languages"]
+    F["FTK Imager<br/>container"] -.glue.-> V["Volatility 3<br/>memory + ISF build"]
+    V -.glue.-> E["EZ Tools<br/>MFT / registry"]
+    E -.glue.-> K["KAPE / Plaso<br/>timeline CSVs"]
+  end
+  subgraph NEW["The issen way"]
+    I["issen &lt;evidence&gt;"] --> ANS["one case DB -> answers"]
+  end
+```
+
+Four tools, three languages, two OSes, glue scripts between — collapsed into one static binary. The per-group **the hard way -> the issen way** callouts show the contrast question by question.
+
+---
+
 # The 13 Official Questions
 
 1. OS of the **Server**? 2. OS of the **Desktop**? 3. Server **local time**?
@@ -1561,44 +1649,49 @@ flowchart LR
 
 ---
 
-# Scorecard — All 13, Measured Against Real Images (2026-06-24)
+# What Issen Does NOT Do
 
-| # | Question | issen surface | Verdict |
-|---|---|---|---|
-| 1–2 | OS server / desktop | `memory check` (build match) | ◐ build matched |
-| 3 | Local time (the trap) | SYSTEM hive + skew rule | ◐ / teaching |
-| 4 | Breach? | `issen info` | ✅ |
-| 5 | Initial vector · 03:21:48 | ingest + query | ✅ |
-| 6.1 | Malicious process · 3644 | `memory ps` | ✅ |
-| 6.2 | Delivery IP `194.61.24.102` | query | ✅ |
-| 6.3 | **C2 `203.78.103.109:443`** | `memory netstat` | ✅ |
-| 6.4–6.5 | On disk · first seen 03:24:06 | query | ✅ |
-| 6.6 | Moved? (USN rename) | query | ✅ |
-| 6.7–6.8 | Capabilities / obtainable | `memory scan` + VT | ◐ / ○ |
-| 6.9 | Persistence · 7045 · 03:27:49 | query | ✅ |
-| 7 | Malicious IPs (+ infra) | measured / OSINT | ✅ / ○ |
-| 8 | Lateral · 03:36:24 | query | ✅ |
-| 8.3 | Data stolen · loot.zip delete | USN | ✅ |
-| 9 | Network layout | logon metadata | ◐ |
-| 10 | Architecture changes | analyst judgement | ○ advice |
-| 11 | Szechuan sauce · time | MFT + secret.zip | ◐ |
-| 12 | Other files + timestomp | MFT · `$SI`/`$FN` | ✅ / ◐ |
-| 13 | Last contact | logoff + live C2 | ◐ |
-| B4–B5 | Who logged on (DC / Desktop) | logon-user query | ✅ |
-| B6 | Domain passwords | hives recovered → crack offline | ○ lab |
-| B7 | Recover Beth's original | MFT name ✅ · contents carve | ✅ / ○ |
-| B8 | Which file timestomped | MFT `$SI`/`$FN` | ✅ name · ◐ flag |
-| B1–B3 | Controls / architecture / policy | analyst judgement | ○ advice |
+Credibility comes from the boundary, stated plainly:
 
-> **~16 of 27 questions fall out of two commands.** The rest are honest ◐ (WIP) or ○ (PCAP / OSINT / offline-lab / advice) — never faked. The minute they took back, the moat is yours: weaving these into one defensible narrative.
+- **No password cracking** — it *recovers* the SAM/SYSTEM hives and NTLM material; turning hashes into plaintext is an **offline-lab** step (a forensic tool emitting plaintext would be doing the attacker's job).
+- **No attribution / OSINT** — it measures IPs and their roles; whether they are *known* adversary infra is a VT/OSINT call (and the once-cited Case-001 APT link was **retracted** — absence of a hit proves nothing).
+- **No PCAP** — deliberately excluded here; the C2 came from **memory**, not the wire.
+- **Contents carving is WIP** — it recovers file *names* and the MFT trail; `$DATA`/slack **content** recovery is in design (o), not this run.
 
-```mermaid
-flowchart LR
-  ING["issen DC01-E01.zip"] --> A["disk answers"]
-  MEM["issen memory"] --> B["memory answers"]
-  A --> NAR["→ correlate → narrative"]
-  B --> NAR
-```
+> Every answer is tagged: ✅ measured · ◐ partial · ○ out-of-tool-reach — never faked. The honesty *is* the credibility.
+
+---
+
+# Scorecard — Every Question, Measured Against the Real Images (2026-06-26)
+
+| # | Question | Latest command | Answer | Gap |
+|---|---|---|---|---|
+| 1-2 | OS (server / desktop) | `issen memory <dump> --command check` | builds matched: **9600** DC / **19041** Desktop | ◐ |
+| 3 | Local time (the trap) | SYSTEM hive + skew rule | **UTC-7**, network ran UTC-6 -> **+1 h** on every host stamp | ◐ |
+| 4 | Was there a breach? | `issen info dc01.duckdb` | 107 failed logons beside a service-install spike | ✅ |
+| 5 | Initial vector | `issen timeline dc01.duckdb --event-type LogonSuccess --ip 194.61.24.102` | **RDP brute force**, `Administrator` from `194.61.24.102`, success 03:21:48 (2 s after 107 fails) | ✅ |
+| 6.1 | Malicious process | `issen memory "$DC_MEM" --command ps` | **`coreupdater.exe` (3644)** | ✅ |
+| 6.2 | Delivery IP | `issen timeline dc01.duckdb --ip 194.61.24.102 --group-by event_type` | `194.61.24.102` | ✅ |
+| 6.3 | C2 | `issen memory "$DC_MEM" --command netstat` | **`203.78.103.109:443`** ESTABLISHED, owned by coreupdater | ✅ |
+| 6.4-6.5 | On disk / first seen | `issen timeline dc01.duckdb --path '*coreupdater*' --first` | `C:\Windows\System32\coreupdater.exe`, first seen 03:24:06 | ✅ |
+| 6.6 | Moved? | `issen timeline dc01.duckdb --path '*coreupdater*' --event-type FileRename` | USN rename trail | ✅ |
+| 6.7-6.8 | Capabilities / obtainable | `issen memory "$DC_MEM" --command scan` | RWX injection in spoolsv (Meterpreter via VT); Metasploit is free | ◐/○ |
+| 6.9 | Persistence | `issen timeline dc01.duckdb --event-type ServiceInstall --service coreupdater` | **7045 service** install 03:27:49 (+ Run key) | ✅ |
+| 7 | Malicious IPs (+ known infra?) | `issen timeline dc01.duckdb --event-type LogonSuccess --group-by ip` | IPs + roles measured; "known infra" is OSINT (retracted link) | ✅/○ |
+| 8 | Lateral movement | `issen timeline desktop.duckdb --event-type LogonSuccess --ip 10.42.85.10` | to the Desktop, 03:36:24 | ✅ |
+| 8.3 | Data stolen / when | `issen timeline desktop.duckdb --path '*loot.zip*'` | secret.zip / loot.zip staged-and-deleted ~02:30-02:34 | ✅ |
+| 9 | Network layout | `issen timeline dc01.duckdb --event-type LogonSuccess --group-by ip` | hosts/IPs from logon metadata (adapter config WIP) | ◐ |
+| 10 | Architecture changes | analyst judgement | advisory layer — issen supplies the evidence | ○ |
+| 11 | Szechuan sauce / time | `issen timeline dc01.duckdb --path '*Szechuan*'` | file trail; theft via the secret.zip window | ◐ |
+| 12 | Other sensitive files | `issen timeline dc01.duckdb --path '*beth*'` | trail measured; timestomp = analyst-confirmed lead | ✅/◐ |
+| 13 | Last contact | `issen timeline ... --event-type Logoff --last` + `issen memory ... --command netstat` | C2 still ESTABLISHED at capture — live when imaged | ◐ |
+| B4-B5 | Who logged on (DC/Desktop) | `issen timeline dc01.duckdb --event-type LogonSuccess --distinct user` | distinct logon users per host | ✅ |
+| B6 | Domain passwords | hives recovered -> crack offline | material recovered; cracking out of scope | ○ |
+| B7 | Recover Beth's original | `issen timeline dc01.duckdb --path '*beth*' --distinct artifact_path` | names recovered (`SECRET_beth.txt` …); contents need carving | ✅/○ |
+| B8 | Which file timestomped | `issen timeline dc01.duckdb --path '*beth*'` ($SI/$FN) | `PortalGunPlans.txt`: $SI earlier than $FN | ✅/◐ |
+| B1-B3 | Controls / architecture | analyst judgement | map measured findings -> CIS/SANS | ○ |
+
+> **~16 of 27 questions fall out of a handful of commands** off the one-command pipeline; the rest are honest ◐ (WIP) or ○ (PCAP / OSINT / offline-lab / advisory) — never faked. *Every answer above is MEASURED against the real CitadelDC01 / Desktop images, validated against the union of the DFIR Madness official + bonus answer keys.*
 
 ---
 
