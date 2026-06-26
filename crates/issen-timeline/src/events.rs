@@ -519,6 +519,50 @@ mod tests {
     }
 
     #[test]
+    fn load_timeline_events_reconstructs_metadata() {
+        // The persisted `metadata` JSON must survive the round-trip, or every
+        // metadata-dependent analysis over the stored timeline silently breaks
+        // (the timestomp detector reads `fn_created`/`si_created` from here, so
+        // dropping metadata makes the bare-pipeline scan stage blind to $SI/$FN
+        // back-dating). Insert a FileCreate carrying $FN/$SI fields and require
+        // them to reload intact.
+        let store = TimelineStore::in_memory().expect("store");
+        let stomped = TimelineEvent::new(
+            1_600_000_000_000_000_000,
+            "2020-09-19T07:33:54Z".to_string(),
+            EventType::FileCreate,
+            ArtifactType::Mft,
+            "FileShare/Secret/Beth_Secret.txt".to_string(),
+            "FileCreate ($SI)".to_string(),
+            "DC01".to_string(),
+        )
+        .with_metadata(
+            "fn_created",
+            serde_json::json!("2020-09-19T11:34:56.970445200Z"),
+        )
+        .with_metadata(
+            "si_created",
+            serde_json::json!(1_600_000_000_000_000_000_i64),
+        );
+        store.inseissen_batch(&[stomped]).expect("ingest");
+
+        let events = store.load_timeline_events().expect("load");
+        let e = events
+            .iter()
+            .find(|e| e.event_type == EventType::FileCreate)
+            .expect("FileCreate reloaded");
+        assert_eq!(
+            e.metadata.get("fn_created").and_then(|v| v.as_str()),
+            Some("2020-09-19T11:34:56.970445200Z"),
+            "fn_created metadata must survive the DB round-trip"
+        );
+        assert!(
+            e.metadata.contains_key("si_created"),
+            "si_created metadata must survive the DB round-trip"
+        );
+    }
+
+    #[test]
     fn activity_category_survives_db_round_trip() {
         // CADET tagging is only useful if it persists: a tagged event ingested to
         // DuckDB must reload with its category. A None-tagged event reloads None.
