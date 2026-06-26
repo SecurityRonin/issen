@@ -145,6 +145,7 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Query and export the timeline.
+    #[command(args_conflicts_with_subcommands = true)]
     Timeline {
         /// Path to the DuckDB database. Optional only with --list-fields.
         #[arg(value_name = "DB_PATH")]
@@ -248,51 +249,11 @@ pub enum Commands {
         /// keywords are refused; the handle is read-only regardless.
         #[arg(long, value_name = "QUERY")]
         sql: Option<String>,
-    },
 
-    /// Interactive/remote logons (LogonType IN 2,10,11), machine accounts dropped.
-    Logons {
-        #[command(flatten)]
-        args: VerbCli,
-        /// Restrict to a single user (TargetUserName).
-        #[arg(long)]
-        user: Option<String>,
-        /// Restrict to a source IP (IpAddress).
-        #[arg(long)]
-        ip: Option<String>,
-    },
-
-    /// Filesystem activity (create/modify/delete/rename).
-    Files {
-        #[command(flatten)]
-        args: VerbCli,
-        /// Filter artifact_path by a glob (e.g. '*coreupdater*', '*.lnk').
-        #[arg(long, value_name = "GLOB")]
-        path: Option<String>,
-    },
-
-    /// Persistence (service install/start, registry modify, scheduled task).
-    Persistence {
-        #[command(flatten)]
-        args: VerbCli,
-        /// Restrict to a named service (ServiceName).
-        #[arg(long)]
-        service: Option<String>,
-        /// Restrict to a registry key path (matches artifact_path glob).
-        #[arg(long = "registry-key", value_name = "GLOB")]
-        registry_key: Option<String>,
-    },
-
-    /// Network/lateral-movement events keyed by remote host.
-    Hosts {
-        #[command(flatten)]
-        args: VerbCli,
-        /// Remote host IP (IpAddress).
-        #[arg(long)]
-        host: Option<String>,
-        /// Remote port (Port).
-        #[arg(long)]
-        port: Option<String>,
+        /// Focused preset view over the same timeline DB (logons/files/
+        /// persistence/hosts). Omit for the general query above.
+        #[command(subcommand)]
+        view: Option<TimelineView>,
     },
 
     /// Show information about a timeline database.
@@ -508,6 +469,55 @@ pub enum Commands {
     },
 }
 
+/// Focused, preset views over an existing timeline DB — subcommands of `timeline`.
+#[derive(Subcommand, Debug)]
+pub enum TimelineView {
+    /// Interactive/remote logons (LogonType IN 2,10,11), machine accounts dropped.
+    Logons {
+        #[command(flatten)]
+        args: VerbCli,
+        /// Restrict to a single user (TargetUserName).
+        #[arg(long)]
+        user: Option<String>,
+        /// Restrict to a source IP (IpAddress).
+        #[arg(long)]
+        ip: Option<String>,
+    },
+
+    /// Filesystem activity (create/modify/delete/rename).
+    Files {
+        #[command(flatten)]
+        args: VerbCli,
+        /// Filter artifact_path by a glob (e.g. '*coreupdater*', '*.lnk').
+        #[arg(long, value_name = "GLOB")]
+        path: Option<String>,
+    },
+
+    /// Persistence (service install/start, registry modify, scheduled task).
+    Persistence {
+        #[command(flatten)]
+        args: VerbCli,
+        /// Restrict to a named service (ServiceName).
+        #[arg(long)]
+        service: Option<String>,
+        /// Restrict to a registry key path (matches artifact_path glob).
+        #[arg(long = "registry-key", value_name = "GLOB")]
+        registry_key: Option<String>,
+    },
+
+    /// Network/lateral-movement events keyed by remote host.
+    Hosts {
+        #[command(flatten)]
+        args: VerbCli,
+        /// Remote host IP (IpAddress).
+        #[arg(long)]
+        host: Option<String>,
+        /// Remote port (Port).
+        #[arg(long)]
+        port: Option<String>,
+    },
+}
+
 /// Shared flags for the Tier-2 intent verbs (`logons`/`files`/`persistence`/
 /// `hosts`): the DB path plus the aggregation/projection toggles. The verb's own
 /// filters (`--user`, `--service`, …) live on each subcommand.
@@ -659,9 +669,59 @@ pub fn run() -> ExitCode {
                 first,
                 last,
                 sql,
+                view,
             } => {
-                // --list-fields is a pure registry dump; no DB required.
-                if list_fields {
+                if let Some(view) = view {
+                    match view {
+                        TimelineView::Logons { args, user, ip } => {
+                            let db = args.db_path.clone();
+                            commands::timeline_verbs::run_logons(
+                                &db,
+                                &commands::timeline_verbs::LogonsArgs {
+                                    user,
+                                    ip,
+                                    common: verb_common(args),
+                                },
+                            )
+                        }
+                        TimelineView::Files { args, path } => {
+                            let db = args.db_path.clone();
+                            commands::timeline_verbs::run_files(
+                                &db,
+                                &commands::timeline_verbs::FilesArgs {
+                                    path,
+                                    common: verb_common(args),
+                                },
+                            )
+                        }
+                        TimelineView::Persistence {
+                            args,
+                            service,
+                            registry_key,
+                        } => {
+                            let db = args.db_path.clone();
+                            commands::timeline_verbs::run_persistence(
+                                &db,
+                                &commands::timeline_verbs::PersistenceArgs {
+                                    service,
+                                    registry_key,
+                                    common: verb_common(args),
+                                },
+                            )
+                        }
+                        TimelineView::Hosts { args, host, port } => {
+                            let db = args.db_path.clone();
+                            commands::timeline_verbs::run_hosts(
+                                &db,
+                                &commands::timeline_verbs::HostsArgs {
+                                    host,
+                                    port,
+                                    common: verb_common(args),
+                                },
+                            )
+                        }
+                    }
+                } else if list_fields {
                     commands::timeline_query::list_fields();
                     Ok(())
                 } else if let Some(sql) = sql {
@@ -733,53 +793,6 @@ pub fn run() -> ExitCode {
                         ),
                     }
                 }
-            }
-            Commands::Logons { args, user, ip } => {
-                let db = args.db_path.clone();
-                commands::timeline_verbs::run_logons(
-                    &db,
-                    &commands::timeline_verbs::LogonsArgs {
-                        user,
-                        ip,
-                        common: verb_common(args),
-                    },
-                )
-            }
-            Commands::Files { args, path } => {
-                let db = args.db_path.clone();
-                commands::timeline_verbs::run_files(
-                    &db,
-                    &commands::timeline_verbs::FilesArgs {
-                        path,
-                        common: verb_common(args),
-                    },
-                )
-            }
-            Commands::Persistence {
-                args,
-                service,
-                registry_key,
-            } => {
-                let db = args.db_path.clone();
-                commands::timeline_verbs::run_persistence(
-                    &db,
-                    &commands::timeline_verbs::PersistenceArgs {
-                        service,
-                        registry_key,
-                        common: verb_common(args),
-                    },
-                )
-            }
-            Commands::Hosts { args, host, port } => {
-                let db = args.db_path.clone();
-                commands::timeline_verbs::run_hosts(
-                    &db,
-                    &commands::timeline_verbs::HostsArgs {
-                        host,
-                        port,
-                        common: verb_common(args),
-                    },
-                )
             }
             Commands::Info { db_path } => commands::info::run(&db_path),
             Commands::Feed { action } => commands::feed::run(&action.to_lib_action()),
@@ -958,21 +971,23 @@ mod tests {
 
     #[test]
     fn timeline_query_verbs_moved_under_timeline() {
-        // The query shortcuts are no longer top-level verbs…
-        assert!(Cli::try_parse_from(["issen", "logons", "db.duckdb"]).is_err());
-        assert!(Cli::try_parse_from(["issen", "files", "db.duckdb"]).is_err());
-        assert!(Cli::try_parse_from(["issen", "persistence", "db.duckdb"]).is_err());
-        assert!(Cli::try_parse_from(["issen", "hosts", "db.duckdb"]).is_err());
-        // …they are subcommands of `timeline`.
-        assert!(Cli::try_parse_from([
-            "issen",
-            "timeline",
-            "logons",
-            "db.duckdb",
-            "--user",
-            "alice"
-        ])
-        .is_ok());
+        // The query shortcuts are no longer top-level subcommands; a leading
+        // `logons` token falls through to the evidence positional (the front
+        // door), not a recognized verb.
+        let cli = Cli::try_parse_from(["issen", "logons", "db.duckdb"]).expect("bare path");
+        assert!(cli.command.is_none());
+        assert_eq!(cli.evidence.len(), 2);
+
+        // They are subcommands of `timeline`.
+        let cli = Cli::try_parse_from(["issen", "timeline", "logons", "db.duckdb", "--user", "x"])
+            .expect("timeline logons");
+        assert!(matches!(
+            cli.command,
+            Some(Commands::Timeline {
+                view: Some(TimelineView::Logons { .. }),
+                ..
+            })
+        ));
         assert!(Cli::try_parse_from([
             "issen",
             "timeline",
@@ -982,8 +997,13 @@ mod tests {
             "10.0.0.1"
         ])
         .is_ok());
-        // …while the flat timeline query still works.
-        assert!(Cli::try_parse_from(["issen", "timeline", "db.duckdb", "--count"]).is_ok());
+
+        // The flat timeline query still works (no view subcommand).
+        let cli = Cli::try_parse_from(["issen", "timeline", "db.duckdb", "--count"]).expect("flat");
+        assert!(matches!(
+            cli.command,
+            Some(Commands::Timeline { view: None, .. })
+        ));
     }
 
     // ── should_use_ansi (FIX 4) ──────────────────────────────────────────
