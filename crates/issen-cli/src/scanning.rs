@@ -180,57 +180,82 @@ pub fn run_scan_phase(
     engine: &ScanEngine,
     evidence_root: &Path,
 ) -> (Vec<FindingRow>, ScanPhaseSummary) {
+    use rayon::prelude::*;
+
     let mut findings = Vec::new();
     let mut summary = ScanPhaseSummary::default();
 
-    // Phase 1: Evaluate events against Sigma rules.
-    for event in events {
-        summary.events_evaluated += 1;
-        let event_map = event_to_map(event);
-        let sigma_hits = engine.evaluate_event(&event_map);
+    // Phase 1: Sigma per-event. Each event is evaluated independently against
+    // the rule set, so they run in parallel; `flat_map_iter`'s `collect`
+    // preserves event order, keeping the finding sequence deterministic.
+    summary.events_evaluated = events.len();
+    let sigma_rows: Vec<FindingRow> = events
+        .par_iter()
+        .flat_map_iter(|event| {
+            let event_map = event_to_map(event);
+            engine
+                .evaluate_event(&event_map)
+                .into_iter()
+                .map(|hit| finding_to_row(&hit, &event.evidence_source_id, &event.artifact_path))
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    summary.sigma_findings = sigma_rows.len();
+    findings.extend(sigma_rows);
 
-        for hit in &sigma_hits {
-            findings.push(finding_to_row(
-                hit,
-                &event.evidence_source_id,
-                &event.artifact_path,
-            ));
-            summary.sigma_findings += 1;
-        }
+    // Phase 2: YARA/hash per unique artifact file, in parallel. Each scan builds
+    // its own `yara_x::Scanner` from the shared rules, so a `&ScanEngine` is
+    // safely shared. Sort the unique paths first: a `HashSet` iterates in a
+    // different order each run, so sorting makes the finding order deterministic.
+    let mut unique_paths: Vec<&str> = events
+        .iter()
+        .map(|e| e.artifact_path.as_str())
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+    unique_paths.sort_unstable();
+    // First evidence_source_id seen per path (matches the original "first event"
+    // attribution), precomputed once instead of an O(n) find per finding.
+    let mut source_for: HashMap<&str, &str> = HashMap::new();
+    for e in events {
+        source_for
+            .entry(e.artifact_path.as_str())
+            .or_insert(e.evidence_source_id.as_str());
     }
-
-    // Phase 2: Scan unique artifact files with YARA/hash IOC engines.
-    let unique_paths: HashSet<&str> = events.iter().map(|e| e.artifact_path.as_str()).collect();
-
-    for artifact_path in unique_paths {
-        // Try to resolve the path relative to evidence root.
-        let full_path = evidence_root.join(artifact_path);
-        if !full_path.is_file() {
-            continue;
-        }
-
-        match engine.scan_file(&full_path) {
-            Ok(report) => {
-                summary.files_scanned += 1;
-                for finding in &report.findings {
-                    // Use the first event's evidence_source_id for this artifact.
-                    let source_id = events
+    let file_results: Vec<(bool, Vec<FindingRow>)> = unique_paths
+        .par_iter()
+        .map(|&artifact_path| {
+            let full_path = evidence_root.join(artifact_path);
+            if !full_path.is_file() {
+                return (false, Vec::new());
+            }
+            match engine.scan_file(&full_path) {
+                Ok(report) => {
+                    let source_id = source_for.get(artifact_path).copied().unwrap_or("unknown");
+                    let rows = report
+                        .findings
                         .iter()
-                        .find(|e| e.artifact_path == artifact_path)
-                        .map_or("unknown", |e| e.evidence_source_id.as_str());
-
-                    findings.push(finding_to_row(finding, source_id, artifact_path));
-                    summary.file_findings += 1;
+                        .map(|finding| finding_to_row(finding, source_id, artifact_path))
+                        .collect();
+                    (true, rows)
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        artifact = artifact_path,
+                        error = %e,
+                        "failed to scan artifact file"
+                    );
+                    (false, Vec::new())
                 }
             }
-            Err(e) => {
-                tracing::warn!(
-                    artifact = artifact_path,
-                    error = %e,
-                    "failed to scan artifact file"
-                );
-            }
+        })
+        .collect();
+    for (scanned, rows) in file_results {
+        if scanned {
+            summary.files_scanned += 1;
         }
+        summary.file_findings += rows.len();
+        findings.extend(rows);
     }
 
     // Phase 3: Extract IPs/domains from event metadata and check network IOC stores.
