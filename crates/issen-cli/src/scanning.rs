@@ -288,16 +288,19 @@ pub fn run_scan_phase(
     // `TemporalFinding`s on a separate output channel, keys on $SI born-after-modify
     // (not $SI-vs-$FN), and never reaches this scan_findings path. Distinct code,
     // distinct severity tier, distinct output — no double-emit.
-    for event in events {
-        if let Some(finding) = detect_timestomp(event, ONE_DAY_NS) {
-            findings.push(timestomp_finding_to_row(
-                &finding,
-                &event.evidence_source_id,
-                &event.artifact_path,
-            ));
-            summary.timestomp_findings += 1;
-        }
-    }
+    // Per-event and independent (`detect_timestomp` is pure), and the dominant
+    // scan cost on a real MFT timeline (hundreds of thousands of FileCreate
+    // events) — run it in parallel; `collect` preserves event order.
+    let timestomp_rows: Vec<FindingRow> = events
+        .par_iter()
+        .filter_map(|event| {
+            detect_timestomp(event, ONE_DAY_NS).map(|finding| {
+                timestomp_finding_to_row(&finding, &event.evidence_source_id, &event.artifact_path)
+            })
+        })
+        .collect();
+    summary.timestomp_findings = timestomp_rows.len();
+    findings.extend(timestomp_rows);
 
     summary.total_findings = findings.len();
     (findings, summary)
