@@ -293,8 +293,36 @@ pub fn scan_persisted(
     engine: &ScanEngine,
     evidence_root: &Path,
 ) -> anyhow::Result<ScanPhaseSummary> {
-    let _ = (store, engine, evidence_root);
-    Ok(ScanPhaseSummary::default()) // RED stub — GREEN fills this in
+    use anyhow::Context;
+
+    let events = store
+        .load_timeline_events()
+        .context("loading persisted timeline for the scan stage")?;
+    let (findings, summary) = run_scan_phase(&events, engine, evidence_root);
+
+    issen_timeline::findings::create_findings_table(store.connection())
+        .context("creating scan_findings table")?;
+    issen_timeline::findings::inseissen_findings(store.connection(), &findings)
+        .context("persisting scan findings")?;
+
+    Ok(summary)
+}
+
+/// Build a [`ScanEngine`] preloaded from the cached threat-intel feeds, or an
+/// empty engine when no feed cache is present / it fails to load. The
+/// event-level detections (timestomp, native ATT&CK) run regardless of feeds,
+/// so an empty engine still produces those findings. Mirrors the engine the
+/// ingest `--scan` path builds, so the bare pipeline's Scan stage matches the
+/// timeline against the same feeds.
+#[must_use]
+pub fn engine_from_cached_feeds(feed_cache_dir: &Path) -> ScanEngine {
+    use issen_signatures::feeds;
+    let registry = feeds::config::FeedRegistry::with_defaults(feed_cache_dir);
+    let cache = feeds::fetcher::FeedCache::new(feed_cache_dir);
+    match feeds::loader::load_cached_feeds(&registry, &cache) {
+        Ok((engine, _summary)) => engine,
+        Err(_) => ScanEngine::new(),
+    }
 }
 
 /// Known metadata field names that may contain IP addresses.

@@ -17,7 +17,7 @@ use tracing::info;
 use crate::scanning;
 
 /// Get the default feed cache directory (same as feed subcommand).
-fn default_feed_cache_dir() -> PathBuf {
+pub(crate) fn default_feed_cache_dir() -> PathBuf {
     if let Ok(home) = std::env::var("HOME") {
         Path::new(&home).join(".local/share/issen/feeds")
     } else {

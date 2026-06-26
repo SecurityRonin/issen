@@ -258,9 +258,31 @@ impl StageExecutor for RealExecutor {
                 println!("  correlated findings: {}", corrs.len());
             }
             Stage::Scan => {
-                // Threat-intel scan is folded into the ingest pass (ingest --scan).
-                // A standalone re-scan over an existing timeline is future work; use
-                // `--rerun` to re-scan after `issen feed update`.
+                // Run the event-level detection pass over the persisted timeline:
+                // Sigma / native-ATT&CK / network-IOC matching against the cached
+                // feeds PLUS the feed-independent $SI/$FN timestomp detector. The
+                // findings land in `scan_findings` (surfaced by `report` /
+                // `timeline --flagged`); full-timeline tag enrichment is skipped to
+                // avoid the O(n) DuckDB re-tag that split scan out of ingest.
+                let pb = self.spinner(stage);
+                let store = TimelineStore::open(&self.db_path)
+                    .with_context(|| format!("opening {} for scan", self.db_path.display()))?;
+                let cache_dir = commands::ingest::default_feed_cache_dir();
+                let engine = crate::scanning::engine_from_cached_feeds(&cache_dir);
+                let scan_root = self
+                    .disk
+                    .first()
+                    .map_or(self.db_path.as_path(), |p| p.as_path());
+                let summary = crate::scanning::scan_persisted(&store, &engine, scan_root)?;
+                pb.finish_and_clear();
+                println!(
+                    "  scan findings: {} (timestomp {}, native {}, sigma {}, network {})",
+                    summary.total_findings,
+                    summary.timestomp_findings,
+                    summary.native_findings,
+                    summary.sigma_findings,
+                    summary.network_findings,
+                );
             }
         }
         println!(
