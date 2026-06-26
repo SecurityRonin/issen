@@ -18,6 +18,8 @@
 )]
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
+use std::path::Path;
+
 use issen_core::artifacts::ArtifactType;
 use issen_core::classify;
 use issen_core::error::RtError;
@@ -78,8 +80,17 @@ impl ForensicParser for RecycleBinParser {
             return Ok(stats);
         };
 
+        // Recover the paired `$R` content file (B7). The disk-collection sweep
+        // places `$R…` beside `$I…` in the extracted tree, so when this `$I` was
+        // opened from a real path we can read its sibling and surface the
+        // deleted file's content. A bytes-only source (no path) degrades to
+        // index-only, exactly as before.
+        let recovered = input
+            .source_path()
+            .and_then(|p| recover_sibling(p, index.original_size));
+
         let mut events = Vec::with_capacity(1);
-        if let Some(event) = delete_event(&index, &artifact_path) {
+        if let Some(event) = delete_event(&index, &artifact_path, recovered.as_ref()) {
             events.push(event);
         }
 
@@ -100,20 +111,75 @@ impl ForensicParser for RecycleBinParser {
     }
 }
 
-/// Build a `FileDelete` [`TimelineEvent`] from a decoded `$I` index.
+/// Recovered `$R` content paired with a `$I` index (B7 — "recover the original
+/// file"). `preview` is a sanitized, bounded UTF-8 rendering for text content;
+/// binary content yields `None`.
+struct RecoveredContent {
+    size: u64,
+    size_matches: bool,
+    preview: Option<String>,
+}
+
+/// Read the `$R` content file paired with a `$I` index at `i_path` and
+/// summarize it. Windows pairs them by swapping the `$I`/`$R` prefix in the
+/// same directory. Returns `None` when the name is not a `$I` index, the
+/// sibling `$R` is absent, or it cannot be read.
+fn recover_sibling(i_path: &Path, original_size: u64) -> Option<RecoveredContent> {
+    let r_name = sibling_r_name(i_path.file_name()?.to_str()?)?;
+    let bytes = std::fs::read(i_path.with_file_name(r_name)).ok()?;
+    let size = bytes.len() as u64;
+    Some(RecoveredContent {
+        size,
+        size_matches: size == original_size,
+        preview: text_preview(&bytes),
+    })
+}
+
+/// Map a `$I…` filename to its paired `$R…` filename, preserving the prefix
+/// case as it sits on disk. `None` when the name is not a `$I` index name.
+fn sibling_r_name(i_name: &str) -> Option<String> {
+    i_name
+        .strip_prefix("$I")
+        .map(|rest| format!("$R{rest}"))
+        .or_else(|| i_name.strip_prefix("$i").map(|rest| format!("$r{rest}")))
+}
+
+/// A bounded, sanitized UTF-8 preview of recovered content, or `None` when the
+/// bytes are not valid UTF-8 (binary content). Control characters other than
+/// tab/newline are stripped, and the preview is capped to keep the event small.
+fn text_preview(bytes: &[u8]) -> Option<String> {
+    const MAX_CHARS: usize = 256;
+    let text = std::str::from_utf8(bytes).ok()?;
+    let cleaned: String = text
+        .chars()
+        .filter(|c| !c.is_control() || *c == '\n' || *c == '\t')
+        .take(MAX_CHARS)
+        .collect();
+    (!cleaned.trim().is_empty()).then_some(cleaned)
+}
+
+/// Build a `FileDelete` [`TimelineEvent`] from a decoded `$I` index, enriched
+/// with the recovered `$R` content when its sibling was available.
 ///
 /// Returns `None` when the recorded deletion `FILETIME` is zero/out of range
 /// (`deleted_at == None`): without a deletion timestamp there is no timeline
 /// anchor for the event, so it is dropped rather than emitted at epoch 0.
-fn delete_event(index: &trash_core::RecycleBinIndex, artifact_path: &str) -> Option<TimelineEvent> {
+fn delete_event(
+    index: &trash_core::RecycleBinIndex,
+    artifact_path: &str,
+    recovered: Option<&RecoveredContent>,
+) -> Option<TimelineEvent> {
     let ts_ns = index.deleted_at?.timestamp_nanos_opt()?;
 
-    let description = format!(
+    let mut description = format!(
         "Deleted file: {} ({} bytes)",
         index.original_path, index.original_size
     );
+    if recovered.is_some() {
+        description.push_str(" — content recovered from $R");
+    }
 
-    let event = TimelineEvent::new(
+    let mut event = TimelineEvent::new(
         ts_ns,
         String::new(),
         EventType::FileDelete,
@@ -133,6 +199,15 @@ fn delete_event(index: &trash_core::RecycleBinIndex, artifact_path: &str) -> Opt
         serde_json::json!(format!("{:?}", index.version)),
     );
 
+    if let Some(rc) = recovered {
+        event = event
+            .with_metadata("recovered_content_size", serde_json::json!(rc.size))
+            .with_metadata("content_size_matches", serde_json::json!(rc.size_matches));
+        if let Some(preview) = &rc.preview {
+            event = event.with_metadata("recovered_content_preview", serde_json::json!(preview));
+        }
+    }
+
     Some(event)
 }
 
@@ -144,6 +219,11 @@ inventory::submit! {
             priority: 80,
             disk_sources: &[
                 sel::DiskSource::Ntfs(sel::NtfsLoc::PerSubdirSweep { parent: r"\$Recycle.Bin", rel: r"", name: sel::NameMatch::Prefix("$i") }),
+                // Collect the paired `$R` content files too, so they land beside
+                // their `$I` index in the extracted tree for sibling recovery
+                // (B7). `classify::recycle_i` matches only `$i`, so a `$R` is
+                // never parsed standalone — it is read via its `$I`'s source_path.
+                sel::DiskSource::Ntfs(sel::NtfsLoc::PerSubdirSweep { parent: r"\$Recycle.Bin", rel: r"", name: sel::NameMatch::Prefix("$r") }),
             ],
             cost: sel::CostTier::Default,
         } }
