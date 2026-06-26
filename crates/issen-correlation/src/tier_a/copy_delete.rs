@@ -140,20 +140,32 @@ pub fn copy_delete_pairs<E>(
 where
     E: EventView,
 {
+    // Pre-sort creates by timestamp ONCE so each delete scans only the
+    // ±WINDOW slice (binary-searched) instead of every create — O(D log C +
+    // matches) instead of O(D × C). Positive timestamps only (the per-candidate
+    // `cre_ts <= 0` guard moves up here); the candidate set, window, host filter,
+    // and nearest-wins tie-break are otherwise unchanged.
+    let mut sorted: Vec<&(E, FileFacts)> = creates
+        .iter()
+        .filter(|(e, _)| e.timestamp_ns() > 0)
+        .collect();
+    sorted.sort_by_key(|(e, _)| e.timestamp_ns());
+    let sorted_ts: Vec<i64> = sorted.iter().map(|(e, _)| e.timestamp_ns()).collect();
+
     let mut out = Vec::new();
     for (del_ev, del_facts) in deletes {
         let del_ts = del_ev.timestamp_ns();
         if del_ts <= 0 {
             continue;
         }
+        // The window [del_ts - W, del_ts + W] as a contiguous slice of `sorted`.
+        let lo = sorted_ts.partition_point(|&t| t < del_ts.saturating_sub(COPY_DELETE_WINDOW_NS));
+        let hi = sorted_ts.partition_point(|&t| t <= del_ts.saturating_add(COPY_DELETE_WINDOW_NS));
         let mut best: Option<&(E, FileFacts)> = None;
-        for candidate in creates {
+        for candidate in sorted[lo..hi].iter().copied() {
             let (cre_ev, cre_facts) = candidate;
             let cre_ts = cre_ev.timestamp_ns();
-            if cre_ts <= 0 || del_ev.hostname() != cre_ev.hostname() {
-                continue;
-            }
-            if (cre_ts - del_ts).abs() > COPY_DELETE_WINDOW_NS {
+            if del_ev.hostname() != cre_ev.hostname() {
                 continue;
             }
             if !guards_hold(del_facts, cre_facts) {
