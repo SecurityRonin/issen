@@ -409,6 +409,16 @@ pub struct ParseJob {
 /// avoids the parse cost, not just the duplicate commit (issen #115). Returns
 /// the parsed units, per-unit failure descriptions, and the count of units
 /// skipped because `skip` reported them complete.
+/// A short label for the worker bar — the artifact's file name (e.g.
+/// `Security.evtx`, `SOFTWARE`), falling back to its type when the path has no
+/// file-name component.
+fn worker_label(a: &DiscoveredArtifact) -> String {
+    a.path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| format!("{:?}", a.artifact_type))
+}
+
 #[must_use]
 pub fn parse_into_jobs(
     artifacts: &[DiscoveredArtifact],
@@ -425,6 +435,9 @@ pub fn parse_into_jobs(
     let per_artifact: Vec<(Vec<ParseJob>, Vec<String>, usize)> = artifacts
         .par_iter()
         .map(|artifact| {
+            // Claim a worker slot for the live per-source worker bars; it names
+            // what this worker is parsing and frees on drop (end of this parse).
+            let _slot = progress.claim_worker(worker_label(artifact));
             let unit = parse_one_artifact(artifact, parsers, progress, skip, opts);
             progress.complete_artifact();
             unit

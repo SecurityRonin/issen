@@ -35,6 +35,9 @@ pub fn install_sigint_cleanup(mp: &MultiProgress) {
 pub struct SourceProgress {
     reporter: ProgressReporter,
     bar: Option<ProgressBar>,
+    /// One child bar per worker slot, grouped under `bar`; each names the
+    /// artifact its slot is currently parsing (empty when not rendering).
+    worker_bars: Vec<ProgressBar>,
     stop: Arc<AtomicBool>,
     handle: Option<JoinHandle<()>>,
 }
@@ -44,16 +47,24 @@ impl SourceProgress {
     /// render thread; otherwise it's an inert holder of the reporter.
     #[must_use]
     pub fn start(mp: &MultiProgress, label: &str, render: bool) -> Self {
-        let reporter = ProgressReporter::new();
         let stop = Arc::new(AtomicBool::new(false));
         if !render {
             return Self {
-                reporter,
+                reporter: ProgressReporter::new(),
                 bar: None,
+                worker_bars: Vec::new(),
                 stop,
                 handle: None,
             };
         }
+
+        // One worker slot/bar per parsing thread (capped so the display stays
+        // readable). The reporter's slot count must match the bar count.
+        let workers = std::thread::available_parallelism()
+            .map(std::num::NonZeroUsize::get)
+            .unwrap_or(1)
+            .clamp(1, 6);
+        let reporter = ProgressReporter::with_workers(workers);
 
         let bar = mp.add(ProgressBar::new_spinner());
         let style = ProgressStyle::with_template(
@@ -65,10 +76,27 @@ impl SourceProgress {
         bar.set_prefix(label.to_string());
         bar.enable_steady_tick(Duration::from_millis(100));
 
+        // Child worker bars, inserted right after the parent so each source's
+        // workers stay grouped under it even while other sources render too.
+        let worker_style = ProgressStyle::with_template("    {prefix:.dim} {wide_msg:.dim}")
+            .unwrap_or_else(|_| ProgressStyle::default_spinner());
+        let mut worker_bars = Vec::with_capacity(workers);
+        let mut prev = bar.clone();
+        for i in 0..workers {
+            let wb = mp.insert_after(&prev, ProgressBar::new_spinner());
+            wb.set_style(worker_style.clone());
+            let connector = if i + 1 == workers { "└" } else { "├" };
+            wb.set_prefix(format!("{connector} worker {}", i + 1));
+            wb.set_message("idle");
+            prev = wb.clone();
+            worker_bars.push(wb);
+        }
+
         let handle = {
             let stop = Arc::clone(&stop);
             let reporter = reporter.clone();
             let bar = bar.clone();
+            let worker_bars = worker_bars.clone();
             let start = Instant::now();
             thread::spawn(move || loop {
                 let snap = reporter.snapshot();
@@ -78,6 +106,14 @@ impl SourceProgress {
                     bar.set_position(snap.artifacts_completed);
                 }
                 bar.set_message(status_line(&snap, start.elapsed()));
+                // Name what each worker slot is currently parsing.
+                let labels = reporter.worker_labels();
+                for (wb, label) in worker_bars.iter().zip(&labels) {
+                    match label {
+                        Some(name) => wb.set_message(format!("parsing {name}")),
+                        None => wb.set_message("idle".to_string()),
+                    }
+                }
                 if stop.load(Ordering::Relaxed) {
                     break;
                 }
@@ -88,6 +124,7 @@ impl SourceProgress {
         Self {
             reporter,
             bar: Some(bar),
+            worker_bars,
             stop,
             handle: Some(handle),
         }
@@ -104,6 +141,10 @@ impl SourceProgress {
         self.stop.store(true, Ordering::Relaxed);
         if let Some(h) = self.handle.take() {
             let _ = h.join();
+        }
+        // Clear the per-worker child bars; the parent keeps the final summary.
+        for wb in self.worker_bars.drain(..) {
+            wb.finish_and_clear();
         }
         if let Some(bar) = self.bar.take() {
             bar.finish_with_message(summary.to_string());
