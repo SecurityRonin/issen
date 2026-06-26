@@ -1803,6 +1803,30 @@ flowchart LR
 
 ---
 
+# More From the Fleet · 4n6mount
+
+**Mount the image. Browse evidence like files. Write without touching the original.** — one FUSE mount, every format.
+
+- **Auto-detects the source** — ext4 / NTFS / exFAT / HFS+ / APFS / ISO9660 filesystems, EWF & VMDK containers, zip / 7z / tar archives, even **memory dumps** — all through one command.
+- **Read-only evidence beside a copy-on-write overlay** — run grep, save notes, pipe output against `rw/`; every write lands in a sidecar and the image stays byte-for-byte pristine.
+- **`deleted/` recovery, `metadata/timeline.jsonl`, hash-based filtering** — an analysis surface, not just a raw mount, so any tool that reads files now reads evidence.
+
+```bash
+4n6mount image.dd /mnt/evidence   # ro/  rw/  deleted/  metadata/
+```
+
+> The bridge under the fleet: scriptable, CI-friendly, chain-of-custody safe — pipe deleted files straight into `issen`, `br4n6`, or `blazehash`. · securityronin.github.io/4n6mount
+
+```mermaid
+flowchart LR
+  I["disk image · container<br/>archive · memory dump"] --> M["4n6mount<br/>one FUSE mount"]
+  M --> RO["ro/ pristine"]
+  M --> RW["rw/ COW overlay"]
+  M --> D["deleted/ recovered"]
+```
+
+---
+
 # More From the Fleet · blazehash
 
 **Hash. Sign. Timestamp. Prove. Seal.** — integrity hashing for workflows that end in a courtroom.
