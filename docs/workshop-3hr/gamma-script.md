@@ -1269,7 +1269,7 @@ What touched disk and when: the malware, the moves, the staged-and-deleted archi
 
 > 🛠️ **The hard way** — `MFTECmd`/`analyzeMFT` on `$MFT`, parse `$UsnJrnl` separately, then merge two CSVs and reconcile timestamps to rebuild the file's history.
 
-⚡ **The issen way** — `issen timeline files dc01.duckdb | grep coreupdater`: MFT + USN already unified in the timeline; one view, one grep.
+⚡ **The issen way** — `issen timeline dc01.duckdb --path '*coreupdater*' --first`: MFT + USN already unified in the timeline; one filter, one answer.
 
 ---
 
@@ -1651,17 +1651,17 @@ Credibility comes from the boundary, stated plainly:
 | 6.1 | Malicious process | `issen memory "$DC_MEM" --command ps` | **`coreupdater.exe` (3644)** | ✅ |
 | 6.2 | Delivery IP | `issen timeline hosts dc01.duckdb --group-by ip` | `194.61.24.102` | ✅ |
 | 6.3 | C2 | `issen memory "$DC_MEM" --command netstat` | **`203.78.103.109:443`** ESTABLISHED, owned by coreupdater | ✅ |
-| 6.4-6.5 | On disk / first seen | `issen timeline files dc01.duckdb \| grep coreupdater` | `C:\Windows\System32\coreupdater.exe`, first seen 03:24:06 | ✅ |
-| 6.6 | Moved? | `issen timeline files dc01.duckdb \| grep coreupdater` | USN rename trail (Downloads → System32) | ✅ |
+| 6.4-6.5 | On disk / first seen | `issen timeline dc01.duckdb --path '*coreupdater*' --first` | `C:\Windows\System32\coreupdater.exe`, first seen 03:24:06 | ✅ |
+| 6.6 | Moved? | `issen timeline dc01.duckdb --path '*coreupdater*' --event-type FileRename` | USN rename trail (Downloads → System32) | ✅ |
 | 6.7-6.8 | Capabilities / obtainable | `issen memory "$DC_MEM" --command scan` | **RWX private region + `MZ` header in `spoolsv` (3724) — injection MEASURED**; the *family* label (Meterpreter) is a YARA/VT call | ✅/○ |
 | 6.9 | Persistence | `issen timeline persistence dc01.duckdb` | **7045 service** `coreupdater` 03:27:49 (+ Run key) | ✅ |
 | 7 | Malicious IPs (+ known infra?) | `issen timeline logons dc01.duckdb --group-by ip` | IPs + roles measured; "known infra" is OSINT (retracted link) | ✅/○ |
 | 8 | Lateral movement | `issen timeline hosts desktop.duckdb` | RDP from the DC (`10.42.85.10`) to the Desktop, 03:36:24 | ✅ |
-| 8.3 | Data stolen / when | `issen timeline files desktop.duckdb \| grep -E 'loot.zip'` | secret.zip / loot.zip staged-and-deleted ~02:30-02:34 | ✅ |
+| 8.3 | Data stolen / when | `issen timeline desktop.duckdb --path '*loot.zip*'` | secret.zip / loot.zip staged-and-deleted ~02:30-02:34 | ✅ |
 | 9 | Network layout | `issen timeline dc01.duckdb --tag system-info` | adapter config from the SYSTEM hive: **`CITADEL-DC01` / `C137.local`, `10.42.85.10` /24, gw `10.42.85.100`** + per-host logon IPs | ✅ |
 | 10 | Architecture changes | analyst judgement | advisory layer — issen supplies the evidence | ○ |
-| 11 | Szechuan sauce / time | `issen timeline files dc01.duckdb \| grep -i szechuan` | **MFT access trail measured** (`Szechuan Sauce.txt` accessed ~02:32), exfil inside the `secret.zip` window ~02:30-02:34; the wire transfer itself is PCAP | ✅/○ |
-| 12 | Other sensitive files | `issen timeline files dc01.duckdb \| grep -i beth` | full trail measured; the `Beth_Secret.txt` timestomp is **auto-flagged Medium** (`issen timeline dc01.duckdb --flagged`) | ✅ |
+| 11 | Szechuan sauce / time | `issen timeline dc01.duckdb --path '*Szechuan*'` | **MFT access trail measured** (`Szechuan Sauce.txt` accessed ~02:32), exfil inside the `secret.zip` window ~02:30-02:34; the wire transfer itself is PCAP | ✅/○ |
+| 12 | Other sensitive files | `issen timeline dc01.duckdb --path '*Beth*'` | full trail measured; the `Beth_Secret.txt` timestomp is **auto-flagged Medium** (`issen timeline dc01.duckdb --flagged`) | ✅ |
 | 13 | Last contact | `issen timeline ... --event-type Logoff --last` + `issen memory ... --command netstat` | **measured: latest Logoff `04:52:11Z` + C2 `203.78.103.109:443` still ESTABLISHED at capture = adversary live when imaged**; `issen session` tightens the exact envelope | ✅ |
 | B4-B5 | Who logged on (DC/Desktop) | `issen timeline logons dc01.duckdb --distinct user` | distinct logon users per host | ✅ |
 | B6 | Domain passwords | `issen memory "$DC_MEM" --command creds` | **NTLM hash material recovered** (validated `hashdump`) + SAM/LSA-secret inventory; turning a hash into plaintext is the offline-lab crack | ✅/○ |
