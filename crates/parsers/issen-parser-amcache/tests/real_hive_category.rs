@@ -1,6 +1,8 @@
-//! Real-data CADET test: drive `amcache` over the Case-001 Desktop `Amcache.hve`
-//! (carved from `DESKTOP-E01`) and assert every program-execution event carries
-//! the `Execution` category.
+//! Real-data CADET test: drive `amcache` over a Case-001 `Amcache.hve` and
+//! assert every program-execution event carries the `Execution` category. Works
+//! for either host's hive — the Desktop (Win10) uses the modern
+//! `Root\InventoryApplicationFile` schema, the DC (Server 2012 R2) the legacy
+//! `Root\File\{VolumeGUID}` schema — both decode via winreg-artifacts 0.2.2.
 //!
 //! Fixture (gitignored): `tests/data/dfirmadness-szechuan-sauce/extracted/szechuan-sauce-hives/Amcache.hve` (carve via the
 //! `extract_amcache` issen-disk example, see `docs/corpus-catalog.md` §A3b).

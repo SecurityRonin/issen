@@ -47,13 +47,15 @@ flowchart LR
 
 ### issen coverage today — honest accounting
 
-**issen does not yet solve this case end-to-end.** Of the F1–F44 union, only **~11 findings are MEASURED-BY-ISSEN**; the rest are write-up-corroborated, design, partial, or out. Concretely:
+issen measures most of the disk-leg answers and the memory-leg essentials end-to-end on the real Case 001 images; the residue is genuinely out-of-reach material (pcap, OSINT, content carving). Re-verified 2026-06-26 on the real DC01 (1.07M events):
 
-- **Disk leg — 4 of the 8 common artifacts are wired** and gave correct results on the real images: **$MFT, $UsnJrnl ($J), Registry hives, EVTX**. These carry the intrusion timeline, brute-force/logon, lateral RDP, and service+Run persistence answers.
-- **Not wired (parser crates exist but are dead code in the binary — PRE-5):** **Prefetch, Shimcache (AppCompatCache), Amcache, LNK/Jump Lists.** Verified 0 events on both hosts (2026-06-11). Several official answers genuinely *require* these — the **evidence-of-execution** answers (“was `coreupdater.exe` *run*, how many times, at what times”, its hash) come from Prefetch/Amcache/Shimcache, and the staging answers from `Loot.lnk`/`Secret.lnk` targets. issen currently only *infers* execution indirectly (the `.pf` file’s MFT creation time + the 7045 service start); it does not parse the prefetch/amcache run metadata.
-- **Memory leg — the process list is now MEASURED** (G2 passed 2026-06-11 via psscan: 40 processes incl. `coreupdater.exe` 3644, `spoolsv.exe` 3724). Deeper memory enrichment (netstat C2 row, malfind injection bytes) is not yet wired for this dump.
+- **Disk leg — the common artifacts are wired and produce on the real image:** $MFT (693k events), $UsnJrnl/$J (82k), Registry hives (211k), EVTX (85k), plus **Shimcache** (140, via the SYSTEM-hive AppCompatCache decoder), **UserAssist** (52, with `coreupdater.exe`’s GUI run-count), and **LNK / Jump Lists** (18 + 15, including the `Secret.lnk` / `Beth_Secret.lnk` / `SECRET_beth.lnk` staging shortcuts → `C:\FileShare\`). **Amcache** decodes the legacy `Root\File` schema (Win8 / Server 2012 R2) as of `winreg-artifacts 0.2.2` — 136 file entries on the DC, validated against the regipy oracle. **Prefetch** is *searched-absent* on the DC (Server 2012 R2 ships prefetch disabled), and this is now reported in the coverage line rather than silently dropped.
+- **Evidence-of-execution is MEASURED, not merely inferred:** `coreupdater.exe` surfaces as UserAssist `ProcessExec` (run metadata), a `coreupdater` `ServiceInstall` (EVTX 7045), and the full MFT + USN file lifecycle; its presence + SHA-1 also ride the Amcache/Shimcache inventory.
+- **Registry named values (PRE-3):** OS build (F1), timezone (F3), computer name, and the host **network config (Q9: `10.42.85.10` / `255.255.255.0` / gw `10.42.85.100`, `CITADEL-DC01` / domain `C137.local`)** are extracted as `system-info` events, validated against the regipy oracle.
+- **Timestomp (B8) is MEASURED:** the bare-pipeline Scan stage flags `FileShare/Secret/Beth_Secret.txt` at **Medium** (`NTFS-TIMESTOMP-SI-FN-MISMATCH`) — the single elevated `$SI`/`$FN` timestomp standing out from the benign copy-leads.
+- **Memory leg — MEASURED:** the process list (40 processes incl. `coreupdater.exe` 3644, `spoolsv.exe` 3724) and the **netstat C2 row (`coreupdater.exe` → `203.78.103.109:443`)** are recovered from `citadeldc01.mem`.
 
-So where this document tags a finding **WRITE-UP-CORROBORATED**, the answer is taken from a published human analysis, **not** produced by issen. Closing the disk gap is tracked as **PRE-5** (wire the four parsers + add the `.lnk` discovery arm) and the broader artifact-expansion plan.
+The remaining **OUT** findings are answered from the write-ups only: OSINT/attribution (Q7), tool naming (Hydra/Metasploit, Q6.8/F38), pcap byte-level transfer (Q9/Q11), offline password cracking (B6), and `$I`/`$R` **content** carving (B7 — the deleted *names* and metadata are recovered; the original file *bytes* are not).
 
 ---
 
@@ -125,7 +127,7 @@ Last interactive logoff around **03:00 network clock**; at memory-capture time a
 
 **Can you recover the original file about Beth’s secrets?** Yes — from the recycle bin. Original name `SECRET_beth.txt`; original contents “Earth Beth is the real Beth.” (recovered from `$Recycle.Bin\S-1-…-500` `$R` data in W8). The replacement `Beth_Secret.txt` carries a different secret. — F24, F43; W2, W8. **OUT** (issen recognizes recycle-bin paths but has no `$I`/`$R` content carver).
 
-**What file was timestomped?** `Beth_Secret.txt`, stomped with Meterpreter to match `PortalGunsPlans.txt`. issen’s current MFT timeline is `$SI`-only and its `$SI`-vs-`$FN` timestomp detector is deliberately an Info-grade lead; this specific stomp was **not** flagged in the measured run. — F24-adjacent; W2. **WRITE-UP-CORROBORATED**, honestly a current issen gap.
+**What file was timestomped?** `Beth_Secret.txt`, stomped with Meterpreter to match `PortalGunPlans.txt`. The bare-pipeline Scan stage flags it `FileShare/Secret/Beth_Secret.txt` at **Medium** (`NTFS-TIMESTOMP-SI-FN-MISMATCH`) — the MFT parser rides all four `$FN` and `$SI` MACE values on the `FileCreate` event, and the detector fires the strict `$SI`<`$FN` ordering plus the sub-second-zeroing corroborator (a whole-second `$SI` back-date against a 100 ns-precise `$FN`). It is the single elevated timestomp among the benign copy-leads. — F24-adjacent; W2. **MEASURED-BY-ISSEN.**
 
 ---
 
@@ -182,30 +184,33 @@ duckdb desktop.duckdb -c "SELECT timestamp_display, event_type, artifact_path
 
 Remember the skew when comparing with the official key: every host-derived value above reads one hour ahead of the key’s network-clock narrative.
 
-### Memory leg — coming (be honest here)
+### Memory leg — measured (process list + C2)
 
-**No memory answer in this document was produced by issen yet.** The G2 first-contact run (2026-06-11) recorded the blocker: `citadeldc01.mem` (raw WinPMEM) is detected as a Raw dump, and every subcommand currently refuses with “dump has no embedded CR3; use --cr3” — the header-less DTB scanner in memf-symbols is not yet wired into the Raw-dump dispatch path (`build_reader`). Until that wiring (B1-wire) lands and G2 re-runs, the memory findings F26–F37 are reproduced from the published write-ups (W1 canonical; W7, W8, W9), which used Volatility:
+issen produces the memory-leg essentials on `citadeldc01.mem`. The header-less DTB scan is wired into the Raw-dump dispatch, so the raw WinPMEM dump no longer needs a manual `--cr3`. Measured on the DC dump: the **process list** (40 processes incl. the dead orphan `coreupdater.exe` 3644 and `spoolsv.exe` 3724) and the **C2 row** (`coreupdater.exe` → `203.78.103.109:443`, ESTABLISHED) — matching the write-ups’ Volatility output (W1 canonical; W7–W9):
 
 ```bash
-# What the write-ups ran (Volatility 2/3, profile Win2012R2x64_18340)
+# issen (profile + DTB auto-resolved, no --cr3)
+issen memory citadeldc01.mem --command ps
+issen memory citadeldc01.mem --command netstat
+
+# write-ups’ cross-check (Volatility, profile Win2012R2x64_18340)
 vol.py -f citadeldc01.mem --profile=Win2012R2x64_18340 pstree -v
 vol.py -f citadeldc01.mem --profile=Win2012R2x64_18340 netscan
 vol.py -f citadeldc01.mem --profile=Win2012R2x64_18340 malfind -D dump/
-# then: clamscan / FLOSS / strings over the dumped region
 ```
 
-What those show on the DC image, and what the equivalent `issen memf` subcommand will surface once the gate clears:
+What the DC image shows, with the per-finding issen status — **measured** today vs still design work:
 
-| Volatility result (write-ups) | F | issen equivalent | Expected output once G2 + wiring land |
+| Volatility result (write-ups) | F | issen equivalent | issen status |
 |---|---|---|---|
-| `coreupdater.exe` PID 3644 present but dead — 0 threads, parent PID 2244 absent | F26 | `issen memf <dump> --command ps` | the orphaned, exited process row (walker exists; routed for Windows) |
-| ESTABLISHED TCP to `203.78.103.109:443` tied to PID 3644 | F27 | `--command netstat` | the C2 row with Note `external-established`; escalation to a C2-graded note ships with build M-1 (process-context escalation, not a port list) |
+| `coreupdater.exe` PID 3644 present but dead — 0 threads, parent PID 2244 absent | F26 | `issen memory <dump> --command ps` | **MEASURED** — the orphaned, exited `coreupdater.exe` 3644 row |
+| ESTABLISHED TCP to `203.78.103.109:443` tied to PID 3644 | F27 | `--command netstat` | **MEASURED** — the `203.78.103.109:443` ESTABLISHED C2 row recovered from the dump |
 | `spoolsv.exe` PID 3724: RWX private VAD region, `MZ` header | F28 | `--command scan` | the injected region flagged; today it would label `injected-code` — the `injected-PE` sub-classification ships with build M-2 (first-bytes capture) |
 | migration: dead orphan ∧ injected live PID ∧ shared C2 endpoint | F29 | `CORR-PROC-MIGRATION` (designed rule) | a single migration correlation over the ps/scan/netstat members |
 | ClamScan/FLOSS on the malfind dump → Meterpreter, C2 string in-region | F30 | `scan` dump + YARA/strings | region dump + strings; family naming stays “consistent with” |
 | spoolsv LISTENING on 62475 (TCPv4+v6) | F31 | `--command netstat` | the listener rows under the injected PID |
 | SYSTEM-context malware → domain credential exposure | F32 | `--command creds` | exposure finding (hashdump/lsadump walkers routed, unvalidated here) |
-| netscan noise triage on a DC (dns.exe et al. vs external-established) | F34 | netstat Note column | the mechanized split the analysts did by hand |
+| netscan noise triage on a DC (dns.exe et al. vs external-established) | F34 | netstat Note column | **MEASURED** — the Note column splits external-established from DC service noise |
 | KDBG/profile + in-RAM SOFTWARE hive give the OS from memory | F35 | auto-profile + in-RAM registry walker | profile resolution is the very thing G2 validates |
 | ShimCache in RAM; memory bodyfile into the super-timeline | F36, F37 | `--command timeline` | declared, “not yet wired for this OS” — design work |
 
