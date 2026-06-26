@@ -1656,7 +1656,7 @@ Credibility comes from the boundary, stated plainly:
 - **No password cracking** — it *recovers* the SAM/SYSTEM hives and NTLM material; turning hashes into plaintext is an **offline-lab** step (a forensic tool emitting plaintext would be doing the attacker's job).
 - **No attribution / OSINT** — it measures IPs and their roles; whether they are *known* adversary infra is a VT/OSINT call (and the once-cited Case-001 APT link was **retracted** — absence of a hit proves nothing).
 - **No PCAP** — deliberately excluded here; the C2 came from **memory**, not the wire.
-- **Contents carving is WIP** — it recovers file *names* and the MFT trail; `$DATA`/slack **content** recovery is in design (o), not this run.
+- **Deleted-content recovery is scoped** — Recycle Bin `$R` content **is** recovered (B7: `SECRET_beth.txt` → "Earth beth is the real beth."); arbitrary `$DATA`/slack carving for non-recycle-bin files is still in design (○).
 
 > Every answer is tagged: ✅ measured · ◐ partial · ○ out-of-tool-reach — never faked. The honesty *is* the credibility.
 
@@ -1680,18 +1680,18 @@ Credibility comes from the boundary, stated plainly:
 | 7 | Malicious IPs (+ known infra?) | `issen timeline dc01.duckdb --event-type LogonSuccess --group-by ip` | IPs + roles measured; "known infra" is OSINT (retracted link) | ✅/○ |
 | 8 | Lateral movement | `issen timeline desktop.duckdb --event-type LogonSuccess --ip 10.42.85.10` | to the Desktop, 03:36:24 | ✅ |
 | 8.3 | Data stolen / when | `issen timeline desktop.duckdb --path '*loot.zip*'` | secret.zip / loot.zip staged-and-deleted ~02:30-02:34 | ✅ |
-| 9 | Network layout | `issen timeline dc01.duckdb --event-type LogonSuccess --group-by ip` | hosts/IPs from logon metadata (adapter config WIP) | ◐ |
+| 9 | Network layout | `issen timeline dc01.duckdb --tag system-info` | adapter config from the SYSTEM hive: **`CITADEL-DC01` / `C137.local`, `10.42.85.10` /24, gw `10.42.85.100`** + per-host logon IPs | ✅ |
 | 10 | Architecture changes | analyst judgement | advisory layer — issen supplies the evidence | ○ |
 | 11 | Szechuan sauce / time | `issen timeline dc01.duckdb --path '*Szechuan*'` | file trail; theft via the secret.zip window | ◐ |
-| 12 | Other sensitive files | `issen timeline dc01.duckdb --path '*beth*'` | trail measured; timestomp = analyst-confirmed lead | ✅/◐ |
+| 12 | Other sensitive files | `issen timeline dc01.duckdb --path '*beth*'` | full trail measured; the `Beth_Secret.txt` timestomp is **auto-flagged Medium** (no analyst step) | ✅ |
 | 13 | Last contact | `issen timeline ... --event-type Logoff --last` + `issen memory ... --command netstat` | C2 still ESTABLISHED at capture — live when imaged | ◐ |
 | B4-B5 | Who logged on (DC/Desktop) | `issen timeline dc01.duckdb --event-type LogonSuccess --distinct user` | distinct logon users per host | ✅ |
 | B6 | Domain passwords | hives recovered -> crack offline | material recovered; cracking out of scope | ○ |
-| B7 | Recover Beth's original | `issen timeline dc01.duckdb --path '*beth*' --distinct artifact_path` | names recovered (`SECRET_beth.txt` …); contents need carving | ✅/○ |
-| B8 | Which file timestomped | `issen timeline dc01.duckdb --path '*beth*'` ($SI/$FN) | `PortalGunPlans.txt`: $SI earlier than $FN | ✅/◐ |
+| B7 | Recover Beth's original | `issen timeline dc01.duckdb --source RecycleBin` | **content recovered from `$R`**: `SECRET_beth.txt` → **"Earth beth is the real beth."** (size-matched) | ✅ |
+| B8 | Which file timestomped | `issen timeline dc01.duckdb --flagged` (scan stage) | **`Beth_Secret.txt` auto-flagged Medium** — whole-second `$SI` back-date vs precise `$FN` (stomped to match `PortalGunPlans.txt`) | ✅ |
 | B1-B3 | Controls / architecture | analyst judgement | map measured findings -> CIS/SANS | ○ |
 
-> **~16 of 27 questions fall out of a handful of commands** off the one-command pipeline; the rest are honest ◐ (WIP) or ○ (PCAP / OSINT / offline-lab / advisory) — never faked. *Every answer above is MEASURED against the real CitadelDC01 / Desktop images, validated against the union of the DFIR Madness official + bonus answer keys.*
+> **~20 of 27 questions fall out of a handful of commands** off the one-command pipeline; the rest are honest ○ (PCAP / OSINT / offline-lab / advisory) — never faked. *Every answer above is MEASURED against the real CitadelDC01 / Desktop images, validated against the union of the DFIR Madness official + bonus answer keys. Newly measured (2026-06-26): network config (Q9), deleted-content recovery (B7), auto-flagged timestomp (B8), Amcache legacy-schema execution inventory.*
 
 ---
 
