@@ -10,8 +10,10 @@
 
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use issen_core::error::RtError;
+use rayon::prelude::*;
 
 /// Floor for the per-archive uncompressed-size cap: any archive may expand to at
 /// least this (4 GiB) regardless of its compressed size, so small triage
@@ -110,6 +112,43 @@ fn write_capped(
     Ok(())
 }
 
+/// Atomic-total counterpart of [`write_capped`] for the parallel zip extractor.
+///
+/// Identical streaming + bomb-cap semantics, but the running total is a shared
+/// `AtomicU64` so concurrent worker threads charge their bytes against one
+/// budget. Each chunk does a single `fetch_add` then checks `prev + n > cap`.
+///
+/// Because the add and the check are not one transaction, the *observed* total
+/// can briefly exceed `cap` by at most `threads × COPY_CHUNK` before every
+/// thread sees the breach and bails — the same defense as the serial version,
+/// only with a bounded overshoot. That slack (a few MiB at most) is far below
+/// the multi-GiB caps in play, so a real decompression bomb still trips almost
+/// immediately while a legitimate large image passes.
+fn write_capped_atomic(
+    reader: &mut dyn Read,
+    path: &Path,
+    total: &AtomicU64,
+    cap: u64,
+) -> Result<(), RtError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let mut out = std::fs::File::create(path)?;
+    let mut buf = vec![0u8; COPY_CHUNK];
+    loop {
+        let n = reader.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        let prev = total.fetch_add(n as u64, Ordering::Relaxed);
+        if prev.saturating_add(n as u64) > cap {
+            return Err(bomb_error(cap));
+        }
+        out.write_all(&buf[..n])?;
+    }
+    Ok(())
+}
+
 fn bomb_error(cap: u64) -> RtError {
     RtError::InvalidData(format!(
         "archive exceeds the {cap}-byte uncompressed size limit (possible \
@@ -135,10 +174,16 @@ pub fn extract_zip_capped(
         .map_err(|e| RtError::InvalidData(format!("failed to open zip: {e}")))?;
 
     let mut report = ExtractReport::default();
-    let mut total: u64 = 0;
 
+    // PHASE 1 (serial): enumerate every entry once through the single shared
+    // archive cursor (`by_index` needs `&mut self`, so this can't be parallel).
+    // Apply the security refusals (symlink, non-enclosed name, safe_join), create
+    // directories, and collect the (index, validated dest path) of each FILE entry
+    // to extract in phase 2. The enumeration archive is dropped before phase 2 so
+    // the workers each open their own independent cursor.
+    let mut to_extract: Vec<(usize, PathBuf)> = Vec::new();
     for i in 0..archive.len() {
-        let mut entry = archive
+        let entry = archive
             .by_index(i)
             .map_err(|e| RtError::InvalidData(format!("zip entry {i}: {e}")))?;
 
@@ -172,10 +217,30 @@ pub fn extract_zip_capped(
             continue;
         };
 
-        write_capped(&mut entry, &path, &mut total, cap)?;
-        report.written += 1;
+        to_extract.push((i, path));
     }
+    drop(archive);
 
+    // PHASE 2 (parallel): each worker opens its OWN ZipArchive over the same file
+    // (ZipArchive is !Sync — by_index takes &mut self — so a shared cursor can't
+    // be used across threads), seeks to its entry, and streams it to disk. The
+    // bomb cap is enforced through one shared AtomicU64 (see write_capped_atomic);
+    // the cap may overshoot by at most threads × COPY_CHUNK, which is the same
+    // defense in parallel.
+    let total = AtomicU64::new(0);
+    to_extract
+        .par_iter()
+        .try_for_each(|(index, path)| -> Result<(), RtError> {
+            let file = std::fs::File::open(archive_path)?;
+            let mut archive = zip::ZipArchive::new(file)
+                .map_err(|e| RtError::InvalidData(format!("failed to open zip: {e}")))?;
+            let mut entry = archive
+                .by_index(*index)
+                .map_err(|e| RtError::InvalidData(format!("zip entry {index}: {e}")))?;
+            write_capped_atomic(&mut entry, path, &total, cap)
+        })?;
+
+    report.written = to_extract.len();
     Ok(report)
 }
 

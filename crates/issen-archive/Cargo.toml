@@ -16,6 +16,7 @@ issen-core   = { workspace = true }
 issen-unpack = { workspace = true }
 inventory    = { workspace = true }
 zip          = { workspace = true }
+rayon        = { workspace = true }
 tar          = { workspace = true }
 flate2       = { workspace = true }
 sevenz-rust  = { workspace = true }
