@@ -114,9 +114,39 @@ fn archive_member_kinds(path: &Path) -> Option<Vec<EvidenceKind>> {
 /// memory leg (which scans directories for loose `.mem`s) can consume them. The
 /// returned [`tempfile::TempDir`] guard must outlive the memory stage.
 fn extract_memory_archive(path: &Path) -> anyhow::Result<(tempfile::TempDir, Vec<PathBuf>)> {
-    // STUB (RED): extracts nothing.
-    let _ = path;
-    Ok((tempfile::tempdir()?, Vec::new()))
+    let tmp = tempfile::tempdir().context("temp dir for memory archive")?;
+    // Safe extractor: bomb-capped, refuses zip-slip/symlink entries.
+    issen_archive::extract::extract_zip(path, tmp.path())
+        .map_err(|e| anyhow::anyhow!("extracting memory archive {}: {e}", path.display()))?;
+    let mems = find_mem_dumps(tmp.path());
+    if mems.is_empty() {
+        anyhow::bail!(
+            "no memory dump (.mem/.vmem/.lime/.dmp/.core) found inside {}",
+            path.display()
+        );
+    }
+    Ok((tmp, mems))
+}
+
+/// All memory-dump files anywhere under `root` (recursive), by extension.
+fn find_mem_dumps(root: &Path) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let Ok(rd) = std::fs::read_dir(&dir) else {
+            continue; // cov:unreachable: dir comes from a just-created extraction
+        };
+        for entry in rd.flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                stack.push(p);
+            } else if pipeline::classify(&p.to_string_lossy()) == Some(EvidenceKind::Memory) {
+                out.push(p);
+            }
+        }
+    }
+    out.sort();
+    out
 }
 
 /// Run the resumable pipeline over `evidence`.
@@ -135,10 +165,25 @@ pub fn run(evidence: &[PathBuf], output: Option<&Path>, verbose: bool) -> anyhow
     // Classify + size each input.
     let mut disk: Vec<(PathBuf, u64)> = Vec::new();
     let mut mem: Vec<(PathBuf, u64)> = Vec::new();
+    // Temp dirs holding .mem cracked out of memory archives. They must outlive
+    // the memory stage, which run_bare drives below within this fn.
+    let mut mem_dirs: Vec<tempfile::TempDir> = Vec::new();
     for p in evidence {
         let size = std::fs::metadata(p).map(|m| m.len()).unwrap_or(0);
-        match pipeline::classify(&p.to_string_lossy()) {
+        match classify_evidence(p) {
             Some(EvidenceKind::Disk) => disk.push((p.clone(), size)),
+            // A zipped memory dump: crack the .mem out so the memory leg's
+            // dir-scan reads it (mirrors how the disk leg unpacks an E01).
+            Some(EvidenceKind::Memory) if is_archive(p) => match extract_memory_archive(p) {
+                Ok((tmp, mems)) => {
+                    for m in mems {
+                        let s = std::fs::metadata(&m).map(|x| x.len()).unwrap_or(0);
+                        mem.push((m, s));
+                    }
+                    mem_dirs.push(tmp);
+                }
+                Err(e) => eprintln!("warning: {e}"),
+            },
             Some(EvidenceKind::Memory) => mem.push((p.clone(), size)),
             None if p.is_dir() => disk.push((p.clone(), 0)), // a collection directory
             None => eprintln!(
@@ -147,6 +192,9 @@ pub fn run(evidence: &[PathBuf], output: Option<&Path>, verbose: bool) -> anyhow
             ),
         }
     }
+    // Keep the extraction temp dirs alive for the whole run (incl. the memory
+    // stage); dropping them early would delete the .mem before it is read.
+    let _mem_dirs = mem_dirs;
     let has_disk = !disk.is_empty();
     let has_memory = !mem.is_empty();
     if !has_disk && !has_memory {
