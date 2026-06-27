@@ -10,6 +10,7 @@
 //! as stalled. See `docs/cli-unified-frontdoor-spec.md`.
 
 use std::collections::{HashMap, HashSet};
+use std::io::IsTerminal as _;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
@@ -19,6 +20,11 @@ use issen_timeline::store::TimelineStore;
 
 use crate::commands;
 use crate::pipeline::{self, EvidenceKind, Flags, RunReport, Stage, StageExecutor};
+
+/// Worker bars to show during the correlate stage: one per concurrently-running
+/// correlation rule — the 8 disk-leg rules plus the memory-leg group (see
+/// `issen_correlation::runner::run_correlations_with_memory_progress`).
+const CORRELATE_RULE_SLOTS: usize = 9;
 
 /// Human label for a stage banner.
 fn stage_label(stage: Stage) -> &'static str {
@@ -247,14 +253,31 @@ impl StageExecutor for RealExecutor {
                 println!("  memory events: {events}");
             }
             Stage::Correlate => {
-                let pb = self.spinner(stage);
+                let n = self.step.get() + 1;
+                self.step.set(n);
+                println!("▶ [{n}/{}] {}", self.total, stage_label(stage));
                 let store = TimelineStore::open(&self.db_path).with_context(|| {
                     format!("opening {} for correlation", self.db_path.display())
                 })?;
+                // One worker bar per concurrently-claimable rule (see
+                // CORRELATE_RULE_SLOTS): the 8 disk-leg rules plus the memory-leg
+                // group. Each rule claims a slot for its duration, so the live
+                // display names the rules in flight.
+                let render = crate::progress_view::should_render_bar(
+                    std::io::stderr().is_terminal(),
+                    self.verbose,
+                );
+                let mp = indicatif::MultiProgress::new();
+                let cp = crate::correlate_progress::CorrelateProgress::start(
+                    &mp,
+                    CORRELATE_RULE_SLOTS,
+                    render,
+                );
+                let reporter = cp.reporter().clone();
                 let corrs = store
-                    .run_and_persist()
+                    .run_and_persist_with_progress(&move |name: &str| reporter.claim_worker(name))
                     .map_err(|e| anyhow::anyhow!("correlation: {e}"))?;
-                pb.finish_and_clear();
+                cp.finish();
                 println!("  correlated findings: {}", corrs.len());
             }
             Stage::Scan => {

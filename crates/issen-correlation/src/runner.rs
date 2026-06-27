@@ -159,10 +159,77 @@ where
 #[must_use]
 pub fn run_correlations_with_memory<E>(events: &[E], memory: &[MemEvent]) -> Vec<Correlation>
 where
-    E: EventView,
+    E: EventView + Sync,
 {
-    let mut out = run_correlations(events);
-    out.extend(run_memory_rules(memory, events));
+    // Delegate to the progress-aware path with a no-op start_rule, so the
+    // sequencing (and its determinism) lives in exactly one place.
+    run_correlations_with_memory_progress(events, memory, &|_| ())
+}
+
+/// The disk-leg rules in their canonical evaluation order, each paired with the
+/// short name reported to `start_rule`. Collecting their outputs in this fixed
+/// order keeps the findings deterministic even though the rules run in parallel.
+#[allow(clippy::type_complexity)]
+fn disk_rules<E: EventView + Sync>() -> [(&'static str, fn(&[E]) -> Vec<Correlation>); 8] {
+    [
+        ("relocate", run_relocate::<E>),
+        ("persist", run_persist::<E>),
+        ("copy-delete", run_copy_delete::<E>),
+        ("bruteforce", run_bruteforce::<E>),
+        ("logon-malware", run_logon_malware::<E>),
+        ("exfil-stage", run_exfil_stage::<E>),
+        ("regconfirm", run_regconfirm::<E>),
+        ("lateral-move", run_lateral_move::<E>),
+    ]
+}
+
+/// Run every disk-leg and memory-leg rule, reporting each rule to `start_rule`
+/// for the lifetime of its evaluation, and returning all firings in one vector.
+///
+/// `start_rule(name)` returns an opaque guard held only while that rule runs;
+/// dropping it signals the rule is done. The guard type is generic (`G`), so
+/// this crate stays UI-free — the CLI passes a closure that claims a progress
+/// worker slot, while the library and tests pass a no-op. The rules run in
+/// parallel (rayon), but their outputs are reassembled in the fixed
+/// [`disk_rules`] order, so the findings set is identical to the sequential
+/// [`run_correlations_with_memory`].
+#[must_use]
+pub fn run_correlations_with_memory_progress<E, F, G>(
+    events: &[E],
+    memory: &[MemEvent],
+    start_rule: &F,
+) -> Vec<Correlation>
+where
+    E: EventView + Sync,
+    F: Fn(&str) -> G + Sync,
+    G: Send,
+{
+    use rayon::prelude::*;
+
+    // Disk-leg rules in parallel; carry each rule's fixed index so the firings
+    // can be re-laid in canonical order regardless of completion order.
+    let rules = disk_rules::<E>();
+    let mut indexed: Vec<(usize, Vec<Correlation>)> = rules
+        .par_iter()
+        .enumerate()
+        .map(|(i, (name, rule))| {
+            let _guard = start_rule(name);
+            (i, rule(events))
+        })
+        .collect();
+    indexed.sort_by_key(|(i, _)| *i);
+
+    let mut out = Vec::new();
+    for (_, firings) in indexed {
+        out.extend(firings);
+    }
+
+    // Memory-leg rules, announced as one "memory" unit (run_memory_rules itself
+    // sequences the three Tier-C/C′ matchers; the guard is held for the group).
+    {
+        let _guard = start_rule("memory");
+        out.extend(run_memory_rules(memory, events));
+    }
     out
 }
 
@@ -760,5 +827,78 @@ mod tests {
             "{:?}",
             codes(&corrs)
         );
+    }
+
+    #[test]
+    fn progress_reports_every_rule_and_matches_the_plain_run() {
+        use std::collections::BTreeSet;
+        use std::sync::{Arc, Mutex};
+
+        use issen_core::timeline::event::EntityRef;
+
+        // A disk-leg persistence pair plus a memory-leg injected-C2 pair, so the
+        // progress run drives both legs through the start_rule callback.
+        let events = vec![
+            Ev::new(1, 1_000, "FileCreate", "DC01", EventSource::Disk)
+                .at("C:\\Windows\\System32\\coreupdater.exe"),
+            Ev::new(2, 2_000, "ServiceInstall", "DC01", EventSource::Evtx)
+                .at("C:\\Windows\\System32\\coreupdater.exe"),
+        ];
+        let memory = vec![
+            MemEvent::new(10, 5_000, "Other(\"MemoryInjection\")", "DUMP-A")
+                .with_entity(EntityRef::Process("spoolsv.exe".to_string()))
+                .with_pid(880)
+                .with_injection("injected-PE"),
+            MemEvent::new(11, 5_000, "NetworkConnect", "DUMP-A")
+                .with_entity(EntityRef::Process("spoolsv.exe".to_string()))
+                .with_entity(EntityRef::Ip("203.78.103.109".to_string()))
+                .with_pid(880)
+                .with_state("ESTABLISHED"),
+        ];
+
+        // Record each rule name the runner starts. The guard returned per rule is
+        // a unit value held for the rule's duration; recording happens on claim.
+        let started: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+        let started_for_cb = Arc::clone(&started);
+        let start_rule = move |name: &str| {
+            started_for_cb
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .push(name.to_string());
+        };
+
+        let progress = run_correlations_with_memory_progress(&events, &memory, &start_rule);
+        let plain = run_correlations_with_memory(&events, &memory);
+
+        // Identical findings (same set of codes) as the non-progress path.
+        assert_eq!(
+            codes(&progress).into_iter().collect::<BTreeSet<_>>(),
+            codes(&plain).into_iter().collect::<BTreeSet<_>>(),
+            "progress run must produce the identical findings set"
+        );
+
+        // Every rule was announced through start_rule (disk + memory legs).
+        let reported: BTreeSet<String> = started
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+            .cloned()
+            .collect();
+        for rule in [
+            "relocate",
+            "persist",
+            "copy-delete",
+            "bruteforce",
+            "logon-malware",
+            "exfil-stage",
+            "regconfirm",
+            "lateral-move",
+            "memory",
+        ] {
+            assert!(
+                reported.contains(rule),
+                "rule {rule:?} must be announced; got {reported:?}"
+            );
+        }
     }
 }

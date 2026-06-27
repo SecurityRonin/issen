@@ -16,7 +16,7 @@ use std::time::Duration;
 use issen_core::timeline::event::EntityRef;
 use issen_correlation::correlation::Correlation;
 use issen_correlation::evaluator::{EventSource, EventView};
-use issen_correlation::runner::run_correlations_with_memory;
+use issen_correlation::runner::run_correlations_with_memory_progress;
 use issen_correlation::tier_c::MemEvent;
 
 use crate::events::{burst_windows, EventQuery, StoredEvent};
@@ -248,6 +248,24 @@ impl TimelineStore {
     /// (Tier C) rules are not run here — the runner leaves an additive seam for
     /// them (see [`run_correlations`]).
     pub fn run_and_persist(&self) -> Result<Vec<Correlation>, TimelineStoreError> {
+        // Delegate with a no-op per-rule callback; the progress-aware variant
+        // carries the only copy of the fetch → run → persist logic.
+        self.run_and_persist_with_progress(&|_| ())
+    }
+
+    /// Like [`run_and_persist`], but reports each correlation rule to `start_rule`
+    /// for the lifetime of its evaluation, so a caller (the CLI) can render a
+    /// per-rule worker bar. `start_rule(name)` returns an opaque guard held only
+    /// while that rule runs; the guard type is generic so this crate stays
+    /// UI-free. The findings are identical to [`run_and_persist`].
+    pub fn run_and_persist_with_progress<F, G>(
+        &self,
+        start_rule: &F,
+    ) -> Result<Vec<Correlation>, TimelineStoreError>
+    where
+        F: Fn(&str) -> G + Sync,
+        G: Send,
+    {
         let events = self.fetch_events(&correlation_query())?;
 
         // Partition the fetched events: memory rows feed the Tier-C matchers as
@@ -270,7 +288,7 @@ impl TimelineStore {
             inputs.push(RunInput::Burst(anchor));
         }
 
-        let correlations = run_correlations_with_memory(&inputs, &memory);
+        let correlations = run_correlations_with_memory_progress(&inputs, &memory, start_rule);
         for corr in &correlations {
             let members: Vec<(u64, &str)> = corr
                 .members
@@ -422,6 +440,47 @@ mod tests {
         for corr in &fired {
             assert!(!corr.members.is_empty(), "{} has members", corr.code);
         }
+    }
+
+    #[test]
+    fn run_and_persist_with_progress_reports_rules_and_matches_plain() {
+        use std::sync::{Arc, Mutex};
+
+        let secs = 1_000_000_000i64;
+        let events = vec![
+            file_create(secs, "C:\\Windows\\System32\\coreupdater.exe"),
+            service_install(2 * secs, "C:\\Windows\\System32\\coreupdater.exe"),
+        ];
+
+        // run_and_persist persists into the store; use one store per call so the
+        // progress and plain runs see the same fresh input (correlations table).
+        let reported: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+        let reported_cb = Arc::clone(&reported);
+        let with_progress = store_with(&events)
+            .run_and_persist_with_progress(&move |name: &str| {
+                reported_cb
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .push(name.to_string());
+            })
+            .expect("run with progress");
+        let plain = store_with(&events).run_and_persist().expect("run plain");
+
+        let p_codes: std::collections::BTreeSet<&str> =
+            with_progress.iter().map(|c| c.code.as_str()).collect();
+        let plain_codes: std::collections::BTreeSet<&str> =
+            plain.iter().map(|c| c.code.as_str()).collect();
+        assert_eq!(p_codes, plain_codes, "identical findings to the plain run");
+        assert!(p_codes.contains("CORR-MALWARE-PERSIST"), "{p_codes:?}");
+
+        let names: std::collections::BTreeSet<String> = reported
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+            .cloned()
+            .collect();
+        assert!(names.contains("persist"), "rules announced: {names:?}");
+        assert!(names.contains("memory"), "rules announced: {names:?}");
     }
 
     #[test]
