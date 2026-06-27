@@ -735,18 +735,23 @@ fn key_judgment(correlations: &[Correlation]) -> String {
         .max_by_key(|s| severity_rank(*s))
         .unwrap_or(Severity::Info);
 
-    // The dominant pattern: the highest-severity, highest-volume rule's note.
+    // The dominant pattern: the highest-severity, highest-volume rule's note,
+    // rendered as a complete, period-terminated sentence so the BLUF lead reads
+    // cleanly (the note already uses "consistent with" framing).
     let pattern = groups.first().map_or_else(String::new, |g| {
-        // Use the note if it carries "consistent with"; otherwise fall back to
-        // a neutral phrasing built from the code + technique.
-        if g.note.to_lowercase().contains("consistent with") {
-            g.note.clone()
+        let base = if g.note.to_lowercase().contains("consistent with") {
+            g.note.trim().to_string()
         } else {
             let tech = g
                 .attack_technique
                 .as_deref()
                 .map_or_else(String::new, |t| format!(" ({t})"));
-            format!("activity consistent with {}{tech}", g.code)
+            format!("Activity is consistent with {}{tech}", g.code)
+        };
+        if base.ends_with('.') {
+            base
+        } else {
+            format!("{base}.")
         }
     });
 
@@ -760,10 +765,19 @@ fn key_judgment(correlations: &[Correlation]) -> String {
         )
     };
 
-    format!(
-        "Evidence is {pattern} {total} correlated finding(s){tech_list}; highest severity {}.",
-        severity_token(max_sev),
-    )
+    // Two sentences: the behaviour, then the quantification — never the
+    // ungrammatical "Evidence is <full sentence>" splice.
+    if pattern.is_empty() {
+        format!(
+            "{total} correlated finding(s){tech_list}; highest severity {}.",
+            severity_token(max_sev),
+        )
+    } else {
+        format!(
+            "{pattern} In total, {total} correlated finding(s){tech_list}; highest severity {}.",
+            severity_token(max_sev),
+        )
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1036,10 +1050,26 @@ fn render_executive_summary(html: &mut String, data: &ReportData) {
         .map(|g| g.max_severity)
         .max_by_key(|s| severity_rank(*s));
 
-    // Time span across all correlations.
+    // Incident window: the span of the HIGH+ correlations. Medium proc-match
+    // correlations key on memory-derived file mtimes (driver dates, "now") that
+    // would otherwise stretch this to a misleading multi-year range; fall back to
+    // all correlations only when no high+ exists.
     let span = {
-        let firsts = data.correlations.iter().map(|c| c.first_ts).min();
-        let lasts = data.correlations.iter().map(|c| c.last_ts).max();
+        let high_rank = severity_rank(Severity::High);
+        let window: Vec<&Correlation> = {
+            let hi: Vec<&Correlation> = data
+                .correlations
+                .iter()
+                .filter(|c| severity_rank(c.severity) >= high_rank)
+                .collect();
+            if hi.is_empty() {
+                data.correlations.iter().collect()
+            } else {
+                hi
+            }
+        };
+        let firsts = window.iter().map(|c| c.first_ts).min();
+        let lasts = window.iter().map(|c| c.last_ts).max();
         match (firsts, lasts) {
             (Some(a), Some(b)) => format!(
                 "{} &mdash; {}",
@@ -2239,6 +2269,16 @@ mod tests {
         assert!(
             kj.contains("T1543.003") || kj.contains("T1110"),
             "names a technique: {kj}"
+        );
+        // Grammar: the lead is the behaviour sentence, THEN the quantification —
+        // never the ungrammatical "Evidence is <full sentence>" splice.
+        assert!(
+            !kj.contains("Evidence is "),
+            "no 'Evidence is <sentence>' splice: {kj}"
+        );
+        assert!(
+            kj.contains(". In total,"),
+            "two sentences (behaviour, then quantification): {kj}"
         );
     }
 
