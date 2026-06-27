@@ -281,17 +281,29 @@ pub fn parse_timestamp(s: &str) -> Result<i64> {
 /// --window 5` can never silently mean 5 nanoseconds. Used by `--around` to
 /// build a symmetric `[pivot-window, pivot+window]` slice.
 pub fn parse_window(s: &str) -> Result<i64> {
-    // STUB (RED).
-    let _ = s;
-    Ok(0)
+    let s = s.trim();
+    let (num, unit_ns) = match s.chars().last() {
+        Some('s') => (&s[..s.len() - 1], 1_000_000_000i64),
+        Some('m') => (&s[..s.len() - 1], 60 * 1_000_000_000),
+        Some('h') => (&s[..s.len() - 1], 3_600 * 1_000_000_000),
+        Some('d') => (&s[..s.len() - 1], 24 * 3_600 * 1_000_000_000),
+        _ => anyhow::bail!("window '{s}' needs an explicit unit (s/m/h/d), e.g. 5m or 2h"),
+    };
+    let magnitude: i64 = num
+        .parse()
+        .map_err(|_| anyhow::anyhow!("window '{s}' has a non-numeric magnitude"))?;
+    magnitude
+        .checked_mul(unit_ns)
+        .ok_or_else(|| anyhow::anyhow!("window '{s}' is too large to represent"))
 }
 
 /// The half-open `[from, to]` ns bounds centered on `pivot_ns`, ± `window_ns`,
 /// saturating at `i64` limits so an extreme pivot/window can never overflow.
 pub fn around_bounds(pivot_ns: i64, window_ns: i64) -> (i64, i64) {
-    // STUB (RED).
-    let _ = (pivot_ns, window_ns);
-    (0, 0)
+    (
+        pivot_ns.saturating_sub(window_ns),
+        pivot_ns.saturating_add(window_ns),
+    )
 }
 
 /// Run the Tier-1 typed query and render the result. Read-only by construction.

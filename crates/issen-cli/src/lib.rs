@@ -213,6 +213,15 @@ pub enum Commands {
         #[arg(long, value_name = "TS")]
         to: Option<String>,
 
+        /// Pivot: show events within +/- --window of this timestamp (ISO 8601 or
+        /// a date). Sugar over --from/--to; cannot be combined with either.
+        #[arg(long, value_name = "TS", conflicts_with_all = ["from", "to"])]
+        around: Option<String>,
+
+        /// Half-width for --around (s/m/h/d, default 5m), e.g. 30s, 2h.
+        #[arg(long, value_name = "DUR", default_value = "5m")]
+        window: String,
+
         /// Typed metadata filter NAME<OP>VAL (OP in =,!=,~). Repeatable.
         #[arg(long = "field", value_name = "NAME<OP>VAL")]
         field: Vec<String>,
@@ -675,6 +684,8 @@ pub fn run() -> ExitCode {
                 path,
                 from,
                 to,
+                around,
+                window,
                 field,
                 ip,
                 user,
@@ -756,6 +767,7 @@ pub fn run() -> ExitCode {
                     let typed = path.is_some()
                         || from.is_some()
                         || to.is_some()
+                        || around.is_some()
                         || !field.is_empty()
                         || ip.is_some()
                         || user.is_some()
@@ -779,16 +791,29 @@ pub fn run() -> ExitCode {
                             // Parse the --from/--to time bounds (loud on bad input). The
                             // enclosing `run() -> ExitCode` cannot use `?`, so the bounds
                             // are resolved here and the arm yields the Result directly.
-                            let bounds = from
-                                .as_deref()
-                                .map(commands::timeline_query::parse_timestamp)
-                                .transpose()
-                                .and_then(|f| {
-                                    to.as_deref()
+                            // `--around PIVOT` is sugar: resolve to a symmetric
+                            // [pivot-window, pivot+window] slice. Otherwise parse
+                            // --from/--to directly. (run() -> ExitCode, so no `?`.)
+                            let bounds: anyhow::Result<(Option<i64>, Option<i64>)> =
+                                if let Some(pivot) = around.as_deref() {
+                                    commands::timeline_query::parse_timestamp(pivot).and_then(|p| {
+                                        commands::timeline_query::parse_window(&window).map(|w| {
+                                            let (f, t) =
+                                                commands::timeline_query::around_bounds(p, w);
+                                            (Some(f), Some(t))
+                                        })
+                                    })
+                                } else {
+                                    from.as_deref()
                                         .map(commands::timeline_query::parse_timestamp)
                                         .transpose()
-                                        .map(|t| (f, t))
-                                });
+                                        .and_then(|f| {
+                                            to.as_deref()
+                                                .map(commands::timeline_query::parse_timestamp)
+                                                .transpose()
+                                                .map(|t| (f, t))
+                                        })
+                                };
                             match bounds {
                                 Err(e) => Err(e),
                                 Ok((from_ns, to_ns)) => {
