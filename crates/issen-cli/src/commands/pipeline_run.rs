@@ -110,6 +110,15 @@ fn archive_member_kinds(path: &Path) -> Option<Vec<EvidenceKind>> {
     Some(kinds)
 }
 
+/// Extract a memory-evidence archive's dump(s) to a fresh temp dir so the
+/// memory leg (which scans directories for loose `.mem`s) can consume them. The
+/// returned [`tempfile::TempDir`] guard must outlive the memory stage.
+fn extract_memory_archive(path: &Path) -> anyhow::Result<(tempfile::TempDir, Vec<PathBuf>)> {
+    // STUB (RED): extracts nothing.
+    let _ = path;
+    Ok((tempfile::tempdir()?, Vec::new()))
+}
+
 /// Run the resumable pipeline over `evidence`.
 ///
 /// # Errors
@@ -438,5 +447,15 @@ mod tests {
             classify_evidence(Path::new("/x/CDrive.E01")),
             Some(EvidenceKind::Disk)
         );
+    }
+
+    #[test]
+    fn extract_memory_archive_yields_the_inner_mem() {
+        let dir = tempfile::tempdir().unwrap();
+        let memzip = zip_with(dir.path(), "DESKTOP-memory.zip", &["DESKTOP-SDN1RPT.mem"]);
+        let (_tmp, mems) = extract_memory_archive(&memzip).expect("extract");
+        assert_eq!(mems.len(), 1, "the inner .mem is extracted");
+        assert_eq!(mems[0].extension().and_then(|e| e.to_str()), Some("mem"));
+        assert!(mems[0].exists(), "the extracted .mem is on disk");
     }
 }
