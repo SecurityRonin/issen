@@ -20,6 +20,10 @@ issen-core     = { workspace = true }
 issen-timeline = { workspace = true }
 issen-unpack   = { workspace = true }
 inventory      = { workspace = true }
+# Read memory dumps straight out of a .zip (DFIR corpora ship dumps zipped) —
+# no temp-file extraction. Deflate64 mirrors the dev-dependency: the Total
+# Recall corpus zip is Deflate64, which the workspace `zip` defaults omit.
+zip = { version = "2", default-features = false, features = ["deflate", "deflate64"] }
 chrono       = { workspace = true }
 serde        = { workspace = true }
 serde_json   = { workspace = true }

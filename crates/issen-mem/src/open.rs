@@ -47,6 +47,17 @@ pub fn detect_format(path: &Path) -> std::io::Result<DumpFormat> {
     })
 }
 
+/// Detect a dump format from its leading bytes — the magic-only core shared by
+/// [`detect_format`] (which reads a file) and the zip path (which has the bytes
+/// already in RAM). A slice shorter than 4 bytes matches no header, so it is
+/// [`DumpFormat::Raw`].
+#[must_use]
+pub fn detect_format_bytes(magic: &[u8]) -> DumpFormat {
+    // RED stub — always Raw until implemented.
+    let _ = magic;
+    DumpFormat::Raw
+}
+
 #[cfg(test)]
 mod tests {
     use std::io::Write;
@@ -94,6 +105,40 @@ mod tests {
     fn detect_nonexistent_file_returns_io_error() {
         let result = detect_format(std::path::Path::new("/nonexistent/does_not_exist.lime"));
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn detect_format_bytes_lime() {
+        assert_eq!(
+            detect_format_bytes(&[0x45, 0x4D, 0x69, 0x4C, 0, 0, 0, 1]),
+            DumpFormat::Lime
+        );
+    }
+
+    #[test]
+    fn detect_format_bytes_avml() {
+        assert_eq!(
+            detect_format_bytes(&[0x61, 0x76, 0x6D, 0x6C, 0, 0, 0, 2]),
+            DumpFormat::Avml
+        );
+    }
+
+    #[test]
+    fn detect_format_bytes_crashdump() {
+        assert_eq!(
+            detect_format_bytes(&[0x50, 0x41, 0x47, 0x45, 0, 0, 0, 0]),
+            DumpFormat::WindowsCrashDump
+        );
+    }
+
+    #[test]
+    fn detect_format_bytes_raw_for_unknown_and_short() {
+        assert_eq!(
+            detect_format_bytes(&[0xDE, 0xAD, 0xBE, 0xEF]),
+            DumpFormat::Raw
+        );
+        assert_eq!(detect_format_bytes(&[0x45, 0x4D]), DumpFormat::Raw);
+        assert_eq!(detect_format_bytes(&[]), DumpFormat::Raw);
     }
 
     #[test]
