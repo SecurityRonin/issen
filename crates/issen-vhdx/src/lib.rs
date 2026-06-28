@@ -4,9 +4,12 @@
 //! Issen pipeline, enabling random-access reads over Microsoft VHDX virtual
 //! disk images.
 
+use std::fs::File;
 use std::io::{Seek, SeekFrom};
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+
+use vhdx::Backing;
 
 use issen_core::error::RtError;
 use issen_core::plugin::traits::DataSource;
@@ -70,12 +73,84 @@ impl VhdxDataSource {
     /// VHDX image. Differencing (parent-linked) disks are not supported.
     pub fn open(path: &Path) -> Result<Self, VhdxError> {
         let reader = vhdx::VhdxReader::open(path)?;
+        Ok(Self::from_reader(reader))
+    }
+
+    /// Open a VHDX image that lives INSIDE a `.zip` — directly, without
+    /// extracting it to a temp directory first.
+    ///
+    /// A `Stored` (uncompressed) entry is read **in place** as a positioned
+    /// sub-range of the zip file ([`Backing::Sub`]); a `Deflated` entry is
+    /// **inflated once into RAM** ([`Backing::Mem`]). Either backing feeds the
+    /// bounded reader, so a stored entry never loads the whole image and an
+    /// inflated entry pays the inflate exactly once.
+    ///
+    /// # Errors
+    /// [`VhdxError`] if the zip cannot be read, holds no `.vhdx` entry, or the
+    /// entry is not a valid VHDX image.
+    pub fn open_zip(zip_path: &Path) -> Result<Self, VhdxError> {
+        use std::io::Read as _;
+
+        // One handle backs the in-place `Sub` reads; a second drives the zip's
+        // central-directory walk + on-demand inflation.
+        let backing_file = Arc::new(File::open(zip_path)?);
+        let mut archive = zip::ZipArchive::new(File::open(zip_path)?)
+            .map_err(|e| VhdxError::Vhdx(format!("zip open: {e}")))?;
+
+        let mut chosen: Option<Backing> = None;
+        for i in 0..archive.len() {
+            let mut entry = archive
+                .by_index(i)
+                .map_err(|e| VhdxError::Vhdx(format!("zip entry {i}: {e}")))?;
+            if !is_vhdx_entry(entry.name()) {
+                continue;
+            }
+            let backing = if entry.compression() == zip::CompressionMethod::Stored {
+                // Contiguous, uncompressed → read straight from the zip at its
+                // data offset. Zero extraction, zero inflate, bounded reads.
+                Backing::sub(Arc::clone(&backing_file), entry.data_start(), entry.size())
+            } else {
+                // Deflated → inflate the whole entry once into RAM (deflate is
+                // sequential), then read it via Backing::Mem.
+                let mut buf = Vec::with_capacity(usize::try_from(entry.size()).unwrap_or(0));
+                entry
+                    .read_to_end(&mut buf)
+                    .map_err(|e| VhdxError::Vhdx(format!("inflate {}: {e}", entry.name())))?;
+                Backing::from_bytes(buf)
+            };
+            chosen = Some(backing);
+            break;
+        }
+
+        let backing = chosen.ok_or_else(|| {
+            VhdxError::Vhdx(format!("no .vhdx entry found in {}", zip_path.display()))
+        })?;
+        let reader = vhdx::VhdxReader::from_backing(backing, None)?;
+        Ok(Self::from_reader(reader))
+    }
+
+    /// Wrap an already-opened reader (shared by `open`/`open_zip`).
+    fn from_reader(reader: vhdx::VhdxReader) -> Self {
         let size = reader.virtual_disk_size();
-        Ok(Self {
+        Self {
             reader: Mutex::new(reader),
             size,
-        })
+        }
     }
+}
+
+/// True when a zip entry names a VHDX container — a basename ending in `.vhdx`
+/// (case-insensitive). Excludes directory entries and other artifacts.
+fn is_vhdx_entry(name: &str) -> bool {
+    if name.ends_with('/') {
+        return false;
+    }
+    let base = name.rsplit(['/', '\\']).next().unwrap_or(name);
+    base.len() > 5
+        && base
+            .rsplit('.')
+            .next()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("vhdx"))
 }
 
 impl DataSource for VhdxDataSource {
@@ -264,5 +339,82 @@ mod tests {
             names.contains(&"VHDX".to_string()),
             "VhdxProvider must be in inventory; got: {names:?}"
         );
+    }
+
+    // ── open_zip tests ────────────────────────────────────────────────────
+
+    #[test]
+    fn is_vhdx_entry_recognizes_only_vhdx_basenames() {
+        assert!(is_vhdx_entry("disk.vhdx"));
+        assert!(is_vhdx_entry("case/DC01.VHDX")); // case-insensitive ext
+        assert!(is_vhdx_entry("nested/dir/image.vhdx"));
+        assert!(!is_vhdx_entry("disk.vhd")); // VHD, not VHDX
+        assert!(!is_vhdx_entry("disk.vhdx.txt")); // sidecar
+        assert!(!is_vhdx_entry("notes.txt"));
+        assert!(!is_vhdx_entry("case/")); // directory entry
+        assert!(!is_vhdx_entry(".vhdx")); // no stem
+    }
+
+    /// `open_zip` over a zip with no `.vhdx` entry must fail loud (never a
+    /// silent empty source).
+    #[test]
+    fn open_zip_without_vhdx_entry_returns_err() {
+        use std::io::Write as _;
+        let zip_path = std::env::temp_dir().join("issen_vhdx_no_entry.zip");
+        {
+            let f = std::fs::File::create(&zip_path).expect("create zip");
+            let mut zw = zip::ZipWriter::new(f);
+            zw.start_file("notes.txt", zip::write::SimpleFileOptions::default())
+                .expect("start");
+            zw.write_all(b"nothing here").expect("write");
+            zw.finish().expect("finish");
+        }
+        let res = VhdxDataSource::open_zip(&zip_path);
+        let _ = std::fs::remove_file(&zip_path);
+        assert!(res.is_err(), "zip without a .vhdx entry must fail");
+    }
+
+    /// Zip a real loose `.vhdx` BOTH stored and deflated and assert that
+    /// `open_zip` reads byte-identical to `open(loose)` over the whole virtual
+    /// disk — proving the `Sub` (in-place) and `Mem` (inflate) backings.
+    ///
+    /// Env-gated (fleet real-data pattern): point `ISSEN_VHDX_TEST` at a small
+    /// `.vhdx`. Skips cleanly when unset.
+    #[test]
+    fn open_zip_matches_open_loose_stored_and_deflated() {
+        use std::io::Write as _;
+
+        let Ok(vhdx_path) = std::env::var("ISSEN_VHDX_TEST") else {
+            eprintln!("skip open_zip test: set ISSEN_VHDX_TEST to a .vhdx path");
+            return;
+        };
+        let vhdx_path = std::path::PathBuf::from(vhdx_path);
+
+        let oracle = VhdxDataSource::open(&vhdx_path).expect("open loose vhdx");
+        let total = oracle.len() as usize;
+        let mut want = vec![0u8; total];
+        oracle.read_at(0, &mut want).expect("read loose full");
+
+        let bytes = std::fs::read(&vhdx_path).expect("read vhdx bytes");
+        for method in [
+            zip::CompressionMethod::Stored,
+            zip::CompressionMethod::Deflated,
+        ] {
+            let zip_path = std::env::temp_dir().join(format!("issen_vhdx_bridge_{method:?}.zip"));
+            {
+                let f = std::fs::File::create(&zip_path).expect("create zip");
+                let mut zw = zip::ZipWriter::new(f);
+                let opts = zip::write::SimpleFileOptions::default().compression_method(method);
+                zw.start_file("image.vhdx", opts).expect("start_file");
+                zw.write_all(&bytes).expect("write entry");
+                zw.finish().expect("finish");
+            }
+            let via_zip = VhdxDataSource::open_zip(&zip_path).expect("open_zip");
+            assert_eq!(via_zip.len() as usize, total, "{method:?} len");
+            let mut got = vec![0u8; total];
+            via_zip.read_at(0, &mut got).expect("read via zip");
+            let _ = std::fs::remove_file(&zip_path);
+            assert!(want == got, "{method:?}: open_zip must match open(loose)");
+        }
     }
 }

@@ -2467,7 +2467,7 @@ dependencies = [
  "mbr-partition-forensic",
  "qcow2-core 0.2.0",
  "thiserror 2.0.18",
- "vhdx-core",
+ "vhdx-core 0.2.1",
  "vmdk-core",
  "vmdk-forensic",
 ]
@@ -4590,6 +4590,7 @@ dependencies = [
  "issen-unpack",
  "tempfile",
  "thiserror 2.0.18",
+ "zip 2.4.2",
 ]
 
 [[package]]
@@ -5310,7 +5311,8 @@ dependencies = [
  "issen-unpack",
  "tempfile",
  "thiserror 2.0.18",
- "vhdx-core",
+ "vhdx-core 0.3.0",
+ "zip 2.4.2",
 ]
 
 [[package]]
@@ -5324,6 +5326,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "vmdk-core",
+ "zip 2.4.2",
 ]
 
 [[package]]
@@ -10940,6 +10943,15 @@ name = "vhdx-core"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "368f616d88cef74cfc08f507699d2f77df82f302d994cf2b9a6757aaf28b6a80"
+dependencies = [
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "vhdx-core"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a2aba7c23ae8ca0d4b383a868cb7e1540c32f0503af0c1a020124bf10716d04"
 dependencies = [
  "thiserror 2.0.18",
 ]

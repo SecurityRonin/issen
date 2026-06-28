@@ -208,7 +208,7 @@ useract-forensic = "0.3"
 goblin       = { version = "0.10", default-features = false, features = ["pe32", "pe64", "std"] }
 ewf          = "0.3"
 vhd          = "0.1.0"
-vhdx         = { version = "0.2.1", package = "vhdx-core" }
+vhdx         = { version = "0.3.0", package = "vhdx-core" }
 vmdk         = { version = "0.7", package = "vmdk-core" }
 qcow2        = { version = "0.3", package = "qcow2-core" }
 iso9660-forensic = "0.6"
