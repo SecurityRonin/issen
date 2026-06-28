@@ -11,13 +11,54 @@
 //!
 //! [`EntityRef::Ip`]: issen_core::timeline::event::EntityRef::Ip
 
+use chrono::DateTime;
+
 use crate::correlation::Correlation;
 use crate::evaluator::{evaluate, EventView, RuleSpec, ScopeRule};
 
-/// Examiner-facing note — an observation, never a verdict.
+/// Examiner-facing note — an observation, never a verdict. The generic phrasing
+/// used when the anchor carries no burst summary; [`bruteforce_note`] supersedes
+/// it with the concrete failure count + window when the summary is present.
 pub const BRUTEFORCE_NOTE: &str =
     "A failed-logon burst followed by a successful logon from the same source IP \
      is consistent with a successful brute-force attempt (T1110).";
+
+/// One second in nanoseconds — the granularity at which a burst's first/last
+/// failures count as the "same instant" (so a same-second burst shows one time,
+/// not a spurious from→to range).
+const NS_PER_SEC: i64 = 1_000_000_000;
+
+/// Render a nanosecond instant as `YYYY-MM-DD HH:MM:SS UTC`. An out-of-range
+/// value (beyond chrono's representable span) falls back to the raw nanoseconds
+/// rather than panicking.
+fn fmt_instant(ns: i64) -> String {
+    DateTime::from_timestamp_nanos(ns)
+        .format("%Y-%m-%d %H:%M:%S UTC")
+        .to_string()
+}
+
+/// The concrete brute-force note: how many failures, over what window, then a
+/// success from the same source IP. A burst whose failures all land in one
+/// wall-clock second collapses to a single instant ("at T") instead of a range
+/// ("between T1 and T2"). Stays an observation — "consistent with", never a
+/// verdict.
+#[must_use]
+pub fn bruteforce_note(failure_count: usize, first_ns: i64, last_ns: i64) -> String {
+    let when = if first_ns.div_euclid(NS_PER_SEC) == last_ns.div_euclid(NS_PER_SEC) {
+        format!("at {}", fmt_instant(first_ns))
+    } else {
+        format!(
+            "between {} and {}",
+            fmt_instant(first_ns),
+            fmt_instant(last_ns)
+        )
+    };
+    format!(
+        "A burst of {failure_count} failed logons {when}, followed by a successful \
+         logon from the same source IP, is consistent with a successful \
+         brute-force attempt (T1110)."
+    )
+}
 
 /// 30 minutes in nanoseconds — the burst→success window (plan v4 §5.2).
 pub const BRUTEFORCE_WINDOW_NS: i64 = 30 * 60 * 1_000_000_000;
@@ -53,7 +94,16 @@ where
     A: EventView,
     C: EventView,
 {
-    evaluate(&bruteforce_rule(), burst, successes)
+    let correlation = evaluate(&bruteforce_rule(), burst, successes)?;
+    // When the anchor carries a burst summary (the runner's synthesized
+    // LogonFailureBurst does), supersede the generic note with the concrete
+    // failure count + window. An anchor without one keeps the static note.
+    Some(match burst.burst_summary() {
+        Some((count, first_ns, last_ns)) => {
+            correlation.with_note(bruteforce_note(count, first_ns, last_ns))
+        }
+        None => correlation,
+    })
 }
 
 #[cfg(test)]

@@ -40,6 +40,12 @@ struct BurstAnchor {
     timestamp_ns: i64,
     entity_refs: Vec<EntityRef>,
     hostname: Option<String>,
+    /// How many failed logons the burst gathered, and the span (earliest →
+    /// latest failure) they covered — surfaced through [`EventView::burst_summary`]
+    /// so the brute-force note can state "N failed logons between T1 and T2".
+    failure_count: usize,
+    first_failure_ns: i64,
+    last_failure_ns: i64,
 }
 
 impl EventView for BurstAnchor {
@@ -60,6 +66,13 @@ impl EventView for BurstAnchor {
     }
     fn source(&self) -> EventSource {
         EventSource::Evtx
+    }
+    fn burst_summary(&self) -> Option<(usize, i64, i64)> {
+        Some((
+            self.failure_count,
+            self.first_failure_ns,
+            self.last_failure_ns,
+        ))
     }
 }
 
@@ -112,6 +125,12 @@ impl EventView for RunInput {
         match self {
             Self::Stored(e) => e.artifact_path(),
             Self::Burst(e) => e.artifact_path(),
+        }
+    }
+    fn burst_summary(&self) -> Option<(usize, i64, i64)> {
+        match self {
+            Self::Stored(e) => e.burst_summary(),
+            Self::Burst(e) => e.burst_summary(),
         }
     }
 }
@@ -194,9 +213,13 @@ fn burst_anchors(events: &[StoredEvent]) -> Vec<BurstAnchor> {
         if group.first().map(|e| e.event_type.as_str()) != Some("LogonFailure") {
             continue;
         }
-        // The latest member fronts the burst (its id keys the persisted member).
+        // The latest member fronts the burst (its id keys the persisted member);
+        // the earliest bounds the failure window for the note.
         let Some(last) = group.iter().max_by_key(|e| e.timestamp_ns) else {
             continue; // cov:unreachable: burst_windows never emits an empty group
+        };
+        let Some(first) = group.iter().min_by_key(|e| e.timestamp_ns) else {
+            continue; // cov:unreachable: a non-empty group always has a minimum
         };
         // Join on the entity every member shares: the source IP if present, else
         // the account. RDP brute-force is frequently logged with Session 0 and no
@@ -209,6 +232,9 @@ fn burst_anchors(events: &[StoredEvent]) -> Vec<BurstAnchor> {
             timestamp_ns: last.timestamp_ns,
             entity_refs: vec![join],
             hostname: last.hostname.clone(),
+            failure_count: group.len(),
+            first_failure_ns: first.timestamp_ns,
+            last_failure_ns: last.timestamp_ns,
         });
     }
     anchors
