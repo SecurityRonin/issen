@@ -6,12 +6,17 @@
 
 use std::fs::File;
 use std::io::Read;
-use std::io::{Seek, SeekFrom};
+use std::io::{Cursor, Seek, SeekFrom};
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use issen_core::error::RtError;
 use issen_core::plugin::traits::DataSource;
+
+/// A seekable, thread-safe byte source the raw reader can sit on: a `File`, an
+/// in-RAM `Cursor`, or a positioned sub-range of a `.zip`.
+pub trait ReadSeekSend: Read + Seek + Send + Sync {}
+impl<T: Read + Seek + Send + Sync> ReadSeekSend for T {}
 
 /// Errors specific to raw image operations.
 #[derive(Debug, thiserror::Error)]
@@ -30,7 +35,7 @@ impl From<DdError> for RtError {
 
 /// A [`DataSource`] backed by a raw (dd) disk image.
 pub struct DdDataSource {
-    reader: Mutex<File>,
+    reader: Mutex<Box<dyn ReadSeekSend>>,
     size: u64,
 }
 
@@ -48,7 +53,7 @@ impl DdDataSource {
         let reader = File::open(path).map_err(DdError::Io)?;
         let size = reader.metadata().map_err(DdError::Io)?.len();
         Ok(Self {
-            reader: Mutex::new(reader),
+            reader: Mutex::new(Box::new(reader)),
             size,
         })
     }
@@ -56,17 +61,140 @@ impl DdDataSource {
     /// Open a raw (dd) image that lives INSIDE a `.zip` — directly, without
     /// extracting it to a temp directory first. A `Stored` entry is read in
     /// place (a positioned sub-range of the zip); a `Deflated` entry is inflated
-    /// once into RAM. The dump entry is chosen by raw-image extension, else the
+    /// once into RAM. The image entry is chosen by raw-image extension, else the
     /// largest file entry.
     ///
     /// # Errors
     /// [`DdError`] if the zip cannot be read or holds no file entry.
     pub fn open_zip(zip_path: &Path) -> Result<Self, DdError> {
-        let _ = zip_path;
-        Err(DdError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "open_zip not implemented",
-        ))) // RED stub
+        let backing = Arc::new(File::open(zip_path).map_err(DdError::Io)?);
+        let mut archive = zip::ZipArchive::new(File::open(zip_path).map_err(DdError::Io)?)
+            .map_err(|e| DdError::Io(std::io::Error::other(format!("zip open: {e}"))))?;
+
+        let idx = find_image_entry(&mut archive).ok_or_else(|| {
+            DdError::Io(std::io::Error::other(format!(
+                "no file entry found in {}",
+                zip_path.display()
+            )))
+        })?;
+        let mut entry = archive
+            .by_index(idx)
+            .map_err(|e| DdError::Io(std::io::Error::other(format!("zip entry {idx}: {e}"))))?;
+
+        let (reader, size): (Box<dyn ReadSeekSend>, u64) =
+            if entry.compression() == zip::CompressionMethod::Stored {
+                let size = entry.size();
+                let sub = SubRangeReader::new(Arc::clone(&backing), entry.data_start(), size);
+                (Box::new(sub), size)
+            } else {
+                let mut buf = Vec::with_capacity(usize::try_from(entry.size()).unwrap_or(0));
+                entry
+                    .read_to_end(&mut buf)
+                    .map_err(|e| DdError::Io(std::io::Error::other(format!("inflate: {e}"))))?;
+                let size = buf.len() as u64;
+                (Box::new(Cursor::new(buf)), size)
+            };
+
+        Ok(Self {
+            reader: Mutex::new(reader),
+            size,
+        })
+    }
+}
+
+/// Raw-image entry extensions recognized inside a zip (lowercase, no dot).
+const DD_EXTS: &[&str] = &["dd", "img", "raw", "bin", "001"];
+
+/// Choose the raw-image entry: an entry with a raw-image extension, else the
+/// largest file entry (the image dominates the archive).
+fn find_image_entry(archive: &mut zip::ZipArchive<File>) -> Option<usize> {
+    let mut by_ext: Option<usize> = None;
+    let mut largest: Option<(usize, u64)> = None;
+    for i in 0..archive.len() {
+        let Ok(entry) = archive.by_index(i) else {
+            continue;
+        };
+        if entry.is_dir() {
+            continue;
+        }
+        let size = entry.size();
+        if by_ext.is_none() {
+            let is_img = Path::new(entry.name())
+                .extension()
+                .and_then(|x| x.to_str())
+                .map(str::to_ascii_lowercase)
+                .is_some_and(|x| DD_EXTS.contains(&x.as_str()));
+            if is_img {
+                by_ext = Some(i);
+            }
+        }
+        if largest.is_none_or(|(_, s)| size > s) {
+            largest = Some((i, size));
+        }
+    }
+    by_ext.or(largest.map(|(i, _)| i))
+}
+
+/// A positioned, read-only window `[base, base + len)` over a shared file — lets
+/// the raw reader sit directly on a `Stored` zip entry without extraction. Uses
+/// positioned reads (no `&mut` on the file), so it is `Send + Sync`.
+struct SubRangeReader {
+    file: Arc<File>,
+    base: u64,
+    len: u64,
+    pos: u64,
+}
+
+impl SubRangeReader {
+    fn new(file: Arc<File>, base: u64, len: u64) -> Self {
+        Self {
+            file,
+            base,
+            len,
+            pos: 0,
+        }
+    }
+}
+
+impl Read for SubRangeReader {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let remaining = self.len.saturating_sub(self.pos);
+        if remaining == 0 || buf.is_empty() {
+            return Ok(0);
+        }
+        let to_read = (buf.len() as u64).min(remaining) as usize;
+        #[cfg(unix)]
+        let n = {
+            use std::os::unix::fs::FileExt;
+            self.file
+                .read_at(&mut buf[..to_read], self.base + self.pos)?
+        };
+        #[cfg(windows)]
+        let n = {
+            use std::os::windows::fs::FileExt;
+            self.file
+                .seek_read(&mut buf[..to_read], self.base + self.pos)?
+        };
+        self.pos += n as u64;
+        Ok(n)
+    }
+}
+
+impl Seek for SubRangeReader {
+    fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
+        let new_pos = match pos {
+            SeekFrom::Start(n) => n as i64,
+            SeekFrom::Current(n) => self.pos as i64 + n,
+            SeekFrom::End(n) => self.len as i64 + n,
+        };
+        if new_pos < 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "seek before start",
+            ));
+        }
+        self.pos = new_pos as u64;
+        Ok(self.pos)
     }
 }
 
