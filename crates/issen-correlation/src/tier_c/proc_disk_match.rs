@@ -25,8 +25,8 @@ use super::{MemEvent, FILE_CREATE_EVENT_TYPE, PROCESS_EXEC_EVENT_TYPE};
 
 /// Examiner-facing note — an observation, never a verdict.
 pub const PROC_DISK_MATCH_NOTE: &str =
-    "A process resident in a memory dump whose image name matches an on-disk file \
-     create is consistent with the on-disk artifact being the running process \
+    "A file created on disk and subsequently found running as a live process in a \
+     memory dump is consistent with that on-disk artifact having been executed \
      (T1055 / T1105).";
 
 /// The image stem a memory `ProcessExec` row names, via its
