@@ -210,7 +210,7 @@ ewf          = "0.3"
 vhd          = "0.1.0"
 vhdx         = { version = "0.3.0", package = "vhdx-core" }
 vmdk         = { version = "0.7", package = "vmdk-core" }
-qcow2        = { version = "0.3", package = "qcow2-core" }
+qcow2        = { version = "0.3.1", package = "qcow2-core" }
 iso9660-forensic = "0.6"
 aff4         = "0.1.0"
 evtx         = { version = "0.11", default-features = false }

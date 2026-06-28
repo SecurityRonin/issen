@@ -65,6 +65,19 @@ impl Qcow2DataSource {
             size,
         })
     }
+
+    /// Open a QCOW2 image whose `.qcow2` file lives INSIDE a `.zip` — directly,
+    /// without extracting it to a temp directory first. A `Stored` entry is read
+    /// in place (a positioned sub-range of the zip); a `Deflated` entry is
+    /// inflated once into RAM and read from a `Cursor`. Either backing feeds
+    /// `Qcow2Reader::open_reader`, whose lazy L1/L2 tables stay bounded.
+    ///
+    /// # Errors
+    /// [`Qcow2Error`] if the zip cannot be read or holds no `.qcow2` entry.
+    pub fn open_zip(zip_path: &Path) -> Result<Self, Qcow2Error> {
+        let _ = zip_path;
+        Err(Qcow2Error::Qcow2("open_zip not implemented".into())) // RED stub
+    }
 }
 
 impl DataSource for Qcow2DataSource {
@@ -177,6 +190,59 @@ mod tests {
     fn qcow2_data_source_is_send_and_sync() {
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<Qcow2DataSource>();
+    }
+
+    /// Write `data` into a single-entry zip with the given compression method.
+    fn make_zip(
+        name: &str,
+        data: &[u8],
+        method: zip::CompressionMethod,
+    ) -> tempfile::NamedTempFile {
+        use zip::write::SimpleFileOptions;
+        let mut cursor = std::io::Cursor::new(Vec::<u8>::new());
+        {
+            let mut zw = zip::ZipWriter::new(&mut cursor);
+            let opts = SimpleFileOptions::default().compression_method(method);
+            zw.start_file(name, opts).expect("start_file");
+            zw.write_all(data).expect("write entry");
+            zw.finish().expect("finish zip");
+        }
+        let mut f = tempfile::Builder::new()
+            .suffix(".zip")
+            .tempfile()
+            .expect("tempfile");
+        f.write_all(cursor.get_ref()).expect("write zip");
+        f.flush().expect("flush");
+        f
+    }
+
+    /// The oracle: open_zip over a zipped image (BOTH Stored and Deflated)
+    /// reads byte-identically to opening the loose `.qcow2` directly.
+    #[test]
+    fn open_zip_matches_open_loose_stored_and_deflated() {
+        let mut data = vec![0u8; 1024];
+        data[10] = 0xCA;
+        data[11] = 0xFE;
+        data[600] = 0x42;
+        let img = qcow2::testutil::test_qcow2(&data);
+
+        let loose = write_tmp(&img);
+        let oracle = Qcow2DataSource::open(loose.path()).expect("open loose");
+        let size = oracle.len();
+        let mut want = vec![0u8; size as usize];
+        oracle.read_at(0, &mut want).expect("read loose");
+
+        for method in [
+            zip::CompressionMethod::Stored,
+            zip::CompressionMethod::Deflated,
+        ] {
+            let zip = make_zip("disk.qcow2", &img, method);
+            let via_zip = Qcow2DataSource::open_zip(zip.path()).expect("open_zip");
+            assert_eq!(via_zip.len(), size, "size mismatch for {method:?}");
+            let mut got = vec![0u8; size as usize];
+            via_zip.read_at(0, &mut got).expect("read via zip");
+            assert_eq!(got, want, "byte mismatch for {method:?}");
+        }
     }
 
     #[test]

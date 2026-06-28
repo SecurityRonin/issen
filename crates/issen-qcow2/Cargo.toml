@@ -16,6 +16,7 @@ issen-core   = { workspace = true }
 issen-unpack = { workspace = true }
 inventory    = { workspace = true }
 qcow2        = { workspace = true }
+zip          = { workspace = true }
 thiserror    = { workspace = true }
 tempfile     = { workspace = true }
 

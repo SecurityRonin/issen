@@ -5166,9 +5166,10 @@ dependencies = [
  "inventory",
  "issen-core",
  "issen-unpack",
- "qcow2-core 0.3.0",
+ "qcow2-core 0.3.1",
  "tempfile",
  "thiserror 2.0.18",
+ "zip 2.4.2",
 ]
 
 [[package]]
@@ -7893,9 +7894,9 @@ dependencies = [
 
 [[package]]
 name = "qcow2-core"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dc58d234981c0bdd1f8b885de0da037968589aa686c26344cceccfa62a20784"
+checksum = "433a47c82a16af770359f26da72254245b8dcb328bf7a8c9c6ebf8d2d786def8"
 dependencies = [
  "flate2",
  "thiserror 2.0.18",
