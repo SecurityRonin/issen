@@ -2458,7 +2458,7 @@ checksum = "35ca50118614dcffca2345581a28cc75caa78b81a7cf04cd2e4024e59ad138e0"
 dependencies = [
  "apm-partition-forensic",
  "dmg-core",
- "ewf",
+ "ewf 0.2.3",
  "forensicnomicon",
  "gpt-partition-forensic",
  "iso9660-forensic",
@@ -2894,6 +2894,23 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2fde641ed13ecc3cbefd1db2133530f4d7ac681bdd4a60aee0563279fca97fb"
 dependencies = [
+ "flate2",
+ "glob",
+ "log",
+ "lru 0.12.5",
+ "md-5",
+ "rayon",
+ "sha-1",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ewf"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7b5e81c6ce862c8787977bfa243e5d8dd67e9deb79c00a496695e90533ea7df"
+dependencies = [
+ "adler2",
  "flate2",
  "glob",
  "log",
@@ -4421,7 +4438,7 @@ dependencies = [
 
 [[package]]
 name = "issen-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -4508,6 +4525,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "sha2",
  "tar",
  "tempfile",
  "thiserror 2.0.18",
@@ -4565,7 +4583,7 @@ name = "issen-ewf"
 version = "0.1.0"
 dependencies = [
  "bytes",
- "ewf",
+ "ewf 0.3.0",
  "inventory",
  "issen-core",
  "issen-disk",

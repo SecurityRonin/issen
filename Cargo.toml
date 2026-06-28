@@ -206,7 +206,7 @@ segb             = { version = "0.1", package = "segb-core" }
 segb-forensic    = "0.1"
 useract-forensic = "0.3"
 goblin       = { version = "0.10", default-features = false, features = ["pe32", "pe64", "std"] }
-ewf          = "0.2"
+ewf          = "0.3"
 vhd          = "0.1.0"
 vhdx         = { version = "0.2.1", package = "vhdx-core" }
 vmdk         = { version = "0.7", package = "vmdk-core" }
