@@ -20,8 +20,9 @@ use crate::evaluator::{evaluate, EventView, RuleSpec, ScopeRule};
 /// used when the anchor carries no burst summary; [`bruteforce_note`] supersedes
 /// it with the concrete failure count + window when the summary is present.
 pub const BRUTEFORCE_NOTE: &str =
-    "A failed-logon burst followed by a successful logon from the same source IP \
-     is consistent with a successful brute-force attempt (T1110).";
+    "A failed-logon burst followed by a successful logon linked to the same source \
+     IP or targeted account is consistent with a successful brute-force attempt \
+     (T1110).";
 
 /// One second in nanoseconds — the granularity at which a burst's first/last
 /// failures count as the "same instant" (so a same-second burst shows one time,
@@ -55,8 +56,8 @@ pub fn bruteforce_note(failure_count: usize, first_ns: i64, last_ns: i64) -> Str
     };
     format!(
         "A burst of {failure_count} failed logons {when}, followed by a successful \
-         logon from the same source IP, is consistent with a successful \
-         brute-force attempt (T1110)."
+         logon linked to the same source IP or targeted account, is consistent \
+         with a successful brute-force attempt (T1110)."
     )
 }
 
@@ -184,6 +185,32 @@ mod tests {
             corr.note
         );
         assert!(corr.note.contains("consistent with"));
+    }
+
+    #[test]
+    fn renders_the_real_case001_administrator_burst() {
+        // Grounded in the actual Case-001 DC01 burst (derived from the stored
+        // timeline): 95 failed logons 03:21:25 → 03:21:46 UTC against the
+        // Administrator account (Session 0, no source IP — joined on the account,
+        // which is exactly why the note can't claim "source IP" alone).
+        use chrono::{TimeZone, Utc};
+        let first = Utc
+            .with_ymd_and_hms(2020, 9, 19, 3, 21, 25)
+            .single()
+            .and_then(|t| t.timestamp_nanos_opt())
+            .expect("a representable instant");
+        let last = Utc
+            .with_ymd_and_hms(2020, 9, 19, 3, 21, 46)
+            .single()
+            .and_then(|t| t.timestamp_nanos_opt())
+            .expect("a representable instant");
+        assert_eq!(
+            bruteforce_note(95, first, last),
+            "A burst of 95 failed logons between 2020-09-19 03:21:25 UTC and \
+             2020-09-19 03:21:46 UTC, followed by a successful logon linked to the \
+             same source IP or targeted account, is consistent with a successful \
+             brute-force attempt (T1110)."
+        );
     }
 
     // ── Negative controls ────────────────────────────────────────────────────
