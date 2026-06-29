@@ -467,6 +467,43 @@ mod tests {
             .is_err());
     }
 
+    fn zip_named(entry: &str) -> tempfile::NamedTempFile {
+        use std::io::Write;
+        use zip::write::SimpleFileOptions;
+        let mut cursor = std::io::Cursor::new(Vec::<u8>::new());
+        {
+            let mut zw = zip::ZipWriter::new(&mut cursor);
+            zw.start_file(entry, SimpleFileOptions::default()).unwrap();
+            zw.write_all(b"content").unwrap();
+            zw.finish().unwrap();
+        }
+        let mut f = tempfile::Builder::new().suffix(".zip").tempfile().unwrap();
+        f.write_all(cursor.get_ref()).unwrap();
+        f.flush().unwrap();
+        f
+    }
+
+    #[test]
+    fn ewf_provider_probe_zip_wrapping_e01_returns_high() {
+        // A zip whose entry is a .E01 segment: claim it for zip-direct ingest
+        // (High beats the generic archive provider's Medium) — no extraction.
+        let f = zip_named("E01-DC01/20200918_CDrive.E01");
+        assert_eq!(
+            EwfProvider.probe(f.path()).expect("probe"),
+            Confidence::High
+        );
+    }
+
+    #[test]
+    fn ewf_provider_probe_zip_without_e01_returns_none() {
+        // No .E01 inside → defer to the archive provider (loose-artifact extract).
+        let f = zip_named("notes.txt");
+        assert_eq!(
+            EwfProvider.probe(f.path()).expect("probe"),
+            Confidence::None
+        );
+    }
+
     #[test]
     fn ewf_provider_open_invalid_returns_err() {
         use std::io::Write;
