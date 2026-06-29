@@ -381,7 +381,7 @@ pub fn archive_backing(
         Some(ArchiveFormat::Zip) => zip_backing(path, plan, exts),
         Some(ArchiveFormat::SevenZ) => first_entry(sevenz_entries(path, plan, exts)?, path, exts),
         Some(ArchiveFormat::Gzip) => first_entry(targz_entries(path, plan, exts)?, path, exts),
-        Some(ArchiveFormat::Bzip2) => first_entry(tarbz2_entries(path, plan, exts)?, path, exts),
+        Some(ArchiveFormat::Bzip2) => first_entry(bzip2_entries(plan, path, exts)?, path, exts),
         Some(other) => Err(io::Error::other(format!(
             "{}: archive format {other:?} not yet supported",
             path.display()
@@ -668,7 +668,7 @@ pub fn archive_entries(
         Some(ArchiveFormat::Zip) => zip_entries(path, plan, exts),
         Some(ArchiveFormat::SevenZ) => sevenz_entries(path, plan, exts),
         Some(ArchiveFormat::Gzip) => targz_entries(path, plan, exts),
-        Some(ArchiveFormat::Bzip2) => tarbz2_entries(path, plan, exts),
+        Some(ArchiveFormat::Bzip2) => bzip2_entries(plan, path, exts),
         Some(other) => Err(io::Error::other(format!(
             "{}: archive format {other:?} not yet supported",
             path.display()
@@ -903,15 +903,47 @@ fn targz_entries(
     tar_entries_from(decoded, plan, exts, &temp_dir, temp_free, "tar.gz")
 }
 
-fn tarbz2_entries(
+/// bzip2 is the one stream codec with a random-access unit (its independent
+/// ~900 KB blocks), so it gets the *selective* path instead of a full spill: a
+/// `.tar.bz2` member is a `RangeView` over a shared seekable reader (only the
+/// covering blocks inflate), and a bare `.bz2` image is one such view over the
+/// whole stream. See `docs/selective-decompression-triage.md`.
+fn bzip2_entries(
+    _plan: &SpillPlan,
     path: &Path,
-    plan: &SpillPlan,
     exts: &[&str],
 ) -> io::Result<Vec<(String, Box<dyn ReadSeekSend>)>> {
-    let temp_dir = storage_backed_temp_dir();
-    let temp_free = temp_free_bytes(&temp_dir);
-    let decoded = bzip2_rs::DecoderReader::new(File::open(path)?);
-    tar_entries_from(decoded, plan, exts, &temp_dir, temp_free, "tar.bz2")
+    let reader = Arc::new(crate::bzseek::Bzip2SeekReader::open(Box::new(File::open(
+        path,
+    )?))?);
+    // A tar.bz2 carries the ustar magic at offset 257 of the decompressed stream;
+    // a bare compressed image does not.
+    let mut magic = [0u8; 5];
+    let is_tar = reader.read_at(257, &mut magic)? == 5 && &magic == b"ustar";
+    if !is_tar {
+        // The whole decompressed stream is the image; one selective view over it.
+        let total = reader.len();
+        return Ok(vec![(
+            "<bz2-stream>".to_string(),
+            Box::new(crate::bzseek::RangeView::new(reader, 0, total)),
+        )]);
+    }
+    let mut out: Vec<(String, Box<dyn ReadSeekSend>)> = Vec::new();
+    for (name, off, size) in crate::bzseek::tar_members(&reader)? {
+        if !ext_matches(&name, exts) {
+            continue;
+        }
+        tracing::debug!(target: "issen::backing", entry = %name, format = "tar.bz2", off, size, "selective member");
+        out.push((
+            name,
+            Box::new(crate::bzseek::RangeView::new(
+                Arc::clone(&reader),
+                off,
+                size,
+            )),
+        ));
+    }
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -1579,6 +1611,20 @@ mod tests {
             read_all(archive_backing(t.path(), &big_plan(None), &["dd"]).unwrap()),
             p
         );
+    }
+
+    #[test]
+    fn archive_entries_tarbz2_selective_members() {
+        // Multi-member .tar.bz2 → each matching member is a selective RangeView
+        // over a shared seekable reader; the .txt is skipped.
+        let a = pattern(120_000);
+        let b = pattern(90_000);
+        let t = make_tarbz2(&[("disk.E01", &a), ("notes.txt", b"skip"), ("disk.E02", &b)]);
+        let got =
+            collect_named(archive_entries(t.path(), &big_plan(None), &["e01", "e02"]).unwrap());
+        assert_eq!(got.len(), 2, "two image segments, the .txt skipped");
+        assert_eq!(got[0].1, a);
+        assert_eq!(got[1].1, b);
     }
 
     #[test]
