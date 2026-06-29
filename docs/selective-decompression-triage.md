@@ -261,7 +261,10 @@ evidence arrived as `.bz2` instead of `.zip`, is it the better "best case"? The
 four files were recompressed at **max bzip2 (-9)** (E01 segments → `.tar.bz2`,
 memory dumps → `.bz2`) and compared. The answer is **no, twice over.**
 
-**Size — bz2 is not smaller (often larger):**
+**Size — no win on *this* evidence (which is the exception, not the rule).**
+In general bzip2 compresses **~10–15% smaller** than zip/gzip on text-like data
+(at a 3–6× speed cost) — that is the documented norm. This forensic corpus is an
+atypical case where that advantage evaporates:
 
 | Source | zip | bz2 (-9) | bz2 / zip |
 |---|---|---|---|
@@ -270,10 +273,20 @@ memory dumps → `.bz2`) and compared. The answer is **no, twice over.**
 | DC01 E01 (2 segments) | 4.50 GiB | 4.45 GiB | 98.8% |
 | Desktop E01 (4 segments) | 6.37 GiB | 6.41 GiB | 100.5% |
 
-E01 is **already zlib-compressed internally**, so neither codec can squeeze it
-further — both land within a percent of the raw E01. On the raw memory dumps,
-DEFLATE actually **beats** bzip2's block-sort by 2–9%. "Max compression bz2" buys
-nothing here.
+Two distinct reasons, both verified:
+
+- **E01 is already zlib-compressed internally**, so neither codec can squeeze it
+  further — both land within ~1% of the raw E01. This is not a bzip2 weakness;
+  nothing re-compresses already-compressed data.
+- **The raw memory dumps genuinely favor DEFLATE** here by ~1–8%. Re-running with
+  single-threaded `bzip2 -9` (ruling out any `pbzip2` multi-stream overhead, which
+  measured at only ~0.4–0.8%) still left zip the smaller of the two — these
+  zero-heavy, structurally-repetitive dumps are exactly the binary shape where
+  LZ77's window/run-handling edges bzip2's Burrows–Wheeler block-sort.
+
+So "max-compression bz2" buys nothing on **this** evidence — but don't generalize
+that to "bz2 is bigger than zip"; on ordinary text/log corpora bzip2 is the
+smaller of the two.
 
 **Speed — bz2 is ~3× slower to decompress (single-stream):**
 
