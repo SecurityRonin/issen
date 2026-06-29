@@ -158,6 +158,23 @@ pub fn probe_spill_plan(concurrency: usize) -> SpillPlan {
     }
 }
 
+/// How many materializing sources may run concurrently within `budget` bytes,
+/// capped at `requested` — the admission governor that degrades a multi-source
+/// ingest from full parallel toward serial when the temp volume (or RAM) can't
+/// hold every concurrent spill at once.
+///
+/// `sizes` are the declared materialization sizes (0 = read in place, no budget
+/// draw). The worst case for `k` concurrent is the `k` largest running together,
+/// so the result is the largest `k` whose top-`k` sum fits `budget`. A source
+/// larger than the whole budget can't materialize at all (handled per-item by
+/// [`decide_backing`]) and is excluded here. Returns `requested` when nothing
+/// materializes, and at least 1 once any single source fits.
+#[must_use]
+pub fn admit_concurrency(sizes: &[u64], budget: u64, requested: usize) -> usize {
+    let _ = (sizes, budget, requested);
+    0 // RED stub
+}
+
 /// Reserve kept free on the spill volume so an ingest never fills it to zero.
 const TEMP_RESERVE: u64 = 2 * GIB;
 
@@ -1065,5 +1082,49 @@ mod tests {
         f.write_all(&[0u8; 100]).unwrap();
         f.flush().unwrap();
         assert!(archive_backing(f.path(), &big_plan(None), &["img"]).is_err());
+    }
+
+    #[test]
+    fn admit_full_parallel_when_nothing_materializes() {
+        // All sources read in place (size 0) → no budget pressure → full parallel.
+        assert_eq!(admit_concurrency(&[0, 0, 0], 8 * GIB, 4), 4);
+        assert_eq!(admit_concurrency(&[], 8 * GIB, 4), 4);
+    }
+
+    #[test]
+    fn admit_full_parallel_when_all_fit() {
+        // Two 2 GiB spills into 8 GiB → both fit; capped at the 2 sources.
+        assert_eq!(admit_concurrency(&[2 * GIB, 2 * GIB], 8 * GIB, 4), 2);
+    }
+
+    #[test]
+    fn admit_serializes_when_sum_exceeds() {
+        // Three 5 GiB spills, 8 GiB budget: one fits, two together don't → serial.
+        assert_eq!(
+            admit_concurrency(&[5 * GIB, 5 * GIB, 5 * GIB], 8 * GIB, 3),
+            1
+        );
+    }
+
+    #[test]
+    fn admit_partial_parallel() {
+        // Three 3 GiB spills, 8 GiB: top-2 = 6 GiB fits, top-3 = 9 GiB doesn't → 2.
+        assert_eq!(
+            admit_concurrency(&[3 * GIB, 3 * GIB, 3 * GIB], 8 * GIB, 3),
+            2
+        );
+    }
+
+    #[test]
+    fn admit_excludes_oversize_source() {
+        // A 10 GiB spill can't fit 8 GiB at all (per-item Refused); the 2 GiB one
+        // still runs serially.
+        assert_eq!(admit_concurrency(&[10 * GIB, 2 * GIB], 8 * GIB, 4), 1);
+    }
+
+    #[test]
+    fn admit_respects_requested_cap() {
+        // Plenty of budget, but only one worker allowed.
+        assert_eq!(admit_concurrency(&[GIB, GIB, GIB], 64 * GIB, 1), 1);
     }
 }
