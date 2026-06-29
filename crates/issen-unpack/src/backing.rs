@@ -47,8 +47,17 @@ pub struct SpillPlan {
 /// clamped to `[64 MiB, 1 GiB]`. An `env_override` bypasses the formula entirely.
 #[must_use]
 pub fn ram_threshold(plan: &SpillPlan) -> u64 {
-    let _ = plan;
-    0 // RED stub
+    // An explicit operator override wins outright (deterministic environments).
+    if let Some(n) = plan.env_override {
+        return n;
+    }
+    let concurrency = plan.concurrency.max(1) as u64;
+    // 1/4 of available RAM, split across the planned concurrent decompressions.
+    // Divide before multiplying is unnecessary here (denominator only), and the
+    // budget can't overflow u64 for any real RAM size.
+    let budget = plan.available_ram / RAM_COMMIT_DENOMINATOR;
+    let per_image = budget / concurrency;
+    per_image.clamp(THRESHOLD_FLOOR, THRESHOLD_CEILING)
 }
 
 #[cfg(test)]
