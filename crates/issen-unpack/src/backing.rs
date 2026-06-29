@@ -304,8 +304,21 @@ pub enum ArchiveFormat {
 /// (non-archive) file — the caller then opens it directly.
 #[must_use]
 pub fn detect_archive_format(magic: &[u8]) -> Option<ArchiveFormat> {
-    let _ = magic;
-    None // RED stub
+    match magic {
+        // PKZIP local-file / central-dir / end-of-cd headers.
+        [0x50, 0x4B, 0x03, 0x04, ..]
+        | [0x50, 0x4B, 0x05, 0x06, ..]
+        | [0x50, 0x4B, 0x07, 0x08, ..] => Some(ArchiveFormat::Zip),
+        // 7-Zip signature "7z\xBC\xAF\x27\x1C".
+        [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C, ..] => Some(ArchiveFormat::SevenZ),
+        // gzip member header.
+        [0x1F, 0x8B, ..] => Some(ArchiveFormat::Gzip),
+        // bzip2 "BZh".
+        [0x42, 0x5A, 0x68, ..] => Some(ArchiveFormat::Bzip2),
+        // DAR slice magic SAUV_MAGIC_NUMBER = 123, big-endian u32.
+        [0x00, 0x00, 0x00, 0x7B, ..] => Some(ArchiveFormat::Dar),
+        _ => None,
+    }
 }
 
 /// Open a disk-image container that lives inside an archive (`zip` today;
@@ -322,8 +335,104 @@ pub fn archive_backing(
     plan: &SpillPlan,
     exts: &[&str],
 ) -> io::Result<Box<dyn ReadSeekSend>> {
-    let _ = (path, plan, exts);
-    Err(io::Error::other("archive_backing not implemented")) // RED stub
+    let mut head = [0u8; 8];
+    let n = File::open(path)?.read(&mut head)?;
+    match detect_archive_format(&head[..n]) {
+        Some(ArchiveFormat::Zip) => zip_backing(path, plan, exts),
+        Some(other) => Err(io::Error::other(format!(
+            "{}: archive format {other:?} not yet supported",
+            path.display()
+        ))),
+        None => Err(io::Error::other(format!(
+            "{}: not a recognized archive",
+            path.display()
+        ))),
+    }
+}
+
+/// Back a disk-image entry inside a `.zip`: `Stored` → in-place window, otherwise
+/// decompress per [`decide_backing`] into RAM or a temp spill.
+fn zip_backing(path: &Path, plan: &SpillPlan, exts: &[&str]) -> io::Result<Box<dyn ReadSeekSend>> {
+    let shared = Arc::new(File::open(path)?);
+    let mut archive = zip::ZipArchive::new(File::open(path)?).map_err(io::Error::other)?;
+    let idx = find_image_entry(&mut archive, exts).ok_or_else(|| {
+        io::Error::other(format!(
+            "{}: no disk-image entry in archive",
+            path.display()
+        ))
+    })?;
+    let mut entry = archive.by_index(idx).map_err(io::Error::other)?;
+
+    let name = entry.name().to_string();
+    let in_place = entry.compression() == zip::CompressionMethod::Stored;
+    let declared = entry.size();
+    let data_start = entry.data_start();
+
+    let temp_dir = storage_backed_temp_dir();
+    let temp_free = temp_free_bytes(&temp_dir);
+    let decision = decide_backing(declared, in_place, plan, &temp_dir, temp_free);
+    tracing::debug!(target: "issen::backing", entry = %name, format = "zip", "{decision}");
+
+    match decision {
+        BackingDecision::InPlace => Ok(Box::new(SubRangeReader::new(
+            Arc::clone(&shared),
+            data_start,
+            declared,
+        ))),
+        BackingDecision::Ram { .. } => {
+            // Bounded read: stop one byte past the declared size so a lying
+            // header is an error, not an unbounded allocation.
+            let mut buf = Vec::with_capacity(usize::try_from(declared).unwrap_or(0));
+            entry
+                .by_ref()
+                .take(declared.saturating_add(1))
+                .read_to_end(&mut buf)?;
+            if buf.len() as u64 > declared {
+                return Err(io::Error::other(format!(
+                    "{name}: entry larger than its declared {declared} bytes (possible bomb)"
+                )));
+            }
+            Ok(Box::new(Cursor::new(buf)))
+        }
+        BackingDecision::Spill { dir, .. } => {
+            let spool = spill_from(&mut entry, ram_threshold(plan), declared, &dir)?;
+            Ok(Box::new(spool))
+        }
+        BackingDecision::Refused { .. } => Err(io::Error::other(decision.to_string())),
+    }
+}
+
+/// Pick the disk-image entry: a file entry whose extension is in `exts`, else the
+/// largest file entry (the image dominates the archive).
+fn find_image_entry<R: Read + Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    exts: &[&str],
+) -> Option<usize> {
+    let mut by_ext: Option<usize> = None;
+    let mut largest: Option<(usize, u64)> = None;
+    for i in 0..archive.len() {
+        let Ok(entry) = archive.by_index(i) else {
+            continue;
+        };
+        if entry.is_dir() {
+            continue;
+        }
+        let size = entry.size();
+        if by_ext.is_none() {
+            let is_image = Path::new(entry.name())
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(str::to_ascii_lowercase)
+                .is_some_and(|e| exts.iter().any(|x| x.eq_ignore_ascii_case(&e)));
+            if is_image {
+                by_ext = Some(i);
+            }
+        }
+        if largest.is_none_or(|(_, s)| size > s) {
+            largest = Some((i, size));
+        }
+    }
+    by_ext.or(largest.map(|(i, _)| i))
 }
 
 /// A positioned, read-only window `[base, base + len)` over a shared archive
