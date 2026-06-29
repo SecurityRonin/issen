@@ -13,6 +13,13 @@ parser_repos := "forensicnomicon memory-forensic winevt-forensic srum-forensic b
 
 # ── Single-repo commands ─────────────────────────────────────────────────────
 
+# First-time setup: enable the repo's git hooks (fmt + clippy pre-commit).
+# Without this, .githooks/pre-commit is never invoked and formatting can drift
+# into main unnoticed.
+setup:
+    git config core.hooksPath .githooks
+    @echo "git hooks enabled (core.hooksPath = .githooks)"
+
 # Default: test this workspace
 test:
     cargo test --workspace

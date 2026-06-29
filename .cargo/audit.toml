@@ -28,4 +28,5 @@ ignore = [
     "RUSTSEC-2026-0098", # rustls-webpki 0.101; via tonic/tikv-client/opendal
     "RUSTSEC-2026-0099", # rustls-webpki 0.101; via tonic/tikv-client/opendal
     "RUSTSEC-2026-0104", # rustls-webpki 0.101; via tonic/tikv-client/opendal
+    "RUSTSEC-2026-0187", # lopdf stack-overflow on nested-PDF *parse*; via printpdf (report generation only, no PDF parsing); printpdf 0.9 pins lopdf ^0.39 so cannot bump independently
 ]

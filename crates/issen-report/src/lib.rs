@@ -1009,8 +1009,8 @@ mod tests {
         .with_tag("bookmarked");
 
         let store = make_store_with_events(&[ev]);
-        let data = collect_report_data(&store, ReportConfig::default())
-            .expect("collect_report_data");
+        let data =
+            collect_report_data(&store, ReportConfig::default()).expect("collect_report_data");
 
         assert_eq!(data.events.len(), 1);
         let row = &data.events[0];
@@ -1044,8 +1044,8 @@ mod tests {
         ];
 
         let store = make_store_with_events(&events);
-        let data = collect_report_data(&store, ReportConfig::default())
-            .expect("collect_report_data");
+        let data =
+            collect_report_data(&store, ReportConfig::default()).expect("collect_report_data");
 
         assert_eq!(data.summary.total_events, 3);
         assert_eq!(data.summary.total_findings, 0);
@@ -1123,8 +1123,8 @@ mod tests {
     #[test]
     fn test_collect_report_data_empty_store() {
         let store = TimelineStore::in_memory().expect("create store");
-        let data = collect_report_data(&store, ReportConfig::default())
-            .expect("collect_report_data");
+        let data =
+            collect_report_data(&store, ReportConfig::default()).expect("collect_report_data");
 
         assert_eq!(data.summary.total_events, 0);
         assert!(data.events.is_empty());
@@ -1154,8 +1154,8 @@ mod tests {
         }];
         findings::insert_findings(store.connection(), &finding_rows).expect("insert findings");
 
-        let data = collect_report_data(&store, ReportConfig::default())
-            .expect("collect_report_data");
+        let data =
+            collect_report_data(&store, ReportConfig::default()).expect("collect_report_data");
 
         assert_eq!(data.summary.total_events, 1);
         assert_eq!(data.summary.total_findings, 1);
