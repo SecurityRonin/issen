@@ -7,6 +7,7 @@
 //! (bomb-safe, independent of the entry's declared size). A `zip` `Stored` entry
 //! never reaches the spill path — it is read in place (zero copy).
 
+use std::fmt;
 use std::fs::File;
 use std::io::{self, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
@@ -72,6 +73,62 @@ pub fn ram_threshold(plan: &SpillPlan) -> u64 {
     let budget = plan.available_ram / RAM_COMMIT_DENOMINATOR;
     let per_image = budget / concurrency;
     per_image.clamp(THRESHOLD_FLOOR, THRESHOLD_CEILING)
+}
+
+/// Reserve kept free on the spill volume so an ingest never fills it to zero.
+const TEMP_RESERVE: u64 = 2 * GIB;
+
+/// How a container's bytes are being backed for reading, and why — the
+/// per-source determination surfaced under `issen ingest --verbose`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BackingDecision {
+    /// Uncompressed-contiguous source (zip `Stored`, loose file): read in place,
+    /// zero copy — no RAM buffer, no temp.
+    InPlace,
+    /// Decompress into a RAM buffer of `bytes`. `forced_by_low_temp` is true when
+    /// it would have spilled but the temp volume was too small and RAM had room.
+    Ram {
+        bytes: u64,
+        forced_by_low_temp: bool,
+    },
+    /// Decompress to a disk-backed temp spill in `dir` (`bytes` decompressed).
+    Spill { dir: PathBuf, bytes: u64 },
+    /// Won't fit the temp volume or a safe share of RAM — refuse before reading.
+    Refused {
+        needed: u64,
+        temp_free: u64,
+        ram_avail: u64,
+        dir: PathBuf,
+    },
+}
+
+/// Decide how to back a container given its declared decompressed size, whether
+/// it can be read in place (uncompressed-contiguous), the resource [`SpillPlan`],
+/// and the chosen spill `temp_dir` + its `temp_free` bytes. Pure — the probing is
+/// a thin shell, and the decision is logged verbatim under `--verbose`.
+#[must_use]
+pub fn decide_backing(
+    declared_size: u64,
+    in_place: bool,
+    plan: &SpillPlan,
+    temp_dir: &Path,
+    temp_free: u64,
+) -> BackingDecision {
+    let _ = (declared_size, in_place, plan, temp_dir, temp_free);
+    BackingDecision::InPlace // RED stub
+}
+
+impl fmt::Display for BackingDecision {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let _ = f;
+        Ok(()) // RED stub
+    }
+}
+
+/// Human-readable byte size, e.g. `42.0 GiB`, `100 B`.
+fn human(bytes: u64) -> String {
+    let _ = bytes;
+    String::new() // RED stub
 }
 
 /// A positioned, read-only window `[base, base + len)` over a shared archive
@@ -433,5 +490,110 @@ mod tests {
         // platform-dependent, but it must not panic.
         let dir = tempfile::tempdir().unwrap();
         let _ = dir_is_tmpfs(dir.path());
+    }
+
+    fn rplan(available_ram: u64) -> SpillPlan {
+        SpillPlan {
+            available_ram,
+            concurrency: 1,
+            env_override: None,
+        }
+    }
+
+    #[test]
+    fn decide_in_place_ignores_sizes() {
+        let d = decide_backing(99 * GIB, true, &rplan(GIB), Path::new("/var/tmp"), 0);
+        assert_eq!(d, BackingDecision::InPlace);
+    }
+
+    #[test]
+    fn decide_small_image_stays_in_ram() {
+        // 8 GiB avail → 2 GiB budget → threshold 1 GiB (ceiling). 10 MiB < that.
+        let d = decide_backing(10 * MIB, false, &rplan(8 * GIB), Path::new("/var/tmp"), 0);
+        assert_eq!(
+            d,
+            BackingDecision::Ram {
+                bytes: 10 * MIB,
+                forced_by_low_temp: false
+            }
+        );
+    }
+
+    #[test]
+    fn decide_large_image_spills_when_temp_fits() {
+        let d = decide_backing(
+            40 * GIB,
+            false,
+            &rplan(8 * GIB),
+            Path::new("/scratch"),
+            1024 * GIB,
+        );
+        assert_eq!(
+            d,
+            BackingDecision::Spill {
+                dir: PathBuf::from("/scratch"),
+                bytes: 40 * GIB
+            }
+        );
+    }
+
+    #[test]
+    fn decide_falls_back_to_ram_when_temp_short_but_ram_fits() {
+        // 8 GiB image, temp nearly full, 32 GiB RAM available (image ≤ half).
+        let d = decide_backing(8 * GIB, false, &rplan(32 * GIB), Path::new("/var/tmp"), GIB);
+        assert_eq!(
+            d,
+            BackingDecision::Ram {
+                bytes: 8 * GIB,
+                forced_by_low_temp: true
+            }
+        );
+    }
+
+    #[test]
+    fn decide_refuses_when_neither_temp_nor_ram_fits() {
+        // 4 TiB image; temp 480 GiB free, 32 GiB RAM — neither suffices.
+        let d = decide_backing(
+            4096 * GIB,
+            false,
+            &rplan(32 * GIB),
+            Path::new("/var/tmp"),
+            480 * GIB,
+        );
+        assert_eq!(
+            d,
+            BackingDecision::Refused {
+                needed: 4096 * GIB,
+                temp_free: 480 * GIB,
+                ram_avail: 32 * GIB,
+                dir: PathBuf::from("/var/tmp"),
+            }
+        );
+    }
+
+    #[test]
+    fn human_formats_binary_units() {
+        assert_eq!(human(100), "100 B");
+        assert_eq!(human(2048), "2.0 KiB");
+        assert_eq!(human(40 * GIB), "40.0 GiB");
+    }
+
+    #[test]
+    fn decision_display_is_actionable() {
+        assert!(BackingDecision::InPlace.to_string().contains("in place"));
+        let spill = BackingDecision::Spill {
+            dir: PathBuf::from("/scratch"),
+            bytes: 40 * GIB,
+        }
+        .to_string();
+        assert!(spill.contains("/scratch") && spill.contains("40.0 GiB"));
+        let refused = BackingDecision::Refused {
+            needed: 4096 * GIB,
+            temp_free: 480 * GIB,
+            ram_avail: 32 * GIB,
+            dir: PathBuf::from("/var/tmp"),
+        }
+        .to_string();
+        assert!(refused.contains("ISSEN_SPILL_DIR") && refused.contains("/var/tmp"));
     }
 }
