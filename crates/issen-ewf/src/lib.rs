@@ -94,6 +94,22 @@ impl From<EwfError> for RtError {
 /// Reads go straight through [`ewf::EwfReader::read_at`], a lock-free
 /// positioned read on a shared `&self`, so concurrent reads of one image
 /// decompress in parallel instead of serializing on a mutex.
+/// Adapts a [`DeflateSeekReader`](issen_unpack::deflate_seek::DeflateSeekReader)
+/// to ewf's [`SegmentBacking`](ewf::SegmentBacking) so a Deflated E01 segment in
+/// a zip is read lazily (bounded RAM) instead of inflated whole. A local newtype
+/// because both the trait and the reader are foreign (orphan rule). Note the arg
+/// order flips: ewf is `read_at(buf, offset)`, the reader is `read_at(offset, buf)`.
+struct DeflateBacking(issen_unpack::deflate_seek::DeflateSeekReader);
+
+impl ewf::SegmentBacking for DeflateBacking {
+    fn read_at(&self, buf: &mut [u8], offset: u64) -> std::io::Result<usize> {
+        self.0.read_at(offset, buf)
+    }
+    fn len(&self) -> u64 {
+        self.0.len()
+    }
+}
+
 pub struct EwfDataSource {
     reader: ewf::EwfReader,
     total_size: u64,
@@ -133,8 +149,6 @@ impl EwfDataSource {
     /// # Errors
     /// [`EwfError`] if the zip cannot be read, or holds no `.E01`/`.E02`/… segment.
     pub fn open_zip(zip_path: &Path) -> Result<Self, EwfError> {
-        use std::io::Read as _;
-
         // One handle backs the in-place `Sub` reads; a second drives the zip's
         // own central-directory walk + on-demand inflation.
         let backing = Arc::new(File::open(zip_path)?);
@@ -146,7 +160,7 @@ impl EwfDataSource {
         // segment number embedded in each header).
         let mut segs: Vec<(String, SegmentSource)> = Vec::new();
         for i in 0..archive.len() {
-            let mut entry = archive
+            let entry = archive
                 .by_index(i)
                 .map_err(|e| EwfError::Ewf(format!("zip entry {i}: {e}")))?;
             let name = entry.name().to_string();
@@ -158,13 +172,20 @@ impl EwfDataSource {
                 // data offset. Zero extraction, zero inflate, true random access.
                 SegmentSource::sub(Arc::clone(&backing), entry.data_start(), entry.size())
             } else {
-                // Deflated -> inflate the whole segment once into RAM (sequential,
-                // which deflate supports), then random-access it there.
-                let mut buf = Vec::with_capacity(usize::try_from(entry.size()).unwrap_or(0));
-                entry
-                    .read_to_end(&mut buf)
-                    .map_err(|e| EwfError::Ewf(format!("inflate {name}: {e}")))?;
-                SegmentSource::from_bytes(buf)
+                // Deflated -> a seekable-DEFLATE (zran) reader over the entry's
+                // raw deflate stream: bounded RAM, decoding only the parts the EWF
+                // reader actually touches, instead of inflating the WHOLE segment
+                // into an unbounded Vec (which OOMs on a host smaller than the
+                // image). The segment never fully materializes.
+                let sub = issen_unpack::backing::SubRangeReader::new(
+                    Arc::clone(&backing),
+                    entry.data_start(),
+                    entry.compressed_size(),
+                );
+                let reader =
+                    issen_unpack::deflate_seek::DeflateSeekReader::open(Box::new(sub), false)
+                        .map_err(|e| EwfError::Ewf(format!("zran index {name}: {e}")))?;
+                SegmentSource::from_backing(Arc::new(DeflateBacking(reader)))
             };
             segs.push((name, src));
         }

@@ -2528,7 +2528,7 @@ checksum = "1475e4b7623a727d109106011cab57595be2bcdc3e1a62fb75bad7dde6a240f0"
 dependencies = [
  "apm-partition-forensic",
  "dmg-core",
- "ewf",
+ "ewf 0.3.0",
  "forensicnomicon",
  "gpt-partition-forensic",
  "iso9660-forensic",
@@ -2963,6 +2963,23 @@ name = "ewf"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7b5e81c6ce862c8787977bfa243e5d8dd67e9deb79c00a496695e90533ea7df"
+dependencies = [
+ "adler2",
+ "flate2",
+ "glob",
+ "log",
+ "lru 0.12.5",
+ "md-5",
+ "rayon",
+ "sha-1",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ewf"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a27dd22b93011e75001f42e03ba2cdeaf0a02553f478cf8657b541bccd602f83"
 dependencies = [
  "adler2",
  "flate2",
@@ -4663,7 +4680,7 @@ name = "issen-ewf"
 version = "0.1.0"
 dependencies = [
  "bytes",
- "ewf",
+ "ewf 0.4.0",
  "inventory",
  "issen-core",
  "issen-disk",
