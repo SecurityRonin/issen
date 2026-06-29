@@ -72,7 +72,7 @@ authors = ["Issen Contributors"]
 
 [workspace.dependencies]
 # Internal crates (path dependencies)
-forensicnomicon  = "0.11"
+forensicnomicon  = "1"
 forensic-pivot   = { path = "crates/forensic-pivot" }
 issen-core       = { path = "crates/issen-core" }
 issen-fswalker   = { path = "crates/issen-fswalker" }
@@ -85,9 +85,9 @@ issen-vhd        = { path = "crates/issen-vhd" }
 issen-vhdx       = { path = "crates/issen-vhdx" }
 issen-vmdk       = { path = "crates/issen-vmdk" }
 issen-disk       = { path = "crates/issen-disk" }
-disk-forensic    = "0.8"
-ntfs-forensic    = "0.7"
-ntfs-core        = "0.8"
+disk-forensic    = "0.9"
+ntfs-forensic    = "0.8"
+ntfs-core        = "0.9"
 issen-qcow2      = { path = "crates/issen-qcow2" }
 issen-iso        = { path = "crates/issen-iso" }
 issen-aff4       = { path = "crates/issen-aff4" }
@@ -137,23 +137,23 @@ issen-parsers       = { path = "crates/issen-parsers" }
 issen-providers     = { path = "crates/issen-providers" }
 
 # winevt-forensic crates (path dependencies into sibling workspace)
-winevt-core     = "0.2"
-winevt-extract  = "0.1"
-winevt-analysis = "0.1"
+winevt-core     = "0.3"
+winevt-extract  = "0.2"
+winevt-analysis = "0.3"
 
 # Memory forensic crates (path dependencies into sibling workspace)
-memf-core      = "0.2.1"
+memf-core      = "0.2.2"
 memf-format    = "0.2.1"
-memf-symbols   = "0.2.1"
-memf-linux     = "0.2.1"
-memf-windows   = "0.2.5"
+memf-symbols   = "0.2.2"
+memf-linux     = "0.3.0"
+memf-windows   = "0.3.0"
 memf-strings   = "0.2.1"
-memf-correlate = "0.2.1"
+memf-correlate = "0.3.0"
 forensic-hashdb = "0.1"
-browser-core    = { version = "0.1", package = "browser-forensic-core" }
-browser-chrome  = { version = "0.1", package = "browser-forensic-chrome" }
-browser-firefox = { version = "0.1", package = "browser-forensic-firefox" }
-browser-safari  = { version = "0.1", package = "browser-forensic-safari" }
+browser-core    = { version = "0.2", package = "browser-forensic-core" }
+browser-chrome  = { version = "0.2", package = "browser-forensic-chrome" }
+browser-firefox = { version = "0.2", package = "browser-forensic-firefox" }
+browser-safari  = { version = "0.2", package = "browser-forensic-safari" }
 
 # External dependencies
 duckdb       = { version = "1", features = ["bundled"] }
@@ -200,25 +200,25 @@ tar          = "0.4"
 sevenz-rust  = "0.6"
 
 # Forensic artifact parsers
-srum-parser      = "0.1.0"
+srum-parser      = "0.2.0"
 srum-core        = "0.1.0"
-segb             = { version = "0.1", package = "segb-core" }
-segb-forensic    = "0.1"
-useract-forensic = "0.3"
+segb             = { version = "0.2", package = "segb-core" }
+segb-forensic    = "0.2"
+useract-forensic = "0.4"
 goblin       = { version = "0.10", default-features = false, features = ["pe32", "pe64", "std"] }
 ewf          = "0.3"
 vhd          = "0.1.1"
 vhdx         = { version = "0.3.0", package = "vhdx-core" }
-vmdk         = { version = "0.7", package = "vmdk-core" }
+vmdk         = { version = "0.8", package = "vmdk-core" }
 qcow2        = { version = "0.3.1", package = "qcow2-core" }
-iso9660-forensic = "0.6"
+iso9660-forensic = "0.7"
 aff4         = "0.1.1"
 evtx         = { version = "0.11", default-features = false }
 mft          = "0.6"
 
 # Registry — our own winreg-forensic fleet crates (notatin fully removed)
-winreg-core      = "0.1.0"
-winreg-artifacts = "0.2"
+winreg-core      = "0.1.1"
+winreg-artifacts = "0.3.1"
 
 # XML / filesystem scanning
 uuid         = { version = "1", features = ["v4"] }

@@ -43,6 +43,10 @@ use issen_core::plugin::traits::{
 };
 use issen_core::timeline::event::{EventType, TimelineEvent};
 
+// `activity_category` became a trait method on `ArtifactDescriptorCadetExt` in
+// forensicnomicon 1.0 (was an inherent method in 0.11).
+use forensicnomicon::cadet::ArtifactDescriptorCadetExt;
+
 /// Standard offline registry hive filenames the catalog scanner engages on.
 /// (The actual hive *type* is detected from content; this is only a fast gate.)
 const HIVE_FILENAMES: &[&str] = &[

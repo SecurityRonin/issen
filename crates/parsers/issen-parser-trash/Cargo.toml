@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 issen-core = { path = "../../issen-core" }
-trash-core = "0.2"
+trash-core = "0.3"
 serde_json = { workspace = true }
 inventory = { workspace = true }
 

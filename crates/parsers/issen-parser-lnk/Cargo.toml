@@ -8,7 +8,7 @@ license.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 issen-core = { path = "../../issen-core" }
-lnk-core = "0.3"
+lnk-core = "0.4"
 forensicnomicon = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }
@@ -17,7 +17,7 @@ inventory = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
-cfb-forensic = "0.1.0"
+cfb-forensic = "0.2"
 
 [lints]
 workspace = true

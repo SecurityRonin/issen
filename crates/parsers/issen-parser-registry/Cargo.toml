@@ -14,7 +14,7 @@ winreg-artifacts = { workspace = true }
 # crate uses only the free `services::is_known_service_binary` /
 # `services::is_known_service_dll` fns, no forensicnomicon report/Observation
 # traits, so the two coexisting versions never cross types.
-forensicnomicon = "0.11"
+forensicnomicon = "1"
 anyhow = { workspace = true }
 chrono = { workspace = true }
 inventory = { workspace = true }

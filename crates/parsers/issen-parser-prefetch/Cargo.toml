@@ -12,7 +12,7 @@ issen-core = { path = "../../issen-core" }
 # crates — the reader (`prefetch-core`, for the full loaded-file list) plus the
 # analyzer (`prefetch-forensic`, for graded anomalies).
 prefetch-core = "0.1"
-prefetch-forensic = "0.2"
+prefetch-forensic = "0.3"
 forensicnomicon = { workspace = true }
 chrono = { workspace = true }
 serde_json = { workspace = true }
