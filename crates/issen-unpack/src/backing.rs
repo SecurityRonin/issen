@@ -114,21 +114,92 @@ pub fn decide_backing(
     temp_dir: &Path,
     temp_free: u64,
 ) -> BackingDecision {
-    let _ = (declared_size, in_place, plan, temp_dir, temp_free);
-    BackingDecision::InPlace // RED stub
+    // Uncompressed-contiguous: read straight from the archive, no copy at all.
+    if in_place {
+        return BackingDecision::InPlace;
+    }
+    // Small enough to keep resident: a RAM buffer, no temp.
+    if declared_size < ram_threshold(plan) {
+        return BackingDecision::Ram {
+            bytes: declared_size,
+            forced_by_low_temp: false,
+        };
+    }
+    // Want to spill: the decompressed image plus a reserve must fit the volume.
+    if temp_free >= declared_size.saturating_add(TEMP_RESERVE) {
+        return BackingDecision::Spill {
+            dir: temp_dir.to_path_buf(),
+            bytes: declared_size,
+        };
+    }
+    // Temp can't hold it — fall back to RAM only if it clearly fits (≤ half of
+    // available), trading the spill for completing the analysis.
+    if declared_size <= plan.available_ram / 2 {
+        return BackingDecision::Ram {
+            bytes: declared_size,
+            forced_by_low_temp: true,
+        };
+    }
+    // Fits neither temp nor a safe share of RAM — refuse before reading a byte.
+    BackingDecision::Refused {
+        needed: declared_size,
+        temp_free,
+        ram_avail: plan.available_ram,
+        dir: temp_dir.to_path_buf(),
+    }
 }
 
 impl fmt::Display for BackingDecision {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let _ = f;
-        Ok(()) // RED stub
+        match self {
+            Self::InPlace => write!(f, "read in place (no decompression, no temp)"),
+            Self::Ram {
+                bytes,
+                forced_by_low_temp: false,
+            } => write!(f, "decompress into RAM ({})", human(*bytes)),
+            Self::Ram {
+                bytes,
+                forced_by_low_temp: true,
+            } => write!(
+                f,
+                "decompress into RAM ({}) — temp volume too small, RAM has room",
+                human(*bytes)
+            ),
+            Self::Spill { dir, bytes } => {
+                write!(f, "spill {} to {}", human(*bytes), dir.display())
+            }
+            Self::Refused {
+                needed,
+                temp_free,
+                ram_avail,
+                dir,
+            } => write!(
+                f,
+                "REFUSED: needs {} decompressed; {} has {} free, RAM {} available — \
+                 set ISSEN_SPILL_DIR to a volume with enough space",
+                human(*needed),
+                dir.display(),
+                human(*temp_free),
+                human(*ram_avail),
+            ),
+        }
     }
 }
 
 /// Human-readable byte size, e.g. `42.0 GiB`, `100 B`.
 fn human(bytes: u64) -> String {
-    let _ = bytes;
-    String::new() // RED stub
+    const UNITS: [&str; 6] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"];
+    let mut value = bytes as f64;
+    let mut unit = 0;
+    while value >= 1024.0 && unit < UNITS.len() - 1 {
+        value /= 1024.0;
+        unit += 1;
+    }
+    if unit == 0 {
+        format!("{bytes} {}", UNITS[0])
+    } else {
+        format!("{value:.1} {}", UNITS[unit])
+    }
 }
 
 /// A positioned, read-only window `[base, base + len)` over a shared archive
