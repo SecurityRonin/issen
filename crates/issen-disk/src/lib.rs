@@ -502,6 +502,16 @@ pub enum ExtractionLimit {
         /// The MFT record number that repeated.
         record: u64,
     },
+    /// A partition holds a filesystem issen recognizes but does not triage
+    /// (e.g. APFS, ext, HFS+). Recorded ONLY when the disk has no NTFS volume,
+    /// so a zero-artifact result on a macOS/Linux image is distinguishable from
+    /// a clean NTFS image rather than a silent empty result.
+    UnsupportedFilesystem {
+        /// The detected filesystem (`APFS`, `ext`, `HFS+`).
+        filesystem: String,
+        /// Byte offset of the partition on the source.
+        offset: u64,
+    },
 }
 
 impl std::fmt::Display for ExtractionLimit {
@@ -532,6 +542,11 @@ impl std::fmt::Display for ExtractionLimit {
             Self::CycleDetected { dir, record } => write!(
                 f,
                 "cycle detected at {dir}: MFT record {record} already visited — sweep stopped"
+            ),
+            Self::UnsupportedFilesystem { filesystem, offset } => write!(
+                f,
+                "{filesystem} filesystem at offset {offset} is not triaged — issen extracts \
+                 NTFS artifacts only, so this disk produced no events (NOT a clean image)"
             ),
         }
     }
@@ -2110,6 +2125,63 @@ mod tests {
         let files = extract_files(&src, parts[0], &["\\test.txt", "\\nope.txt"]).expect("extract");
         assert_eq!(files.len(), 1); // only the present file
         assert_eq!(files[0].path, "\\test.txt");
+    }
+
+    /// An MBR disk whose partition carries an APFS container superblock (NXSB
+    /// magic at offset 32) instead of an NTFS boot sector — a macOS image.
+    fn disk_with_apfs(lba_start: u32, lba_count: u32) -> VecSource {
+        let total = (lba_start + lba_count) as usize * SECTOR;
+        let mut disk = vec![0u8; total];
+        disk[..SECTOR].copy_from_slice(&mbr_one_ntfs(lba_start, lba_count));
+        let off = lba_start as usize * SECTOR;
+        disk[off + 32..off + 36].copy_from_slice(b"NXSB"); // nx_superblock_t.nx_magic
+        VecSource(disk)
+    }
+
+    #[test]
+    fn apfs_disk_records_unsupported_filesystem() {
+        // The Big Sur "✔ 0 events" gap: a macOS/APFS disk yields no NTFS
+        // artifacts, but that empty result must be LOUD (distinguishable from a
+        // clean image), not a silent zero.
+        let src = disk_with_apfs(2048, 64);
+        assert!(
+            find_ntfs_partitions(&src).expect("find").is_empty(),
+            "fixture sanity: APFS partition is not NTFS"
+        );
+        let outcome = collect_with_caps(
+            &src,
+            &[NtfsLoc::FixedPath(r"\$MFT")],
+            ExtractCaps::default(),
+        )
+        .expect("collect");
+        assert!(
+            outcome.limits.iter().any(|l| matches!(
+                l,
+                ExtractionLimit::UnsupportedFilesystem { filesystem, .. } if filesystem == "APFS"
+            )),
+            "an APFS-only disk must record an UnsupportedFilesystem diagnostic, got {:?}",
+            outcome.limits
+        );
+    }
+
+    #[test]
+    fn ntfs_disk_records_no_unsupported_filesystem() {
+        // The supported case must stay quiet — no false "unsupported" alarm.
+        let src = disk_with_volume(2048);
+        let outcome = collect_with_caps(
+            &src,
+            &[NtfsLoc::FixedPath(r"\$MFT")],
+            ExtractCaps::default(),
+        )
+        .expect("collect");
+        assert!(
+            !outcome
+                .limits
+                .iter()
+                .any(|l| matches!(l, ExtractionLimit::UnsupportedFilesystem { .. })),
+            "a supported NTFS disk must not raise an unsupported-filesystem warning, got {:?}",
+            outcome.limits
+        );
     }
 
     #[test]
