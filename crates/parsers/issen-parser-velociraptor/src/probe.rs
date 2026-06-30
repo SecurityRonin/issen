@@ -19,7 +19,7 @@ pub fn probe_velociraptor(path: &Path) -> Result<Confidence, RtError> {
         return Ok(Confidence::None);
     };
 
-    let Ok(mut archive) = zip::ZipArchive::new(file) else {
+    let Ok(mut archive) = zip_core::ZipArchive::new(file) else {
         return Ok(Confidence::None);
     };
 
@@ -28,7 +28,7 @@ pub fn probe_velociraptor(path: &Path) -> Result<Confidence, RtError> {
 
     let limit = archive.len().min(200);
     for i in 0..limit {
-        if let Ok(entry) = archive.by_index_raw(i) {
+        if let Ok(entry) = archive.by_index(i) {
             let name = entry.name().to_string();
             if name.starts_with("uploads/") {
                 has_uploads = true;

@@ -94,7 +94,7 @@ impl VhdxDataSource {
         // One handle backs the in-place `Sub` reads; a second drives the zip's
         // central-directory walk + on-demand inflation.
         let backing_file = Arc::new(File::open(zip_path)?);
-        let mut archive = zip::ZipArchive::new(File::open(zip_path)?)
+        let mut archive = zip_core::ZipArchive::new(File::open(zip_path)?)
             .map_err(|e| VhdxError::Vhdx(format!("zip open: {e}")))?;
 
         let mut chosen: Option<Backing> = None;
@@ -105,7 +105,7 @@ impl VhdxDataSource {
             if !is_vhdx_entry(entry.name()) {
                 continue;
             }
-            let backing = if entry.compression() == zip::CompressionMethod::Stored {
+            let backing = if entry.compression() == zip_core::CompressionMethod::Stored {
                 // Contiguous, uncompressed → read straight from the zip at its
                 // data offset. Zero extraction, zero inflate, bounded reads.
                 Backing::sub(Arc::clone(&backing_file), entry.data_start(), entry.size())

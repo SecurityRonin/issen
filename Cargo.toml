@@ -193,7 +193,8 @@ ipnet        = "2"
 md-5         = "0.10"
 regex        = "1"
 schemars     = { version = "0.8", features = ["derive"] }
-zip          = "2"
+zip          = { version = "2", default-features = false, features = ["deflate"] }
+zip-forensic-core = "0.1"
 percent-encoding = "2"
 flate2       = "1"
 tar          = "0.4"

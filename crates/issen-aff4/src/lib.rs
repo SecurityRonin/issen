@@ -111,7 +111,7 @@ impl CollectionProvider for Aff4Provider {
         let Ok(file) = File::open(path) else {
             return Ok(Confidence::None);
         };
-        let Ok(mut archive) = zip::ZipArchive::new(file) else {
+        let Ok(mut archive) = zip_core::ZipArchive::new(file) else {
             return Ok(Confidence::None); // not a zip → not AFF4
         };
         if archive.by_name("information.turtle").is_ok() {

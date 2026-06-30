@@ -152,7 +152,7 @@ impl EwfDataSource {
         // One handle backs the in-place `Sub` reads; a second drives the zip's
         // own central-directory walk + on-demand inflation.
         let backing = Arc::new(File::open(zip_path)?);
-        let mut archive = zip::ZipArchive::new(File::open(zip_path)?)
+        let mut archive = zip_core::ZipArchive::new(File::open(zip_path)?)
             .map_err(|e| EwfError::Ewf(format!("zip open: {e}")))?;
 
         // Collect (name, source) per EWF segment entry; sort by name so the
@@ -167,7 +167,7 @@ impl EwfDataSource {
             if !is_ewf_segment(&name) {
                 continue;
             }
-            let src = if entry.compression() == zip::CompressionMethod::Stored {
+            let src = if entry.compression() == zip_core::CompressionMethod::Stored {
                 // Contiguous, uncompressed -> read straight from the zip at its
                 // data offset. Zero extraction, zero inflate, true random access.
                 SegmentSource::sub(Arc::clone(&backing), entry.data_start(), entry.size())
@@ -235,7 +235,7 @@ fn zip_contains_ewf_segment(path: &Path) -> bool {
     let Ok(file) = File::open(path) else {
         return false;
     };
-    let Ok(mut archive) = zip::ZipArchive::new(file) else {
+    let Ok(mut archive) = zip_core::ZipArchive::new(file) else {
         return false;
     };
     (0..archive.len()).any(|i| {

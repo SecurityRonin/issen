@@ -397,7 +397,7 @@ pub fn archive_backing(
 /// decompress per [`decide_backing`] into RAM or a temp spill.
 fn zip_backing(path: &Path, plan: &SpillPlan, exts: &[&str]) -> io::Result<Box<dyn ReadSeekSend>> {
     let shared = Arc::new(File::open(path)?);
-    let mut archive = zip::ZipArchive::new(File::open(path)?).map_err(io::Error::other)?;
+    let mut archive = zip_core::ZipArchive::new(File::open(path)?).map_err(io::Error::other)?;
     let idx = find_image_entry(&mut archive, exts).ok_or_else(|| {
         io::Error::other(format!(
             "{}: no disk-image entry in archive",
@@ -407,7 +407,7 @@ fn zip_backing(path: &Path, plan: &SpillPlan, exts: &[&str]) -> io::Result<Box<d
     let mut entry = archive.by_index(idx).map_err(io::Error::other)?;
 
     let name = entry.name().to_string();
-    let in_place = entry.compression() == zip::CompressionMethod::Stored;
+    let in_place = entry.compression() == zip_core::CompressionMethod::Stored;
     let declared = entry.size();
     let data_start = entry.data_start();
 
@@ -448,7 +448,7 @@ fn zip_backing(path: &Path, plan: &SpillPlan, exts: &[&str]) -> io::Result<Box<d
 /// Pick the disk-image entry: a file entry whose extension is in `exts`, else the
 /// largest file entry (the image dominates the archive).
 fn find_image_entry<R: Read + Seek>(
-    archive: &mut zip::ZipArchive<R>,
+    archive: &mut zip_core::ZipArchive<R>,
     exts: &[&str],
 ) -> Option<usize> {
     let mut by_ext: Option<usize> = None;
@@ -830,7 +830,7 @@ fn zip_entries(
     exts: &[&str],
 ) -> io::Result<Vec<(String, Box<dyn ReadSeekSend>)>> {
     let shared = Arc::new(File::open(path)?);
-    let mut archive = zip::ZipArchive::new(File::open(path)?).map_err(io::Error::other)?;
+    let mut archive = zip_core::ZipArchive::new(File::open(path)?).map_err(io::Error::other)?;
     let temp_dir = storage_backed_temp_dir();
     let temp_free = temp_free_bytes(&temp_dir);
     let mut out: Vec<(String, Box<dyn ReadSeekSend>)> = Vec::new();
@@ -840,7 +840,7 @@ fn zip_entries(
             continue;
         }
         let name = entry.name().to_string();
-        let in_place = entry.compression() == zip::CompressionMethod::Stored;
+        let in_place = entry.compression() == zip_core::CompressionMethod::Stored;
         let declared = entry.size();
         let data_start = entry.data_start();
         let decision = decide_backing(declared, in_place, plan, &temp_dir, temp_free);

@@ -375,7 +375,7 @@ pub fn extract_bundles_from_zip(zip_path: &Path) -> anyhow::Result<Vec<AttackFlo
     let file = std::fs::File::open(zip_path)
         .map_err(|e| anyhow::anyhow!("cannot open zip {}: {e}", zip_path.display()))?;
     let mut archive =
-        zip::ZipArchive::new(file).map_err(|e| anyhow::anyhow!("invalid zip: {e}"))?;
+        zip_core::ZipArchive::new(file).map_err(|e| anyhow::anyhow!("invalid zip: {e}"))?;
 
     let mut bundles = Vec::new();
 

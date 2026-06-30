@@ -12,13 +12,15 @@ issen-core = { workspace = true }
 issen-unpack = { workspace = true }
 inventory = { workspace = true }
 tracing = { workspace = true }
-zip = { workspace = true }
+zip-forensic-core = { workspace = true }
 percent-encoding = { workspace = true }
 chrono = { workspace = true }
 regex = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+# zip-rs writer mints the in-memory Velociraptor-collection fixtures the tests read back.
+zip = { workspace = true }
 
 [lints]
 workspace = true

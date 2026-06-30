@@ -44,7 +44,7 @@ pub fn is_zip(path: &Path) -> bool {
 /// Choose the zip entry that holds the memory dump: an entry whose extension is
 /// a known dump extension, else the largest file entry (a memory dump dominates
 /// the archive). Fails loud when the archive has no file entry.
-fn find_dump_entry(archive: &mut zip::ZipArchive<File>) -> anyhow::Result<usize> {
+fn find_dump_entry(archive: &mut zip_core::ZipArchive<File>) -> anyhow::Result<usize> {
     let mut by_ext: Option<usize> = None;
     let mut largest: Option<(usize, u64)> = None;
     for i in 0..archive.len() {
@@ -95,7 +95,7 @@ fn read_up_to(r: &mut impl Read, buf: &mut [u8]) -> std::io::Result<usize> {
 pub fn read_dump_from_zip(zip_path: &Path) -> anyhow::Result<(DumpFormat, Vec<u8>)> {
     let file =
         File::open(zip_path).with_context(|| format!("opening zip {}", zip_path.display()))?;
-    let mut archive = zip::ZipArchive::new(file)
+    let mut archive = zip_core::ZipArchive::new(file)
         .with_context(|| format!("reading zip central directory of {}", zip_path.display()))?;
     let idx = find_dump_entry(&mut archive)?;
     let mut entry = archive
@@ -159,7 +159,7 @@ pub fn detect_format_any(path: &Path) -> std::io::Result<DumpFormat> {
         return crate::open::detect_format(path);
     }
     let file = File::open(path)?;
-    let mut archive = zip::ZipArchive::new(file)
+    let mut archive = zip_core::ZipArchive::new(file)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
     let idx = find_dump_entry(&mut archive)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;

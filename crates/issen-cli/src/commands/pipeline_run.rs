@@ -95,7 +95,7 @@ fn archive_member_kinds(path: &Path) -> Option<Vec<EvidenceKind>> {
         return None;
     }
     let file = std::fs::File::open(path).ok()?;
-    let mut archive = zip::ZipArchive::new(file).ok()?;
+    let mut archive = zip_core::ZipArchive::new(file).ok()?;
     let mut kinds = Vec::new();
     for i in 0..archive.len() {
         let Ok(entry) = archive.by_index(i) else {

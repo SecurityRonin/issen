@@ -56,15 +56,16 @@ dependencies = [
 
 [[package]]
 name = "aff4"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ced8935c6dfc83e2fe779efc349ce160be524529f3a9a5ea6c7fc2dbb8cc0add"
+checksum = "5931ef9433027dd00f1d98e9e2f39e80b1d690f09d48387485d97cc9c2b7b36b"
 dependencies = [
  "flate2",
  "lz4_flex",
  "snap",
  "thiserror 2.0.18",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -1277,15 +1278,6 @@ checksum = "8ae3f5d315924270530207e2a68396c3cc547f6dca3fbdca317cfb1a51edb593"
 
 [[package]]
 name = "bzip2"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49ecfb22d906f800d4fe833b6282cf4dc1c298f5057ca0b5445e5c209735ca47"
-dependencies = [
- "bzip2-sys",
-]
-
-[[package]]
-name = "bzip2"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3a53fac24f34a81bc9954b5d6cfce0c21e18ec6959f44f56e8e90e4bb7c346c"
@@ -1301,16 +1293,6 @@ checksum = "beeb59e7e4c811ab37cc73680c798c7a5da77fc9989c62b09138e31ee740f735"
 dependencies = [
  "crc32fast",
  "tinyvec",
-]
-
-[[package]]
-name = "bzip2-sys"
-version = "0.1.13+1.0.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "225bff33b2141874fe80d71e07d6eec4f85c5c216453dd96388240f96e1acc14"
-dependencies = [
- "cc",
- "pkg-config",
 ]
 
 [[package]]
@@ -3176,7 +3158,7 @@ dependencies = [
  "serde_yaml",
  "tar",
  "tempfile",
- "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -4501,6 +4483,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -4588,6 +4571,7 @@ dependencies = [
  "tracing-subscriber",
  "winevt-core",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -4627,6 +4611,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tracing",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -4688,6 +4673,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -4719,6 +4705,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -4745,6 +4732,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -5197,6 +5185,7 @@ dependencies = [
  "tempfile",
  "tracing",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -5397,6 +5386,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tracing",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -5423,6 +5413,7 @@ dependencies = [
  "thiserror 2.0.18",
  "vhdx-core",
  "zip 2.4.2",
+ "zip-forensic-core",
 ]
 
 [[package]]
@@ -6036,17 +6027,6 @@ name = "lzma-rust2"
 version = "0.16.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce716bf1a316f47a280fc76295f6495b5bea4752bca01c3b3885e101b1c23c02"
-
-[[package]]
-name = "lzma-sys"
-version = "0.1.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fda04ab3764e6cde78b9974eec4f779acaba7c4e84b36eca3cf77c581b85d27"
-dependencies = [
- "cc",
- "libc",
- "pkg-config",
-]
 
 [[package]]
 name = "lznt1"
@@ -9278,7 +9258,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "081a399c6762c4a9bda9233f502aca74b6ca6a0caaff4d218b12887eac4b6adc"
 dependencies = [
  "aes 0.9.1",
- "bzip2 0.6.1",
+ "bzip2",
  "cbc 0.2.1",
  "crc32fast",
  "getrandom 0.4.3",
@@ -12180,15 +12160,6 @@ name = "xtask"
 version = "0.1.0"
 
 [[package]]
-name = "xz2"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "388c44dc09d76f1536602ead6d325eb532f5c122f17782bd57fb47baeeb767e2"
-dependencies = [
- "lzma-sys",
-]
-
-[[package]]
 name = "yansi"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12368,20 +12339,6 @@ name = "zeroize"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e"
-dependencies = [
- "zeroize_derive",
-]
-
-[[package]]
-name = "zeroize_derive"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c50655cbb0fe3fc43170059e702f1ce5e19b84cec58dc87b037a09935c2f328"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.118",
-]
 
 [[package]]
 name = "zerotrie"
@@ -12422,28 +12379,16 @@ version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fabe6324e908f85a1c52063ce7aa26b68dcb7eb6dbc83a2d148403c9bc3eba50"
 dependencies = [
- "aes 0.8.4",
  "arbitrary",
- "bzip2 0.5.2",
- "constant_time_eq",
  "crc32fast",
  "crossbeam-utils",
  "deflate64",
  "displaydoc",
  "flate2",
- "getrandom 0.3.4",
- "hmac",
  "indexmap 2.14.0",
- "lzma-rs",
  "memchr",
- "pbkdf2",
- "sha1",
  "thiserror 2.0.18",
- "time",
- "xz2",
- "zeroize",
  "zopfli",
- "zstd",
 ]
 
 [[package]]
@@ -12458,6 +12403,27 @@ dependencies = [
  "indexmap 2.14.0",
  "memchr",
  "zopfli",
+]
+
+[[package]]
+name = "zip-forensic-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd66ca0be2a86f374ac27bf8e9872246bed322d7ea894d617e2e4f6d4660151b"
+dependencies = [
+ "aes 0.8.4",
+ "bzip2-rs",
+ "constant_time_eq",
+ "crc32fast",
+ "ctr",
+ "deflate64",
+ "flate2",
+ "hmac",
+ "lzma-rs",
+ "pbkdf2",
+ "ruzstd",
+ "sha1",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -12482,32 +12448,4 @@ dependencies = [
  "crc32fast",
  "log",
  "simd-adler32",
-]
-
-[[package]]
-name = "zstd"
-version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e91ee311a569c327171651566e07972200e76fcfe2242a4fa446149a3881c08a"
-dependencies = [
- "zstd-safe",
-]
-
-[[package]]
-name = "zstd-safe"
-version = "7.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f49c4d5f0abb602a93fb8736af2a4f4dd9512e36f7f570d66e65ff867ed3b9d"
-dependencies = [
- "zstd-sys",
-]
-
-[[package]]
-name = "zstd-sys"
-version = "2.0.16+zstd.1.5.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91e19ebc2adc8f83e43039e79776e3fda8ca919132d68a1fed6a5faca2683748"
-dependencies = [
- "cc",
- "pkg-config",
 ]

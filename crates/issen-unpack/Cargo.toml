@@ -23,7 +23,7 @@ sysinfo = "0.33"
 # adaptive RAM/temp spill: zip (Stored = in-place window), 7z (solid LZMA),
 # tar.gz, tar.bz2. All pure-Rust to keep the forbid(unsafe) / batteries-included
 # guarantee — bzip2-rs is decompress-only, which is all a read-only reader needs.
-zip = { workspace = true }
+zip-forensic-core = { workspace = true }
 sevenz-rust2 = "0.21"
 flate2 = { workspace = true }
 tar = { workspace = true }
@@ -37,6 +37,8 @@ miniz_oxide = { version = "0.8", features = ["block-boundary"] }
 tempfile = { workspace = true }
 inventory = { workspace = true }
 issen-core = { workspace = true }
+# zip-rs writer mints the in-memory disk-image-in-zip fixtures the unit tests read back.
+zip = { workspace = true }
 # Pure-Rust bzip2 ENCODER, test-only: mints .tar.bz2 fixtures the production
 # decompressor (bzip2-rs) reads back. Never shipped.
 banzai = "0.3"

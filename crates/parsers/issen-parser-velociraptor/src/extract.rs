@@ -18,7 +18,7 @@ pub fn extract_velociraptor(
     dest: &Path,
 ) -> Result<(Vec<ManifestEntry>, CollectionMetadata), RtError> {
     let file = std::fs::File::open(zip_path)?;
-    let mut archive = zip::ZipArchive::new(file)
+    let mut archive = zip_core::ZipArchive::new(file)
         .map_err(|e| RtError::InvalidData(format!("Failed to open zip: {e}")))?;
 
     let mut entries = Vec::new();

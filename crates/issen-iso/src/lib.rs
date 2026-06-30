@@ -83,7 +83,7 @@ impl IsoDataSource {
     /// entry is not a valid ISO 9660 image.
     pub fn open_zip(zip_path: &Path) -> Result<Self, IsoError> {
         let backing = Arc::new(File::open(zip_path)?);
-        let mut archive = zip::ZipArchive::new(File::open(zip_path)?)
+        let mut archive = zip_core::ZipArchive::new(File::open(zip_path)?)
             .map_err(|e| IsoError::InvalidIso(format!("zip open: {e}")))?;
 
         let idx = find_iso_entry(&mut archive).ok_or_else(|| {
@@ -93,7 +93,7 @@ impl IsoDataSource {
             .by_index(idx)
             .map_err(|e| IsoError::InvalidIso(format!("zip entry {idx}: {e}")))?;
 
-        let stored = entry.compression() == zip::CompressionMethod::Stored;
+        let stored = entry.compression() == zip_core::CompressionMethod::Stored;
         let data_start = entry.data_start();
         let entry_size = entry.size();
 
@@ -124,7 +124,7 @@ impl IsoDataSource {
 }
 
 /// Find the first `.iso` file entry in the archive, by extension.
-fn find_iso_entry(archive: &mut zip::ZipArchive<File>) -> Option<usize> {
+fn find_iso_entry(archive: &mut zip_core::ZipArchive<File>) -> Option<usize> {
     for i in 0..archive.len() {
         let Ok(entry) = archive.by_index(i) else {
             continue;

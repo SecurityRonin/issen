@@ -56,7 +56,7 @@ issen-parser-biome = { workspace = true }
 issen-correlation = { workspace = true, features = ["remote"] }
 issen-unpack = { workspace = true }
 issen-archive = { workspace = true }
-zip = { workspace = true }
+zip-forensic-core = { workspace = true }
 tempfile = { workspace = true }
 issen-mem    = { workspace = true }
 issen-evtx   = { workspace = true }
@@ -84,6 +84,8 @@ issen-remote-io = { workspace = true, features = ["sftp"] }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
+# zip-rs writer mints the in-memory pipeline-zip fixtures the unit tests read back.
+zip = { workspace = true }
 flate2 = { workspace = true }
 issen-disk = { workspace = true }
 predicates = { workspace = true }

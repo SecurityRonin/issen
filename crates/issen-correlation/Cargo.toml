@@ -23,6 +23,9 @@ serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 tar = { workspace = true }
 flate2 = { workspace = true }
+# attack_flow.rs reads bundles via zip-forensic-core; sync.rs keeps zip-rs for its
+# whole-archive ZipArchive::extract() helper (no equivalent in the read-only core).
+zip-forensic-core = { workspace = true }
 zip = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

@@ -16,7 +16,7 @@ serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 reqwest = { workspace = true }
 tar = { workspace = true }
-zip = { workspace = true }
+zip-forensic-core = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

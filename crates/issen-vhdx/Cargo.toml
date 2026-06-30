@@ -16,11 +16,13 @@ issen-core   = { workspace = true }
 issen-unpack = { workspace = true }
 inventory    = { workspace = true }
 vhdx         = { workspace = true }
-zip          = { workspace = true }
+zip-forensic-core = { workspace = true }
 thiserror    = { workspace = true }
 tempfile     = { workspace = true }
 
 [dev-dependencies]
+# zip-rs writer mints the in-memory VHDX-in-zip fixtures the unit tests read back.
+zip          = { workspace = true }
 
 [lints]
 workspace = true
