@@ -113,9 +113,7 @@ fn json_to_tau_value(v: &serde_json::Value) -> tau_engine::Value<'_> {
 ///   - `value*` for starts with
 ///   - `*value` for ends with
 ///   - `value` for exact match
-fn convert_sigma_detection(
-    detection: &serde_yaml::Value,
-) -> Result<serde_yaml::Value, SigmaError> {
+fn convert_sigma_detection(detection: &serde_yaml::Value) -> Result<serde_yaml::Value, SigmaError> {
     let mapping = detection
         .as_mapping()
         .ok_or_else(|| SigmaError::Compile("detection must be a mapping".into()))?;

@@ -13,8 +13,13 @@ Please open an issue before large changes so we can align on approach.
 ```bash
 git clone https://github.com/SecurityRonin/issen
 cd issen
+just setup          # enable the pre-commit hook (fmt + clippy) — do this first
 cargo test --workspace
 ```
+
+`just setup` points git at `.githooks/`, so `cargo fmt --check` and clippy run
+before every commit. Without it the hook is dormant and formatting can drift
+into `main` (CI only catches it after the fact).
 
 All crates follow strict TDD — write failing tests first, then the implementation. See the test patterns in any existing crate for examples.
 

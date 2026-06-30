@@ -44,6 +44,11 @@ ignore = [
     { id = "RUSTSEC-2026-0098", reason = "rustls-webpki 0.101 via tonic/tikv-client/opendal; awaiting opendal update" },
     { id = "RUSTSEC-2026-0099", reason = "rustls-webpki 0.101 via tonic/tikv-client/opendal; awaiting opendal update" },
     { id = "RUSTSEC-2026-0104", reason = "rustls-webpki 0.101 via tonic/tikv-client/opendal; awaiting opendal update" },
+    # lopdf is reached only via printpdf (PDF report *generation*, issen-report).
+    # The advisory is a stack overflow when *parsing* deeply-nested input PDFs —
+    # a path this code never takes (it writes reports, never reads untrusted PDFs).
+    # Cannot bump independently of printpdf.
+    { id = "RUSTSEC-2026-0187", reason = "lopdf via printpdf; report generation only (no PDF parsing); awaiting printpdf update" },
 ]
 
 # ---------------------------------------------------------------------------

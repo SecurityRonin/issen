@@ -35,7 +35,10 @@ fn validate_udp_scan() {
     let dns_listen = lst.iter().filter(|c| c.local_port == 53).count();
     eprintln!("listeners on :53 (dns.exe): {dns_listen}");
     for c in lst.iter().filter(|c| c.local_port == 53).take(4) {
-        eprintln!("  {} {}:{} {} pid={} {}", c.protocol, c.local_addr, c.local_port, c.state, c.pid, c.process_name);
+        eprintln!(
+            "  {} {}:{} {} pid={} {}",
+            c.protocol, c.local_addr, c.local_port, c.state, c.pid, c.process_name
+        );
     }
     eprintln!("--- first 12 UDP ---");
     for c in udp.iter().take(12) {
