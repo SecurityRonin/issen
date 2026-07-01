@@ -121,9 +121,9 @@ pub fn filetime_to_utc_ns(filetime: u64) -> Option<i64> {
     if filetime == 0 || filetime < FILETIME_EPOCH_OFFSET {
         return None;
     }
-    let unix_100ns = filetime - FILETIME_EPOCH_OFFSET;
-    // Multiply by 100 to convert from 100-ns units to nanoseconds
-    i64::try_from(unix_100ns.checked_mul(100)?).ok()
+    // Delegate the epoch arithmetic to the spec-cited timeglyph decoder (our own
+    // fleet crate); keep the forensic 0/pre-epoch guard above (0 = "no timestamp").
+    decode("filetime", i64::try_from(filetime).ok()?)
 }
 
 /// Decode a raw integer timestamp in the named format (a [`timeglyph`] format
@@ -132,8 +132,9 @@ pub fn filetime_to_utc_ns(filetime: u64) -> Option<i64> {
 /// is unknown or the value is out of the representable range.
 #[must_use]
 pub fn decode(format_id: &str, value: i64) -> Option<i64> {
-    let _ = (format_id, value);
-    None // GREEN: delegate to timeglyph::format(id).decode_int(value)
+    let fmt = timeglyph::format(format_id).ok()?;
+    let posix_ns = fmt.decode_int(value).ok()?;
+    i64::try_from(posix_ns.0).ok()
 }
 
 #[cfg(test)]
