@@ -165,10 +165,20 @@ impl UsnRecordV2 {
     /// Convert Windows FILETIME to Unix nanoseconds.
     #[must_use]
     pub fn filetime_to_unix_ns(filetime: i64) -> i64 {
-        // Windows FILETIME: 100ns intervals since 1601-01-01
-        // Unix epoch offset: 11644473600 seconds
+        // Delegate the epoch arithmetic to the spec-cited timeglyph decoder (our
+        // own fleet crate, [MS-DTYP]). Fall back to the saturating hand-rolled
+        // math for values timeglyph cannot represent, preserving this site's
+        // never-None `-> i64` contract.
         const EPOCH_DIFF_100NS: i64 = 116_444_736_000_000_000;
-        (filetime - EPOCH_DIFF_100NS) * 100
+        timeglyph::format("filetime")
+            .ok()
+            .and_then(|f| f.decode_int(filetime).ok())
+            .and_then(|posix_ns| i64::try_from(posix_ns.0).ok())
+            .unwrap_or_else(|| {
+                filetime
+                    .saturating_sub(EPOCH_DIFF_100NS)
+                    .saturating_mul(100)
+            })
     }
 
     /// Convert to ISO 8601 display string.

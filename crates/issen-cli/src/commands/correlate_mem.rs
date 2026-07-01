@@ -89,9 +89,18 @@ pub fn dump_stem(path: &Path) -> String {
 /// yields `None`, which the caller treats as "no metadata instant".
 #[must_use]
 pub fn acquisition_ns_from_filetime(filetime: u64) -> Option<i64> {
-    let unix_100ns = filetime.checked_sub(FILETIME_UNIX_EPOCH_DELTA)?;
-    let ns = unix_100ns.checked_mul(100)?;
-    i64::try_from(ns).ok()
+    // Preserve the pre-epoch guard (0 = "no system time" is below the delta, so
+    // it too yields None): only decode FILETIMEs at or after the Unix epoch.
+    if filetime < FILETIME_UNIX_EPOCH_DELTA {
+        return None;
+    }
+    // Delegate the epoch arithmetic to the spec-cited timeglyph decoder (our own
+    // fleet crate, [MS-DTYP]). A u64 above i64::MAX is garbage → None (no panic).
+    let posix_ns = timeglyph::format("filetime")
+        .ok()?
+        .decode_int(i64::try_from(filetime).ok()?)
+        .ok()?;
+    i64::try_from(posix_ns.0).ok()
 }
 
 /// Resolve the acquisition instant (Unix ns) for a dump, in priority order:

@@ -19,7 +19,15 @@ const FILETIME_EPOCH_DIFF: i64 = 116_444_736_000_000_000;
 
 /// Convert a Windows `FILETIME` to (unix-nanoseconds, RFC 3339 display).
 fn filetime_to_unix(ft: i64) -> (i64, String) {
-    let ns = ft.saturating_sub(FILETIME_EPOCH_DIFF).saturating_mul(100);
+    // Delegate the epoch arithmetic to the spec-cited timeglyph decoder (our own
+    // fleet crate, [MS-DTYP]). Fall back to the saturating hand-rolled math for
+    // values timeglyph cannot represent, preserving the never-None / saturating
+    // contract this site relies on (0 = "no run time", handled by the caller).
+    let ns = timeglyph::format("filetime")
+        .ok()
+        .and_then(|f| f.decode_int(ft).ok())
+        .and_then(|posix_ns| i64::try_from(posix_ns.0).ok())
+        .unwrap_or_else(|| ft.saturating_sub(FILETIME_EPOCH_DIFF).saturating_mul(100));
     let display = chrono::DateTime::from_timestamp_nanos(ns).to_rfc3339();
     (ns, display)
 }

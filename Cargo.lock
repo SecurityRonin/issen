@@ -4604,6 +4604,7 @@ dependencies = [
  "srum-parser",
  "tar",
  "tempfile",
+ "timeglyph",
  "toml",
  "tracing",
  "tracing-subscriber",
@@ -4647,6 +4648,7 @@ dependencies = [
  "tar",
  "tempfile",
  "thiserror 2.0.18",
+ "timeglyph",
  "tracing",
  "zip 2.4.2",
  "zip-forensic-core",
@@ -4972,6 +4974,7 @@ dependencies = [
  "ntfs-core",
  "serde_json",
  "tempfile",
+ "timeglyph",
  "tracing",
 ]
 
@@ -5000,6 +5003,7 @@ dependencies = [
  "prefetch-forensic",
  "serde_json",
  "tempfile",
+ "timeglyph",
 ]
 
 [[package]]
@@ -5207,6 +5211,7 @@ dependencies = [
  "issen-core",
  "serde_json",
  "tempfile",
+ "timeglyph",
  "tracing",
 ]
 

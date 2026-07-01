@@ -26,13 +26,23 @@ pub fn is_born_before_install(file_born_ns: i64, os_install_ns: i64, threshold_n
 /// Windows epoch offset: 11 644 473 600 seconds = `11_644_473_600_000_000_000` ns.
 #[must_use]
 pub fn filetime_to_unix_ns(filetime: u64) -> i64 {
-    // Windows epoch is 11 644 473 600 seconds before Unix epoch.
-    // In 100-ns ticks: 116_444_736_000_000_000.
-    // In nanoseconds:  11_644_473_600_000_000_000 (exceeds i64::MAX — use i128).
+    // Delegate the epoch arithmetic to the spec-cited timeglyph decoder (our own
+    // fleet crate, [MS-DTYP]). Fall back to the saturating hand-rolled i128 math
+    // for values timeglyph cannot represent (or a u64 above i64::MAX), preserving
+    // this site's never-None `-> i64` saturating contract.
     const EPOCH_DIFF_100NS: i128 = 116_444_736_000_000_000;
-    let unix_100ns = i128::from(filetime) - EPOCH_DIFF_100NS;
-    // Saturate on overflow; realistic forensic timestamps fit comfortably in i64.
-    i64::try_from(unix_100ns * 100).unwrap_or(i64::MAX)
+    let saturating = || {
+        let unix_100ns = i128::from(filetime) - EPOCH_DIFF_100NS;
+        i64::try_from(unix_100ns * 100).unwrap_or(i64::MAX)
+    };
+    match i64::try_from(filetime) {
+        Ok(ft) => timeglyph::format("filetime")
+            .ok()
+            .and_then(|f| f.decode_int(ft).ok())
+            .and_then(|posix_ns| i64::try_from(posix_ns.0).ok())
+            .unwrap_or_else(saturating),
+        Err(_) => saturating(),
+    }
 }
 
 /// Convert a Windows registry `InstallDate` value (Unix timestamp, seconds,

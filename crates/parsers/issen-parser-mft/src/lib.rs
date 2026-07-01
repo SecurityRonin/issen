@@ -102,15 +102,19 @@ pub fn filetime_to_ns(filetime: u64) -> Option<i64> {
     if filetime == 0 {
         return None;
     }
-    // Reject FILETIMEs that predate the Unix epoch.
-    let ticks_since_unix = filetime.checked_sub(FILETIME_EPOCH_OFFSET)?;
-    // Each tick is 100 ns; convert to nanoseconds.
-    // Use i128 to avoid overflow before casting to i64.
-    let ns = i128::from(ticks_since_unix) * 100;
-    // Clamp to i64 range — any realistic forensic timestamp fits easily.
-    #[allow(clippy::cast_possible_truncation)]
-    let result = ns.clamp(i128::from(i64::MIN), i128::from(i64::MAX)) as i64;
-    Some(result)
+    // Reject FILETIMEs that predate the Unix epoch (0 = "not set" handled above).
+    if filetime < FILETIME_EPOCH_OFFSET {
+        return None;
+    }
+    // Delegate the epoch arithmetic to the spec-cited timeglyph decoder (our own
+    // fleet crate, [MS-DTYP]); the 0/pre-epoch guards above are preserved.
+    // FILETIME is u64 on disk but timeglyph takes i64: a value above i64::MAX is
+    // garbage → None (never a panic).
+    let posix_ns = timeglyph::format("filetime")
+        .ok()?
+        .decode_int(i64::try_from(filetime).ok()?)
+        .ok()?;
+    i64::try_from(posix_ns.0).ok()
 }
 
 /// Convert a `chrono::DateTime<Utc>` to nanoseconds since the Unix epoch.
