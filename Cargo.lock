@@ -67,15 +67,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "aff4"
-version = "0.1.2"
+name = "aes-kw"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5931ef9433027dd00f1d98e9e2f39e80b1d690f09d48387485d97cc9c2b7b36b"
+checksum = "69fa2b352dcefb5f7f3a5fb840e02665d311d878955380515e4fd50095dd3d8c"
 dependencies = [
+ "aes 0.8.4",
+]
+
+[[package]]
+name = "aff4"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f37f0dd37d8a7174ff8904567032d63a3061b6112ba8294800b318bb2f39a658"
+dependencies = [
+ "aes 0.8.4",
+ "aes-kw",
  "flate2",
  "lz4_flex",
+ "pbkdf2",
+ "sha2 0.10.9",
  "snap",
  "thiserror 2.0.18",
+ "xts-mode",
  "zip 2.4.2",
  "zip-forensic-core",
 ]
@@ -12182,6 +12196,16 @@ checksum = "7db36564308ced066dfa8972d844e85647f9c3588c57a1cecda89f76e8700907"
 [[package]]
 name = "xtask"
 version = "0.1.0"
+
+[[package]]
+name = "xts-mode"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09cbddb7545ca0b9ffa7bdc653e8743303e1712687a6918ced25f2cdbed42520"
+dependencies = [
+ "byteorder",
+ "cipher 0.4.4",
+]
 
 [[package]]
 name = "yansi"
