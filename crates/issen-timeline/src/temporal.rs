@@ -137,6 +137,50 @@ pub fn decode(format_id: &str, value: i64) -> Option<i64> {
     i64::try_from(posix_ns.0).ok()
 }
 
+/// Calendar system for rendering a `timestamp_ns`.
+#[derive(Debug, Clone)]
+pub enum Calendar {
+    /// Standard civil (Gregorian) instant.
+    Civil,
+    /// Chinese lunisolar / 干支 four-pillar reading at the render zone's meridian.
+    /// The optional value is the observer's longitude (degrees east) for
+    /// apparent-solar-time correction (`None` = meridian-only). A reading is a
+    /// convention-relative interpretation, not a single verdict.
+    Lunisolar(Option<f64>),
+}
+
+/// How to render a `timestamp_ns` for human-facing output: the output timezone
+/// (via [`timeglyph::RenderZone`] — UTC / fixed offset / DST-correct IANA zone),
+/// an optional `jiff` strftime format (RFC 3339 when `None`), and the calendar.
+#[derive(Debug, Clone)]
+pub struct TimeRenderConfig {
+    /// Output timezone.
+    pub zone: timeglyph::RenderZone,
+    /// Optional `jiff` strftime pattern (e.g. `"%Y-%m-%d %H:%M:%S"`); `None`
+    /// renders RFC 3339.
+    pub format: Option<String>,
+    /// Calendar system.
+    pub calendar: Calendar,
+}
+
+impl Default for TimeRenderConfig {
+    fn default() -> Self {
+        Self {
+            zone: timeglyph::RenderZone::Utc,
+            format: None,
+            calendar: Calendar::Civil,
+        }
+    }
+}
+
+/// Render a Unix-nanosecond instant per `cfg`. Never panics; returns the RFC-3339
+/// UTC form as a fallback for an out-of-range instant or a bad format.
+#[must_use]
+pub fn render_at(timestamp_ns: i64, cfg: &TimeRenderConfig) -> String {
+    let _ = (timestamp_ns, cfg);
+    String::new() // GREEN: render via timeglyph (zone/lunisolar) + jiff (format)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -285,6 +329,46 @@ mod tests {
         assert_eq!(decode("webkit", 11_644_473_600_000_000), Some(0));
         // unknown format id → None (never a silent wrong answer).
         assert_eq!(decode("not_a_format", 0), None);
+    }
+
+    #[test]
+    fn render_at_supports_timezone_format_and_lunisolar() {
+        use timeglyph::RenderZone;
+        // 2020-01-01T00:00:00Z
+        let ns: i64 = 1_577_836_800_000_000_000;
+
+        // UTC / RFC 3339 (the default).
+        assert_eq!(render_at(ns, &TimeRenderConfig::default()), "2020-01-01T00:00:00Z");
+
+        // A named IANA zone, resolved DST-correct per instant (Tokyo = UTC+9).
+        let tokyo = TimeRenderConfig {
+            zone: RenderZone::parse("Asia/Tokyo").expect("tz"),
+            ..Default::default()
+        };
+        assert!(
+            render_at(ns, &tokyo).starts_with("2020-01-01T09:00:00"),
+            "Tokyo render should be UTC+9, got: {}",
+            render_at(ns, &tokyo)
+        );
+
+        // A custom jiff strftime format.
+        let fmt = TimeRenderConfig {
+            format: Some("%Y-%m-%d %H:%M".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(render_at(ns, &fmt), "2020-01-01 00:00");
+
+        // Lunisolar / 干支 at the China meridian (UTC+8) with an observer longitude.
+        let luni = TimeRenderConfig {
+            zone: RenderZone::parse("+08:00").expect("offset"),
+            calendar: Calendar::Lunisolar(Some(120.0)),
+            ..Default::default()
+        };
+        let r = render_at(ns, &luni);
+        assert!(
+            r.chars().any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c)),
+            "a lunisolar reading must contain 干支/CJK pillars, got: {r}"
+        );
     }
 
     #[test]

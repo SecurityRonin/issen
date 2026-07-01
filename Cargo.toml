@@ -176,6 +176,7 @@ inventory    = "0.3"
 toml         = "0.8"
 chrono       = { version = "0.4", features = ["serde"] }
 timeglyph    = "0.3"
+jiff         = "0.2"
 bytes        = "1"
 memmap2      = "0.9"
 tempfile     = "3"

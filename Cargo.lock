@@ -5401,6 +5401,7 @@ dependencies = [
  "insta",
  "issen-core",
  "issen-correlation",
+ "jiff",
  "rayon",
  "rusqlite",
  "serde",
@@ -9918,6 +9919,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
+name = "stem-branch"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6359b4f4bbc07680d63a49cac8991d2e0acced7d24b5624aad174e5a8629cfd"
+
+[[package]]
 name = "string_cache"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10370,6 +10377,7 @@ dependencies = [
  "jiff",
  "serde",
  "serde_json",
+ "stem-branch",
  "thiserror 2.0.18",
 ]
 

@@ -21,7 +21,8 @@ hex = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 chrono = { workspace = true }
-timeglyph = { workspace = true }
+timeglyph = { workspace = true, features = ["lunisolar"] }
+jiff = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
