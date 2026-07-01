@@ -177,8 +177,43 @@ impl Default for TimeRenderConfig {
 /// UTC form as a fallback for an out-of-range instant or a bad format.
 #[must_use]
 pub fn render_at(timestamp_ns: i64, cfg: &TimeRenderConfig) -> String {
-    let _ = (timestamp_ns, cfg);
-    String::new() // GREEN: render via timeglyph (zone/lunisolar) + jiff (format)
+    let instant = timeglyph::PosixNs(i128::from(timestamp_ns));
+    match &cfg.calendar {
+        Calendar::Lunisolar(longitude) => {
+            match timeglyph::lunisolar::render(instant, &cfg.zone, *longitude) {
+                Ok(r) => format!(
+                    "{} 干支 {} {} {} {} · {}",
+                    r.civil_local,
+                    r.year_pillar,
+                    r.month_pillar,
+                    r.day_pillar,
+                    r.hour_pillar,
+                    r.solar_term
+                ),
+                Err(_) => instant.to_rfc3339().unwrap_or_else(|| "invalid".to_string()),
+            }
+        }
+        Calendar::Civil => match &cfg.format {
+            None => instant.render(&cfg.zone).unwrap_or_else(|| "invalid".to_string()),
+            Some(fmt) => render_with_format(timestamp_ns, &cfg.zone, fmt),
+        },
+    }
+}
+
+/// Render `ns` in `zone` with a `jiff` strftime `fmt`. Panic-free: a bad format
+/// or out-of-range instant yields a diagnostic string, never a panic.
+fn render_with_format(ns: i64, zone: &timeglyph::RenderZone, fmt: &str) -> String {
+    use timeglyph::RenderZone;
+    let tz = match zone {
+        RenderZone::Utc => jiff::tz::TimeZone::UTC,
+        RenderZone::Fixed(off) => jiff::tz::TimeZone::fixed(*off),
+        RenderZone::Named(tz) => tz.clone(),
+    };
+    let Ok(ts) = jiff::Timestamp::from_nanosecond(i128::from(ns)) else {
+        return "invalid".to_string();
+    };
+    let zoned = ts.to_zoned(tz);
+    jiff::fmt::strtime::format(fmt, &zoned).unwrap_or_else(|_| "invalid format".to_string())
 }
 
 #[cfg(test)]
