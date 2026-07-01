@@ -32,9 +32,10 @@ tarpaulin-report.html
 # OS
 Thumbs.db
 
-# Tool configs (MCP, Serena)
+# Tool configs (MCP, Serena, Claude Code)
 .playwright-mcp/
 .serena/
+.claude/
 
 # Generated site
 site/
