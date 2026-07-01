@@ -52,6 +52,7 @@ _(nothing actively in progress — pick the next item from the backlog below)_
 - ⬜ **#109 CI greening — sibling repos still red/with debt:** `srum-forensic`, `ext4fs-forensic`, `4n6mount`, `winevt-forensic`. (issen + forensicnomicon now green.)
 - ✅ **Docs → MkDocs — DONE (CLAUDE.md note was stale, verified 2026-06-18):** all four (`forensicnomicon`, `memory-forensic`, `winevt-forensic`, `srum-forensic`) already have `mkdocs.yml` + `mkdocs build` deploy workflows; forensicnomicon footer links verified **live** (HTTP 200, real content). No migration work left.
 - 🚩 forensicnomicon CI **test** job MSRV-1.75 stays root-only on purpose (the unpublished `ingest`/`4n6query` bins pull deps above 1.75); MSRV is a *library* guarantee.
+- ⬜ **Drop C-FFI `zip` (bzip2-sys/zstd-sys/lzma-sys) — split migration:** read consumers → `zip-forensic-core`, write consumers → feature-slimmed zip-rs (`default-features=false, features=["deflate"]`). Unblocked (zip-forensic-core 0.2.0 published). Plan: `docs/plans/2026-07-01-drop-cffi-zip-fleet-migration.md`. Acceptance: `cargo tree -e features --workspace | grep -E 'bzip2-sys|zstd-sys|lzma-sys'` EMPTY.
 
 ---
 
