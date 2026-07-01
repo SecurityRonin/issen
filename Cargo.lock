@@ -3,6 +3,18 @@
 version = 4
 
 [[package]]
+name = "ad1-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e59ecdd8e435477b9e7ef0b2ca8d93377fb152cb69ce3939c4c1b4eeb6abbd4"
+dependencies = [
+ "flate2",
+ "md-5",
+ "sha1",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4473,6 +4485,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "issen-ad1"
+version = "0.1.0"
+dependencies = [
+ "ad1-core",
+ "inventory",
+ "issen-core",
+ "issen-unpack",
+ "tempfile",
+]
+
+[[package]]
 name = "issen-aff4"
 version = "0.1.0"
 dependencies = [
@@ -5235,6 +5258,7 @@ dependencies = [
 name = "issen-providers"
 version = "0.1.0"
 dependencies = [
+ "issen-ad1",
  "issen-aff4",
  "issen-archive",
  "issen-dd",

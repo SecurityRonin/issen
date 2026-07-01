@@ -1,0 +1,27 @@
+[package]
+name = "issen-ad1"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "AccessData AD1 logical-image collection provider for the Issen forensic pipeline"
+repository.workspace = true
+
+[lib]
+name = "issen_ad1"
+path = "src/lib.rs"
+
+[dependencies]
+issen-core   = { workspace = true }
+issen-unpack = { workspace = true }
+inventory    = { workspace = true }
+# Pure-Rust AD1 reader (crates.io); imported as `ad1`.
+ad1-core     = { workspace = true }
+
+[dev-dependencies]
+# Build crafted AD1 fixtures in-memory (tier-2, no 48 GiB corpus needed).
+ad1-core = { workspace = true, features = ["testfix"] }
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

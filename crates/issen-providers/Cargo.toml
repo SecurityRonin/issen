@@ -18,6 +18,7 @@ path = "src/lib.rs"
 [dependencies]
 issen-aff4 = { workspace = true }
 issen-archive = { workspace = true }
+issen-ad1 = { workspace = true }
 issen-dd = { workspace = true }
 issen-ewf = { workspace = true }
 issen-iso = { workspace = true }

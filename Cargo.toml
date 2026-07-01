@@ -51,6 +51,7 @@ members = [
     "crates/issen-evtx",
     "crates/issen-dd",
     "crates/issen-archive",
+    "crates/issen-ad1",
     "crates/issen-vhd",
     "crates/issen-vhdx",
     "crates/issen-vmdk",
@@ -81,6 +82,9 @@ issen-timeline   = { path = "crates/issen-timeline" }
 issen-ewf        = { path = "crates/issen-ewf" }
 issen-dd         = { path = "crates/issen-dd" }
 issen-archive    = { path = "crates/issen-archive" }
+issen-ad1        = { path = "crates/issen-ad1" }
+# AD1 logical-image reader (crates.io), imported as `ad1`.
+ad1-core         = "0.1"
 issen-vhd        = { path = "crates/issen-vhd" }
 issen-vhdx       = { path = "crates/issen-vhdx" }
 issen-vmdk       = { path = "crates/issen-vmdk" }
