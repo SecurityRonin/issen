@@ -11,7 +11,7 @@
 //!
 //! [`EntityRef::Ip`]: issen_core::timeline::event::EntityRef::Ip
 
-use chrono::DateTime;
+use jiff::Timestamp;
 
 use crate::correlation::Correlation;
 use crate::evaluator::{evaluate, EventView, RuleSpec, ScopeRule};
@@ -30,12 +30,13 @@ pub const BRUTEFORCE_NOTE: &str =
 const NS_PER_SEC: i64 = 1_000_000_000;
 
 /// Render a nanosecond instant as `YYYY-MM-DD HH:MM:SS UTC`. An out-of-range
-/// value (beyond chrono's representable span) falls back to the raw nanoseconds
+/// value (beyond jiff's representable span) falls back to the raw nanoseconds
 /// rather than panicking.
 fn fmt_instant(ns: i64) -> String {
-    DateTime::from_timestamp_nanos(ns)
-        .format("%Y-%m-%d %H:%M:%S UTC")
-        .to_string()
+    Timestamp::from_nanosecond(i128::from(ns))
+        .ok()
+        .and_then(|ts| jiff::fmt::strtime::format("%Y-%m-%d %H:%M:%S UTC", ts).ok())
+        .unwrap_or_else(|| ns.to_string())
 }
 
 /// The concrete brute-force note: how many failures, over what window, then a
@@ -193,17 +194,18 @@ mod tests {
         // timeline): 95 failed logons 03:21:25 → 03:21:46 UTC against the
         // Administrator account (Session 0, no source IP — joined on the account,
         // which is exactly why the note can't claim "source IP" alone).
-        use chrono::{TimeZone, Utc};
-        let first = Utc
-            .with_ymd_and_hms(2020, 9, 19, 3, 21, 25)
-            .single()
-            .and_then(|t| t.timestamp_nanos_opt())
-            .expect("a representable instant");
-        let last = Utc
-            .with_ymd_and_hms(2020, 9, 19, 3, 21, 46)
-            .single()
-            .and_then(|t| t.timestamp_nanos_opt())
-            .expect("a representable instant");
+        let civil_ns = |h, m, s| {
+            i64::try_from(
+                jiff::civil::datetime(2020, 9, 19, h, m, s, 0)
+                    .in_tz("UTC")
+                    .expect("a representable instant")
+                    .timestamp()
+                    .as_nanosecond(),
+            )
+            .expect("a representable instant")
+        };
+        let first = civil_ns(3, 21, 25);
+        let last = civil_ns(3, 21, 46);
         assert_eq!(
             bruteforce_note(95, first, last),
             "A burst of 95 failed logons between 2020-09-19 03:21:25 UTC and \

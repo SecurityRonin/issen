@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 
 // ── Transport families ────────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ pub struct FeedManifest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub taxii_cursor: Option<String>,
     /// When this sync ran.
-    pub fetched_at: DateTime<Utc>,
+    pub fetched_at: Timestamp,
     /// Absolute path to the locally cached / extracted content.
     pub local_cache_path: PathBuf,
     /// Result of parsing the downloaded content.

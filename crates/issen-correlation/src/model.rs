@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 
 /// Broad classification of what an intel item *is*.
@@ -81,7 +81,7 @@ pub struct Evidence {
     pub source: EvidenceSource,
     pub kind: EvidenceKind,
     pub subject: Option<SubjectRef>,
-    pub timestamp: Option<DateTime<Utc>>,
+    pub timestamp: Option<Timestamp>,
     pub attrs: BTreeMap<String, String>,
     pub tags: Vec<String>,
 }
@@ -118,7 +118,7 @@ impl Evidence {
     }
 
     #[must_use]
-    pub fn with_timestamp(mut self, ts: DateTime<Utc>) -> Self {
+    pub fn with_timestamp(mut self, ts: Timestamp) -> Self {
         self.timestamp = Some(ts);
         self
     }

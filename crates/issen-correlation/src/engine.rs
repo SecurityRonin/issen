@@ -110,13 +110,13 @@ fn subject_matches(
 }
 
 fn within_window(
-    anchor_timestamp: Option<chrono::DateTime<chrono::Utc>>,
-    candidate_timestamp: Option<chrono::DateTime<chrono::Utc>>,
+    anchor_timestamp: Option<jiff::Timestamp>,
+    candidate_timestamp: Option<jiff::Timestamp>,
     within_seconds: Option<i64>,
 ) -> bool {
     match (anchor_timestamp, candidate_timestamp, within_seconds) {
         (Some(anchor), Some(candidate), Some(window)) => {
-            (candidate - anchor).num_seconds().abs() <= window
+            candidate.duration_since(anchor).as_secs().abs() <= window
         }
         (None, _, Some(_)) | (_, _, None) => true,
         _ => false,

@@ -36,9 +36,9 @@ pub use attack_flow::{
 mod tests {
     use std::fs;
 
-    use chrono::{TimeZone, Utc};
     use flate2::write::GzEncoder;
     use flate2::Compression;
+    use jiff::{SignedDuration, Timestamp};
     use tempfile::tempdir;
     use zip::write::SimpleFileOptions;
 
@@ -84,7 +84,10 @@ mod tests {
 
     #[test]
     fn correlates_cross_source_evidence_into_a_single_finding() {
-        let ts = Utc.with_ymd_and_hms(2026, 4, 16, 0, 0, 0).unwrap();
+        let ts = jiff::civil::datetime(2026, 4, 16, 0, 0, 0, 0)
+            .in_tz("UTC")
+            .unwrap()
+            .timestamp();
         let rule = CorrelationRule {
             id: "pivot.reverse-shell".into(),
             title: "Reverse shell over suspicious port".into(),
@@ -117,7 +120,7 @@ mod tests {
             EvidenceKind::Network,
             Some(SubjectRef::Process(4242)),
         )
-        .with_timestamp(ts + chrono::Duration::seconds(30))
+        .with_timestamp(ts + SignedDuration::from_secs(30))
         .with_tag("suspicious_port");
 
         let findings = CorrelationEngine.evaluate(&[rule], &[command, network]);
@@ -283,7 +286,10 @@ clauses:
             .into_iter()
             .find(|rule| rule.id == "correlation.miner.rootkit-concealment")
             .expect("miner rule");
-        let ts = Utc.with_ymd_and_hms(2026, 4, 16, 0, 0, 0).unwrap();
+        let ts = jiff::civil::datetime(2026, 4, 16, 0, 0, 0, 0)
+            .in_tz("UTC")
+            .unwrap()
+            .timestamp();
 
         let rootkit = Evidence::new(
             "rootkit-1",
@@ -300,7 +306,7 @@ clauses:
             EvidenceKind::Process,
             Some(SubjectRef::Process(31337)),
         )
-        .with_timestamp(ts + chrono::Duration::seconds(5))
+        .with_timestamp(ts + SignedDuration::from_secs(5))
         .with_tag("miner_thread"); // libuv-worker threads confirm XMRig; more specific than hidden_process
 
         // Hidden-process network evidence comes from Volatility (memory),
@@ -311,7 +317,7 @@ clauses:
             EvidenceKind::Network,
             Some(SubjectRef::Process(31337)),
         )
-        .with_timestamp(ts + chrono::Duration::seconds(10))
+        .with_timestamp(ts + SignedDuration::from_secs(10))
         .with_tag("mining_pool");
 
         let findings = CorrelationEngine.evaluate(&[rule], &[rootkit, hidden, network]);
@@ -377,7 +383,10 @@ clauses:
 
     #[test]
     fn matches_rule_clause_against_evidence_attributes() {
-        let ts = Utc.with_ymd_and_hms(2026, 4, 16, 0, 0, 0).unwrap();
+        let ts = jiff::civil::datetime(2026, 4, 16, 0, 0, 0, 0)
+            .in_tz("UTC")
+            .unwrap()
+            .timestamp();
         let rule = CorrelationRule {
             id: "correlation.miner.attr-driven".into(),
             title: "Attribute-driven miner correlation".into(),
@@ -424,7 +433,7 @@ clauses:
             EvidenceKind::Network,
             Some(SubjectRef::Process(1337)),
         )
-        .with_timestamp(ts + chrono::Duration::seconds(10))
+        .with_timestamp(ts + SignedDuration::from_secs(10))
         .with_attr("dst_port", "3333");
 
         let findings = CorrelationEngine.evaluate(&[rule], &[process, network]);
@@ -523,7 +532,7 @@ clauses:
             },
             version: Some("abc123".into()),
             taxii_cursor: None,
-            fetched_at: chrono::Utc::now(),
+            fetched_at: Timestamp::now(),
             local_cache_path: PathBuf::from("/tmp/sigma"),
             parse_status: ParseStatus::Ok { rule_count: 42 },
         };

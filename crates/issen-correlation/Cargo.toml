@@ -15,7 +15,7 @@ issen-core = { workspace = true }
 forensicnomicon = { workspace = true }
 rayon = { workspace = true }
 anyhow = { workspace = true }
-chrono = { workspace = true }
+jiff = { workspace = true }
 timeglyph = { workspace = true }
 sha2 = { workspace = true }
 reqwest = { workspace = true }

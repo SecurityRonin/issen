@@ -5,7 +5,7 @@
 //! a [`SkewFinding`] is emitted — an anti-forensics signal that timestamps
 //! for the same artefact diverge suspiciously between sources.
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 
 use crate::model::{Evidence, EvidenceSource};
 
@@ -33,10 +33,10 @@ pub struct SkewFinding {
     pub path: String,
     /// Label of the first source (e.g. `"MFT"`).
     pub source_a: String,
-    pub timestamp_a: DateTime<Utc>,
+    pub timestamp_a: Timestamp,
     /// Label of the second source (e.g. `"EventLog"`).
     pub source_b: String,
-    pub timestamp_b: DateTime<Utc>,
+    pub timestamp_b: Timestamp,
     /// Absolute number of seconds between the two timestamps.
     pub delta_secs: i64,
 }
@@ -99,7 +99,7 @@ pub fn detect_time_skew(events: &[Evidence], opts: &SkewOpts) -> Vec<SkewFinding
                 // Safety: only events with Some(timestamp) are inserted into groups.
                 let Some(ts_a) = a.timestamp else { continue };
                 let Some(ts_b) = b.timestamp else { continue };
-                let delta_secs = (ts_a - ts_b).num_seconds().abs();
+                let delta_secs = ts_a.duration_since(ts_b).as_secs().abs();
 
                 if delta_secs > opts.threshold_secs {
                     findings.push(SkewFinding {
@@ -122,19 +122,20 @@ pub fn detect_time_skew(events: &[Evidence], opts: &SkewOpts) -> Vec<SkewFinding
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone as _;
-
     use super::*;
     use crate::model::{EvidenceKind, EvidenceSource};
 
-    fn make(id: &str, source: EvidenceSource, path: &str, ts: DateTime<Utc>) -> Evidence {
+    fn make(id: &str, source: EvidenceSource, path: &str, ts: Timestamp) -> Evidence {
         Evidence::new(id, source, EvidenceKind::Artifact, None)
             .with_attr("path", path)
             .with_timestamp(ts)
     }
 
-    fn ts(h: u32, m: u32, s: u32) -> DateTime<Utc> {
-        chrono::Utc.with_ymd_and_hms(2026, 4, 19, h, m, s).unwrap()
+    fn ts(h: i8, m: i8, s: i8) -> Timestamp {
+        jiff::civil::datetime(2026, 4, 19, h, m, s, 0)
+            .in_tz("UTC")
+            .unwrap()
+            .timestamp()
     }
 
     // ── RED tests (all expected to FAIL while detect_time_skew is a stub) ─────

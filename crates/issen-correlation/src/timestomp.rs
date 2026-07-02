@@ -21,9 +21,9 @@
 //! (copy/tunnelling modifiers, sub-second zeroing, USN/`$LogFile` correlation)
 //! is tracked in `docs/research/2026-06-09-timestomp-detection-false-positives.md`.
 
-use chrono::{DateTime, Utc};
 use forensicnomicon::report::{Category, Finding, Severity, Source};
 use issen_core::timeline::event::{EventType, TimelineEvent};
+use jiff::Timestamp;
 
 /// Stable, scheme-prefixed finding code (published contract — never change).
 /// Matches the Case 001 capability-gaps sub-plan (Workstream C2).
@@ -175,10 +175,7 @@ fn meta_ns(event: &TimelineEvent, key: &str) -> Option<i64> {
 /// Parse a `datetime_to_display`-formatted string (`%Y-%m-%dT%H:%M:%S%.9fZ`,
 /// RFC3339) back to nanoseconds since the Unix epoch.
 fn display_to_ns(s: &str) -> Option<i64> {
-    DateTime::parse_from_rfc3339(s)
-        .ok()?
-        .with_timezone(&Utc)
-        .timestamp_nanos_opt()
+    i64::try_from(s.parse::<Timestamp>().ok()?.as_nanosecond()).ok()
 }
 
 /// `true` when a nanosecond timestamp falls exactly on a whole second — i.e. its
@@ -236,10 +233,8 @@ mod tests {
     const T: i64 = FN_2020_NS; // 2020-01-01T00:00:00Z — a whole second
 
     fn disp(ns: i64) -> String {
-        use chrono::TimeZone;
-        Utc.timestamp_nanos(ns)
-            .format("%Y-%m-%dT%H:%M:%S%.9fZ")
-            .to_string()
+        let ts = Timestamp::from_nanosecond(i128::from(ns)).expect("representable instant");
+        jiff::fmt::strtime::format("%Y-%m-%dT%H:%M:%S%.9fZ", ts).expect("valid format")
     }
 
     fn fc(si_c: i64, si_m: i64, si_a: i64, fn_c: i64, path: &str) -> TimelineEvent {
