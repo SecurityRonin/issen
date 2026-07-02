@@ -219,21 +219,24 @@ fn check_en_002(
 mod tests {
     use super::super::file_reader::MockFileReader;
     use super::*;
-    use chrono::{TimeZone, Utc};
     use issen_mft_tree::node::{FileNode, NtfsTimestamps};
     use issen_mft_tree::tree::FileTree;
     use std::collections::HashMap;
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    fn ts() -> chrono::DateTime<Utc> {
-        Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap()
+    /// 2024-01-01 00:00:00 UTC as a `SystemTime`; `.into()` builds the
+    /// `NtfsTimestamps` fields (whose type is provided by `issen_mft_tree`).
+    fn ts() -> SystemTime {
+        let inst = "2024-01-01T00:00:00Z".parse::<jiff::Timestamp>().unwrap();
+        UNIX_EPOCH + Duration::new(inst.as_second() as u64, inst.subsec_nanosecond() as u32)
     }
 
     fn default_ts() -> NtfsTimestamps {
         NtfsTimestamps {
-            modified: ts(),
-            accessed: ts(),
-            created: ts(),
-            entry_modified: ts(),
+            modified: ts().into(),
+            accessed: ts().into(),
+            created: ts().into(),
+            entry_modified: ts().into(),
         }
     }
 

@@ -45,7 +45,7 @@ reqwest = { workspace = true }
 # Utilities
 thiserror = { workspace = true }
 tracing = { workspace = true }
-chrono = { workspace = true }
+jiff = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

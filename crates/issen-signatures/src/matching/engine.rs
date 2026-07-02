@@ -357,6 +357,15 @@ pub struct ScanEngineStats {
     pub total_good_hashes: usize,
 }
 
+// The scan phase shares one `&ScanEngine` across rayon workers (each
+// `scan_file`/`evaluate_event` takes `&self` and builds its own per-scan
+// `yara_x::Scanner`), so the engine MUST stay `Sync`. This compile-time guard
+// fails loudly if a future field (e.g. an `Rc`/`RefCell`) breaks that.
+const _SCANENGINE_IS_SYNC: fn() = || {
+    fn assert_sync<T: Sync>() {}
+    assert_sync::<ScanEngine>();
+};
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -762,12 +771,3 @@ detection:
         assert!(debug_str.contains("ScanEngine"));
     }
 }
-
-// The scan phase shares one `&ScanEngine` across rayon workers (each
-// `scan_file`/`evaluate_event` takes `&self` and builds its own per-scan
-// `yara_x::Scanner`), so the engine MUST stay `Sync`. This compile-time guard
-// fails loudly if a future field (e.g. an `Rc`/`RefCell`) breaks that.
-const _SCANENGINE_IS_SYNC: fn() = || {
-    fn assert_sync<T: Sync>() {}
-    assert_sync::<ScanEngine>();
-};

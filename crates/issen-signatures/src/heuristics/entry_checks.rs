@@ -81,11 +81,23 @@ fn check_ts_003(node: &FileNode, results: &mut Vec<Anomaly>) {
     }
 }
 
+/// Convert an `NtfsTimestamps` field (`issen_mft_tree` uses UTC instants) to a
+/// `jiff::Timestamp`. Out-of-range values fall back to the Unix epoch so the
+/// per-entry checks never panic on adversarial input.
+fn to_jiff(secs: i64, subsec_nanos: u32) -> jiff::Timestamp {
+    let subsec = i32::try_from(subsec_nanos).unwrap_or(0);
+    jiff::Timestamp::new(secs, subsec).unwrap_or(jiff::Timestamp::UNIX_EPOCH)
+}
+
 fn check_ts_004(node: &FileNode, config: &HeuristicsConfig, results: &mut Vec<Anomaly>) {
     let Some(vol_created) = config.volume_created else {
         return;
     };
-    if node.si_timestamps.created < vol_created {
+    let si_created = to_jiff(
+        node.si_timestamps.created.timestamp(),
+        node.si_timestamps.created.timestamp_subsec_nanos(),
+    );
+    if si_created < vol_created {
         results.push(Anomaly {
             severity: Severity::Medium,
             category: AnomalyCategory::Timestomping,
@@ -226,26 +238,39 @@ fn check_mg_003(node: &FileNode, results: &mut Vec<Anomaly>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{TimeZone, Timelike, Utc};
     use issen_mft_tree::node::NtfsTimestamps;
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    fn ts(year: i32, month: u32, day: u32) -> chrono::DateTime<Utc> {
-        Utc.with_ymd_and_hms(year, month, day, 0, 0, 0).unwrap()
+    /// A calendar date at midnight UTC as a `jiff::Timestamp`.
+    fn jts(year: i32, month: u32, day: u32) -> jiff::Timestamp {
+        format!("{year:04}-{month:02}-{day:02}T00:00:00Z")
+            .parse()
+            .unwrap()
     }
 
-    fn ts_with_nanos(year: i32, month: u32, day: u32, nanos: u32) -> chrono::DateTime<Utc> {
-        Utc.with_ymd_and_hms(year, month, day, 12, 0, 0)
-            .unwrap()
-            .with_nanosecond(nanos)
-            .unwrap()
+    /// The same instant as a `SystemTime`, for building `NtfsTimestamps`
+    /// fields (whose type is provided by `issen_mft_tree`) via `.into()`.
+    fn sys(ts: jiff::Timestamp) -> SystemTime {
+        UNIX_EPOCH + Duration::new(ts.as_second() as u64, ts.subsec_nanosecond() as u32)
+    }
+
+    fn ts(year: i32, month: u32, day: u32) -> SystemTime {
+        sys(jts(year, month, day))
+    }
+
+    fn ts_with_nanos(year: i32, month: u32, day: u32, nanos: u32) -> SystemTime {
+        let noon = format!("{year:04}-{month:02}-{day:02}T12:00:00Z")
+            .parse::<jiff::Timestamp>()
+            .unwrap();
+        UNIX_EPOCH + Duration::new(noon.as_second() as u64, nanos)
     }
 
     fn default_ts() -> NtfsTimestamps {
         NtfsTimestamps {
-            modified: ts(2024, 1, 1),
-            accessed: ts(2024, 1, 1),
-            created: ts(2024, 1, 1),
-            entry_modified: ts(2024, 1, 1),
+            modified: ts(2024, 1, 1).into(),
+            accessed: ts(2024, 1, 1).into(),
+            created: ts(2024, 1, 1).into(),
+            entry_modified: ts(2024, 1, 1).into(),
         }
     }
 
@@ -280,8 +305,8 @@ mod tests {
     fn ts_001_triggers_when_created_after_modified() {
         let node = FileNode {
             si_timestamps: NtfsTimestamps {
-                created: ts(2024, 6, 1),
-                modified: ts(2024, 1, 1),
+                created: ts(2024, 6, 1).into(),
+                modified: ts(2024, 1, 1).into(),
                 ..default_ts()
             },
             ..default_node()
@@ -294,8 +319,8 @@ mod tests {
     fn ts_001_does_not_trigger_normal_timestamps() {
         let node = FileNode {
             si_timestamps: NtfsTimestamps {
-                created: ts(2024, 1, 1),
-                modified: ts(2024, 6, 1),
+                created: ts(2024, 1, 1).into(),
+                modified: ts(2024, 6, 1).into(),
                 ..default_ts()
             },
             ..default_node()
@@ -310,11 +335,11 @@ mod tests {
     fn ts_002_triggers_on_large_si_fn_divergence() {
         let node = FileNode {
             si_timestamps: NtfsTimestamps {
-                created: ts(2024, 6, 1),
+                created: ts(2024, 6, 1).into(),
                 ..default_ts()
             },
             fn_timestamps: Some(NtfsTimestamps {
-                created: ts(2023, 1, 1),
+                created: ts(2023, 1, 1).into(),
                 ..default_ts()
             }),
             ..default_node()
@@ -336,13 +361,13 @@ mod tests {
     #[test]
     fn ts_002_does_not_trigger_within_24h() {
         let si = NtfsTimestamps {
-            created: ts(2024, 1, 2),
+            created: ts(2024, 1, 2).into(),
             ..default_ts()
         };
         let node = FileNode {
             si_timestamps: si,
             fn_timestamps: Some(NtfsTimestamps {
-                created: ts(2024, 1, 1),
+                created: ts(2024, 1, 1).into(),
                 ..default_ts()
             }),
             ..default_node()
@@ -356,16 +381,16 @@ mod tests {
     #[test]
     fn ts_003_triggers_zeroed_subseconds() {
         let si = NtfsTimestamps {
-            created: ts(2024, 1, 1), // zero nanos (whole second)
-            modified: ts(2024, 1, 1),
-            accessed: ts(2024, 1, 1),
-            entry_modified: ts(2024, 1, 1),
+            created: ts(2024, 1, 1).into(), // zero nanos (whole second)
+            modified: ts(2024, 1, 1).into(),
+            accessed: ts(2024, 1, 1).into(),
+            entry_modified: ts(2024, 1, 1).into(),
         };
         let fn_ts = NtfsTimestamps {
-            created: ts_with_nanos(2024, 1, 1, 123_456_789),
-            modified: ts_with_nanos(2024, 1, 1, 987_654_321),
-            accessed: ts(2024, 1, 1),
-            entry_modified: ts(2024, 1, 1),
+            created: ts_with_nanos(2024, 1, 1, 123_456_789).into(),
+            modified: ts_with_nanos(2024, 1, 1, 987_654_321).into(),
+            accessed: ts(2024, 1, 1).into(),
+            entry_modified: ts(2024, 1, 1).into(),
         };
         let node = FileNode {
             si_timestamps: si,
@@ -379,16 +404,16 @@ mod tests {
     #[test]
     fn ts_003_does_not_trigger_when_both_have_subseconds() {
         let si = NtfsTimestamps {
-            created: ts_with_nanos(2024, 1, 1, 111_111_111),
-            modified: ts_with_nanos(2024, 1, 1, 222_222_222),
-            accessed: ts(2024, 1, 1),
-            entry_modified: ts(2024, 1, 1),
+            created: ts_with_nanos(2024, 1, 1, 111_111_111).into(),
+            modified: ts_with_nanos(2024, 1, 1, 222_222_222).into(),
+            accessed: ts(2024, 1, 1).into(),
+            entry_modified: ts(2024, 1, 1).into(),
         };
         let fn_ts = NtfsTimestamps {
-            created: ts_with_nanos(2024, 1, 1, 123_456_789),
-            modified: ts_with_nanos(2024, 1, 1, 987_654_321),
-            accessed: ts(2024, 1, 1),
-            entry_modified: ts(2024, 1, 1),
+            created: ts_with_nanos(2024, 1, 1, 123_456_789).into(),
+            modified: ts_with_nanos(2024, 1, 1, 987_654_321).into(),
+            accessed: ts(2024, 1, 1).into(),
+            entry_modified: ts(2024, 1, 1).into(),
         };
         let node = FileNode {
             si_timestamps: si,
@@ -404,11 +429,11 @@ mod tests {
     #[test]
     fn ts_004_triggers_when_si_predates_volume() {
         let config = HeuristicsConfig {
-            volume_created: Some(ts(2023, 1, 1)),
+            volume_created: Some(jts(2023, 1, 1)),
         };
         let node = FileNode {
             si_timestamps: NtfsTimestamps {
-                created: ts(2020, 1, 1),
+                created: ts(2020, 1, 1).into(),
                 ..default_ts()
             },
             ..default_node()

@@ -72,7 +72,7 @@ pub struct Anomaly {
 #[derive(Default)]
 pub struct HeuristicsConfig {
     /// If set, HEUR-TS-004 checks for `$SI` timestamps predating this date.
-    pub volume_created: Option<chrono::DateTime<chrono::Utc>>,
+    pub volume_created: Option<jiff::Timestamp>,
 }
 
 /// Lookup structure for anomalies by arena index.

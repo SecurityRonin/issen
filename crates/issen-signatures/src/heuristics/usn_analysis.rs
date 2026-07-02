@@ -8,12 +8,21 @@ use ntfs_core::usn::{UsnReason, UsnRecord};
 use super::anomaly::{Anomaly, AnomalyCategory, AnomalyIndex};
 use crate::matching::results::Severity;
 
-/// Convert a `DateTime<Utc>` to Windows FILETIME (100ns ticks since 1601-01-01).
+/// Convert a `jiff::Timestamp` to Windows FILETIME (100ns ticks since 1601-01-01).
 /// Used for time-window comparisons that were originally written against raw FILETIME i64.
-fn to_filetime(dt: &chrono::DateTime<chrono::Utc>) -> i64 {
+fn to_filetime(ts: jiff::Timestamp) -> i64 {
     const FILETIME_EPOCH_OFFSET_SECS: i64 = 11_644_473_600;
-    (dt.timestamp() + FILETIME_EPOCH_OFFSET_SECS) * 10_000_000
-        + i64::from(dt.timestamp_subsec_nanos()) / 100
+    (ts.as_second() + FILETIME_EPOCH_OFFSET_SECS) * 10_000_000
+        + i64::from(ts.subsec_nanosecond()) / 100
+}
+
+/// Convert a `UsnRecord` timestamp (`ntfs_core` uses whole-second UTC instants)
+/// to a `jiff::Timestamp`. Out-of-range values fall back to the Unix epoch so the
+/// analysis never panics on adversarial input.
+fn record_ts(rec: &UsnRecord) -> jiff::Timestamp {
+    let secs = rec.timestamp.timestamp();
+    let subsec = i32::try_from(rec.timestamp.timestamp_subsec_nanos()).unwrap_or(0);
+    jiff::Timestamp::new(secs, subsec).unwrap_or(jiff::Timestamp::UNIX_EPOCH)
 }
 
 /// Run all USN stream analysis checks.
@@ -61,7 +70,7 @@ fn check_usn_001(records: &[UsnRecord], tree: Option<&FileTree>, index: &mut Ano
         let mut last_ts: Option<i64> = None;
 
         for rec in recs {
-            let ts = to_filetime(&rec.timestamp);
+            let ts = to_filetime(record_ts(rec));
             if rec.reason.contains(UsnReason::RENAME_NEW_NAME) && is_wipe_name(&rec.filename) {
                 rename_count += 1;
                 if first_ts.is_none() {
@@ -132,7 +141,7 @@ fn check_usn_002(records: &[UsnRecord], tree: Option<&FileTree>, index: &mut Ano
 
     for end in 0..renames.len() {
         // Shrink window from the left.
-        while to_filetime(&renames[end].timestamp) - to_filetime(&renames[start].timestamp)
+        while to_filetime(record_ts(renames[end])) - to_filetime(record_ts(renames[start]))
             > sixty_seconds_ticks
         {
             start += 1;
@@ -247,14 +256,21 @@ fn check_usn_004(records: &[UsnRecord], tree: &FileTree, index: &mut AnomalyInde
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use chrono::{DateTime, TimeZone, Utc};
     use issen_mft_tree::node::{FileNode, NtfsTimestamps};
     use ntfs_core::usn::FileAttributes;
     use ntfs_core::usn::UsnReason;
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+    /// A `jiff::Timestamp` as a `SystemTime`, so the `UsnRecord.timestamp` and
+    /// `NtfsTimestamps` fields (both typed by external crates) can be built with
+    /// `.into()` without naming the external date-time type directly.
+    fn sys(ts: jiff::Timestamp) -> SystemTime {
+        UNIX_EPOCH + Duration::new(ts.as_second() as u64, ts.subsec_nanosecond() as u32)
+    }
 
     /// Base timestamp: 2024-06-01 00:00:00 UTC.
-    fn base_ts() -> DateTime<Utc> {
-        Utc.with_ymd_and_hms(2024, 6, 1, 0, 0, 0).unwrap()
+    fn base_ts() -> jiff::Timestamp {
+        "2024-06-01T00:00:00Z".parse().unwrap()
     }
 
     fn make_usn_record(
@@ -262,7 +278,7 @@ mod tests {
         frn: u64,
         parent_frn: u64,
         reason: UsnReason,
-        timestamp: DateTime<Utc>,
+        timestamp: jiff::Timestamp,
         usn: i64,
     ) -> UsnRecord {
         UsnRecord {
@@ -271,7 +287,7 @@ mod tests {
             parent_mft_entry: parent_frn,
             parent_mft_sequence: 1,
             usn,
-            timestamp,
+            timestamp: sys(timestamp).into(),
             reason,
             filename: file_name.to_string(),
             file_attributes: FileAttributes::empty(),
@@ -282,12 +298,12 @@ mod tests {
     }
 
     fn default_ts() -> NtfsTimestamps {
-        let t = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+        let t: SystemTime = sys("2024-01-01T00:00:00Z".parse().unwrap());
         NtfsTimestamps {
-            modified: t,
-            accessed: t,
-            created: t,
-            entry_modified: t,
+            modified: t.into(),
+            accessed: t.into(),
+            created: t.into(),
+            entry_modified: t.into(),
         }
     }
 
@@ -386,7 +402,7 @@ mod tests {
                 100,
                 10,
                 UsnReason::RENAME_NEW_NAME,
-                base + chrono::Duration::seconds(1),
+                base + jiff::SignedDuration::from_secs(1),
                 1100,
             ),
             make_usn_record(
@@ -394,7 +410,7 @@ mod tests {
                 100,
                 10,
                 UsnReason::RENAME_NEW_NAME,
-                base + chrono::Duration::seconds(2),
+                base + jiff::SignedDuration::from_secs(2),
                 1200,
             ),
             make_usn_record(
@@ -402,7 +418,7 @@ mod tests {
                 100,
                 10,
                 UsnReason::FILE_DELETE,
-                base + chrono::Duration::seconds(3),
+                base + jiff::SignedDuration::from_secs(3),
                 1300,
             ),
         ];
@@ -432,7 +448,7 @@ mod tests {
                 100,
                 10,
                 UsnReason::RENAME_NEW_NAME,
-                base + chrono::Duration::seconds(1),
+                base + jiff::SignedDuration::from_secs(1),
                 1100,
             ),
         ];
@@ -462,7 +478,7 @@ mod tests {
                 100,
                 10,
                 UsnReason::RENAME_NEW_NAME,
-                base + chrono::Duration::seconds(1),
+                base + jiff::SignedDuration::from_secs(1),
                 1100,
             ),
         ];
@@ -482,7 +498,7 @@ mod tests {
                 1000 + i,
                 10,
                 UsnReason::RENAME_NEW_NAME,
-                base + chrono::Duration::milliseconds(i as i64 * 100), // all within ~5.5 seconds
+                base + jiff::SignedDuration::from_millis(i as i64 * 100), // all within ~5.5 seconds
                 (i as i64) * 100,
             ));
         }
@@ -507,7 +523,7 @@ mod tests {
                 1000 + i,
                 10,
                 UsnReason::RENAME_NEW_NAME,
-                base + chrono::Duration::seconds(i as i64),
+                base + jiff::SignedDuration::from_secs(i as i64),
                 (i as i64) * 100,
             ));
         }
@@ -533,7 +549,7 @@ mod tests {
                 200,
                 10,
                 UsnReason::FILE_CREATE,
-                base + chrono::Duration::seconds(1),
+                base + jiff::SignedDuration::from_secs(1),
                 2_000_000,
             ), // 2MB gap
         ];
@@ -554,7 +570,7 @@ mod tests {
                 200,
                 10,
                 UsnReason::FILE_CREATE,
-                base + chrono::Duration::seconds(1),
+                base + jiff::SignedDuration::from_secs(1),
                 1200,
             ),
         ];
@@ -666,7 +682,7 @@ mod tests {
             parent_mft_entry: 10,
             parent_mft_sequence: 1,
             usn: 1000,
-            timestamp: chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap(),
+            timestamp: sys(jiff::Timestamp::from_second(1_700_000_000).unwrap()).into(),
             reason: UsnReason::FILE_CREATE | UsnReason::CLOSE,
             filename: "test.txt".to_string(),
             file_attributes: FileAttributes::empty(),

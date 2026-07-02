@@ -102,7 +102,7 @@ impl FeedCache {
         // Write metadata.
         let metadata = FeedMetadata {
             feed_id: feed_id.to_string(),
-            last_fetched: chrono::Utc::now().to_rfc3339(),
+            last_fetched: jiff::Timestamp::now().to_string(),
             etag: None,
             indicator_count,
             file_size: data.len() as u64,

@@ -136,20 +136,25 @@ fn check_loc_003(idx: usize, node: &issen_mft_tree::node::FileNode, index: &mut 
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use chrono::{TimeZone, Utc};
     use issen_mft_tree::node::{FileNode, NtfsTimestamps};
     use issen_mft_tree::tree::FileTree;
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    fn ts(y: i32, m: u32, d: u32) -> chrono::DateTime<Utc> {
-        Utc.with_ymd_and_hms(y, m, d, 0, 0, 0).unwrap()
+    /// A calendar date at midnight UTC as a `SystemTime`; `.into()` builds the
+    /// `NtfsTimestamps` fields (whose type is provided by `issen_mft_tree`).
+    fn ts(y: i32, m: u32, d: u32) -> SystemTime {
+        let inst = format!("{y:04}-{m:02}-{d:02}T00:00:00Z")
+            .parse::<jiff::Timestamp>()
+            .unwrap();
+        UNIX_EPOCH + Duration::new(inst.as_second() as u64, inst.subsec_nanosecond() as u32)
     }
 
     fn default_ts() -> NtfsTimestamps {
         NtfsTimestamps {
-            modified: ts(2024, 1, 1),
-            accessed: ts(2024, 1, 1),
-            created: ts(2024, 1, 1),
-            entry_modified: ts(2024, 1, 1),
+            modified: ts(2024, 1, 1).into(),
+            accessed: ts(2024, 1, 1).into(),
+            created: ts(2024, 1, 1).into(),
+            entry_modified: ts(2024, 1, 1).into(),
         }
     }
 

@@ -5358,7 +5358,6 @@ version = "0.1.0"
 name = "issen-signatures"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "csv",
  "forensicnomicon",
  "hex",
@@ -5367,6 +5366,7 @@ dependencies = [
  "issen-core",
  "issen-correlation",
  "issen-mft-tree",
+ "jiff",
  "md-5",
  "ntfs-core",
  "regex",
