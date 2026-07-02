@@ -99,8 +99,9 @@ fn draw_system_profile(frame: &mut Frame, meta: &CollectionMetadata, area: Rect)
         ));
     }
     if meta.acquisition_time > 0 {
-        let display = chrono::DateTime::from_timestamp(meta.acquisition_time, 0)
-            .map(|dt| dt.format("%Y-%m-%d %H:%M UTC").to_string())
+        let display = jiff::Timestamp::new(meta.acquisition_time, 0)
+            .ok()
+            .and_then(|ts| jiff::fmt::strtime::format("%Y-%m-%d %H:%M UTC", ts).ok())
             .unwrap_or_else(|| meta.acquisition_time.to_string());
         lines.push(profile_row("Collected", &display, label_style));
     }

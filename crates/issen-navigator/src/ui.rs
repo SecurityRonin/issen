@@ -31,29 +31,21 @@ fn format_size(bytes: u64) -> String {
     }
 }
 
-/// Map a file's modification time to a heat-map color.
-///
-/// Uses the most recent timestamp in the tree as reference (not wall clock),
-/// so forensic images from any era get useful color gradients.
-/// Buckets are exponentially spaced: changes are most visible for recent files.
 /// Render an NTFS timestamp (`jiff::Timestamp`) as `YYYY-MM-DD HH:MM:SS` UTC.
 fn ts_display(ts: jiff::Timestamp) -> String {
     jiff::fmt::strtime::format("%Y-%m-%d %H:%M:%S", ts).unwrap_or_else(|_| ts.to_string())
 }
 
-/// Convert an NTFS timestamp (`jiff::Timestamp`) to the `chrono` instant type
-/// the age-gradient helper is written against.
-fn ts_to_chrono(ts: jiff::Timestamp) -> chrono::DateTime<chrono::Utc> {
-    chrono::DateTime::from_timestamp(ts.as_second(), ts.subsec_nanosecond() as u32)
-        .unwrap_or_default()
-}
-
-fn age_color(
-    modified: chrono::DateTime<chrono::Utc>,
-    reference: chrono::DateTime<chrono::Utc>,
-) -> Color {
-    let age = reference.signed_duration_since(modified);
-    let hours = age.num_hours();
+/// Map a file's modification time to a heat-map color.
+///
+/// Uses the most recent timestamp in the tree as reference (not wall clock),
+/// so forensic images from any era get useful color gradients.
+/// Buckets are exponentially spaced: changes are most visible for recent files.
+fn age_color(modified: jiff::Timestamp, reference: jiff::Timestamp) -> Color {
+    // Age in whole hours, truncated toward zero. A `modified` in the future
+    // (clock skew) yields a negative span, so `hours` is negative and falls
+    // into the hottest bucket.
+    let hours = reference.duration_since(modified).as_secs() / 3600;
 
     if hours < 1 {
         Color::Rgb(255, 60, 60) // bright red — just modified
@@ -266,10 +258,7 @@ fn draw_file_list(frame: &mut Frame, area: Rect, app: &mut App) {
                         .add_modifier(Modifier::BOLD),
                 )
             } else {
-                let file_color = age_color(
-                    ts_to_chrono(node.si_timestamps.modified),
-                    app.reference_time,
-                );
+                let file_color = age_color(node.si_timestamps.modified, app.reference_time);
                 if node.is_downloaded() {
                     Cell::from(Line::from(vec![
                         Span::styled(
@@ -459,10 +448,7 @@ fn draw_detail_panel(frame: &mut Frame, area: Rect, app: &mut App) {
     ]));
     lines.push(Line::from(vec![
         Span::styled("  MFT Mod  ", dim),
-        Span::styled(
-            ts_display(node.si_timestamps.entry_modified),
-            val,
-        ),
+        Span::styled(ts_display(node.si_timestamps.entry_modified), val),
     ]));
 
     // $FN timestamps (only shown when they differ from $SI — forensic indicator)
@@ -824,10 +810,10 @@ fn draw_help_modal(frame: &mut Frame) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{TimeZone, Utc};
+    use jiff::SignedDuration;
 
-    fn ref_time() -> chrono::DateTime<Utc> {
-        Utc.with_ymd_and_hms(2024, 6, 15, 12, 0, 0).unwrap()
+    fn ref_time() -> jiff::Timestamp {
+        "2024-06-15T12:00:00Z".parse().unwrap()
     }
 
     #[test]
@@ -839,70 +825,70 @@ mod tests {
 
     #[test]
     fn age_color_few_hours_ago() {
-        let modified = ref_time() - chrono::Duration::hours(3);
+        let modified = ref_time() - SignedDuration::from_hours(3);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(255, 120, 50));
     }
 
     #[test]
     fn age_color_one_day_ago() {
-        let modified = ref_time() - chrono::Duration::hours(12);
+        let modified = ref_time() - SignedDuration::from_hours(12);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(255, 170, 50));
     }
 
     #[test]
     fn age_color_few_days_ago() {
-        let modified = ref_time() - chrono::Duration::days(2);
+        let modified = ref_time() - SignedDuration::from_hours(24 * 2);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(255, 220, 60));
     }
 
     #[test]
     fn age_color_one_week_ago() {
-        let modified = ref_time() - chrono::Duration::days(5);
+        let modified = ref_time() - SignedDuration::from_hours(24 * 5);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(200, 230, 80));
     }
 
     #[test]
     fn age_color_two_weeks_ago() {
-        let modified = ref_time() - chrono::Duration::days(10);
+        let modified = ref_time() - SignedDuration::from_hours(24 * 10);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(130, 210, 100));
     }
 
     #[test]
     fn age_color_one_month_ago() {
-        let modified = ref_time() - chrono::Duration::days(20);
+        let modified = ref_time() - SignedDuration::from_hours(24 * 20);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(80, 200, 180));
     }
 
     #[test]
     fn age_color_three_months_ago() {
-        let modified = ref_time() - chrono::Duration::days(60);
+        let modified = ref_time() - SignedDuration::from_hours(24 * 60);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(80, 170, 210));
     }
 
     #[test]
     fn age_color_six_months_ago() {
-        let modified = ref_time() - chrono::Duration::days(120);
+        let modified = ref_time() - SignedDuration::from_hours(24 * 120);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(100, 140, 200));
     }
 
     #[test]
     fn age_color_one_year_ago() {
-        let modified = ref_time() - chrono::Duration::days(300);
+        let modified = ref_time() - SignedDuration::from_hours(24 * 300);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(130, 130, 180));
     }
 
     #[test]
     fn age_color_ancient() {
-        let modified = ref_time() - chrono::Duration::days(500);
+        let modified = ref_time() - SignedDuration::from_hours(24 * 500);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(140, 140, 140));
     }
@@ -910,7 +896,7 @@ mod tests {
     #[test]
     fn age_color_future_timestamp() {
         // Modified in the future (clock skew) — treat as hottest
-        let modified = ref_time() + chrono::Duration::hours(5);
+        let modified = ref_time() + SignedDuration::from_hours(5);
         let color = age_color(modified, ref_time());
         assert_eq!(color, Color::Rgb(255, 60, 60));
     }

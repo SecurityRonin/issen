@@ -142,11 +142,10 @@ fn source_color(source: TimelineSource) -> Color {
 }
 
 fn format_timestamp(ts: i64) -> String {
-    use chrono::{DateTime, Utc};
-    DateTime::from_timestamp(ts, 0).map_or_else(
-        || format!("{ts}"),
-        |dt: DateTime<Utc>| dt.format("%Y-%m-%dT%H:%M:%S").to_string(),
-    )
+    jiff::Timestamp::new(ts, 0)
+        .ok()
+        .and_then(|t| jiff::fmt::strtime::format("%Y-%m-%dT%H:%M:%S", t).ok())
+        .unwrap_or_else(|| format!("{ts}"))
 }
 
 fn truncate_path(path: &str, max_len: usize) -> String {

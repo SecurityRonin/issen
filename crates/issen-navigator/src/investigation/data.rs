@@ -328,8 +328,10 @@ pub fn parse_uac_metadata(path: &Path) -> CollectionMetadata {
 
 /// Parse a UAC timestamp string (YYYYMMDDHHMMSS) into Unix epoch seconds.
 fn parse_uac_timestamp(ts: &str) -> i64 {
-    chrono::NaiveDateTime::parse_from_str(ts, "%Y%m%d%H%M%S")
-        .map_or(0, |dt| dt.and_utc().timestamp())
+    jiff::fmt::strtime::parse("%Y%m%d%H%M%S", ts)
+        .and_then(|tm| tm.to_datetime())
+        .and_then(|dt| dt.to_zoned(jiff::tz::TimeZone::UTC))
+        .map_or(0, |zdt| zdt.timestamp().as_second())
 }
 
 // ---------------------------------------------------------------------------

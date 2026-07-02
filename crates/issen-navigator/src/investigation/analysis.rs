@@ -1004,7 +1004,7 @@ fn analyze_attack_timeline(alerts: &[Alert], input: &AlertInput<'_>) -> Analysis
         question_id: "attack_timeline",
         tier: Tier::Timeline,
         category: "Timeline",
-        question: "What is the chronological sequence of the attack?",
+        question: "What is the temporal sequence of the attack?",
         answer,
         findings,
         interpretation,

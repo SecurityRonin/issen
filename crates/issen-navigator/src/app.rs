@@ -3,7 +3,6 @@
 use std::collections::HashSet;
 use std::time::{Duration, Instant};
 
-use chrono::{DateTime, Utc};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::Rect;
 
@@ -112,7 +111,7 @@ pub struct App {
     /// Screen area occupied by the file list (updated each render frame).
     pub file_list_area: Rect,
     /// Reference timestamp used for age-based file colouring (set at startup).
-    pub reference_time: DateTime<Utc>,
+    pub reference_time: jiff::Timestamp,
 }
 
 // ---------------------------------------------------------------------------
@@ -159,7 +158,7 @@ impl App {
             visible_height: 40,
             show_help: false,
             file_list_area: Rect::default(),
-            reference_time: Utc::now(),
+            reference_time: jiff::Timestamp::now(),
         };
         app.refresh_entries();
         Ok(app)

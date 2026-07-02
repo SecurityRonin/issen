@@ -4,7 +4,6 @@
 //! login history, process list) into a unified `TimelineEvent` stream that
 //! can be sorted, filtered, and displayed in the Investigation Workbench.
 
-use chrono::DateTime;
 use issen_mft_tree::node::NtfsTimestamps;
 use issen_mft_tree::tree::FileTree;
 use issen_parser_uac::parsers::bodyfile::BodyfileEntry;
@@ -186,8 +185,8 @@ pub fn bodyfile_to_events(entries: &[BodyfileEntry]) -> Vec<TimelineEvent> {
 /// used as a fallback year hint for `last` output that omits the year.
 #[must_use]
 pub fn logins_to_events(records: &[LoginRecord], acquisition_time: i64) -> Vec<TimelineEvent> {
-    let fallback_year = DateTime::from_timestamp(acquisition_time, 0).map_or(2024, |dt| {
-        dt.format("%Y").to_string().parse().unwrap_or(2024)
+    let fallback_year = jiff::Timestamp::new(acquisition_time, 0).map_or(2024, |ts| {
+        i64::from(ts.to_zoned(jiff::tz::TimeZone::UTC).year())
     });
 
     let mut events = Vec::with_capacity(records.len() * 2);
@@ -394,6 +393,16 @@ pub fn build_sparkline(events: &[TimelineEvent], width: usize) -> Vec<u64> {
 // Timestamp parsing helpers
 // ---------------------------------------------------------------------------
 
+/// Parse a naive (timezone-less) datetime `s` with strftime `fmt`, interpret it
+/// as UTC, and return Unix epoch seconds. `None` if the string does not match.
+fn parse_naive_utc_secs(s: &str, fmt: &str) -> Option<i64> {
+    jiff::fmt::strtime::parse(fmt, s)
+        .and_then(|tm| tm.to_datetime())
+        .and_then(|dt| dt.to_zoned(jiff::tz::TimeZone::UTC))
+        .map(|zdt| zdt.timestamp().as_second())
+        .ok()
+}
+
 /// Best-effort parse of `last` command timestamp strings.
 ///
 /// Handles formats like:
@@ -410,25 +419,25 @@ pub fn parse_login_time(s: &str, fallback_year: i64) -> Result<i64, ()> {
     }
 
     // Try full datetime with year: "Mon Jan  6 12:34:56 2024"
-    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(s, "%a %b %e %H:%M:%S %Y") {
-        return Ok(dt.and_utc().timestamp());
+    if let Some(secs) = parse_naive_utc_secs(s, "%a %b %e %H:%M:%S %Y") {
+        return Ok(secs);
     }
 
     // Try without seconds: "Mon Jan  6 12:34 2024"
-    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(s, "%a %b %e %H:%M %Y") {
-        return Ok(dt.and_utc().timestamp());
+    if let Some(secs) = parse_naive_utc_secs(s, "%a %b %e %H:%M %Y") {
+        return Ok(secs);
     }
 
     // Try without year: "Mon Jan  6 12:34" — append fallback year
     let with_year = format!("{s} {fallback_year}");
-    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(&with_year, "%a %b %e %H:%M %Y") {
-        return Ok(dt.and_utc().timestamp());
+    if let Some(secs) = parse_naive_utc_secs(&with_year, "%a %b %e %H:%M %Y") {
+        return Ok(secs);
     }
 
     // Try without year with seconds: "Mon Jan  6 12:34:56"
     let with_year = format!("{s} {fallback_year}");
-    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(&with_year, "%a %b %e %H:%M:%S %Y") {
-        return Ok(dt.and_utc().timestamp());
+    if let Some(secs) = parse_naive_utc_secs(&with_year, "%a %b %e %H:%M:%S %Y") {
+        return Ok(secs);
     }
 
     Err(())
@@ -456,11 +465,11 @@ pub fn parse_ps_start_time(s: &str) -> Result<i64, ()> {
     // ps typically shows "HH:MM" for today's processes or "MonDD" for older.
     // Neither carries enough info for a precise timestamp, so we reject them.
     // Only accept ISO-like formats that might appear in some ps implementations.
-    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S") {
-        return Ok(dt.and_utc().timestamp());
+    if let Some(secs) = parse_naive_utc_secs(s, "%Y-%m-%d %H:%M:%S") {
+        return Ok(secs);
     }
-    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S") {
-        return Ok(dt.and_utc().timestamp());
+    if let Some(secs) = parse_naive_utc_secs(s, "%Y-%m-%dT%H:%M:%S") {
+        return Ok(secs);
     }
 
     Err(())
@@ -611,24 +620,39 @@ mod tests {
         assert_eq!(TimelineSource::all().len(), 8);
     }
 
+    /// Build a minimal USN_RECORD_V2 buffer so the record's `timestamp` comes
+    /// from `ntfs-core`'s own parser, whose public timestamp type this crate
+    /// does not name directly.
+    fn make_usn_v2(filetime: i64, reason_bits: u32, name: &str) -> Vec<u8> {
+        let name_utf16: Vec<u8> = name.encode_utf16().flat_map(u16::to_le_bytes).collect();
+        let filename_offset: u16 = 0x3C;
+        let filename_length = u16::try_from(name_utf16.len()).unwrap();
+        let record_len = usize::from(filename_offset) + name_utf16.len();
+
+        let mut buf = vec![0u8; record_len];
+        buf[0x00..0x04].copy_from_slice(&u32::try_from(record_len).unwrap().to_le_bytes());
+        // MFT file reference: entry 12345 (0x3039), sequence 1 (high 16 bits).
+        buf[0x08..0x10].copy_from_slice(&(0x3039_u64 | (1_u64 << 48)).to_le_bytes());
+        // Parent file reference: entry 5, sequence 1.
+        buf[0x10..0x18].copy_from_slice(&(0x5_u64 | (1_u64 << 48)).to_le_bytes());
+        buf[0x18..0x20].copy_from_slice(&0i64.to_le_bytes()); // usn
+        buf[0x20..0x28].copy_from_slice(&filetime.to_le_bytes());
+        buf[0x28..0x2C].copy_from_slice(&reason_bits.to_le_bytes());
+        buf[0x38..0x3A].copy_from_slice(&filename_length.to_le_bytes());
+        buf[0x3A..0x3C].copy_from_slice(&filename_offset.to_le_bytes());
+        buf[usize::from(filename_offset)..].copy_from_slice(&name_utf16);
+        buf
+    }
+
     #[test]
     fn usn_to_events_single_record() {
-        use ntfs_core::usn::{FileAttributes, UsnReason};
+        // FILETIME for 2024-01-15T00:00:00Z (Unix 1_705_276_800): unix secs
+        // times 10^7 (100-ns ticks) plus the 1601->1970 epoch difference.
+        const FILETIME_2024_01_15: i64 = 1_705_276_800 * 10_000_000 + 116_444_736_000_000_000;
+        const REASON_FILE_CREATE: u32 = 0x0000_0100;
 
-        let record = UsnRecord {
-            mft_entry: 12345,
-            mft_sequence: 1,
-            parent_mft_entry: 5,
-            parent_mft_sequence: 1,
-            usn: 0,
-            timestamp: chrono::DateTime::from_timestamp(1_705_276_800, 0).unwrap(),
-            reason: UsnReason::FILE_CREATE,
-            filename: "test.txt".into(),
-            file_attributes: FileAttributes::empty(),
-            source_info: 0,
-            security_id: 0,
-            major_version: 2,
-        };
+        let bytes = make_usn_v2(FILETIME_2024_01_15, REASON_FILE_CREATE, "test.txt");
+        let record = ntfs_core::usn::parse_usn_record_v2(&bytes).unwrap();
 
         let events = usn_to_events(&[record]);
         assert_eq!(events.len(), 1);
