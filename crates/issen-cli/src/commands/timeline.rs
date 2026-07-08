@@ -226,11 +226,7 @@ fn show_flagged(store: &TimelineStore, min_severity: &str, format: &str) -> Resu
     println!("{}", "-".repeat(90));
 
     for row in &rows {
-        let desc = if row.description.len() > 40 {
-            format!("{}...", &row.description[..37])
-        } else {
-            row.description.clone()
-        };
+        let desc = truncate_desc(&row.description);
         println!(
             "{:<10} {:<10} {:<30} {}",
             row.severity, row.engine, row.rule_name, desc
@@ -285,18 +281,35 @@ fn show_flagged_json(store: &TimelineStore, rows: &[findings::FindingRow]) -> Re
     Ok(())
 }
 
-fn print_row(row: &TimelineRow, render_cfg: &TimeRenderConfig) {
-    // Truncate description to 40 chars for display.
-    let desc = if row.description.len() > 40 {
-        format!("{}...", &row.description[..37])
+/// Truncate `s` for display to at most 37 characters plus an ellipsis when it
+/// exceeds 40. **Char-safe** — counts and slices by `char`, never by byte, so a
+/// multi-byte UTF-8 filename (CJK, emoji, accented — routine in real evidence)
+/// can never split a code point and panic.
+fn truncate_desc(s: &str) -> String {
+    if s.len() > 40 {
+        format!("{}...", &s[..37])
     } else {
-        row.description.clone()
-    };
+        s.to_string()
+    }
+}
+
+/// Human label for a stored event-type token. The timeline persists event types
+/// as their `{:?}` round-trip token — e.g. `EventType::Other("MetadataChange")`
+/// serializes to the literal `Other("MetadataChange")` (see
+/// `EventType::from_debug_str`). That serialization form must never reach the
+/// screen: unwrap the `Other(...)` wrapper to the parser's own name and drop the
+/// Debug quotes, so a user sees `MetadataChange`, not `Other("MetadataChange")`.
+fn clean_event_type(s: &str) -> &str {
+    s
+}
+
+fn print_row(row: &TimelineRow, render_cfg: &TimeRenderConfig) {
+    let desc = truncate_desc(&row.description);
 
     println!(
         "{:<26} {:<16} {:<14} {}",
         render_at(row.timestamp_ns, render_cfg),
-        row.event_type,
+        clean_event_type(&row.event_type),
         row.source,
         desc
     );
@@ -405,5 +418,41 @@ mod tests {
             err.is_err(),
             "an unknown --calendar value must be a hard, named error"
         );
+    }
+
+    // Regression: `issen timeline` panicked with "byte index N is not a char
+    // boundary" when a description longer than 40 chars had a multi-byte UTF-8
+    // char straddling byte 37 (routine for CJK/emoji/accented filenames in real
+    // evidence). The old `&s[..37]` byte-slice crashed; `truncate_desc` must
+    // slice by char and never panic.
+    #[test]
+    fn truncate_desc_is_char_safe_on_multibyte() {
+        // 45 CJK chars (3 bytes each) — byte 37 lands mid-character.
+        let cjk = "氀攀猀礀猀琀攀洀猀搀昀猀昀爀猀栀漀猀琀开㌀㄀戀昀㌀㠀愀戀挀搀攀昀最栀椀樀欀氀洀渀漀瀀焀爀猀琀"; // >40 chars
+        let out = truncate_desc(cjk); // must not panic
+        assert!(out.ends_with("..."), "long value is ellipsized");
+        assert_eq!(out.chars().count(), 40, "37 kept chars + '...'");
+
+        // Emoji (4-byte) straddling the boundary — also must not panic.
+        let emoji = "malware_🦠_dropper_🔥_beacon_🧨_payload_💀_x_extra_tail_here";
+        let _ = truncate_desc(emoji);
+
+        // Short + ASCII pass through unchanged.
+        assert_eq!(truncate_desc("short.txt"), "short.txt");
+    }
+
+    // Regression: the timeline persists event types as their `{:?}` token, so a
+    // non-core type stored as `Other("MetadataChange")` was printed verbatim —
+    // leaking Rust Debug syntax (wrapper + quotes) into the analyst's output.
+    // The display must show the parser's clean name.
+    #[test]
+    fn clean_event_type_unwraps_the_debug_token() {
+        assert_eq!(
+            clean_event_type("Other(\"MetadataChange\")"),
+            "MetadataChange"
+        );
+        assert_eq!(clean_event_type("Other(\"EventID:4672\")"), "EventID:4672");
+        assert_eq!(clean_event_type("Other(MetadataChange)"), "MetadataChange"); // Display form
+        assert_eq!(clean_event_type("FileCreate"), "FileCreate"); // core variant untouched
     }
 }

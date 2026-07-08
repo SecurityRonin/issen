@@ -182,6 +182,8 @@ fn fmt_assertion(a: &AssertionLevel) -> &'static str {
     }
 }
 
+/// Truncate `s` to at most `max` **characters** (char-safe — slices only at a
+/// UTF-8 code-point boundary, so a multi-byte filename can never split and panic).
 fn truncate(s: &str, max: usize) -> &str {
     if s.len() <= max {
         s
