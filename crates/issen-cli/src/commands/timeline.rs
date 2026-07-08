@@ -286,8 +286,9 @@ fn show_flagged_json(store: &TimelineStore, rows: &[findings::FindingRow]) -> Re
 /// multi-byte UTF-8 filename (CJK, emoji, accented — routine in real evidence)
 /// can never split a code point and panic.
 fn truncate_desc(s: &str) -> String {
-    if s.len() > 40 {
-        format!("{}...", &s[..37])
+    if s.chars().count() > 40 {
+        let head: String = s.chars().take(37).collect();
+        format!("{head}...")
     } else {
         s.to_string()
     }
@@ -300,7 +301,10 @@ fn truncate_desc(s: &str) -> String {
 /// screen: unwrap the `Other(...)` wrapper to the parser's own name and drop the
 /// Debug quotes, so a user sees `MetadataChange`, not `Other("MetadataChange")`.
 fn clean_event_type(s: &str) -> &str {
-    s
+    s.strip_prefix("Other(\"")
+        .and_then(|r| r.strip_suffix("\")"))
+        .or_else(|| s.strip_prefix("Other(").and_then(|r| r.strip_suffix(")")))
+        .unwrap_or(s)
 }
 
 fn print_row(row: &TimelineRow, render_cfg: &TimeRenderConfig) {
