@@ -12,6 +12,21 @@ use jsonguard::{display_safe, tsv_safe};
 
 use crate::tquery::QueryResult;
 
+/// The human label for a stored event-type token. Event types persist as their
+/// `{:?}` round-trip form (see `EventType::from_debug_str`), so a non-core type
+/// is stored as `Other("X")`. The human text/TSV view unwraps it to `X`; the
+/// JSON view keeps the token verbatim so it still round-trips on re-import.
+///
+/// NOTE: mirrors `issen-cli`'s flat-timeline `clean_event_type` (two callers,
+/// two layers — a binary and this library). If a third caller appears, hoist a
+/// single `EventType::human_label` into `issen-core` and delegate both here.
+fn humanize_event_type(s: &str) -> &str {
+    s.strip_prefix("Other(\"")
+        .and_then(|r| r.strip_suffix("\")"))
+        .or_else(|| s.strip_prefix("Other(").and_then(|r| r.strip_suffix(")")))
+        .unwrap_or(s)
+}
+
 /// A self-describing provenance header attached to every result.
 #[derive(Debug, Clone)]
 pub struct Provenance {
@@ -47,7 +62,17 @@ pub fn render_text(result: &QueryResult, prov: &Provenance) -> String {
             let cells: Vec<String> = result
                 .columns
                 .iter()
-                .map(|c| tsv_safe(c.values.get(i).map_or("", |v| v.as_str())).to_string())
+                .map(|c| {
+                    let raw = c.values.get(i).map_or("", |v| v.as_str());
+                    // Human text/TSV view: show the clean event-type label, not
+                    // the `Other("…")` serialization token. JSON keeps the token.
+                    let shown = if c.name == "event_type" {
+                        humanize_event_type(raw)
+                    } else {
+                        raw
+                    };
+                    tsv_safe(shown).to_string()
+                })
                 .collect();
             out.push_str(&cells.join("\t"));
             out.push('\n');
