@@ -204,6 +204,45 @@ mod tests {
         assert!(render_text(&absent, &prov).contains("COVERAGE GAP"));
     }
 
+    // Split display from serialization. The text/TSV view is for humans: a
+    // non-core event type persisted as its round-trip Debug token
+    // `Other("EventID:4672")` must display as the clean name `EventID:4672`.
+    // The JSON view is a machine / re-import stream and must keep the token
+    // verbatim so it round-trips through `EventType::from_debug_str`.
+    #[test]
+    fn event_type_humanized_in_text_but_token_kept_in_json() {
+        let r = result_with(
+            2,
+            vec![Column {
+                name: "event_type".into(),
+                values: vec!["Other(\"EventID:4672\")".into(), "FileCreate".into()],
+            }],
+            vec![],
+        );
+        let prov = Provenance {
+            db_path: "x".into(),
+            filters: vec![],
+        };
+
+        let text = render_text(&r, &prov);
+        assert!(text.contains("EventID:4672"), "human label missing: {text}");
+        assert!(
+            !text.contains("Other("),
+            "raw Debug token leaked into the human text view: {text}"
+        );
+        assert!(
+            text.contains("FileCreate"),
+            "a core variant must pass through unchanged: {text}"
+        );
+
+        let json = render_json(&r, &prov);
+        let parsed: serde_json::Value = serde_json::from_str(&json).expect("valid json");
+        assert_eq!(
+            parsed["rows"][0]["event_type"], "Other(\"EventID:4672\")",
+            "the machine/JSON stream must keep the round-trip token"
+        );
+    }
+
     #[test]
     fn json_render_is_valid_and_escaped() {
         let r = result_with(
