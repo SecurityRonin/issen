@@ -1119,6 +1119,28 @@ mod tests {
     }
 
     #[test]
+    fn path_filter_matches_case_insensitively() {
+        // Windows evidence stores the same logical path in different cases across
+        // sources (USN vs MFT vs registry), and NTFS paths are case-insensitive.
+        // An analyst who types a different case must NOT silently miss the
+        // artifact. `seeded()` stores `C:/coreupdater.exe` lowercase; an UPPERCASE
+        // glob must still match it. Case-sensitive LIKE returns 0 (silent miss);
+        // ILIKE returns 1.
+        let store = seeded();
+        let q = TypedQuery {
+            path: Some("*COREUPDATER*".into()),
+            mode: Mode::Count,
+            ..Default::default()
+        };
+        let r = q.run(store.connection()).expect("count");
+        assert_eq!(
+            r.columns[0].values[0], "1",
+            "an uppercase --path glob must match a lowercase-stored path \
+             (case-insensitive matching); a silent miss loses evidence"
+        );
+    }
+
+    #[test]
     fn exclude_machine_accounts_drops_dollar_users() {
         let store = seeded();
         let q = TypedQuery {
