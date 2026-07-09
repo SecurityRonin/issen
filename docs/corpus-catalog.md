@@ -41,6 +41,9 @@ download/regenerate per the provenance notes; they are not committed._
 | LogHub `OpenSSH_2k.log` — real sshd `auth.log` | 220 KB | REAL-ext | logpai/loghub (ISSRE'23) |
 | BitLocker oracle `bdetogo.raw` (`bitlocker-forensic`) | 64 MB | REAL-ext | log2timeline/dfvfs (Apache-2.0) |
 | FileVault CoreStorage oracle `fvdetest.qcow2` (`filevault-forensic`) | 16 MB | REAL-ext | log2timeline/dfvfs (Apache-2.0) |
+| BitLocker `bitlocker-1.dd` — AES-128-CBC (0x8002) (`bitlocker-forensic`) | 100 MB | REAL-ext | picoCTF 2025 |
+| BitLocker `vault.raw` — XTS-128 (0x8004) (`bitlocker-forensic`) | 2 GB | REAL-ext | BelkaCTF6 (**not redistributable**) |
+| BitLocker `m8003/m8004/m8005.raw` — AES-256-CBC / XTS-128 / XTS-256 | 133 MB ea. | SYNTHETIC | self-minted (manage-bde) |
 
 **Encryption-layer Tier-1 oracles (dfvfs, Apache-2.0).** Third-party images with
 *published* unlock keys — genuine Tier-1 for the decryptor crates. Full provenance
@@ -54,6 +57,23 @@ downloaded).
   `dd7b1d584f2e07112ec7003d5fcd9864`, password `fvde-TEST`, CS partition at LBA 40.
   Oracle for `filevault-core`; validated via `pyfvde`. URL:
   <https://raw.githubusercontent.com/log2timeline/dfvfs/main/test_data/fvdetest.qcow2>
+
+**BitLocker cipher-method oracles (`bitlocker-core`, validated via `pybde`; kept in
+`/tmp`, env-gated, document-don't-commit).** Cover the full modern method table:
+- `bitlocker-1.dd` — **Tier-1** (picoCTF 2025 Bitlocker-1), md5
+  `22c3492cbc26ff648df066e1ed5329a7`, password `jacqueline`, method **0x8002**
+  (AES-128-CBC, no diffuser), bare volume @0.
+- `vault.raw` (from BelkaCTF6 "Bogus Bill" `vault.vhdx`) — **Tier-1**, md5
+  `faac779e252ee133b48f26c878168467`, recovery password
+  `590238-514580-359986-088242-029766-319495-410509-636911`, method **0x8004**
+  (XTS-AES-128), BitLocker volume @ byte 16777216. **License: Belkasoft CTF — not
+  confirmed redistributable; provenance only, never committed.**
+- `m8003/m8004/m8005.raw` — **Tier-2 self-minted** (Parallels Win11 `manage-bde`;
+  we authored them, so redistributable), partition @ byte 65536, recovery-password
+  protectors: m8003 = **0x8003** (AES-256-CBC) rk `068002-…-375705`; m8004 = **0x8004**
+  (XTS-128) rk `435743-…-447194`; m8005 = **0x8005** (XTS-256) rk `031174-…-262174`.
+  Ground truth: `/tmp/bde-mint-oracle/GROUND-TRUTH.md`. (0x8000 = the dfvfs `bdetogo.raw`
+  above; 0x8001 AES-256-CBC+diffuser is deferred — Vista/7-only, un-mintable on Win11.)
 
 ---
 
