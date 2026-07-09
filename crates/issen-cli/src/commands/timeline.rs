@@ -319,6 +319,15 @@ fn print_row(row: &TimelineRow, render_cfg: &TimeRenderConfig) {
     );
 }
 
+/// Format one scan finding for the `--flagged` text view.
+fn format_flagged_row(row: &findings::FindingRow) -> String {
+    let desc = truncate_desc(&row.description);
+    format!(
+        "{:<10} {:<10} {:<30} {}",
+        row.severity, row.engine, row.rule_name, desc
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -357,6 +366,35 @@ mod tests {
                 .map(|f| f.rule_id.as_str())
                 .collect::<Vec<_>>()
         );
+    }
+
+    #[test]
+    fn flagged_row_surfaces_the_finding_subject() {
+        // A "New Windows service installed (7045)" finding is unactionable
+        // without WHICH service — dozens of benign 7045s (VMware Tools, …) look
+        // identical in the flagged view. The row MUST surface the subject
+        // (artifact_path) so the analyst sees the malicious binary and can pivot
+        // to it, instead of guessing what to search.
+        let row = findings::FindingRow {
+            evidence_source_id: "default".into(),
+            artifact_path: r"C:\Windows\System32\coreupdater.exe".into(),
+            engine: "Native".into(),
+            severity: "high".into(),
+            rule_name: "native-t1543.003".into(),
+            description: "New Windows service installed (7045)".into(),
+            matched_indicator: None,
+            tags: "[]".into(),
+        };
+        let line = format_flagged_row(&row);
+        assert!(
+            line.contains(r"C:\Windows\System32\coreupdater.exe"),
+            "the finding subject (which artifact?) must appear in the flagged row: {line}"
+        );
+        assert!(
+            line.contains("native-t1543.003"),
+            "rule still shown: {line}"
+        );
+        assert!(line.contains("high"), "severity still shown: {line}");
     }
 
     #[test]
