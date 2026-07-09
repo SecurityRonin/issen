@@ -10,6 +10,7 @@ use issen_timeline::findings;
 use issen_timeline::query::{TimelineQuery, TimelineRow};
 use issen_timeline::store::TimelineStore;
 use issen_timeline::temporal::{render_at, Calendar, TimeRenderConfig};
+use jsonguard::display_safe;
 use timeglyph::RenderZone;
 
 use super::timeline_format;
@@ -218,19 +219,16 @@ fn show_flagged(store: &TimelineStore, min_severity: &str, format: &str) -> Resu
     }
     println!();
 
-    // Print findings table.
+    // Print findings table. SUBJECT (the finding's artifact_path) makes a
+    // "service installed (7045)" row actionable — it names which artifact.
     println!(
-        "{:<10} {:<10} {:<30} DESCRIPTION",
-        "SEVERITY", "ENGINE", "RULE"
+        "{:<10} {:<10} {:<30} {:<40} SUBJECT",
+        "SEVERITY", "ENGINE", "RULE", "DESCRIPTION"
     );
-    println!("{}", "-".repeat(90));
+    println!("{}", "-".repeat(110));
 
     for row in &rows {
-        let desc = truncate_desc(&row.description);
-        println!(
-            "{:<10} {:<10} {:<30} {}",
-            row.severity, row.engine, row.rule_name, desc
-        );
+        println!("{}", format_flagged_row(row));
     }
 
     println!("\n{} finding(s) displayed.", rows.len());
@@ -319,13 +317,26 @@ fn print_row(row: &TimelineRow, render_cfg: &TimeRenderConfig) {
     );
 }
 
-/// Format one scan finding for the `--flagged` text view.
+/// Format one scan finding for the `--flagged` text view. Surfaces the finding
+/// SUBJECT (`artifact_path`) so a "New Windows service installed (7045)" row
+/// names *which* service — the actionable pivot — instead of reading identically
+/// to every benign service install. `description` and `artifact_path` are
+/// attacker-controlled evidence, so both pass through `jsonguard::display_safe`,
+/// which strips control/bidi bytes that could otherwise rewrite the terminal.
 fn format_flagged_row(row: &findings::FindingRow) -> String {
-    let desc = truncate_desc(&row.description);
+    let safe_desc = display_safe(row.description.as_str()).to_string();
+    let desc = truncate_desc(&safe_desc);
+    let subject = display_safe(row.artifact_path.as_str()).to_string();
     format!(
-        "{:<10} {:<10} {:<30} {}",
-        row.severity, row.engine, row.rule_name, desc
+        "{:<10} {:<10} {:<30} {:<40} {}",
+        row.severity,
+        row.engine,
+        row.rule_name,
+        desc,
+        subject.trim()
     )
+    .trim_end()
+    .to_string()
 }
 
 #[cfg(test)]

@@ -4593,6 +4593,7 @@ dependencies = [
  "issen-timeline",
  "issen-unpack",
  "jiff",
+ "jsonguard",
  "mft",
  "ntfs-core",
  "predicates",

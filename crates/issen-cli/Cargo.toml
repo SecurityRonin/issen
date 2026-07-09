@@ -23,6 +23,7 @@ name = "issen_cli"
 path = "src/lib.rs"
 
 [dependencies]
+jsonguard = { workspace = true }
 sha2 = { workspace = true }
 ctrlc = { workspace = true }
 rayon = { workspace = true }
