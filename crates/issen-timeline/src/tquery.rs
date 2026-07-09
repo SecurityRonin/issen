@@ -233,7 +233,8 @@ pub struct TypedQuery {
     pub event_types: Vec<String>,
     /// `source` filters (OR within).
     pub sources: Vec<String>,
-    /// `artifact_path` glob/substring (compiled to an escaped, parameterized LIKE).
+    /// `artifact_path` glob/substring (compiled to an escaped, parameterized
+    /// case-insensitive ILIKE — Windows paths are case-insensitive).
     pub path: Option<String>,
     /// Typed metadata filters (AND-combined).
     pub fields: Vec<FieldFilter>,
@@ -417,7 +418,12 @@ impl TypedQuery {
             }
         }
         if let Some(ref glob) = self.path {
-            clauses.push("artifact_path LIKE ? ESCAPE '\\'".to_string());
+            // ILIKE (case-insensitive): Windows evidence stores the same path in
+            // mixed case across sources (USN/MFT/registry) and NTFS is
+            // case-insensitive, so a case-sensitive match silently misses
+            // artifacts. `*`/`?` still translate to `%`/`_`; literal metacharacters
+            // stay escaped via ESCAPE.
+            clauses.push("artifact_path ILIKE ? ESCAPE '\\'".to_string());
             params.push(DuckValue::Text(glob_to_like(glob)));
         }
         if let Some(from) = self.from_ns {
