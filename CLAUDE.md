@@ -443,6 +443,20 @@ that isn't compiled in is a capability that isn't there when it matters. So:
   feature-juggling, is the answer. Reference: `blazehash` → `blazehash-core` (lean lib) +
   `blazehash` (full binary); `ext4fs-core`/`ewf-forensic` depend on `blazehash-core` for
   `algorithm::hash_bytes`, never the GPU+cloud app stack.
+- **Decode/enrichment capability is NEVER opt-in — the `*-forensic`/analysis layer is capable by
+  default.** Value/BLOB decoders (`blob-decoder` for bplist/protobuf/gzip/zlib/snappy/base64/utf16/
+  json, recursively unwrapped), timestamp decipherment (`timeglyph`), and the like are ALWAYS
+  compiled into the analysis layer — never behind a Cargo feature the analyst must know to enable.
+  An examiner staring at an opaque SQLite BLOB must get "binary plist → {…}" / "protobuf → N fields"
+  from the zero-config path, not a rebuild. A hard-coded special case (e.g. sqlite-forensic's
+  WebKit-`.localstorage` UTF-16 helper) is a *narrow* known-artifact convenience — it does NOT
+  substitute for wiring in the general decoder. **MSRV yields to capability here:** if pulling a
+  capability dep raises the analysis crate's MSRV (e.g. `blob-decoder` → 1.88 via `plist`→`time`),
+  TAKE the bump — do NOT feature-gate to preserve a low MSRV. The low-MSRV floor is preserved where
+  it belongs via the split: the lean `*-core` reader stays low-MSRV for third-party library reuse;
+  the `*-forensic` layer + the binary carry the full decode stack and whatever MSRV it needs.
+  (Lived case: proposing an optional `blob-decode` feature on sqlite-forensic was wrong — it must
+  **hard-dep** `blob-decoder` in the forensic layer, always on.)
 - **Exception (the only one):** a genuinely optional, *rarely-wanted* heavy subsystem MAY be a
   named non-default feature **as long as the shipping binary turns it on**. The library's
   `default` may stay lean for third-party reuse, but every fleet binary that links it builds
@@ -554,8 +568,8 @@ straight ASCII in paths/commands.
 Whenever a change could affect issen's runtime output across artifact types — a
 fleet-wide dependency convergence (e.g. the forensicnomicon 0.11 sweep), a release
 candidate, or any cross-cutting parser/report change — **confirm it end-to-end with a
-single unified `issen ingest` of these four Case-001 (DFIR Madness "Szechuan Sauce")
-sources, and NO others** (no pagefile, no pcap):
+single unified default-pipeline run (`issen <the four sources…> -o <db>`, no subcommand)
+over these four Case-001 (DFIR Madness "Szechuan Sauce") sources, and NO others** (no pagefile, no pcap):
 
 1. **DC01 memory** — `tests/data/dfirmadness-szechuan-sauce/DC01-memory.zip`
 2. **DC01 disk** — `tests/data/dfirmadness-szechuan-sauce/DC01-E01.zip`
@@ -566,11 +580,22 @@ These four exercise both hosts × both media (disk + memory), so the ingest driv
 full analyzer set — NTFS / registry / EVTX / prefetch / LNK / SRUM / browser / Biome on
 the disk legs and memf-windows on the memory legs — all feeding one `forensicnomicon::report`
 aggregation. Extract the four to `/tmp` (never under `~/src` — the committed bytes are the
-zips; see the provenance standard above). The validation has **two legs**, because
-`issen ingest`/`correlate` are disk-only — `.mem` dumps route through `issen memory`:
+zips; see the provenance standard above).
 
-- **Disk leg** (both E01s into one unified timeline): `issen ingest <DC01.E01> <DESKTOP.E01> -o /tmp/<name>.duckdb` — drives NTFS / registry / EVTX / prefetch / LNK / SRUM / browser / Biome, each tagged with its evidence source. (Pass only the FIRST `.E01` segment; ewf follows `.E02…` automatically.)
-- **Memory leg** (each dump): `issen memory <DC01.mem>` and `issen memory <DESKTOP.mem>` — drives memf-windows (EPROCESS / netstat / hashdump / …).
+The **default `issen <evidence…>` command unifies both media in one pass** — it ingests the
+disk images and parses the memory dumps *into the same timeline*, so the one-command
+end-to-end is:
+
+- `issen <DC01.E01> <DESKTOP.E01> <DC01.mem> <DESKTOP.mem> -o /tmp/<name>.duckdb` — the disk leg
+  drives NTFS / registry / EVTX / prefetch / LNK / SRUM / browser / Biome (each tagged with its
+  evidence source); the memory leg feeds memf-windows events into the same
+  `forensicnomicon::report` aggregation. (Pass only the FIRST `.E01` segment; ewf follows
+  `.E02…` automatically. A folder of mixed images + `.mem`s works too.)
+
+Two distinctions so the next reader isn't tripped up (see **ADR 0012**): the *explicit*
+`issen ingest` subcommand is **disk-only** (it points a `.mem` at `issen memory`), and
+`issen memory <dump>` runs the **deep** per-dump analysis (EPROCESS / netstat / hashdump / …) —
+use it for the focused single-dump view rather than the unified sweep.
 
 Both legs completing and producing populated, non-crashing output across all analyzers is
 the runtime confirmation. Deliberately exclude pagefile and pcap.
@@ -630,7 +655,7 @@ every fleet repo inherits them and rotation is one update:
   crates.io / Homebrew / winget / Cloudsmith. A release with *just* the executables works with zero
   external secrets.
 
-### Two gotchas that fail the build/deb green-looking (both bit disk-forensic)
+### Gotchas that fail — or silently skip — despite a green-looking run
 
 1. **`rust-toolchain.toml` pin overrides the cross-build → `error[E0463]: can't find crate for core`.**
    If the repo pins `rust-toolchain.toml` (apps pin to the dev toolchain, e.g. `1.96.0`), that pin
@@ -653,6 +678,33 @@ every fleet repo inherits them and rotation is one update:
    `cargo install cargo-deb && cargo deb` must package past the copyright check (the macOS-only
    `strip: unrecognized option --strip-unneeded` warning is harmless — GNU strip on the Linux runner
    is fine).
+3. **The `crate` job can be silently ABSENT — a green release that never publishes** (bit
+   `timeglyph`). The template above lists a `crate` publish job, but a repo can drift and lack it
+   entirely: the `v*` tag goes green, the GitHub Release + binaries + Homebrew/apt/winget all ship, and
+   **crates.io never gets the crate** — nothing fails. `timeglyph` 0.1–0.3 were hand-published, so the
+   gap hid until 0.4.0 (release fully green, crates.io stuck at 0.3.0). **Audit every app/CLI repo:**
+   `grep -rn "cargo publish" .github/workflows`; if absent, add a `publish-crate` job `needs: build`
+   running `cargo publish --locked` with `CARGO_REGISTRY_TOKEN` (the org secret above — all repos). The
+   general failure mode + job template are in the release skill.
+4. **Non-workspace GUI (`lens`/overlay) crate builds into its OWN `target/` → packaging can't find the
+   binary** (bit `timeglyph` 0.4.0). When the GUI crate is `exclude`d from the workspace, `cargo build
+   --manifest-path <gui>/Cargo.toml` outputs to `<gui>/target/`, not the root `target/`; the
+   macOS/Windows package step (`tar … target/<triple>/release/<gui-bin>`) and the `cargo-deb --variant
+   gui` merge-asset then fail `Cannot stat: No such file` — and *only* on the GUI-building targets
+   (Linux musl is CLI-only, so it passes and the failure reads as platform-specific). **Fix:** set
+   `CARGO_TARGET_DIR: ${{ github.workspace }}/target` on every GUI-crate build step so it co-locates
+   with the CLI binary.
+5. **A channel on its OWN tag = a silently-forgotten partial release** (bit `timeglyph` — PyPI wheels
+   were on a separate `py-v*` tag). The `v*` release shipped the crate + binaries + brew/apt/winget, but
+   the wheels never went out (no `py-v*` tag cut) **and** `bindings/python` was never bumped (stuck at
+   0.3.0 vs the crate's 0.4.0), so a belated `py-v0.4.0` would have built a stale 0.3.0 wheel. **Fix:**
+   one `v*` tag fans out to **every** channel — put the `wheels` + `publish-wheels` jobs *in*
+   `release.yml`, not a parallel `py-v*` workflow; a `ci.yml` guard enforces `bindings/` version ==
+   crate version (lockstep); make `publish-crate` idempotent (skip if the version is already on
+   crates.io) so a re-tag ships only the missing channel. **PyPI auth = Trusted Publishing (OIDC), the
+   fleet standard** — `publish-wheels` carries `id-token: write` + `pypa/gh-action-pypi-publish`, no
+   `PYPI_API_TOKEN` secret; one-time per repo, register the repo + `release.yml` as a Trusted Publisher
+   on pypi.org (project → Publishing). General pattern in the release skill.
 
 ### crates.io versioning rule
 
