@@ -135,13 +135,12 @@ pub fn available_ram_bytes() -> u64 {
     }
 }
 
-/// Free bytes on the filesystem containing `dir` (statvfs: `f_bavail × f_frsize`);
-/// 0 if it can't be probed (callers treat 0 as "do not spill here").
+/// Free bytes available on the filesystem containing `dir`; 0 if it can't be
+/// probed (callers treat 0 as "do not spill here"). Cross-platform via `fs4`
+/// (statvfs on Unix, `GetDiskFreeSpaceEx` on Windows) — `rustix::fs` is Unix-only.
 #[must_use]
 pub fn temp_free_bytes(dir: &Path) -> u64 {
-    rustix::fs::statvfs(dir)
-        .map(|s| s.f_bavail.saturating_mul(s.f_frsize))
-        .unwrap_or(0)
+    fs4::available_space(dir).unwrap_or(0)
 }
 
 /// Gather the live resource snapshot for `concurrency` planned sources, reading
@@ -624,11 +623,12 @@ fn dir_is_writable(dir: &Path) -> bool {
 /// True if `dir` lives on a RAM-backed filesystem (tmpfs/ramfs). Reads
 /// `/proc/mounts` (absent off Linux → `false`, which is correct: macOS/Windows
 /// default temp dirs are disk-backed).
+#[cfg(unix)]
 fn dir_is_tmpfs(dir: &Path) -> bool {
     // statfs(2) at the moment the spill dir is chosen — the kernel's own answer,
     // authoritative across bind mounts / overlays (unlike parsing /proc/mounts).
     // Off Linux the magics don't match, which is the correct conservative default
-    // (macOS/Windows default temp dirs are disk-backed).
+    // (macOS default temp dirs are disk-backed).
     rustix::fs::statfs(dir)
         // `f_type` is `i64` on 64-bit Linux (cast is a no-op there) but `u32` on
         // macOS/BSD, where the cast is load-bearing — so it must stay.
@@ -639,9 +639,18 @@ fn dir_is_tmpfs(dir: &Path) -> bool {
         .unwrap_or(false)
 }
 
+/// Windows has no `statfs(2)` and `rustix::fs` is Unix-only; its default temp
+/// dir is disk-backed, so the conservative answer is `false` (same as the
+/// non-matching-magic path on other non-Linux Unixes).
+#[cfg(not(unix))]
+fn dir_is_tmpfs(_dir: &Path) -> bool {
+    false
+}
+
 /// True for a RAM-backed filesystem magic, per the Linux `statfs(2)` man page
 /// (`TMPFS_MAGIC` / `RAMFS_MAGIC`). Pure, so the classification is testable
-/// without a real mount.
+/// without a real mount. Only reached from the Unix `dir_is_tmpfs` (and tests).
+#[cfg_attr(not(unix), allow(dead_code))]
 fn is_ram_backed_fstype(f_type: i64) -> bool {
     const TMPFS_MAGIC: i64 = 0x0102_1994;
     const RAMFS_MAGIC: i64 = 0x8584_58f6;

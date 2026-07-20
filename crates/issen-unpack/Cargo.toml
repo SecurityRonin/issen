@@ -17,6 +17,10 @@ tracing = { workspace = true }
 # Safe statfs(2)/statvfs(3) for runtime tmpfs detection + temp free space of the
 # spill dir (already in the tree via tempfile; no unsafe/libc in our code).
 rustix = { version = "0.38", features = ["fs"] }
+# Cross-platform free-space probe (statvfs on Unix, GetDiskFreeSpaceEx on
+# Windows). rustix::fs is Unix-only, so temp_free_bytes goes through fs4 to
+# build + work on the Windows target too.
+fs4 = "0.6"
 # Cross-platform available-RAM probe for the adaptive spill budget.
 sysinfo = "0.33"
 # Read a disk-image entry straight out of an archive. Each format feeds the same
