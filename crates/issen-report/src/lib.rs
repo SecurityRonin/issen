@@ -178,6 +178,10 @@ pub struct ReportData {
     /// Correlation member events resolved from the `timeline` table, keyed by
     /// `timeline.id`. Only the members of rendered instances are populated.
     pub member_events: std::collections::HashMap<u64, CorrEventRow>,
+    /// Detection-content provenance (label, value) pairs read from the case
+    /// run-manifest — e.g. correlation ruleset digest, feed snapshot, Issen
+    /// version. Empty for case DBs written before the manifest existed.
+    pub provenance: Vec<(String, String)>,
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +288,18 @@ pub fn collect_report_data(
         .map_err(|e| ReportError::Database(e.to_string()))?;
     let member_events = collect_member_events(conn, &correlations)?;
 
+    // --- Detection-content provenance (case run-manifest) --------------------
+    let mut provenance = Vec::new();
+    for (label, key) in [
+        ("Correlation ruleset digest", "correlation_ruleset_digest"),
+        ("Feed snapshot", "feed_snapshot"),
+        ("Issen version", "issen_version"),
+    ] {
+        if let Some(v) = store.read_run_manifest(key).ok().flatten() {
+            provenance.push((label.to_string(), v));
+        }
+    }
+
     // --- Assemble ------------------------------------------------------------
     let summary = ReportSummary {
         total_events,
@@ -301,6 +317,7 @@ pub fn collect_report_data(
         findings,
         correlations,
         member_events,
+        provenance,
     })
 }
 
@@ -1011,6 +1028,9 @@ details.appendix-sub > summary {{ cursor: pointer; color: var(--link); font-size
     // === 4. Appendix — the verifiable substrate (collapsed) ==================
     render_appendix(&mut html, data);
 
+    // === 5. Detection Provenance — the run-manifest audit trail ==============
+    render_provenance(&mut html, data);
+
     // --- Footer --------------------------------------------------------------
     let _ = write!(
         html,
@@ -1143,6 +1163,32 @@ fn render_executive_summary(html: &mut String, data: &ReportData) {
         "<div class=\"tile\"><div class=\"value\" style=\"font-size:0.8rem\">{span}</div><div class=\"label\">Time Span (UTC)</div></div>"
     );
     html.push_str("</div>\n</section>\n");
+}
+
+/// Render the Detection Provenance section: the case run-manifest values
+/// (correlation ruleset digest, feed snapshot, Issen version) that record which
+/// detection content produced this report. Omitted entirely when empty (older
+/// case DBs without a run-manifest).
+fn render_provenance(html: &mut String, data: &ReportData) {
+    if data.provenance.is_empty() {
+        return;
+    }
+    html.push_str("<section>\n<h2>Detection Provenance</h2>\n");
+    html.push_str(
+        "<p class=\"appendix-note\">The detection content behind these findings: \
+         the correlation ruleset, feed snapshot, and Issen version recorded for \
+         this run.</p>\n",
+    );
+    html.push_str("<dl>\n");
+    for (label, value) in &data.provenance {
+        let _ = writeln!(
+            html,
+            "<dt>{}</dt><dd>{}</dd>",
+            html_escape(label),
+            html_escape(value),
+        );
+    }
+    html.push_str("</dl>\n</section>\n");
 }
 
 /// Render the ATT&CK Overview: kill-chain tactics as columns, techniques under
@@ -1599,6 +1645,7 @@ mod tests {
             findings,
             correlations: Vec::new(),
             member_events: HashMap::new(),
+            provenance: Vec::new(),
         }
     }
 
@@ -2078,6 +2125,7 @@ mod tests {
             findings: vec![],
             correlations: vec![],
             member_events: HashMap::new(),
+            provenance: vec![],
         };
 
         let html = render_html(&data);
