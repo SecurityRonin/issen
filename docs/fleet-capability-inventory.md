@@ -38,31 +38,31 @@ filevault) are **not** artifact parsers — they're wired through `issen-provide
 | Biome (SEGB) | `segb` + `segb-forensic` + `useract-forensic` | `issen-parser-biome` |
 | Shellbags | `winreg-artifacts` | `issen-parser-shellbags` |
 | SetupAPI (device install) | inline | `issen-parser-setupapi` |
-| EVTX (extraction) | `winevt-extract` | `issen-parser-evtx` — *shallow, see below* |
+| EVTX (extract + detect + carve) | `winevt-extract` + `winevt-analysis` + `winevt-carver` | `issen-parser-evtx` — ATT&CK enrichment + ElfChnk-slack carving (ADR 0018 tier 1) |
+| SQLite deleted rows | `sqlite-forensic` + `sqlite-core` | `issen-parser-sqlite` — freelist/dropped-page/free-block carving, schema-agnostic (ADR 0018 tier 1) |
 
 ## 🟡 Wired-shallow — live, but surfacing a fraction of the fleet capability
 
 | Artifact | Wrapper | Missing (upstream has it) |
 |---|---|---|
-| EVTX | `issen-parser-evtx` | `winevt-analysis` (EventID→ATT&CK), `winevt-carver` (ElfChnk unallocated), `winevt-integrity`, `winevt-memory` — none wired. Extraction only. |
-| Browser | `issen-browser` | Live rows only. No `browser-forensic-carve` (deleted rows), no history-clearing / AutoIncrementGap findings. |
+| EVTX | `issen-parser-evtx` | `winevt-integrity`, `winevt-memory` still unwired. `winevt-analysis` (EventID→ATT&CK) + `winevt-carver` (ElfChnk slack) are now wired (tier 1). |
+| Browser | `issen-browser` | Live rows only. No `browser-forensic-carve` (deleted rows), no history-clearing / AutoIncrementGap findings. *(Loose-file SQLite deleted rows are now caught by `issen-parser-sqlite`; browser-DB-specific carving still pending.)* |
 | Linux | `issen-parser-linux` | Hand-rolled (auth.log/syslog/cron/bash_history); doesn't use `shellhist-forensic` or `journald-forensic` (binary journal unhandled). |
 | macOS | `issen-parser-macos` | system.log / .logarchive / fseventsd only. |
 | PE | `issen-parser-pe` | `goblin` inline; doesn't use the fleet `exec-pe-forensic` analyzer. |
 
 ## 🔴 Dark — fleet crate (or enum variant) exists, nothing wired
 
-Priority order:
+Priority order (`sqlite-forensic` + EVTX-depth **cleared 2026-07-21** — see Wired-deep):
 
-1. **`sqlite-forensic`** — deleted-row / free-page / WAL carving. **Zero references in
-   any issen manifest.** The biggest gap (browser + chat + credential rows);
-   `issen-browser` uses raw `rusqlite` on live rows only.
-2. **EVTX depth** — wire `winevt-analysis` + `winevt-carver` onto `issen-parser-evtx`.
-3. **Browser depth** — add `browser-forensic-carve` + clearing findings to `issen-browser`.
-4. **`bam-forensic`** — `ArtifactType::Bam` is in the enum but no parser produces it and
+1. **Browser depth** — add `browser-forensic-carve` + clearing findings to `issen-browser`
+   (browser-DB-specific carving; loose-file SQLite deleted rows already covered by
+   `issen-parser-sqlite`).
+2. **`bam-forensic`** — `ArtifactType::Bam` is in the enum but no parser produces it and
    `classify.rs` has no `bam()` predicate → the variant is dark.
-5. **No wrapper at all:** `usb-forensic` / `peripheral-forensic`, `leveldb-forensic`
+3. **No wrapper at all:** `usb-forensic` / `peripheral-forensic`, `leveldb-forensic`
    (browser IndexedDB), `journald-forensic`, `dpapi-forensic` (offline DPAPI).
+4. **EVTX residual:** `winevt-integrity` (tamper) + `winevt-memory` still unwired.
 
 Niche / lower-priority: `git-forensic`, `web3-forensic`, `bluetooth-forensic`,
 `ese-forensic` (ESE reached only via `srum-parser`).
