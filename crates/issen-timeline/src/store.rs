@@ -270,6 +270,32 @@ mod tests {
     }
 
     #[test]
+    fn run_manifest_upserts_and_reads_back() {
+        let store = TimelineStore::in_memory().expect("store");
+        store
+            .record_run_manifest("correlation_ruleset_digest", "abc123")
+            .expect("w1");
+        store
+            .record_run_manifest("issen_version", "0.1.3")
+            .expect("w2");
+        assert_eq!(
+            store
+                .read_run_manifest("correlation_ruleset_digest")
+                .expect("r1"),
+            Some("abc123".to_string())
+        );
+        assert_eq!(store.read_run_manifest("absent").expect("r-absent"), None);
+        // upsert replaces the prior value
+        store
+            .record_run_manifest("issen_version", "0.1.4")
+            .expect("w3");
+        assert_eq!(
+            store.read_run_manifest("issen_version").expect("r3"),
+            Some("0.1.4".to_string())
+        );
+    }
+
+    #[test]
     fn record_stage_state_upserts_by_stage() {
         let store = TimelineStore::in_memory().expect("store");
         store
