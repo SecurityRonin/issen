@@ -40,6 +40,25 @@ fn is_segb(path: &Path) -> bool {
         .is_ok_and(|()| &buf == b"SEGB")
 }
 
+/// SQLite database magic: a database file begins with the 16 bytes
+/// `SQLite format 3\0`.
+fn is_sqlite(path: &Path) -> bool {
+    use std::io::Read;
+    let mut buf = [0u8; 16];
+    std::fs::File::open(path)
+        .and_then(|mut f| f.read_exact(&mut buf))
+        .is_ok_and(|()| &buf == b"SQLite format 3\0")
+}
+
+/// A SQLite database file (by the `SQLite format 3\0` magic at offset 0). Used by
+/// the file-level deleted-row carver (`issen-parser-sqlite`) to recover deleted
+/// rows from any SQLite file's own free space, additive to (never a replacement
+/// for) live-row parsers such as `issen-browser`.
+#[must_use]
+pub fn sqlite(path: &Path) -> bool {
+    is_sqlite(path)
+}
+
 /// `$UsnJrnl:$J` / `$J` change-journal stream.
 #[must_use]
 pub fn usn(path: &Path) -> bool {
@@ -276,5 +295,13 @@ mod tests {
             .write_all(b"SEGB....")
             .unwrap();
         assert!(segb(&bio) && !segb(&hive));
+
+        let db = dir.path().join("History");
+        std::fs::File::create(&db)
+            .unwrap()
+            .write_all(b"SQLite format 3\0rest-of-header")
+            .unwrap();
+        assert!(sqlite(&db), "SQLite magic ⇒ sqlite predicate matches");
+        assert!(!sqlite(&hive), "a regf hive is not a SQLite database");
     }
 }

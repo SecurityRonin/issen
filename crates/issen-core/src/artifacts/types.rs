@@ -61,6 +61,11 @@ pub enum ArtifactType {
     /// Windows Recycle Bin `$I` index file (deleted-file metadata: original path,
     /// original size, deletion time).
     RecycleBin,
+    /// Deleted rows carved from a SQLite database's own free space (freelist /
+    /// dropped-table / in-page free blocks) by the file-level carver. Distinct
+    /// from `BrowserHistory` (live rows): a `SqliteCarved` event is a recovered
+    /// deleted record, not a live one.
+    SqliteCarved,
 }
 
 impl std::fmt::Display for ArtifactType {
@@ -94,6 +99,7 @@ impl std::fmt::Display for ArtifactType {
             Self::DeviceInstall => write!(f, "Device Install"),
             Self::Pe => write!(f, "PE Executable"),
             Self::RecycleBin => write!(f, "Recycle Bin"),
+            Self::SqliteCarved => write!(f, "SQLite Carved"),
         }
     }
 }
@@ -136,6 +142,7 @@ impl ArtifactType {
             "DeviceInstall" => Self::DeviceInstall,
             "Pe" => Self::Pe,
             "RecycleBin" => Self::RecycleBin,
+            "SqliteCarved" => Self::SqliteCarved,
             _ => return None,
         })
     }
@@ -206,6 +213,7 @@ mod tests {
             ArtifactType::DeviceInstall,
             ArtifactType::Pe,
             ArtifactType::RecycleBin,
+            ArtifactType::SqliteCarved,
         ] {
             let debug = format!("{at:?}");
             assert_eq!(

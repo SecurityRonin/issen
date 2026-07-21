@@ -5719,6 +5719,7 @@ dependencies = [
  "issen-parser-setupapi",
  "issen-parser-shellbags",
  "issen-parser-shimcache",
+ "issen-parser-sqlite",
  "issen-parser-srum",
  "issen-parser-svcdiff",
  "issen-parser-trash",
