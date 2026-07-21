@@ -59,6 +59,10 @@ jobs:
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
         with:
           cache-on-failure: true
+          # rust-cache keys by runner OS/arch, NOT the Rust --target. The two
+          # macOS targets share one arm64 runner and would overwrite each other's
+          # cache slot; a per-target key gives each its own (large-rust-builds skill).
+          key: ${{ matrix.target }}
 
       # etcd-client's build script invokes protoc to compile its .proto files.
       - name: Install protoc
@@ -194,6 +198,10 @@ jobs:
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
         with:
           cache-on-failure: true
+          # rust-cache keys by runner OS/arch, NOT the Rust --target. The two
+          # macOS targets share one arm64 runner and would overwrite each other's
+          # cache slot; a per-target key gives each its own (large-rust-builds skill).
+          key: ${{ matrix.target }}
 
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
