@@ -2090,6 +2090,26 @@ mod tests {
         assert!(html.contains("Jane Doe"), "should contain examiner name");
     }
 
+    #[test]
+    fn detection_provenance_section_renders() {
+        let mut data = sample_report_data(vec![], vec![]);
+        data.provenance = vec![(
+            "Correlation ruleset digest".to_string(),
+            "abc123".to_string(),
+        )];
+
+        let html = render_html(&data);
+
+        assert!(
+            html.contains("Detection Provenance"),
+            "should contain the Detection Provenance section header"
+        );
+        assert!(
+            html.contains("abc123"),
+            "should render the provenance value"
+        );
+    }
+
     // ---- BLUF / progressive-disclosure redesign -----------------------------
 
     use forensicnomicon::report::Severity;
