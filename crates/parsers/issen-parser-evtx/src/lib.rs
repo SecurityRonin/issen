@@ -371,6 +371,168 @@ pub fn record_to_event(
     event
 }
 
+/// Build a [`winevt_core::EvtxEvent`] from a parsed EVTX record so the fleet
+/// `winevt-analysis` MITRE detectors can run over it.
+///
+/// The flattened EventData/UserData payload is carried verbatim in `data` under
+/// its native field names — that is exactly what the detectors match on
+/// (`ServiceName`, `TargetUserName`, `Image`, …).
+#[must_use]
+pub fn build_evtx_event(data: &Value, timestamp_ns: i64) -> winevt_core::EvtxEvent {
+    let event_id = extract_event_id(data).unwrap_or(0);
+    let channel = json_str(data, &["Event", "System", "Channel"]).to_string();
+    let computer = json_str(data, &["Event", "System", "Computer"]).to_string();
+    let flat = winevt_extract::flatten_event_data(data);
+    winevt_core::EvtxEvent {
+        event_id: u32::try_from(event_id).unwrap_or(0),
+        channel,
+        timestamp_ns,
+        computer,
+        user_sid: None,
+        logon_id: None,
+        process_id: None,
+        thread_id: None,
+        data: flat.into_iter().collect(),
+    }
+}
+
+/// Convert one `winevt-analysis` detection into a suspicious [`TimelineEvent`]
+/// carrying its MITRE technique / tactic / evidence.
+///
+/// A detection is an observation ("consistent with"), never a verdict; it is
+/// emitted as its own event (mirroring the issen PE analyzer) rather than
+/// mutating the triggering event, because several detectors are cross-event
+/// clusters with no single owning record.
+#[must_use]
+fn detection_to_event(d: &winevt_analysis::EvtxDetection, source_id: &str) -> TimelineEvent {
+    let channel_path = if d.channel.is_empty() {
+        "EventLog".to_string()
+    } else {
+        d.channel.clone()
+    };
+    TimelineEvent::new(
+        d.timestamp_ns,
+        String::new(),
+        EventType::Other("evtx-detection".into()),
+        ArtifactType::EventLog,
+        channel_path,
+        d.description.clone(),
+        source_id.to_string(),
+    )
+    .with_tag("suspicious")
+    .with_metadata("event_id", serde_json::json!(d.event_id))
+    .with_metadata("mitre_technique", serde_json::json!(d.mitre_technique_id))
+    .with_metadata("tactic", serde_json::json!(d.tactic))
+    .with_metadata("evidence", serde_json::json!(d.evidence))
+    .with_metadata("detection_kind", serde_json::json!(format!("{:?}", d.kind)))
+}
+
+/// Run every `winevt-analysis` detector over the extracted events and lift each
+/// hit into a MITRE-tagged suspicious [`TimelineEvent`].
+#[must_use]
+pub fn enrich_with_detections(
+    events: &[winevt_core::EvtxEvent],
+    source_id: &str,
+) -> Vec<TimelineEvent> {
+    winevt_analysis::detect_all(events)
+        .iter()
+        .map(|d| detection_to_event(d, source_id))
+        .collect()
+}
+
+/// Windows FILETIME (100 ns ticks since 1601-01-01) → Unix epoch nanoseconds.
+///
+/// A zero FILETIME (an all-zero record header field) maps to 0 rather than a
+/// large negative pre-1970 value.
+#[must_use]
+fn filetime_to_unix_ns(filetime: u64) -> i64 {
+    /// 100 ns ticks between 1601-01-01 and 1970-01-01.
+    const FILETIME_UNIX_EPOCH_DIFF: i128 = 11_644_473_600 * 10_000_000;
+    if filetime == 0 {
+        return 0;
+    }
+    let unix_100ns = i128::from(filetime) - FILETIME_UNIX_EPOCH_DIFF;
+    (unix_100ns * 100).clamp(i128::from(i64::MIN), i128::from(i64::MAX)) as i64
+}
+
+/// Convert a carver [`winevt_carver::FreeSpaceCarvedRecord`] into a clearly
+/// marked carved/recovered [`TimelineEvent`].
+///
+/// `record_id` and the FILETIME are decoded from the raw record header with
+/// bounds-checked reads (the carver hands back untrusted bytes).
+#[must_use]
+fn carved_record_to_event(
+    rec: &winevt_carver::FreeSpaceCarvedRecord,
+    source_id: &str,
+) -> TimelineEvent {
+    let record_id = rec
+        .raw
+        .get(8..16)
+        .and_then(|b| <[u8; 8]>::try_from(b).ok())
+        .map_or(0, u64::from_le_bytes);
+    let filetime = rec
+        .raw
+        .get(16..24)
+        .and_then(|b| <[u8; 8]>::try_from(b).ok())
+        .map_or(0, u64::from_le_bytes);
+    let ts_ns = filetime_to_unix_ns(filetime);
+    let confidence = format!("{:?}", rec.confidence);
+    TimelineEvent::new(
+        ts_ns,
+        String::new(),
+        EventType::Other("evtx-carved-record".into()),
+        ArtifactType::EventLog,
+        "EventLog".to_string(),
+        format!(
+            "Carved orphaned EVTX record {record_id} from unallocated ElfChnk free-space \
+             (chunk offset {}, confidence {confidence})",
+            rec.chunk_offset
+        ),
+        source_id.to_string(),
+    )
+    .with_tag("carved")
+    .with_tag("recovered")
+    .with_metadata("carved", serde_json::json!(true))
+    .with_metadata("record_id", serde_json::json!(record_id))
+    .with_metadata("carve_confidence", serde_json::json!(confidence))
+    .with_metadata("chunk_offset", serde_json::json!(rec.chunk_offset))
+    .with_metadata(
+        "record_offset_within_chunk",
+        serde_json::json!(rec.record_offset_within_chunk),
+    )
+}
+
+/// Carve orphaned records from the unallocated ElfChnk free-space of an EVTX
+/// buffer (ADR 0018 tier 1 — file-level, bounded by the artifact already read,
+/// so DEFAULT-ON; this is NOT whole-disk carving).
+///
+/// These are records the allocated-record iterator never returns: deleted or
+/// overwritten entries left in each chunk's slack region past its
+/// `free_space_offset`. Chunk discovery and free-space scanning are delegated
+/// to the fleet `winevt-carver`; every slice into the buffer is bounds-checked
+/// so a crafted chunk offset cannot panic.
+#[must_use]
+pub fn carve_orphaned_events(buffer: &[u8], source_id: &str) -> Vec<TimelineEvent> {
+    let result = winevt_carver::carve_from_bytes(buffer);
+    let chunk_size = winevt_carver::CHUNK_SIZE as usize;
+    let mut out = Vec::new();
+    for chunk in &result.chunks {
+        let Ok(off) = usize::try_from(chunk.offset) else {
+            continue; // cov:unreachable: chunk offsets originate from buffer indices (fit usize)
+        };
+        let Some(end) = off.checked_add(chunk_size) else {
+            continue; // cov:unreachable: off + 64KiB cannot overflow for an in-memory buffer
+        };
+        let Some(chunk_data) = buffer.get(off..end) else {
+            continue; // cov:unreachable: carve_from_bytes only reports full in-bounds chunks
+        };
+        for rec in winevt_carver::carve_chunk_free_space(chunk_data, chunk.offset) {
+            out.push(carved_record_to_event(&rec, source_id));
+        }
+    }
+    out
+}
+
 impl ForensicParser for EvtxFileParser {
     #[allow(clippy::unnecessary_literal_bound)]
     fn name(&self) -> &str {
@@ -425,6 +587,16 @@ impl ForensicParser for EvtxFileParser {
             return Ok(stats);
         }
 
+        let source_id = "evtx-evidence";
+
+        // ADR 0018 tier 1 — file-level carving is DEFAULT-ON: recover orphaned
+        // records from the unallocated ElfChnk free-space of THIS same buffer
+        // (bounded by the artifact already read, not whole-disk) before the
+        // buffer is consumed by the allocated-record parser below. Held and
+        // emitted after the allocated events so allocated vs carved stay
+        // distinguishable in emission order too.
+        let carved_events = carve_orphaned_events(&buffer, source_id);
+
         // Parse via the evtx crate.
         let mut parser = match EvtxCrateParser::from_buffer(buffer) {
             Ok(p) => p,
@@ -436,8 +608,12 @@ impl ForensicParser for EvtxFileParser {
             }
         };
 
-        let source_id = "evtx-evidence";
         let mut batch: Vec<TimelineEvent> = Vec::with_capacity(1000);
+        // Accumulate the extracted events in winevt-core form so the fleet
+        // winevt-analysis MITRE detectors can run over the whole set (several
+        // detectors are cross-event clusters). EVTX is loaded fully, so this is
+        // bounded by the same 256 MiB cap the parser already assumes.
+        let mut evtx_events: Vec<winevt_core::EvtxEvent> = Vec::new();
 
         for result in parser.records_json_value() {
             match result {
@@ -445,6 +621,8 @@ impl ForensicParser for EvtxFileParser {
                     let ts = &record.timestamp;
                     let ts_ns = timestamp_to_ns(ts.as_second(), ts.subsec_nanosecond());
                     let ts_display = ts.to_string();
+
+                    evtx_events.push(build_evtx_event(&record.data, ts_ns));
 
                     let event = record_to_event(
                         record.event_record_id,
@@ -483,6 +661,23 @@ impl ForensicParser for EvtxFileParser {
         if !batch.is_empty() {
             stats.events_emitted += batch.len() as u64;
             emitter.emit_batch(batch)?;
+        }
+
+        // Enrichment: run the fleet winevt-analysis detectors over every
+        // extracted event and emit each MITRE-tagged hit as its own suspicious
+        // TimelineEvent (observation, not verdict).
+        let detections = enrich_with_detections(&evtx_events, source_id);
+        if !detections.is_empty() {
+            debug!(count = detections.len(), "winevt-analysis MITRE detections");
+            stats.events_emitted += detections.len() as u64;
+            emitter.emit_batch(detections)?;
+        }
+
+        // Emit the orphaned records carved from unallocated ElfChnk free-space.
+        if !carved_events.is_empty() {
+            debug!(count = carved_events.len(), "carved orphaned EVTX records");
+            stats.events_emitted += carved_events.len() as u64;
+            emitter.emit_batch(carved_events)?;
         }
 
         // Declare the terminal state for resumable ingestion (issen #115).

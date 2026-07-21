@@ -160,6 +160,7 @@ issen-providers     = { path = "crates/issen-providers" }
 winevt-core     = "0.3"
 winevt-extract  = "0.2"
 winevt-analysis = "0.3"
+winevt-carver   = "0.1"
 
 # Memory forensic crates (path dependencies into sibling workspace)
 memf-core      = "0.2.2"
