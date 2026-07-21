@@ -18,6 +18,7 @@ members = [
     "crates/parsers/issen-parser-registry",
     "crates/parsers/issen-parser-logfile",
     "crates/parsers/issen-parser-prefetch",
+    "crates/parsers/issen-parser-sqlite",
     "crates/parsers/issen-parser-lnk",
     "crates/parsers/issen-parser-trash",
     "crates/parsers/issen-parser-linux",
@@ -131,6 +132,7 @@ issen-parser-lxss         = { path = "crates/parsers/issen-parser-lxss" }
 issen-parser-regcatalog   = { path = "crates/parsers/issen-parser-regcatalog" }
 issen-parser-logfile      = { path = "crates/parsers/issen-parser-logfile" }
 issen-parser-prefetch     = { path = "crates/parsers/issen-parser-prefetch" }
+issen-parser-sqlite       = { path = "crates/parsers/issen-parser-sqlite" }
 issen-parser-lnk          = { path = "crates/parsers/issen-parser-lnk" }
 issen-parser-trash   = { path = "crates/parsers/issen-parser-trash" }
 issen-parser-amcache      = { path = "crates/parsers/issen-parser-amcache" }
@@ -172,6 +174,10 @@ browser-core    = { version = "0.2", package = "browser-forensic-core" }
 browser-chrome  = { version = "0.2", package = "browser-forensic-chrome" }
 browser-firefox = { version = "0.2", package = "browser-forensic-firefox" }
 browser-safari  = { version = "0.2", package = "browser-forensic-safari" }
+
+# SQLite forensic crates (file-level deleted-row carving) — reader + analyzer.
+sqlite-core     = "0.10"
+sqlite-forensic = "0.10"
 
 # External dependencies
 duckdb       = { version = "1", features = ["bundled"] }

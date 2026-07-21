@@ -1,0 +1,24 @@
+[package]
+name = "issen-parser-sqlite"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+issen-core = { path = "../../issen-core" }
+# File-level deleted-row carving via OUR published fleet crates: the reader
+# (`sqlite-core`, the panic-free SQLite file-format parser + freelist/free-space
+# navigation) plus the analyzer (`sqlite-forensic`, whose `carve_all_deleted_records`
+# recovers deleted rows from a located file's own freelist + in-page free space).
+sqlite-core = { workspace = true }
+sqlite-forensic = { workspace = true }
+serde_json = { workspace = true }
+inventory = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+rusqlite = { workspace = true }
+
+[lints]
+workspace = true
