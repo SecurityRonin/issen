@@ -1500,4 +1500,111 @@ mod tests {
             "a record-level deserialisation failure is genuine data loss"
         );
     }
+
+    // -- winevt-analysis ATT&CK enrichment ---------------------------------
+
+    /// A 7045 service-install for a known-vulnerable driver (`zamguard64`) must
+    /// be lifted, via the fleet `winevt-analysis` detectors, into a suspicious
+    /// TimelineEvent carrying the MITRE technique (BYOVD → T1068).
+    #[test]
+    fn evtx_analysis_enriches_byovd_service_install_with_mitre() {
+        let data = serde_json::json!({
+            "Event": {
+                "System": { "EventID": 7045, "Channel": "System", "Computer": "DC01" },
+                "EventData": { "ServiceName": "zamguard64" }
+            }
+        });
+        let ev = build_evtx_event(&data, 1_700_000_000_000_000_000);
+        // Sanity: the extracted event must carry the fields the detector reads.
+        assert_eq!(ev.event_id, 7045);
+        assert_eq!(ev.channel, "System");
+        assert_eq!(
+            ev.data.get("ServiceName").map(String::as_str),
+            Some("zamguard64")
+        );
+
+        let enriched = enrich_with_detections(&[ev], "evtx-src");
+        assert!(
+            enriched.iter().any(|e| {
+                e.metadata.get("mitre_technique") == Some(&serde_json::json!("T1068"))
+                    && e.tags.iter().any(|t| t == "suspicious")
+            }),
+            "BYOVD driver install must yield a suspicious T1068 detection event"
+        );
+    }
+
+    /// A benign service install must not manufacture a detection event.
+    #[test]
+    fn evtx_analysis_no_detection_for_benign_service() {
+        let data = serde_json::json!({
+            "Event": {
+                "System": { "EventID": 7045, "Channel": "System", "Computer": "DC01" },
+                "EventData": { "ServiceName": "Spooler" }
+            }
+        });
+        let ev = build_evtx_event(&data, 1_700_000_000_000_000_000);
+        assert!(enrich_with_detections(&[ev], "evtx-src").is_empty());
+    }
+
+    // -- winevt-carver unallocated ElfChnk carving (ADR 0018 tier 1) --------
+
+    /// Build a minimal single-chunk EVTX buffer with one orphaned record placed
+    /// in the chunk's free-space (unallocated) region, so the carver has
+    /// something deleted to recover.
+    fn evtx_with_orphaned_free_space_record(record_id: u64, filetime: u64) -> Vec<u8> {
+        const CHUNK_SIZE: usize = 0x1_0000;
+        const HEADER: usize = 4096;
+        let mut buf = vec![0u8; HEADER + CHUNK_SIZE];
+        // File header magic.
+        buf[0..8].copy_from_slice(b"ElfFile\0");
+        // Chunk header magic at the chunk start.
+        let chunk = HEADER;
+        buf[chunk..chunk + 8].copy_from_slice(b"ElfChnk\0");
+        // free_space_offset (u32 LE @ +48) = 0x200 => the whole records area is
+        // treated as free space, so the orphaned record below is carved.
+        buf[chunk + 48..chunk + 52].copy_from_slice(&0x200u32.to_le_bytes());
+        // Orphaned record at records-area start (0x200).
+        let rec = chunk + 0x200;
+        let payload: [u8; 8] = [0x0F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        let size: u32 = 24 + payload.len() as u32 + 4; // header + payload + trailing size
+        buf[rec..rec + 4].copy_from_slice(&[0x2A, 0x2A, 0x00, 0x00]); // RECORD_MAGIC
+        buf[rec + 4..rec + 8].copy_from_slice(&size.to_le_bytes());
+        buf[rec + 8..rec + 16].copy_from_slice(&record_id.to_le_bytes());
+        buf[rec + 16..rec + 24].copy_from_slice(&filetime.to_le_bytes());
+        buf[rec + 24..rec + 32].copy_from_slice(&payload);
+        buf[rec + 32..rec + 36].copy_from_slice(&size.to_le_bytes()); // trailing size
+        buf
+    }
+
+    #[test]
+    fn evtx_carver_recovers_orphaned_free_space_record() {
+        // FILETIME for a 2022-ish timestamp (> the 1601->1970 epoch delta).
+        let filetime = 133_000_000_000_000_000u64;
+        let buf = evtx_with_orphaned_free_space_record(42, filetime);
+
+        let carved = carve_orphaned_events(&buf, "evtx-src");
+        assert_eq!(
+            carved.len(),
+            1,
+            "exactly one orphaned record must be carved"
+        );
+        let ev = &carved[0];
+        // Clearly marked carved/recovered and distinguishable from allocated.
+        assert!(ev.tags.iter().any(|t| t == "carved"));
+        assert_eq!(ev.metadata.get("carved"), Some(&serde_json::json!(true)));
+        assert_eq!(
+            ev.metadata.get("record_id"),
+            Some(&serde_json::json!(42u64))
+        );
+        assert!(
+            ev.timestamp_ns > 0,
+            "recovered FILETIME must decode to a positive epoch-ns"
+        );
+    }
+
+    #[test]
+    fn evtx_carver_empty_on_clean_buffer() {
+        // A buffer with no chunks yields no carved records (and never panics).
+        assert!(carve_orphaned_events(&[0u8; 4096], "evtx-src").is_empty());
+    }
 }
