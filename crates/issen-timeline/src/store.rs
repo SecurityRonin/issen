@@ -93,6 +93,16 @@ impl TimelineStore {
                 ingested_at     TIMESTAMP DEFAULT current_timestamp
             );
 
+            -- Case run-manifest: the auditable provenance of which detection
+            -- content produced this case's findings (correlation ruleset digest,
+            -- feed snapshot, issen version). Distinct from pipeline_state, which
+            -- holds resume keys — this is the analyst / court-reproducibility record.
+            CREATE TABLE IF NOT EXISTS run_manifest (
+                key         VARCHAR PRIMARY KEY,
+                value       VARCHAR NOT NULL,
+                recorded_at TIMESTAMP DEFAULT current_timestamp
+            );
+
             -- Cross-artifact correlation findings produced by the ordered
             -- evaluator. One row per finding; members live in
             -- correlation_members keyed on timeline.id.
@@ -215,6 +225,34 @@ impl TimelineStore {
             duckdb::params![stage, status, fingerprint],
         )?;
         Ok(())
+    }
+
+    /// Record (upsert) a case run-manifest entry — the auditable provenance of
+    /// which detection content produced this case's findings. Keyed on `key`;
+    /// DELETE+INSERT upsert, same robustness rationale as `record_stage_state`.
+    pub fn record_run_manifest(&self, key: &str, value: &str) -> Result<(), TimelineStoreError> {
+        self.conn.execute(
+            "DELETE FROM run_manifest WHERE key = ?",
+            duckdb::params![key],
+        )?;
+        self.conn.execute(
+            "INSERT INTO run_manifest (key, value, recorded_at)
+             VALUES (?, ?, current_timestamp)",
+            duckdb::params![key, value],
+        )?;
+        Ok(())
+    }
+
+    /// Read a case run-manifest value by key (`None` if absent).
+    pub fn read_run_manifest(&self, key: &str) -> Result<Option<String>, TimelineStoreError> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT value FROM run_manifest WHERE key = ?")?;
+        let mut rows = stmt.query_map([key], |row| row.get::<_, String>(0))?;
+        match rows.next() {
+            Some(r) => Ok(Some(r?)),
+            None => Ok(None),
+        }
     }
 
     /// Load all persisted pipeline stage-state rows.

@@ -291,6 +291,25 @@ pub fn run(
         db_path: db_path.clone(),
     };
 
+    // Case run-manifest — the auditable provenance of which detection content
+    // produced this case's findings: the correlation ruleset CONTENT digest (so
+    // an edited rule is traceable without a version bump), the feed snapshot, and
+    // the issen version. Distinct from the resume fingerprint; queryable via
+    // `SELECT * FROM run_manifest`. Open the DB only briefly, like the recorder.
+    {
+        let store = TimelineStore::open(&db_path)
+            .with_context(|| format!("opening {} to record the run manifest", db_path.display()))?;
+        for (k, v) in [
+            ("correlation_ruleset_digest", ruleset.as_str()),
+            ("feed_snapshot", feeds.as_str()),
+            ("issen_version", env!("CARGO_PKG_VERSION")),
+        ] {
+            store
+                .record_run_manifest(k, v)
+                .map_err(|e| anyhow::anyhow!("record run manifest ({k}): {e}"))?;
+        }
+    }
+
     let flags = Flags {
         rerun,
         ..Flags::default()
