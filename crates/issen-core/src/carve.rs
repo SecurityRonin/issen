@@ -18,7 +18,9 @@
 //! here carries no container-level timestamp (epoch `0`); a future classify
 //! re-entry may enrich it from the decoded records.
 
-use forensic_carve::{CarvedItem, Carver, Region, RegionSource};
+use forensic_carve::{
+    sweep, CarveOptions, CarvedItem, Carver, RecoveryMethod, Region, RegionSource,
+};
 
 use crate::artifacts::ArtifactType;
 use crate::plugin::traits::DataSource;
@@ -80,7 +82,13 @@ fn carved_item_to_event(item: &CarvedItem, evidence_source_id: &str) -> Timeline
 
 /// Carve the `regions` of a disk `source` into timeline events (disk MVP).
 ///
-/// NOT YET IMPLEMENTED (RED): returns no events regardless of input.
+/// Runs one [`forensic_carve::sweep`] with the injected `carvers` under
+/// [`RecoveryMethod::UnallocatedCarve`], converting each recovered item into a
+/// [`TimelineEvent`] stamped with the carve provenance and `evidence_source_id`.
+/// The `regions` are the disk's unallocated extents (the caller enumerates them
+/// via `forensic-vfs`'s `FileSystem::unallocated()`); the `tag` type `R` is
+/// carried through the sweep but not otherwise used here (the item's absolute
+/// offset already locates it in the image).
 pub fn carve_unallocated<S, R>(
     source: &S,
     regions: impl IntoIterator<Item = Region<R>>,
@@ -91,10 +99,14 @@ where
     S: RegionSource,
     R: Clone,
 {
-    let _ = (source, carvers, evidence_source_id);
-    let _ = regions.into_iter().count();
-    let _ = carved_item_to_event; // silence dead-code until GREEN wires it in
-    Vec::new()
+    let opts = CarveOptions {
+        recovery_method: RecoveryMethod::UnallocatedCarve,
+        ..CarveOptions::default()
+    };
+    sweep(source, regions, carvers, &opts)
+        .into_iter()
+        .map(|swept| carved_item_to_event(&swept.item, evidence_source_id))
+        .collect()
 }
 
 #[cfg(test)]
