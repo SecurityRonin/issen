@@ -268,9 +268,9 @@ checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
 
 [[package]]
 name = "apfs-core"
-version = "0.2.5"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23690bde20276549adb31daa06c5a4c1b0d3360b5f637c1b96485241ad9d7c15"
+checksum = "6c5646c83cddb18f7abf571e50d53e238fabb496c1177517842a6ac0c47408e5"
 dependencies = [
  "bitflags 2.13.0",
  "chrono",
@@ -3148,15 +3148,16 @@ dependencies = [
 
 [[package]]
 name = "ext4fs-core"
-version = "0.2.5"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe5dd33a954871944f5469c298bf56ba9ca6b2f699d712cd72cbe04a1aabbbcb"
+checksum = "2e36f645a667a404a42457a4c260d07514cbad80f7e828047b50f47074648ce3"
 dependencies = [
  "bitflags 2.13.0",
  "blazehash-core",
  "crc",
  "forensic-vfs",
  "forensicnomicon 1.8.1",
+ "safe-read",
 ]
 
 [[package]]
@@ -4370,7 +4371,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core",
 ]
 
 [[package]]
@@ -4784,7 +4785,9 @@ dependencies = [
  "duckdb",
  "enable-ansi-support",
  "flate2",
+ "forensic-carve",
  "forensic-pivot",
+ "forensic-vfs",
  "forensicnomicon 1.8.1",
  "indicatif",
  "inventory",
@@ -7015,9 +7018,9 @@ dependencies = [
 
 [[package]]
 name = "ntfs-core"
-version = "0.9.5"
+version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21dd9d1962efbe385a681014859614b1a83acee719a3d1d4c73a022e0caa83ea"
+checksum = "0b8f79729ffbbb58bd52ab668f52982ed96e2b47c9c0b01b1921bb14b3066e75"
 dependencies = [
  "bitflags 2.13.0",
  "chrono",
@@ -12155,7 +12158,7 @@ version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12342cb4d8e3b046f3d80effd474a7a02447231330ef77d71daa6fbc40681143"
 dependencies = [
- "windows-core 0.57.0",
+ "windows-core",
  "windows-targets 0.52.6",
 ]
 
@@ -12165,23 +12168,10 @@ version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2ed2439a290666cd67ecce2b0ffaad89c2a56b976b736e6ece670297897832d"
 dependencies = [
- "windows-implement 0.57.0",
- "windows-interface 0.57.0",
+ "windows-implement",
+ "windows-interface",
  "windows-result 0.1.2",
  "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-core"
-version = "0.62.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8e83a14d34d0623b51dce9581199302a221863196a1dde71a7663a4c2be9deb"
-dependencies = [
- "windows-implement 0.60.2",
- "windows-interface 0.59.3",
- "windows-link",
- "windows-result 0.4.1",
- "windows-strings",
 ]
 
 [[package]]
@@ -12196,32 +12186,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "windows-implement"
-version = "0.60.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "053e2e040ab57b9dc951b72c264860db7eb3b0200ba345b4e4c3b14f67855ddf"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.118",
-]
-
-[[package]]
 name = "windows-interface"
 version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29bee4b38ea3cde66011baa44dba677c432a78593e202392d1e9070cf2a7fca7"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.118",
-]
-
-[[package]]
-name = "windows-interface"
-version = "0.59.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f316c4a2570ba26bbec722032c4099d8c8bc095efccdc15688708623367e358"
 dependencies = [
  "proc-macro2",
  "quote",
