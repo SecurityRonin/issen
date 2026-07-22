@@ -1069,6 +1069,7 @@ pub fn run() -> ExitCode {
             cli.sigma_rules.as_deref(),
             cli.hash_iocs.as_deref(),
             cli.network_iocs.as_deref(),
+            cli.unallocated,
         )
     };
 

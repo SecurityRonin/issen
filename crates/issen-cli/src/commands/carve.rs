@@ -23,8 +23,19 @@ use std::path::PathBuf;
 /// listing the disk sources it would sweep.
 #[must_use]
 pub fn unallocated_pending_notice(disk: &[PathBuf]) -> String {
-    let _ = disk;
-    String::new()
+    let mut out = String::from(
+        "issen: --unallocated requested — the carve engine and disk carvers \
+         (sqlite / evtx-chunk / registry-hive) are wired via \
+         issen_core::carve::carve_unallocated. Enumerating each volume's \
+         unallocated extents (forensic-vfs FileSystem::unallocated) into the \
+         disk leg is the remaining integration; no carved events were added \
+         this run.\n",
+    );
+    out.push_str("  disk sources that would be swept:\n");
+    for path in disk {
+        out.push_str(&format!("    - {}\n", path.display()));
+    }
+    out
 }
 
 /// Emit [`unallocated_pending_notice`] to stderr (stdout carries the analysis /

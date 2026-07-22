@@ -193,6 +193,7 @@ pub fn run(
     sigma_rules: Option<&Path>,
     hash_iocs: Option<&[PathBuf]>,
     network_iocs: Option<&[PathBuf]>,
+    unallocated: bool,
 ) -> anyhow::Result<()> {
     if evidence.is_empty() {
         anyhow::bail!(
@@ -345,6 +346,7 @@ pub fn run(
             sigma_rules: sigma_rules.map(Path::to_path_buf),
             hash_iocs: hash_iocs.map(<[PathBuf]>::to_vec),
             network_iocs: network_iocs.map(<[PathBuf]>::to_vec),
+            unallocated,
         };
 
         let report = pipeline::run_bare(&applicable, &flags, &current_fp, &recorder, &executor)?;
@@ -589,6 +591,9 @@ struct RealExecutor {
     sigma_rules: Option<PathBuf>,
     hash_iocs: Option<Vec<PathBuf>>,
     network_iocs: Option<Vec<PathBuf>>,
+    // `--unallocated`: after normal ingest, sweep unallocated disk space for
+    // carved artifacts (disk MVP; see `commands::carve`).
+    unallocated: bool,
 }
 
 impl RealExecutor {
@@ -634,6 +639,11 @@ impl StageExecutor for RealExecutor {
                     self.verbose,
                     false,
                 )?;
+                // After normal ingest, optionally sweep unallocated disk space
+                // for carved artifacts no filesystem references (disk MVP).
+                if self.unallocated {
+                    commands::carve::announce_unallocated_pending(&self.disk);
+                }
             }
             Stage::Memory => {
                 let pb = self.spinner(stage);
