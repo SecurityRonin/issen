@@ -142,6 +142,37 @@ pub fn unallocated_regions(fs: &dyn FileSystem) -> Vec<Region<RegionTag>> {
         .collect()
 }
 
+/// Carve a disk source's unallocated space into timeline events (disk MVP).
+///
+/// The orchestration entry point for the disk leg: enumerates `fs`'s unallocated
+/// extents ([`unallocated_regions`]), adapts `datasource` via
+/// [`DataSourceRegionSource`], and runs the injected `carvers` over exactly those
+/// extents ([`carve_unallocated`]). Allocated space is never swept.
+///
+/// `carvers` are injected (not read from [`forensic_carve::registered_carvers`]
+/// here) for the same reason [`carve_unallocated`] injects them — the seam stays
+/// free of the carver fleet and is unit-testable with a mock carver. The
+/// orchestrator (`issen-cli`, which force-links the carver crates) passes
+/// `&forensic_carve::registered_carvers()`.
+///
+/// Returns the carved artifacts as [`TimelineEvent`]s stamped with the carve
+/// provenance and `evidence_source_id`; an empty vec when the volume exposes no
+/// unallocated extents (or no carver fires).
+#[must_use]
+pub fn carve_disk_source(
+    datasource: &dyn DataSource,
+    fs: &dyn FileSystem,
+    carvers: &[&dyn Carver],
+    evidence_source_id: &str,
+) -> Vec<TimelineEvent> {
+    let regions = unallocated_regions(fs);
+    if regions.is_empty() {
+        return Vec::new();
+    }
+    let source = DataSourceRegionSource(datasource);
+    carve_unallocated(&source, regions, carvers, evidence_source_id)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
