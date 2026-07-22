@@ -3,6 +3,10 @@
 - Status: Proposed
 - Date: 2026-07
 - Deciders: SecurityRonin
+- Relationship: see **ADR 0017** (Accepted). This ADR covers the CONTAINER layer
+  (`disk_forensic::container::open` → sector stream); 0017 covers the FILESYSTEM layer
+  (`forensic-vfs` walking that stream). Complementary per the constitution's "VFS &
+  Container" split — not superseded.
 
 ## Context
 

@@ -48,5 +48,5 @@ our own tools.
 ## References
 
 - `CLAUDE.md` — "Batteries-Included — Compile Everything In", lean-core/full-binary rule
-- MEMORY notes — "GPL deps block issen license gate", "issen release build timings" (bundled-DuckDB MSVC long pole)
+- Fleet `deny.toml` — BSL-1.0 allowed (xxhash via blazehash), the license-gate fix that preserves the full feature set (see the Batteries-Included consequences above).
 - Reference: `blazehash-core` (lean lib) + `blazehash` (full binary)

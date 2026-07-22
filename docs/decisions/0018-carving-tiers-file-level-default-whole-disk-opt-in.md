@@ -1,4 +1,4 @@
-# 18. Carving tiers — file-level carving is default-on; whole-disk carving is opt-in behind `--unallocated`
+# 0018. Carving tiers — file-level carving is default-on; whole-disk carving is opt-in behind `--unallocated`
 
 Date: 2026-07-21 (Tier-2 flag renamed 2026-07-22)
 Status: Accepted (issen-local tier rationale). **Generalised fleet-wide by ronin-issen

@@ -41,5 +41,5 @@ tests (an APFS-only disk must record `UnsupportedFilesystem`).
 
 ## References
 
-- `CLAUDE.md` — global "Robustness" ("Bootstrap failure ≠ artifact-not-found", "Show the unrecognized value")
+- Fleet robustness posture — `CLAUDE.md` "Security & Robustness Standard — Paranoid Gatekeeper". The specific rule applied here — a bootstrap/prerequisite failure surfaces loudly, never as a silent empty result, and the offending value is shown — is stated in the Decision above.
 - Crate: `crates/issen-disk` (`classify_partitions`, `detect_filesystem`, `ExtractionLimit::UnsupportedFilesystem`)

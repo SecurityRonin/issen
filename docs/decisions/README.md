@@ -30,3 +30,8 @@ holds the standing conclusion.
 | [0011](0011-consolidate-hash-lookup-on-forensic-hashdb.md) | Consolidate disk/scan hash lookup on forensic-hashdb | Accepted |
 | [0012](0012-default-pipeline-unifies-disk-and-memory-legs.md) | The default `issen <evidence>` pipeline unifies disk and memory legs into one timeline | Accepted |
 | [0013](0013-secure-by-default-decryption-credential-supply.md) | Secure-by-default credential supply for encrypted volumes (BitLocker/FileVault/LUKS) | Proposed |
+| [0014](0014-frontdoor-collection-evidence.md) | Restore `EvidenceKind::Collection` to the front door (UAC-collection analysis) | Accepted |
+| [0015](0015-linux-analysis-parity-beyond-uac-collections.md) | Generalize Linux artifact analysis beyond UAC collections (disk-image parity) | Accepted |
+| [0016](0016-browser-profile-discovery-via-fswalk-not-discover-profiles.md) | Multi-profile browser discovery rides the fswalk, not `discover_profiles` | Accepted |
+| [0017](0017-forensic-vfs-collapse-whole-disk-content-scan.md) | Collapse issen's disk access onto forensic-vfs for filesystem-agnostic whole-disk content scanning | Accepted |
+| [0018](0018-carving-tiers-file-level-default-whole-disk-opt-in.md) | Carving tiers — file-level default-on; whole-disk opt-in behind `--unallocated` (generalized by fleet ADR 0001) | Accepted |

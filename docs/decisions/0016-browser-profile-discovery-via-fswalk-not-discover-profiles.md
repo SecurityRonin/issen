@@ -1,4 +1,4 @@
-# 0016 — Multi-profile browser discovery rides the fswalk, not `discover_profiles`
+# 0016. Multi-profile browser discovery rides the fswalk, not `discover_profiles`
 
 Status: accepted
 Date: 2026-07-14
