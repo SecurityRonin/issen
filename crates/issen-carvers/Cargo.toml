@@ -24,6 +24,12 @@ path = "src/lib.rs"
 # `forensic_carve::CarverRegistration` type — required for `inventory` to see them.
 [dependencies]
 forensic-carve = { workspace = true }
+# The disk carver producers. PATH deps into the sibling repos (the carve modules
+# are newer than the crates.io releases and depend on the unpublished
+# `forensic-carve`), each resolving the SAME `../forensic-carve` checkout.
+sqlite-forensic = { path = "../../../sqlite-forensic/forensic" }   # SqliteCarver  → "sqlite"
+winevt-carver   = { path = "../../../winevt-forensic/crates/winevt-carver" }  # EvtxChunkCarver → "evtx-chunk"
+winreg-carve    = { path = "../../../winreg-forensic/crates/winreg-carve" }   # HiveCarver     → "registry-hive"
 
 [build-dependencies]
 toml = { workspace = true }
