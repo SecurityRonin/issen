@@ -9,6 +9,9 @@ repository.workspace = true
 
 [dependencies]
 forensicnomicon = { workspace = true, features = ["serde"] }
+# Fleet carving contract + single-pass sweep engine (ADR 0001) — the carve seam
+# converts recovered items to TimelineEvents. Shared unpublished path dep.
+forensic-carve = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

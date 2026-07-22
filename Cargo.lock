@@ -5067,6 +5067,7 @@ name = "issen-core"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "forensic-carve",
  "forensicnomicon 1.8.1",
  "hex",
  "insta",
