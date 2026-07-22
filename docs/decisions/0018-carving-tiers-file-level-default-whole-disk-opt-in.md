@@ -1,7 +1,13 @@
-# 18. Carving tiers — file-level carving is default-on; whole-disk carving is opt-in behind `--deleted`
+# 18. Carving tiers — file-level carving is default-on; whole-disk carving is opt-in behind `--unallocated`
 
-Date: 2026-07-21
-Status: Accepted (design; governs the sqlite-forensic + winevt-carver wiring)
+Date: 2026-07-21 (Tier-2 flag renamed 2026-07-22)
+Status: Accepted (issen-local tier rationale). **Generalised fleet-wide by ronin-issen
+fleet ADR 0001** (`fleet-carving-flags-sweep-engine-contract`) — the flag taxonomy, the
+`forensic-carve` sweep engine, the `Carver` contract, and the memory leg. This ADR is
+issen's local origin for the tier split. The Tier-2 flag was renamed `--deleted` →
+`--unallocated` per fleet ADR 0001: `--deleted` is reserved for FS-recorded *tombstones*
+(a deliberate deletion the filesystem recorded), while `--unallocated` names the
+allocation *observation* and asserts no intent.
 
 ## Context
 
@@ -31,14 +37,15 @@ because it recovers the **high-value, recently-deleted rows that live in the fil
 own slack** — which is *most* of what matters in triage (deleted history, chat,
 credential rows).
 
-### Tier 2 — whole-disk unallocated carving → OPT-IN behind `--deleted`
+### Tier 2 — whole-disk unallocated carving → OPT-IN behind `--unallocated`
 
 Magic-byte scanning the **entire image** for *orphaned* SQLite/EVTX/other artifacts
 that are no longer referenced by the filesystem at all. This is **O(image size)** —
 gigabytes, and it *would* balloon triage time. It is **off by default** and gated
-behind the existing **`--deleted`** flag (precedent: ntfs `deleted_nodes()`, the
-4n6mount `--deleted` work). It answers the rarer *"the DB/file itself was deleted"*
-question.
+behind the **`--unallocated`** flag (alias `--unalloc`). This is distinct from
+`--deleted` (FS-recorded tombstones — ntfs `deleted_nodes()`, 4n6mount `--deleted`),
+a separate cheaper flag; `--residual` enables both. It answers the rarer *"the
+DB/file itself is no longer referenced by the filesystem"* question.
 
 ## Consequences
 
@@ -51,7 +58,7 @@ question.
   on, and the rare, expensive case is explicit and auditable.
 - **Wiring rule for parsers:** a `*-forensic` carve capability that scopes to a
   *located file's* internal free space is wired into the parser's default path; any
-  capability that scans *unallocated disk* is wired behind `--deleted`. When in doubt,
+  capability that scans *unallocated disk* is wired behind `--unallocated`. When in doubt,
   ask "is the cost bounded by this artifact, or by the image?" — the answer picks the
   tier.
 - Applies beyond sqlite/evtx: the same split governs any future carver (registry hive
