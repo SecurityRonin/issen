@@ -1,5 +1,6 @@
 pub mod analyse;
 pub mod biome;
+pub mod carve;
 pub mod correlate;
 pub mod correlate_mem;
 pub mod coverage_summary;
