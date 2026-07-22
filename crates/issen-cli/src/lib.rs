@@ -153,6 +153,11 @@ pub struct Cli {
     #[arg(long)]
     rerun: bool,
 
+    /// Also carve unallocated disk space for deleted artifacts that no
+    /// filesystem references (slower; whole-image scan).
+    #[arg(long = "unallocated", visible_alias = "unalloc")]
+    unallocated: bool,
+
     /// Output format for a UAC-collection case: narrative (default, human
     /// analysis + supertimeline), jsonl (one timeline event per line), or csv.
     /// Ignored for disk/memory evidence.
