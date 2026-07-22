@@ -269,4 +269,100 @@ mod tests {
         assert_eq!(artifact_type_for("evtx-chunk"), ArtifactType::EventLog);
         assert_eq!(artifact_type_for("registry-hive"), ArtifactType::Registry);
     }
+
+    // --- Unallocated-extent enumeration + disk-source carve (fleet ADR 0001 §4) ---
+
+    use forensic_vfs::{
+        ByteRun, DirStream, ExtentStream, FileId, FileSystem, FsKind, FsMeta, NodeStream, RunAlloc,
+        RunFlags, RunInfo, SectorSizes, StreamId, TimeZonePolicy, VfsResult,
+    };
+
+    /// Build one `RunInfo` at an absolute image offset with an allocation status.
+    fn run(offset: u64, len: u64, alloc: RunAlloc) -> RunInfo {
+        RunInfo {
+            run: ByteRun {
+                image_offset: offset,
+                len,
+                flags: RunFlags::default(),
+            },
+            alloc,
+        }
+    }
+
+    /// A `forensic_vfs::FileSystem` whose only exercised surface is
+    /// `unallocated()` — every other method is unreachable, because the carve
+    /// seam navigates a volume solely by its unallocated extents.
+    struct MockFs {
+        runs: Vec<RunInfo>,
+    }
+
+    impl FileSystem for MockFs {
+        fn kind(&self) -> FsKind {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn root(&self) -> FileId {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn sector_sizes(&self) -> SectorSizes {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn timestamp_zone(&self) -> TimeZonePolicy {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn read_dir(&self, _ino: FileId) -> VfsResult<DirStream> {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn extents(&self, _ino: FileId, _stream: StreamId) -> VfsResult<ExtentStream> {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn lookup(&self, _parent: FileId, _name: &[u8]) -> VfsResult<Option<FileId>> {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn meta(&self, _ino: FileId) -> VfsResult<FsMeta> {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn read_at(
+            &self,
+            _ino: FileId,
+            _stream: StreamId,
+            _off: u64,
+            _buf: &mut [u8],
+        ) -> VfsResult<usize> {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn read_link(&self, _ino: FileId, _cap: usize) -> VfsResult<Vec<u8>> {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn deleted(&self) -> VfsResult<NodeStream> {
+            unreachable!("carve reaches only unallocated()")
+        }
+        fn unallocated(&self) -> VfsResult<ExtentStream> {
+            let runs = self.runs.clone();
+            Ok(ExtentStream::new(runs.into_iter().map(Ok)))
+        }
+    }
+
+    #[test]
+    fn unallocated_regions_maps_only_unallocated_extents() {
+        // Two unallocated extents plus an allocated one and a zero-length one:
+        // only the two non-empty unallocated runs become carve Regions.
+        let fs = MockFs {
+            runs: vec![
+                run(1_000, 4_096, RunAlloc::Unallocated),
+                run(9_000, 512, RunAlloc::Allocated), // allocated → skipped
+                run(20_480, 8_192, RunAlloc::Unallocated),
+                run(50_000, 0, RunAlloc::Unallocated), // empty → skipped
+            ],
+        };
+        let regions = unallocated_regions(&fs);
+        assert_eq!(regions.len(), 2, "two non-empty unallocated extents");
+        assert_eq!(regions[0].start, 1_000, "first extent absolute offset");
+        assert_eq!(regions[0].len, 4_096);
+        assert_eq!(
+            regions[0].tag, 1_000,
+            "tag carries the source-extent offset"
+        );
+        assert_eq!(regions[1].start, 20_480, "second extent absolute offset");
+        assert_eq!(regions[1].len, 8_192);
+    }
 }

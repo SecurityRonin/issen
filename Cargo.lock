@@ -3564,6 +3564,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "forensic-vfs"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "285cbb38f775a1c3c476e7e20bffea29eea6a62f73e0721957c04cb3867d1fa6"
+dependencies = [
+ "forensicnomicon-core",
+ "state-history-forensic",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "forensicnomicon"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5068,6 +5079,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "forensic-carve",
+ "forensic-vfs",
  "forensicnomicon 1.8.1",
  "hex",
  "insta",
@@ -10787,6 +10799,12 @@ name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
+
+[[package]]
+name = "state-history-forensic"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06d95f05c0dd49a5dfae0eb6cb6fae7bb3bd5c1f787300c94a3a5adecb44d98f"
 
 [[package]]
 name = "static_assertions"
