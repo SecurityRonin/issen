@@ -3532,6 +3532,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
+name = "forensic-carve"
+version = "0.0.0"
+dependencies = [
+ "aho-corasick",
+ "inventory",
+]
+
+[[package]]
 name = "forensic-hashdb"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4981,6 +4989,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "issen-carvers"
+version = "0.1.0"
+dependencies = [
+ "forensic-carve",
+ "toml",
+]
+
+[[package]]
 name = "issen-cli"
 version = "0.1.3"
 dependencies = [
@@ -4999,6 +5015,7 @@ dependencies = [
  "inventory",
  "is-terminal",
  "issen-archive",
+ "issen-carvers",
  "issen-core",
  "issen-correlation",
  "issen-disk",

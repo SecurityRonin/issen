@@ -33,6 +33,7 @@ issen-core = { workspace = true }
 # Aggregator umbrellas own the parser/provider link-anchor set (build.rs codegen
 # from their own manifests). The two root anchors in lib.rs reference these.
 issen-parsers = { workspace = true }
+issen-carvers = { workspace = true }
 issen-providers = { workspace = true }
 issen-fswalker = { workspace = true }
 issen-timeline = { workspace = true }

@@ -41,6 +41,7 @@ members = [
     "crates/parsers/issen-parser-regcatalog",
     "crates/issen-report",
     "crates/issen-parsers",
+    "crates/issen-carvers",
     "crates/issen-providers",
     "crates/issen-cli",
     "crates/issen-navigator",
@@ -99,7 +100,12 @@ issen-vhd        = { path = "crates/issen-vhd" }
 issen-vhdx       = { path = "crates/issen-vhdx" }
 issen-vmdk       = { path = "crates/issen-vmdk" }
 issen-disk       = { path = "crates/issen-disk" }
+issen-carvers    = { path = "crates/issen-carvers" }
 disk-forensic    = "0.9"
+# Fleet carving contract + single-pass sweep engine (ADR 0001). Unpublished; the
+# SHARED local checkout every carver crate also path-deps, so issen resolves ONE
+# `forensic-carve` package and its `inventory::collect!` sees every submission.
+forensic-carve   = { path = "../forensic-carve" }
 ntfs-forensic    = "0.8"
 ntfs-core        = "0.9"
 # Non-NTFS filesystem readers for non-NTFS triage collection. Imported as

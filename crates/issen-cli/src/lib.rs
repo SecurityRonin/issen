@@ -60,6 +60,13 @@ use is_terminal::IsTerminal;
 // (and their generated anchor sets) into the link.
 extern crate issen_parsers as _;
 extern crate issen_providers as _;
+// Force-link every disk carver crate (sqlite / evtx-chunk / registry-hive) so
+// their `forensic_carve` `inventory::submit!` registrations survive DCE and
+// `forensic_carve::registered_carvers()` returns them for the `--unallocated`
+// sweep. The anchor set is owned by the issen-carvers aggregator umbrella (its
+// build.rs generates one `extern crate <dep> as _;` per carver from its own
+// Cargo.toml), mirroring issen-parsers. This root anchor is MANDATORY.
+extern crate issen_carvers as _;
 
 pub mod banner;
 pub mod commands;

@@ -1,0 +1,35 @@
+[package]
+name = "issen-carvers"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+description = "Aggregator umbrella: force-links every disk carver crate so their forensic-carve inventory::submit! registrations survive dead-code elimination. Not itself a carver."
+repository.workspace = true
+publish = false
+
+[lib]
+name = "issen_carvers"
+path = "src/lib.rs"
+
+# Every carver crate whose `inventory::submit! { CarverRegistration::new(..) }`
+# must survive DCE is a DIRECT normal dependency here — this list is the single
+# source of truth for the carver anchor set. `build.rs` reads THIS manifest and
+# emits one real `extern crate <dep> as _;` per dep into OUT_DIR/anchors.rs. Add
+# a carver => add one line here; the build regenerates the anchor.
+#
+# All carver crates and `forensic-carve` resolve to the SAME local
+# `../forensic-carve` checkout (workspace dep + the siblings' own path deps all
+# canonicalize there), so `registered_carvers()` and the submissions share one
+# `forensic_carve::CarverRegistration` type — required for `inventory` to see them.
+[dependencies]
+forensic-carve = { workspace = true }
+
+[build-dependencies]
+toml = { workspace = true }
+
+[dev-dependencies]
+toml = { workspace = true }
+
+[lints]
+workspace = true
