@@ -75,4 +75,14 @@ mod tests {
             "lists each disk source: {notice}"
         );
     }
+
+    #[test]
+    fn carve_disk_sources_unallocated_degrades_on_unopenable_paths() {
+        // A path that cannot be opened as a DataSource is a best-effort skip:
+        // an empty result, never a panic or a fabricated extent.
+        let events = carve_disk_sources_unallocated(&[PathBuf::from(
+            "/nonexistent/issen-no-such-image.E01",
+        )]);
+        assert!(events.is_empty(), "unopenable source yields no events");
+    }
 }
