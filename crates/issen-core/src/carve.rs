@@ -398,4 +398,44 @@ mod tests {
         assert_eq!(regions[1].start, 20_480, "second extent absolute offset");
         assert_eq!(regions[1].len, 8_192);
     }
+
+    #[test]
+    fn carve_disk_source_carves_only_the_unallocated_extent() {
+        // A magic-bearing artifact sits in an UNALLOCATED extent (0..128) and an
+        // identical one sits in an ALLOCATED extent (256..400). Only the former
+        // is swept, so exactly one event is produced, anchored at the
+        // unallocated hit — allocated space is never carved.
+        let mut image = vec![0u8; 512];
+        image[64..64 + MOCK_MAGIC.len()].copy_from_slice(MOCK_MAGIC); // unallocated
+        image[300..300 + MOCK_MAGIC.len()].copy_from_slice(MOCK_MAGIC); // allocated
+        let ds = MemSource(image);
+        let fs = MockFs {
+            runs: vec![
+                run(0, 128, RunAlloc::Unallocated),
+                run(256, 144, RunAlloc::Allocated),
+            ],
+        };
+        let carver = MockCarver;
+        let carvers: Vec<&dyn Carver> = vec![&carver];
+
+        let events = carve_disk_source(&ds, &fs, &carvers, "img-1");
+        assert_eq!(events.len(), 1, "only the unallocated magic is carved");
+        let e = &events[0];
+        assert!(
+            e.artifact_path.contains("@64"),
+            "carved from the unallocated extent: {}",
+            e.artifact_path
+        );
+        assert!(
+            !e.artifact_path.contains("@300"),
+            "allocated-space magic must never be carved: {}",
+            e.artifact_path
+        );
+        assert!(
+            e.tags.iter().any(|t| t == "recovery:unallocated-carve"),
+            "recovery method tagged: {:?}",
+            e.tags
+        );
+        assert_eq!(e.evidence_source_id, "img-1");
+    }
 }
