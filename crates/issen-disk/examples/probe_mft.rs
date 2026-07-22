@@ -35,7 +35,7 @@ fn main() {
                 continue;
             }
         };
-        let mut fs = match NtfsFs::open(part) {
+        let fs = match NtfsFs::open(part) {
             Ok(fs) => fs,
             Err(e) => {
                 println!("    NtfsFs::open error: {e}");

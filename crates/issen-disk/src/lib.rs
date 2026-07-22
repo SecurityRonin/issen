@@ -1572,6 +1572,172 @@ pub fn mft_mirror_integrity_events(
         .collect()
 }
 
+// ── Unallocated-space carving (fleet ADR 0001 §4) ────────────────────────────
+//
+// Re-open each volume in the disk source as a `forensic_vfs::FileSystem` (the
+// reader crate's `vfs` adapter) and drive `issen_core::carve::carve_disk_source`
+// over exactly its unallocated extents. Carvers are INJECTED (the orchestrator
+// force-links the carver fleet and passes `forensic_carve::registered_carvers()`),
+// keeping this leg free of the carver crates. Allocated space is never swept.
+//
+// A volume that fails to open is a best-effort per-partition miss — surfaced to
+// stderr and skipped — never a hard abort: the whole-disk source was already
+// opened successfully upstream, so a single volume that won't mount is not a
+// bootstrap failure (fleet ADR 0001; matches the per-partition degrade the
+// triage collectors already use).
+
+/// Carve the unallocated space of the NTFS volume at `window`.
+///
+/// Opens the volume via [`open_volume`] as a `forensic_vfs::FileSystem` and runs
+/// the injected `carvers` over its unallocated extents. A volume that won't open
+/// is skipped (empty vec + stderr note).
+#[must_use]
+pub fn carve_ntfs_window(
+    source: &dyn DataSource,
+    window: PartitionWindow,
+    evidence_source_id: &str,
+    carvers: &[&dyn forensic_carve::Carver],
+) -> Vec<issen_core::timeline::event::TimelineEvent> {
+    match open_volume(source, window) {
+        Ok(fs) => issen_core::carve::carve_disk_source(source, &fs, carvers, evidence_source_id),
+        Err(e) => {
+            eprintln!(
+                "Warning: unallocated carve skipped an NTFS volume at offset {}: {e}",
+                window.offset
+            );
+            Vec::new()
+        }
+    }
+}
+
+/// Carve the unallocated space of the ext4 volume at `window`.
+///
+/// Opens the volume via `ext4fs::Ext4Fs::open` as a `forensic_vfs::FileSystem`
+/// and runs the injected `carvers` over its unallocated extents.
+#[must_use]
+pub fn carve_ext4_window(
+    source: &dyn DataSource,
+    window: PartitionWindow,
+    evidence_source_id: &str,
+    carvers: &[&dyn forensic_carve::Carver],
+) -> Vec<issen_core::timeline::event::TimelineEvent> {
+    let reader = match ntfs_core::OffsetReader::new(
+        DataSourceReader::new(source),
+        window.offset,
+        window.length,
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!(
+                "Warning: unallocated carve could not window an ext4 volume at offset {}: {e}",
+                window.offset
+            );
+            return Vec::new();
+        }
+    };
+    match ext4fs::Ext4Fs::open(reader) {
+        Ok(fs) => issen_core::carve::carve_disk_source(source, &fs, carvers, evidence_source_id),
+        Err(e) => {
+            eprintln!(
+                "Warning: unallocated carve skipped an ext4 volume at offset {}: {e}",
+                window.offset
+            );
+            Vec::new()
+        }
+    }
+}
+
+/// Carve the unallocated space of the APFS volume at `window`.
+///
+/// Opens the container via `apfs_core::vfs::ApfsFs::open` as a
+/// `forensic_vfs::FileSystem` and runs the injected `carvers` over its
+/// unallocated extents (free space tracked by the container space manager).
+#[must_use]
+pub fn carve_apfs_window(
+    source: &dyn DataSource,
+    window: PartitionWindow,
+    evidence_source_id: &str,
+    carvers: &[&dyn forensic_carve::Carver],
+) -> Vec<issen_core::timeline::event::TimelineEvent> {
+    let reader = match ntfs_core::OffsetReader::new(
+        DataSourceReader::new(source),
+        window.offset,
+        window.length,
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!(
+                "Warning: unallocated carve could not window an APFS container at offset {}: {e}",
+                window.offset
+            );
+            return Vec::new();
+        }
+    };
+    match apfs_core::vfs::ApfsFs::open(reader) {
+        Ok(fs) => issen_core::carve::carve_disk_source(source, &fs, carvers, evidence_source_id),
+        Err(e) => {
+            eprintln!(
+                "Warning: unallocated carve skipped an APFS container at offset {}: {e}",
+                window.offset
+            );
+            Vec::new()
+        }
+    }
+}
+
+/// Carve every recognized volume's unallocated space in the disk `source`.
+///
+/// Classifies the partitions ([`classify_partitions`]) and, for each NTFS / ext4
+/// / APFS volume, re-opens it as a `forensic_vfs::FileSystem` and sweeps its
+/// unallocated extents with the injected `carvers` — the orchestration the
+/// `--unallocated` pipeline arm calls. A partition-table classification failure
+/// is surfaced to stderr and returns empty (best-effort). Filesystems without a
+/// carve-capable reader (e.g. HFS+) are noted and skipped.
+#[must_use]
+pub fn carve_source_unallocated(
+    source: &dyn DataSource,
+    evidence_source_id: &str,
+    carvers: &[&dyn forensic_carve::Carver],
+) -> Vec<issen_core::timeline::event::TimelineEvent> {
+    let (ntfs_windows, non_ntfs) = match classify_partitions(source) {
+        Ok(class) => class,
+        Err(e) => {
+            eprintln!("Warning: unallocated carve could not classify partitions: {e}");
+            return Vec::new();
+        }
+    };
+    let mut events = Vec::new();
+    for window in ntfs_windows {
+        events.extend(carve_ntfs_window(
+            source,
+            window,
+            evidence_source_id,
+            carvers,
+        ));
+    }
+    for (filesystem, window) in non_ntfs {
+        match filesystem {
+            "ext" => events.extend(carve_ext4_window(
+                source,
+                window,
+                evidence_source_id,
+                carvers,
+            )),
+            "APFS" => events.extend(carve_apfs_window(
+                source,
+                window,
+                evidence_source_id,
+                carvers,
+            )),
+            other => eprintln!(
+                "Note: unallocated carve has no reader for {other} at offset {} — skipped",
+                window.offset
+            ),
+        }
+    }
+    events
+}
+
 // ── $Boot vs backup-$Boot consistency ────────────────────────────────────────
 //
 // NTFS stores the volume boot record (VBR/BPB) at the partition's first sector

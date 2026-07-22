@@ -110,8 +110,8 @@ ntfs-forensic    = "0.8"
 ntfs-core        = "0.9"
 # Non-NTFS filesystem readers for non-NTFS triage collection. Imported as
 # `ext4fs` (ext4fs-core sets [lib] name = "ext4fs") and `apfs_core`.
-ext4fs-core      = "0.1"
-apfs-core        = "0.1"
+ext4fs-core      = "0.2"
+apfs-core        = "0.2"
 issen-qcow2      = { path = "crates/issen-qcow2" }
 issen-iso        = { path = "crates/issen-iso" }
 issen-dmg        = { path = "crates/issen-dmg" }

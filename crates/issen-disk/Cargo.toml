@@ -15,9 +15,9 @@ path = "src/lib.rs"
 issen-core     = { workspace = true }
 disk-forensic  = { workspace = true }
 ntfs-forensic  = { workspace = true }
-ntfs-core      = { workspace = true }
-ext4fs-core    = { workspace = true }
-apfs-core      = { workspace = true }
+ntfs-core      = { workspace = true, features = ["vfs"] }
+ext4fs-core    = { workspace = true, features = ["vfs"] }
+apfs-core      = { workspace = true, features = ["vfs"] }
 forensic-carve = { workspace = true }
 issen-unpack   = { workspace = true }
 tempfile      = { workspace = true }
