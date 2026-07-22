@@ -1161,6 +1161,18 @@ mod tests {
     }
 
     #[test]
+    fn front_door_accepts_unallocated_flag() {
+        // `--unallocated` (alias `--unalloc`) opts into the whole-image carve of
+        // unallocated space; it is OFF by default (the normal, faster pipeline).
+        let cli = Cli::try_parse_from(["issen", "DC01.E01"]).expect("parse");
+        assert!(!cli.unallocated, "unallocated carving defaults off");
+        let cli = Cli::try_parse_from(["issen", "--unallocated", "DC01.E01"]).expect("parse");
+        assert!(cli.unallocated, "--unallocated enables the carve sweep");
+        let cli = Cli::try_parse_from(["issen", "--unalloc", "DC01.E01"]).expect("parse alias");
+        assert!(cli.unallocated, "--unalloc is an accepted alias");
+    }
+
+    #[test]
     fn timeline_query_verbs_moved_under_timeline() {
         // The query shortcuts are no longer top-level subcommands; a leading
         // `logons` token falls through to the evidence positional (the front
