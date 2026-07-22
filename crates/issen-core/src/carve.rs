@@ -21,6 +21,7 @@
 use forensic_carve::{
     sweep, CarveOptions, CarvedItem, Carver, RecoveryMethod, Region, RegionSource,
 };
+use forensic_vfs::{FileSystem, RunAlloc};
 
 use crate::artifacts::ArtifactType;
 use crate::plugin::traits::DataSource;
@@ -106,6 +107,38 @@ where
     sweep(source, regions, carvers, &opts)
         .into_iter()
         .map(|swept| carved_item_to_event(&swept.item, evidence_source_id))
+        .collect()
+}
+
+/// The tag carried on each unallocated [`Region`]: the extent's absolute image
+/// byte offset. It is provenance only — the sweep already stamps each carved
+/// hit with its own absolute offset — but preserving it lets a future consumer
+/// attribute a hit back to the unallocated extent it was recovered from.
+pub type RegionTag = u64;
+
+/// Enumerate a filesystem's unallocated extents as carve [`Region`]s.
+///
+/// Streams [`forensic_vfs::FileSystem::unallocated`] and maps every genuinely
+/// [`RunAlloc::Unallocated`] run to a `Region { start: image_offset, len, tag:
+/// image_offset }`. Allocated / overwritten / unknown runs — and zero-length
+/// runs — are skipped, so only unallocated space is ever handed to a carver
+/// (fleet ADR 0001 §4). A per-run stream error is skipped (best-effort), so one
+/// bad run never aborts the sweep; if the volume cannot produce an extent stream
+/// at all the result is simply empty (a per-source capability miss — the volume
+/// was already opened successfully upstream, so this is not a bootstrap failure).
+#[must_use]
+pub fn unallocated_regions(fs: &dyn FileSystem) -> Vec<Region<RegionTag>> {
+    let Ok(stream) = fs.unallocated() else {
+        return Vec::new();
+    };
+    stream
+        .filter_map(Result::ok)
+        .filter(|ri| ri.alloc == RunAlloc::Unallocated && ri.run.len > 0)
+        .map(|ri| Region {
+            start: ri.run.image_offset,
+            len: ri.run.len,
+            tag: ri.run.image_offset,
+        })
         .collect()
 }
 
