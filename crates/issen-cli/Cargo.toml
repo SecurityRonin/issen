@@ -34,6 +34,8 @@ issen-core = { workspace = true }
 # from their own manifests). The two root anchors in lib.rs reference these.
 issen-parsers = { workspace = true }
 issen-carvers = { workspace = true }
+forensic-carve = { workspace = true }
+issen-disk = { workspace = true }
 issen-providers = { workspace = true }
 issen-fswalker = { workspace = true }
 issen-timeline = { workspace = true }
@@ -87,10 +89,11 @@ issen-remote-io = { workspace = true, features = ["sftp"] }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
+# Synthetic forensic_vfs::FileSystem for the unallocated-carve seam unit test.
+forensic-vfs = "0.7"
 # zip-rs writer mints the in-memory pipeline-zip fixtures the unit tests read back.
 zip = { workspace = true }
 flate2 = { workspace = true }
-issen-disk = { workspace = true }
 predicates = { workspace = true }
 # browser_profile_discovery mints per-profile Chrome `History` SQLite fixtures.
 rusqlite = { workspace = true }

@@ -640,9 +640,27 @@ impl StageExecutor for RealExecutor {
                     false,
                 )?;
                 // After normal ingest, optionally sweep unallocated disk space
-                // for carved artifacts no filesystem references (disk MVP).
+                // for carved artifacts no filesystem references (disk MVP): each
+                // volume is re-opened as a forensic_vfs::FileSystem and its
+                // unallocated extents swept with the registered carvers; each hit
+                // becomes a `recovery:unallocated-carve` timeline event.
                 if self.unallocated {
-                    commands::carve::announce_unallocated_pending(&self.disk);
+                    commands::carve::announce_unallocated_sweep(&self.disk);
+                    let carved = commands::carve::carve_disk_sources_unallocated(&self.disk);
+                    let store = TimelineStore::open(&self.db_path).with_context(|| {
+                        format!(
+                            "opening {} for the unallocated carve",
+                            self.db_path.display()
+                        )
+                    })?;
+                    let mut inserted = 0u64;
+                    for event in &carved {
+                        store
+                            .insert_event(event)
+                            .context("inserting a carved unallocated event")?;
+                        inserted += 1;
+                    }
+                    println!("  carved unallocated events: {inserted}");
                 }
             }
             Stage::Memory => {
