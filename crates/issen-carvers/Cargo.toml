@@ -27,9 +27,9 @@ forensic-carve = { workspace = true }
 # The disk carver producers. PATH deps into the sibling repos (the carve modules
 # are newer than the crates.io releases and depend on the unpublished
 # `forensic-carve`), each resolving the SAME `../forensic-carve` checkout.
-sqlite-forensic = { path = "../../../sqlite-forensic/forensic" }   # SqliteCarver  → "sqlite"
-winevt-carver   = { path = "../../../winevt-forensic/crates/winevt-carver" }  # EvtxChunkCarver → "evtx-chunk"
-winreg-carve    = { path = "../../../winreg-forensic/crates/winreg-carve" }   # HiveCarver     → "registry-hive"
+sqlite-forensic = "0.10"   # SqliteCarver    → "sqlite"        (registry, published)
+winevt-carver   = "0.1"    # EvtxChunkCarver → "evtx-chunk"    (registry, published)
+winreg-carve    = "0.1"    # HiveCarver      → "registry-hive" (registry, published)
 
 [build-dependencies]
 toml = { workspace = true }

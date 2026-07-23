@@ -102,10 +102,12 @@ issen-vmdk       = { path = "crates/issen-vmdk" }
 issen-disk       = { path = "crates/issen-disk" }
 issen-carvers    = { path = "crates/issen-carvers" }
 disk-forensic    = "0.11"
-# Fleet carving contract + single-pass sweep engine (ADR 0001). Unpublished; the
-# SHARED local checkout every carver crate also path-deps, so issen resolves ONE
-# `forensic-carve` package and its `inventory::collect!` sees every submission.
-forensic-carve   = { path = "../forensic-carve" }
+# Fleet carving contract + single-pass sweep engine (ADR 0001). The published
+# registry version — issen and every carver crate resolve the SAME `forensic-carve`
+# so its `inventory::collect!` sees every carver's registration (a path dep here
+# would be a SECOND forensic-carve crate, and the carvers' registrations — made
+# against the registry crate — would be invisible to issen's `registered_carvers()`).
+forensic-carve   = "0.1"
 ntfs-forensic    = "0.8"
 ntfs-core        = "0.9"
 # Non-NTFS filesystem readers for non-NTFS triage collection. Imported as
