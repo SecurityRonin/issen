@@ -153,8 +153,10 @@ pub struct Cli {
     #[arg(long)]
     rerun: bool,
 
-    /// Also carve unallocated disk space for deleted artifacts that no
-    /// filesystem references (slower; whole-image scan).
+    /// Also carve unallocated disk space — recover residual artifacts (SQLite
+    /// DBs, EVTX chunks, registry hives) that no filesystem entry references,
+    /// across every container format (E01/VMDK/QCOW2/VHDX/DMG/ISO/AFF4/raw).
+    /// Slower: a whole-image scan of the space outside live files.
     #[arg(long = "unallocated", visible_alias = "unalloc")]
     unallocated: bool,
 

@@ -81,4 +81,4 @@ Wiring `sqlite-forensic` / `winevt-carver` follows **ADR
 [0018](decisions/0018-carving-tiers-file-level-default-whole-disk-opt-in.md)**:
 **file-level** carving (a located file's own freelist/WAL/unallocated) is cheap and
 **default-on** in the parser; **whole-disk** unallocated carving is O(image) and gated
-behind **`--deleted`**.
+behind **`--unallocated`** (alias `--unalloc`).

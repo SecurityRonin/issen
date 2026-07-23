@@ -166,6 +166,17 @@ issen report case.duckdb -o report.html
 
 Issen auto-detects each container via its `CollectionProvider` registry, triages the NTFS volume for the artifacts that matter, parses each one, walks memory dumps for process / network / injection state, and correlates everything into one super-timeline. `issen timeline`, `issen report`, and `issen info` all read the same DuckDB database.
 
+### Recovering residual artifacts from unallocated space
+
+Live-file triage only sees what the filesystem still references. Add `--unallocated` (alias `--unalloc`) to also carve the space *outside* live files — recovering residual SQLite databases, EVTX chunks, and registry hives that no directory entry points to any more:
+
+```bash
+# Same pipeline, plus a whole-image carve of unallocated space
+issen DC01.E01 -o case.duckdb --unallocated
+```
+
+The carve runs over the decoded image through the fleet container abstraction, so it works uniformly across **E01/EWF, VMDK, QCOW2, VHDX, DMG, ISO, AFF4, and raw** — no separate extract step, even for a compressed `.E01`. It sweeps only genuinely unallocated extents (never live files, so nothing is double-reported), and every recovered item lands in the same timeline tagged `recovery:unallocated-carve`. It is a slower, opt-in pass: a full scan of the image's free space.
+
 ### What it triages from a disk image
 
 When the evidence is a Windows disk image, Issen walks the NTFS filesystem and extracts:
