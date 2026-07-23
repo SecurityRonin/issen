@@ -1668,7 +1668,13 @@ pub fn carve_ntfs_window(
     carvers: &[&dyn forensic_carve::Carver],
 ) -> Vec<issen_core::timeline::event::TimelineEvent> {
     match open_volume(source, window) {
-        Ok(fs) => issen_core::carve::carve_disk_source(source, &fs, carvers, evidence_source_id),
+        Ok(fs) => issen_core::carve::carve_disk_source(
+            source,
+            &fs,
+            carvers,
+            evidence_source_id,
+            window.offset,
+        ),
         Err(e) => {
             eprintln!(
                 "Warning: unallocated carve skipped an NTFS volume at offset {}: {e}",
@@ -1705,7 +1711,13 @@ pub fn carve_ext4_window(
         }
     };
     match ext4fs::Ext4Fs::open(reader) {
-        Ok(fs) => issen_core::carve::carve_disk_source(source, &fs, carvers, evidence_source_id),
+        Ok(fs) => issen_core::carve::carve_disk_source(
+            source,
+            &fs,
+            carvers,
+            evidence_source_id,
+            window.offset,
+        ),
         Err(e) => {
             eprintln!(
                 "Warning: unallocated carve skipped an ext4 volume at offset {}: {e}",
@@ -1743,7 +1755,13 @@ pub fn carve_apfs_window(
         }
     };
     match apfs_core::vfs::ApfsFs::open(reader) {
-        Ok(fs) => issen_core::carve::carve_disk_source(source, &fs, carvers, evidence_source_id),
+        Ok(fs) => issen_core::carve::carve_disk_source(
+            source,
+            &fs,
+            carvers,
+            evidence_source_id,
+            window.offset,
+        ),
         Err(e) => {
             eprintln!(
                 "Warning: unallocated carve skipped an APFS container at offset {}: {e}",
@@ -1769,7 +1787,7 @@ pub fn carve_source_unallocated(
     carvers: &[&dyn forensic_carve::Carver],
 ) -> Vec<issen_core::timeline::event::TimelineEvent> {
     let (ntfs_windows, non_ntfs) = match classify_partitions(source) {
-        Ok(class) => class,
+        Ok(class) => class, //DEBUGME
         Err(e) => {
             eprintln!("Warning: unallocated carve could not classify partitions: {e}");
             return Vec::new();

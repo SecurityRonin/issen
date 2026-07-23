@@ -15,26 +15,28 @@
 //! opens readers transiently during ingest, and the carve pass simply asks for
 //! them again.
 //!
-//! Current source coverage: the retained-`DataSource` opener that exists for an
-//! arbitrary path is the raw-file one (`FileDataSource`), so raw/dd images and
-//! bare filesystems are swept directly. Container-decoded sources (E01 / VMDK /
-//! AFF4) need `issen-unpack` to expose a retained `Box<dyn DataSource>` from its
-//! providers (today they open→extract→drop); that seam is the follow-up needed
-//! to sweep a zipped/EWF image's unallocated space here.
+//! Source coverage: every path is decoded through the fleet container
+//! abstraction (`issen_disk::open_container_source`), which sniffs the container
+//! magic and exposes a uniform `Box<dyn DataSource>` sector stream — Raw/dd, EWF
+//! (E01), VMDK, QCOW2, VHDX, DMG, ISO, and AFF4 — so a zipped/EWF image's
+//! unallocated space is swept without a separate extract step (fleet ADR 0001
+//! §4). A container it cannot decode fails loud upstream in `open`; here an
+//! unopenable source is a best-effort per-source skip.
 
 use std::path::PathBuf;
 
 use issen_core::timeline::event::TimelineEvent;
-use issen_fswalker::layers::layer0_storage::FileDataSource;
 
 /// Carve the unallocated space of every disk source into timeline events.
 ///
-/// For each `disk` path: open it as a [`FileDataSource`], then hand it to
-/// [`issen_disk::carve_source_unallocated`] with the force-linked
-/// [`forensic_carve::registered_carvers`]. A source that cannot be opened is a
-/// best-effort skip (stderr note), never a panic — mirroring the per-partition
-/// degrade the disk collectors already use. The evidence-source id is the
-/// source's file name, tying each carved event back to the image it came from.
+/// For each `disk` path: decode it through the fleet container abstraction
+/// ([`issen_disk::open_container_source`], which sniffs Raw/EWF/VMDK/QCOW2/VHDX/
+/// DMG/ISO/AFF4 and exposes a uniform sector stream — fleet ADR 0001 §4), then
+/// hand the decoded source to [`issen_disk::carve_source_unallocated`] with the
+/// force-linked [`forensic_carve::registered_carvers`]. A source that cannot be
+/// opened is a best-effort skip (stderr note), never a panic — mirroring the
+/// per-partition degrade the disk collectors already use. The evidence-source id
+/// is the source's file name, tying each carved event back to its image.
 #[must_use]
 pub fn carve_disk_sources_unallocated(disk: &[PathBuf]) -> Vec<TimelineEvent> {
     let registered = forensic_carve::registered_carvers();
@@ -45,7 +47,7 @@ pub fn carve_disk_sources_unallocated(disk: &[PathBuf]) -> Vec<TimelineEvent> {
 
     let mut events = Vec::new();
     for path in disk {
-        let source = match FileDataSource::open(path) {
+        let source = match issen_disk::open_container_source(path) {
             Ok(s) => s,
             Err(e) => {
                 eprintln!(
@@ -61,7 +63,7 @@ pub fn carve_disk_sources_unallocated(disk: &[PathBuf]) -> Vec<TimelineEvent> {
             .unwrap_or("disk")
             .to_string();
         events.extend(issen_disk::carve_source_unallocated(
-            &source,
+            source.as_ref(),
             &evidence_id,
             &carvers,
         ));
@@ -250,7 +252,9 @@ mod tests {
             .map(|c| *c as &dyn forensic_carve::Carver)
             .collect();
 
-        let events = issen_core::carve::carve_disk_source(&ds, &fs, &carvers, "synthetic");
+        // Bare, partition-less synthetic filesystem image: the FS starts at
+        // disk offset 0, so `base_offset` is 0.
+        let events = issen_core::carve::carve_disk_source(&ds, &fs, &carvers, "synthetic", 0);
 
         assert!(
             events.iter().any(|e| {

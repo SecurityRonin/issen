@@ -164,10 +164,21 @@ pub fn carve_disk_source(
     fs: &dyn FileSystem,
     carvers: &[&dyn Carver],
     evidence_source_id: &str,
+    base_offset: u64,
 ) -> Vec<TimelineEvent> {
-    let regions = unallocated_regions(fs);
+    let mut regions = unallocated_regions(fs);
     if regions.is_empty() {
         return Vec::new();
+    }
+    // `fs.unallocated()` reports extents relative to the filesystem's own start.
+    // The filesystem sits at `base_offset` within the whole-disk `datasource`
+    // (its MBR/GPT partition offset), so translate every extent to an absolute
+    // disk offset — otherwise the sweep reads the wrong bytes (and events would
+    // carry filesystem-relative, not absolute, offsets). `base_offset` is 0 for a
+    // bare, partition-less filesystem image.
+    for r in &mut regions {
+        r.start = r.start.saturating_add(base_offset);
+        r.tag = r.start;
     }
     let source = DataSourceRegionSource(datasource);
     carve_unallocated(&source, regions, carvers, evidence_source_id)
@@ -449,7 +460,7 @@ mod tests {
         let carver = MockCarver;
         let carvers: Vec<&dyn Carver> = vec![&carver];
 
-        let events = carve_disk_source(&ds, &fs, &carvers, "img-1");
+        let events = carve_disk_source(&ds, &fs, &carvers, "img-1", 0);
         assert_eq!(events.len(), 1, "only the unallocated magic is carved");
         let e = &events[0];
         assert!(

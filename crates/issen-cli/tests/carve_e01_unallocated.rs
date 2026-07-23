@@ -10,7 +10,14 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use issen_core::plugin::traits::DataSource;
+// Force-link the disk carver fleet into this integration-test binary. `inventory`
+// registrations are linker-section constructors; the `extern crate issen_carvers
+// as _;` anchor in the `issen_cli` lib does not drag them transitively into a
+// separate `tests/` crate, so `registered_carvers()` would otherwise be empty
+// here (it is non-empty in the production `issen` binary, which links the lib
+// directly — see the in-lib unit test in `commands/carve.rs`).
+extern crate issen_carvers as _;
+
 use std::io::Write;
 
 const E01: &[u8] = include_bytes!("data/mbr-ext4-sqlite-unalloc.E01");
@@ -31,8 +38,7 @@ fn e01_unallocated_space_carves_a_sqlite_db_via_container_abstraction() {
     );
 
     // Carve the decoded image's unallocated space with the registered carvers.
-    let registered = forensic_carve::registered_carvers();
-    let carvers: Vec<&dyn forensic_carve::Carver> = registered.iter().copied().collect();
+    let carvers = forensic_carve::registered_carvers();
     let events = issen_disk::carve_source_unallocated(ds.as_ref(), "e01", &carvers);
 
     assert!(
