@@ -83,9 +83,9 @@ dependencies = [
 
 [[package]]
 name = "aff4"
-version = "0.2.0"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f37f0dd37d8a7174ff8904567032d63a3061b6112ba8294800b318bb2f39a658"
+checksum = "1f558a314b1689fe06428159f595b016b950ff0a9224b6a4230d117057e22802"
 dependencies = [
  "aes 0.8.4",
  "aes-kw",
@@ -2353,6 +2353,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "dar-core"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec7a91e9e7a64576b95c8f953218cb4bc02876f3e707891f8ee4841fac882321"
+dependencies = [
+ "bzip2-rs",
+ "flate2",
+ "lz4_flex",
+ "lzma-rs",
+ "lzo",
+ "ruzstd 0.7.3",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2654,11 +2669,14 @@ dependencies = [
 
 [[package]]
 name = "disk-forensic"
-version = "0.9.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1475e4b7623a727d109106011cab57595be2bcdc3e1a62fb75bad7dde6a240f0"
+checksum = "b42656f7686db3d4af0747eca473313919e86b3e611345a784f4b7884ae8be63"
 dependencies = [
+ "ad1-core",
+ "aff4",
  "apm-partition-forensic",
+ "dar-core",
  "dmg-core",
  "ewf 0.3.0",
  "forensicnomicon 1.8.1",
@@ -6338,7 +6356,7 @@ version = "0.11.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "373f5eceeeab7925e0c1098212f2fbc4d416adec9d35051a6ab251e824c1854a"
 dependencies = [
- "twox-hash",
+ "twox-hash 2.1.2",
 ]
 
 [[package]]
@@ -6595,7 +6613,7 @@ dependencies = [
  "lru 0.16.4",
  "memmap2",
  "rust-lzxpress",
- "ruzstd",
+ "ruzstd 0.8.3",
  "snap",
  "thiserror 2.0.18",
 ]
@@ -9240,11 +9258,20 @@ checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
 name = "ruzstd"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fad02996bfc73da3e301efe90b1837be9ed8f4a462b6ed410aa35d00381de89f"
+dependencies = [
+ "twox-hash 1.6.3",
+]
+
+[[package]]
+name = "ruzstd"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7c1c839d570d835527c9a5e4db7cb2198683a988cb9d7293fc8674e6bd58fc8"
 dependencies = [
- "twox-hash",
+ "twox-hash 2.1.2",
 ]
 
 [[package]]
@@ -11329,6 +11356,16 @@ dependencies = [
 
 [[package]]
 name = "twox-hash"
+version = "1.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
+dependencies = [
+ "cfg-if",
+ "static_assertions",
+]
+
+[[package]]
+name = "twox-hash"
 version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ea3136b675547379c4bd395ca6b938e5ad3c3d20fad76e7fe85f9e0d011419c"
@@ -13111,7 +13148,7 @@ dependencies = [
  "hmac",
  "lzma-rs",
  "pbkdf2",
- "ruzstd",
+ "ruzstd 0.8.3",
  "sha1",
  "thiserror 2.0.18",
 ]

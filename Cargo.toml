@@ -101,7 +101,7 @@ issen-vhdx       = { path = "crates/issen-vhdx" }
 issen-vmdk       = { path = "crates/issen-vmdk" }
 issen-disk       = { path = "crates/issen-disk" }
 issen-carvers    = { path = "crates/issen-carvers" }
-disk-forensic    = "0.9"
+disk-forensic    = "0.11"
 # Fleet carving contract + single-pass sweep engine (ADR 0001). Unpublished; the
 # SHARED local checkout every carver crate also path-deps, so issen resolves ONE
 # `forensic-carve` package and its `inventory::collect!` sees every submission.

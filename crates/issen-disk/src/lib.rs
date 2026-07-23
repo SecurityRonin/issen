@@ -1532,6 +1532,75 @@ fn rt_to_io(e: RtError) -> std::io::Error {
     }
 }
 
+/// A [`DataSource`] over a container-decoded disk image.
+///
+/// Wraps the positioned `Read + Seek` reader that
+/// [`disk_forensic::container::open`] returns for ANY supported container —
+/// Raw/dd, EWF/E01, VMDK, QCOW2, VHD, VHDX, DMG, ISO, AFF4 — so a carve or
+/// triage consumer reads the DECODED sectors without knowing (or special-casing)
+/// the wrapper format. This is the container-abstraction counterpart to the
+/// raw-only file opener: opening an `.E01` here yields the decoded disk, not the
+/// EWF container bytes.
+///
+/// The decoder's reader is `Read + Seek + Send` but not `Sync`; a `Mutex`
+/// supplies the `Sync` half of the `DataSource` contract (each `read_at` seeks
+/// then fills, mirroring `FileDataSource`). `source_path` is intentionally left
+/// as the default `None`: the file on disk is the *encoded* container, so a
+/// path-reopening parser must never be handed it as if it were the decoded
+/// stream.
+pub struct ContainerDataSource {
+    reader: std::sync::Mutex<Box<dyn disk_forensic::container::ReadSeek>>,
+    len: u64,
+}
+
+impl DataSource for ContainerDataSource {
+    fn len(&self) -> u64 {
+        self.len
+    }
+
+    fn read_at(&self, offset: u64, buf: &mut [u8]) -> Result<usize, RtError> {
+        let mut reader = self
+            .reader
+            .lock()
+            .map_err(|e| RtError::InvalidData(format!("container reader mutex poisoned: {e}")))?;
+        reader.seek(SeekFrom::Start(offset))?;
+        // Fill the buffer across short reads (a decompressing reader — ewf zran,
+        // qcow2 lazy L2 — may return a chunk boundary mid-buffer). Stop at EOF.
+        let mut filled = 0;
+        while filled < buf.len() {
+            let n = reader.read(&mut buf[filled..])?;
+            if n == 0 {
+                break;
+            }
+            filled += n;
+        }
+        Ok(filled)
+    }
+}
+
+/// Open any container image at `path` as a decoded [`DataSource`].
+///
+/// Sniffs the container format via [`disk_forensic::container::open`] and returns
+/// a [`ContainerDataSource`] over the decoded sector stream. Every format the
+/// fleet decodes flows through here, so a consumer (e.g. the `--unallocated`
+/// carve sweep) opens a path once and never learns one container from another —
+/// raw/dd, EWF/E01, VMDK, QCOW2, VHD, VHDX, DMG, ISO, AFF4 all yield decoded
+/// sectors. A corrupt or logical-only container fails loud with the offending
+/// path, never a silent wrong-bytes read.
+///
+/// # Errors
+/// [`RtError::InvalidData`] naming the path when the container cannot be opened
+/// or decoded (a corrupt image, an unsupported variant, or a logical-only file
+/// container that has no raw disk underneath).
+pub fn open_container_source(path: &std::path::Path) -> Result<Box<dyn DataSource>, RtError> {
+    let image = disk_forensic::container::open(path)
+        .map_err(|e| RtError::InvalidData(format!("container open {}: {e}", path.display())))?;
+    Ok(Box::new(ContainerDataSource {
+        reader: std::sync::Mutex::new(image.reader),
+        len: image.size,
+    }))
+}
+
 /// Compare `$MFT` against its `$MFTMirr` (the first four system records NTFS
 /// mirrors: `$MFT`, `$MFTMirr`, `$LogFile`, `$Volume`) and surface any divergence
 /// as an Integrity event. A mismatch is consistent with metadata tampering OR
