@@ -47,14 +47,16 @@ jobs:
         uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609 # v2
 
       - name: Build workspace docs
+        # The pinned toolchain (rust-toolchain.toml) is stable, so no nightly-only
+        # rustdoc flags here: `--enable-index-page`/`-Zunstable-options`/`--default-theme`
+        # abort on stable. The redirect `target/doc/index.html` written in the next
+        # step already provides the landing page `--enable-index-page` would have.
         run: |
           cargo doc \
             --workspace \
             --no-deps \
             --document-private-items \
             --features remote
-        env:
-          RUSTDOCFLAGS: "--enable-index-page -Zunstable-options --default-theme ayu"
 
       - name: Add redirect index and copy markdown docs
         run: |

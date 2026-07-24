@@ -33,12 +33,20 @@ use issen_core::plugin::selector::CostTier;
 ///   `extract_triage` walks NTFS only; there is no ext4/APFS extraction path yet.
 /// - `BiomeMenuItem`: a macOS Biome SEGB artifact — likewise not on NTFS, and
 ///   reachable via the dedicated `issen biome` command.
+/// - `SqliteCarved`: cost/scope policy (ADR 0018) — the fallback type for a loose
+///   SQLite file no higher-priority selector claims. On a disk image the carver
+///   declares no `disk_sources` of its own; it co-runs additively on the SQLite
+///   databases other selectors already pull off the image (browser history, etc.),
+///   which classify as their own types. Globbing every arbitrary SQLite file off an
+///   NTFS image is out of default-triage scope (the opt-in `--deleted`/`--unallocated`
+///   tier), mirroring the `Pe` exemption.
 const EXEMPT: &[&str] = &[
     "Pe",
     "SystemInfo",
     "LoginHistory",
     "CrontabConfig",
     "BiomeMenuItem",
+    "SqliteCarved",
 ];
 
 /// The `ArtifactType`s the registry classifier can produce — i.e. the type each
