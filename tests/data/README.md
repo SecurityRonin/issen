@@ -15,6 +15,8 @@ tests/data/
 │   └── 78-DeepDive.zip                              (537 MB)
 ├── cyberspace-ctf-2024/
 │   └── csctf-2024_forensics_memory.zip             (671 MB)
+├── 2018-lonewolf/
+│   └── SYSTEM {,.LOG1,.LOG2}                        (12 MB — extracted Win10 SYSTEM registry hive)
 ├── defcon-dfir-ctf-2018/
 │   └── MaxPowersCDrive.E01                          (29 GB)
 ├── dfirmadness-szechuan-sauce/   (full case, both hosts)
@@ -35,6 +37,22 @@ tests/data/
 ```
 
 ## Files
+
+### 2018-lonewolf/
+
+#### SYSTEM (+ SYSTEM.LOG1, SYSTEM.LOG2) — extracted Windows 10 registry hive
+
+- **Source:** Digital Corpora — 2018 Lone Wolf Scenario (Thomas "Tom" Moore; GMU CFRS 780), a real physical Windows 10 laptop (Samsung SSD 850 PRO 512 GB), imaged with FTK Imager 3.1.1.8 on 2018-04-06.
+- **Identity:** the `SYSTEM` hive (`/Windows/System32/config/SYSTEM` + `.LOG1`/`.LOG2`) carved from the disk image; single control set (`Current=1` → ControlSet001).
+- **Scenario page:** <https://digitalcorpora.org/corpora/scenarios/2018-lone-wolf-scenario/>
+- **Original image (E01–E09, ~12.9 GB):** <https://downloads.digitalcorpora.org/corpora/scenarios/2018-lonewolf/LoneWolf_Image_Files/>
+- **Full-image MD5:** `7af48fa65519e84246b1729e5b68f140` · **SHA1:** `694e26624d1ea029eb50d793b198edf85be4b4fc` (per the FTK acquisition log, re-verified with `ewfinfo`).
+- **Extracted-hive SHA256:** `SYSTEM` = `9154e260abdc4ac206ef9d872dd4e1add0150b869bda5b112944af2ff5ec39b4` (12,845,056 B); `SYSTEM.LOG1` = `9bc4bd3324313b689e0cda9275494d93c714dcb03b434a69927bae8ac7ebc065`; `SYSTEM.LOG2` = `fc1c4b211d19ca3ec1c6c402f602c4f67d287a4fb9664069c3e0172898940652`.
+- **Extraction:** TSK/libewf (`icat` from the ControlSet path) → the 12.9 GB image was deleted after carving; transaction logs applied with **regipy** (315 dirty pages recovered).
+- **Notable contents (BTHPORT, verified with regipy as an independent oracle):** `Services\BTHPORT\Parameters\Devices` is **EMPTY (0 paired devices)**; `Parameters\Keys` holds one host-adapter subkey `28e347017777` (radio `28:E3:47:01:77:77`) with no link keys; `PerDevices` empty. The full Bluetooth stack is installed (BTHPORT, bthserv, BTHUSB, BthLEEnum, …) — the machine had a radio but was never paired.
+- **Use case:** the **"BT-adapter-present, zero-pairings" edge-case fixture** for `bluetooth-forensic` — the parser must return 0 pairings gracefully (empty `Devices`; an adapter under `Keys` with no link keys) without panicking. Env-gated via `BLUETOOTH_TEST_SYSTEM_HIVE` (point it at `tests/data/2018-lonewolf/SYSTEM`); skips cleanly when absent. This is **not** a positive/pairing oracle — a hive *with* pairings must be minted on a real Windows box (`reg save HKLM\SYSTEM`) for that.
+- **Redistribution:** Digital Corpora content is provided for research/education; the extracted hive is **gitignored, not committed** — re-derive from the public image above.
+- **Classification:** REAL-ext (real-world artifact, third-party corpus).
 
 ### defcon-dfir-ctf-2018/
 
