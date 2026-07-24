@@ -1,5 +1,6 @@
 [package]
 name = "issen-wsl"
+publish = false            # internal orchestrator crate — ADR-0005 (never publish internals)
 version = "0.1.0"
 description = "Windows+WSL forensic analysis — path/timestamp normalization, session linking, pattern detection"
 edition.workspace = true

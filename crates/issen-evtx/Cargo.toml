@@ -1,5 +1,6 @@
 [package]
 name = "issen-evtx"
+publish = false            # internal orchestrator crate — ADR-0005 (never publish internals)
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
