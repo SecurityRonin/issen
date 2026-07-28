@@ -1,0 +1,23 @@
+[package]
+name = "issen-usb"
+publish = false            # internal orchestrator crate — ADR-0005 (never publish internals)
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+# usb-forensic is a cross-source CORRELATION engine (audit() -> Findings + cross-source
+# DeviceHistory), not a per-file parser — it cannot ride the ForensicParser/EventEmitter
+# plugin path. This crate is the correlation-stage seam: it bridges issen's located
+# artifacts into usb-forensic's HistorySources and maps the results back into issen's
+# timeline + report. See docs/plans/usb-forensics-enhancements-design.md.
+
+[dependencies]
+issen-core = { path = "../issen-core" }
+# usb-forensic 0.1.0 is unpublished — path dep is the in-flight bridge; switch to the
+# registry version once published (Dependency-Preference / ADR-0006 bottom-up).
+usb-forensic = { version = "0.1", path = "../../../../parser/usb-forensic" }
+jiff = { workspace = true }
+
+[lints]
+workspace = true

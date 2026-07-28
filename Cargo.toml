@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/issen-correlation",
+    "crates/issen-usb",
     "crates/issen-core",
     "crates/issen-fswalker",
     "crates/issen-plugin-sdk",

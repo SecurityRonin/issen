@@ -2669,6 +2669,28 @@ dependencies = [
 
 [[package]]
 name = "disk-forensic"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1475e4b7623a727d109106011cab57595be2bcdc3e1a62fb75bad7dde6a240f0"
+dependencies = [
+ "apm-partition-forensic",
+ "dmg-core",
+ "ewf 0.3.0",
+ "forensicnomicon",
+ "gpt-partition-forensic",
+ "iso9660-forensic",
+ "livedisk-core",
+ "livedisk-forensic",
+ "mbr-partition-forensic",
+ "qcow2-core",
+ "thiserror 2.0.18",
+ "vhdx-core",
+ "vmdk-core",
+ "vmdk-forensic",
+]
+
+[[package]]
+name = "disk-forensic"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b42656f7686db3d4af0747eca473313919e86b3e611345a784f4b7884ae8be63"
@@ -3819,19 +3841,20 @@ dependencies = [
 
 [[package]]
 name = "gpt-partition-core"
-version = "0.6.0"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "820f1815e00025987bb77dcdf97b576bdbcd263ed941e4f75b22077f60e1a742"
+checksum = "b7ee12f413ae5ed46715e9fba0ecd6fb734ffb896de740fee87066da442d1ea5"
 dependencies = [
  "forensicnomicon",
+ "safe-read",
  "thiserror 2.0.18",
 ]
 
 [[package]]
 name = "gpt-partition-forensic"
-version = "0.6.0"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6366dae7080ccb8facd0c0133b7eb15a0f0f2d4f8261d9663f2a16bb0ebc467"
+checksum = "601e4d6dde1cb9bcc723c5be4ca68009a40a052d642125c1963bee8226206866"
 dependencies = [
  "forensicnomicon",
  "gpt-partition-core",
@@ -4920,7 +4943,7 @@ name = "issen-disk"
 version = "0.1.0"
 dependencies = [
  "apfs-core",
- "disk-forensic",
+ "disk-forensic 0.11.0",
  "ext4fs-core",
  "forensic-carve",
  "issen-core",
@@ -4961,7 +4984,7 @@ dependencies = [
  "tempfile",
  "winevt-analysis",
  "winevt-core",
- "winevt-extract",
+ "winevt-extract 0.2.0",
 ]
 
 [[package]]
@@ -5143,7 +5166,7 @@ dependencies = [
  "winevt-analysis",
  "winevt-carver",
  "winevt-core",
- "winevt-extract",
+ "winevt-extract 0.2.0",
 ]
 
 [[package]]
@@ -5596,7 +5619,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tracing",
  "uuid",
- "winevt-extract",
+ "winevt-extract 0.2.0",
 ]
 
 [[package]]
@@ -5710,6 +5733,15 @@ dependencies = [
  "tracing",
  "zip 2.4.2",
  "zip-forensic-core",
+]
+
+[[package]]
+name = "issen-usb"
+version = "0.1.0"
+dependencies = [
+ "issen-core",
+ "jiff",
+ "usb-forensic",
 ]
 
 [[package]]
@@ -6519,9 +6551,9 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 
 [[package]]
 name = "mbr-partition-core"
-version = "0.6.1"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddd86b43d5572472c628fea17a40348b43ec43fe3f605d47355c9ded2756fc85"
+checksum = "03087a9fd55bcefefa8ee9d220eb4d74860c8075395324ecd14f95ee7dd8705e"
 dependencies = [
  "forensicnomicon",
  "thiserror 2.0.18",
@@ -6529,9 +6561,9 @@ dependencies = [
 
 [[package]]
 name = "mbr-partition-forensic"
-version = "0.6.1"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c445b1be2281f786f398f4866fd426f67c10838e737e700190dd30b0402f18a5"
+checksum = "6110d9fec1e1894202be612151313d1fd7cdebab51e7fccfd506232be630bff1"
 dependencies = [
  "forensicnomicon",
  "gpt-partition-forensic",
@@ -7631,6 +7663,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1316fa0c02e9625af9583e4cffa9a60fc8bdce759434637614dab561e29e1c38"
 
 [[package]]
+name = "peripheral-core"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d58c400f53d03f090a534d9e9f3095886c2d12fea5c8392684c1a7a84d9c7fb2"
+dependencies = [
+ "winreg-core 0.2.0",
+]
+
+[[package]]
 name = "petgraph"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7809,13 +7850,13 @@ checksum = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
 
 [[package]]
 name = "plist"
-version = "1.9.0"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "092791278e026273c1b65bbdcfbba3a300f2994c896bd01ab01da613c29c46f1"
+checksum = "7da1d65da6dd5d1e44199ac0f58712d241c0f439f80adea8924d832384087f85"
 dependencies = [
  "base64 0.22.1",
  "indexmap 2.14.0",
- "quick-xml 0.39.4",
+ "quick-xml 0.41.0",
  "serde",
  "time",
 ]
@@ -8404,9 +8445,9 @@ dependencies = [
 
 [[package]]
 name = "quick-xml"
-version = "0.39.4"
+version = "0.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdcc8dd4e2f670d309a5f0e83fe36dfdc05af317008fea29144da1a2ac858e5e"
+checksum = "e660451e55124f798a69a5af3f49ccfbefbd41910eefd25caf2393e1f3473ec1"
 dependencies = [
  "memchr",
 ]
@@ -11529,6 +11570,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "usb-forensic"
+version = "0.1.0"
+dependencies = [
+ "disk-forensic 0.9.0",
+ "evtx",
+ "ewf 0.4.0",
+ "forensicnomicon",
+ "jiff",
+ "lnk-core",
+ "mbr-partition-forensic",
+ "peripheral-core 0.8.1",
+ "plist",
+ "serde",
+ "serde_json",
+ "winevt-extract 0.4.0",
+ "winreg-core 0.2.0",
+]
+
+[[package]]
 name = "useract-forensic"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11537,7 +11597,7 @@ dependencies = [
  "chrono",
  "forensicnomicon",
  "lnk-core",
- "peripheral-core",
+ "peripheral-core 0.1.0",
  "segb-core",
  "shellhist-core",
  "srum-core 0.1.0",
@@ -12531,6 +12591,22 @@ name = "winevt-extract"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d36cbf0f1af5358118d4427af313efdc04a7412b855c3cafa676d6112098792b"
+dependencies = [
+ "base64 0.22.1",
+ "evtx",
+ "forensicnomicon",
+ "jiff",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "winevt-extract"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03c4febddd0c56c95ac463f05f9526561a9add060830a8117e48eac3ba08927e"
 dependencies = [
  "base64 0.22.1",
  "evtx",
