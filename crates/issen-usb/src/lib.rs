@@ -21,26 +21,45 @@ use issen_core::timeline::event::{EventType, TimelineEvent};
 /// under [`ArtifactType::DeviceInstall`]. The labels are a published contract.
 #[must_use]
 pub fn attribute_label(attribute: &usb_forensic::Attribute) -> &'static str {
-    "UsbEvent" // RED — real mapping in GREEN
+    use usb_forensic::Attribute as A;
+    match attribute {
+        A::FirstConnected => "UsbFirstConnected",
+        A::LastConnected => "UsbLastConnected",
+        A::LastRemoved => "UsbLastRemoved",
+        A::VolumeName => "UsbVolumeName",
+        A::VolumeSerial => "UsbVolumeSerial",
+        A::AccessedFile => "UsbFileAccessed",
+        A::DriveLetter => "UsbDriveLetter",
+        A::Encryption => "UsbEncryption",
+        A::DeviceClass => "UsbDeviceClass",
+        // A future variant degrades to a stable generic label, never a build break.
+        _ => "UsbEvent",
+    }
 }
 
 /// Convert a `usb-forensic` cross-source timeline event into an issen [`TimelineEvent`].
 ///
 /// usb-forensic timestamps are epoch **seconds**; issen uses **nanoseconds**.
 #[must_use]
-pub fn to_issen_event(
-    _ev: &usb_forensic::TimelineEvent,
-    _evidence_source_id: &str,
-) -> TimelineEvent {
-    // RED — stub yields an empty event so the assertions fail.
+pub fn to_issen_event(ev: &usb_forensic::TimelineEvent, evidence_source_id: &str) -> TimelineEvent {
+    // usb-forensic timestamps are epoch SECONDS; issen uses NANOSECONDS.
+    let timestamp_ns = ev.when.saturating_mul(1_000_000_000);
+    let timestamp_display = jiff::Timestamp::from_second(ev.when)
+        .map(|t| t.to_string())
+        .unwrap_or_default();
+    let label = attribute_label(&ev.attribute);
+    let description = format!(
+        "USB {} — device {} (source {:?})",
+        label, ev.device.0, ev.source
+    );
     TimelineEvent::new(
-        0,
-        String::new(),
-        EventType::Other(String::new()),
+        timestamp_ns,
+        timestamp_display,
+        EventType::Other(label.to_owned()),
         ArtifactType::DeviceInstall,
-        String::new(),
-        String::new(),
-        String::new(),
+        ev.locator.clone(),
+        description,
+        evidence_source_id.to_owned(),
     )
 }
 
