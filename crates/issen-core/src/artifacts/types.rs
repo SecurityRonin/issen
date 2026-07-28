@@ -66,6 +66,10 @@ pub enum ArtifactType {
     /// from `BrowserHistory` (live rows): a `SqliteCarved` event is a recovered
     /// deleted record, not a live one.
     SqliteCarved,
+    /// Browser Web Storage — Local Storage / Session Storage records decoded from a
+    /// Chromium LevelDB store (key/value + origin). Timestamps only on Local Storage
+    /// `Meta` records; the rest are sequence-ordered.
+    WebStorage,
 }
 
 impl std::fmt::Display for ArtifactType {
@@ -100,6 +104,7 @@ impl std::fmt::Display for ArtifactType {
             Self::Pe => write!(f, "PE Executable"),
             Self::RecycleBin => write!(f, "Recycle Bin"),
             Self::SqliteCarved => write!(f, "SQLite Carved"),
+            Self::WebStorage => write!(f, "Web Storage"),
         }
     }
 }
@@ -143,6 +148,7 @@ impl ArtifactType {
             "Pe" => Self::Pe,
             "RecycleBin" => Self::RecycleBin,
             "SqliteCarved" => Self::SqliteCarved,
+            "WebStorage" => Self::WebStorage,
             _ => return None,
         })
     }
@@ -214,6 +220,7 @@ mod tests {
             ArtifactType::Pe,
             ArtifactType::RecycleBin,
             ArtifactType::SqliteCarved,
+            ArtifactType::WebStorage,
         ] {
             let debug = format!("{at:?}");
             assert_eq!(
