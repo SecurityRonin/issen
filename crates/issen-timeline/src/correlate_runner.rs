@@ -452,6 +452,79 @@ mod tests {
         store
     }
 
+    /// A 4624 type-10 (RDP) logon exactly as EVTX ingest builds it: an
+    /// `EventType::LogonSuccess` with a `logon_type` metadata field, the account
+    /// as `EntityRef::User`, and the source IP as `EntityRef::Ip`.
+    fn rdp_logon(ts: i64, evidence: &str, host: &str, user: &str, src_ip: &str) -> TimelineEvent {
+        TimelineEvent::new(
+            ts,
+            format!("2026-01-01T00:00:00.{ts:09}Z"),
+            EventType::LogonSuccess,
+            ArtifactType::EventLog,
+            "Security.evtx".to_string(),
+            "RDP logon".to_string(),
+            evidence.to_string(),
+        )
+        .with_hostname(host)
+        .with_entity_ref(EntityRef::User(user.to_string()))
+        .with_entity_ref(EntityRef::Ip(src_ip.to_string()))
+        .with_metadata("logon_type", serde_json::json!(10))
+    }
+
+    /// A SYSTEM-hive registry interface binding exactly as the registry parser
+    /// builds it: a zero-timestamp `system-info` event carrying the host's own
+    /// bound address in `ip_address` metadata and **no hostname**.
+    fn iface_binding(evidence: &str, ip: &str) -> TimelineEvent {
+        TimelineEvent::new(
+            0,
+            String::new(),
+            EventType::Other("system-info".to_string()),
+            ArtifactType::Registry,
+            r"ControlSet001\Services\Tcpip\Parameters\Interfaces\{guid}".to_string(),
+            format!("Network interface: IP {ip}"),
+            evidence.to_string(),
+        )
+        .with_metadata("ip_address", serde_json::json!(ip))
+    }
+
+    /// A type-10 logon into host A followed by a type-10 logon into a different
+    /// host sourced from host A's OWN interface address must fire
+    /// `CORR-LATERAL-MOVE`. Host A's address is known only from a zero-timestamp
+    /// registry interface binding — which the positive-timestamp correlation
+    /// window excludes — so the runner must feed those host-identity rows to the
+    /// disk-leg pass for the inventory to be available.
+    #[test]
+    fn run_and_persist_fires_lateral_move_from_zero_ts_interface_inventory() {
+        let secs = 1_000_000_000i64;
+        let events = vec![
+            // Host A (DC) owns 10.42.85.10 — a zero-timestamp registry binding.
+            iface_binding("dc.E01", "10.42.85.10"),
+            // Host-A logon (into the DC), earlier, attacker-sourced.
+            rdp_logon(
+                10 * secs,
+                "dc.E01",
+                "CITADEL-DC01",
+                "Administrator",
+                "203.0.113.9",
+            ),
+            // Host-B logon (into the desktop), later, sourced from the DC's IP.
+            rdp_logon(
+                20 * secs,
+                "desktop.E01",
+                "DESKTOP-SDN1RPT",
+                "Administrator",
+                "10.42.85.10",
+            ),
+        ];
+        let store = store_with(&events);
+        let corrs = store.run_and_persist().expect("correlate");
+        assert!(
+            corrs.iter().any(|c| c.code == "CORR-LATERAL-MOVE"),
+            "expected CORR-LATERAL-MOVE; got {:?}",
+            corrs.iter().map(|c| c.code.clone()).collect::<Vec<_>>()
+        );
+    }
+
     #[test]
     fn run_and_persist_fires_two_distinct_rules_and_reads_back() {
         // A persistence pair (FileCreate -> ServiceInstall on the same stem) AND
