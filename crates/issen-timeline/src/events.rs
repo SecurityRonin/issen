@@ -80,6 +80,34 @@ impl issen_correlation::evaluator::EventView for StoredEvent {
             _ => EventSource::Other,
         }
     }
+
+    /// The 4624 logon type from the event's metadata. The EVTX ingest writes a
+    /// normalized numeric `logon_type` for 4624 and also flattens the raw
+    /// `LogonType` string; read the numeric key first, then fall back to the raw
+    /// string. `None` when metadata is absent, unparseable, or carries no type.
+    fn logon_type(&self) -> Option<u64> {
+        let meta: serde_json::Value = serde_json::from_str(self.metadata.as_deref()?).ok()?;
+        if let Some(n) = meta.get("logon_type").and_then(serde_json::Value::as_u64) {
+            return Some(n);
+        }
+        meta.get("LogonType")
+            .and_then(serde_json::Value::as_str)
+            .and_then(|s| s.trim().parse::<u64>().ok())
+    }
+
+    /// The host's own bound interface address, written by the registry parser as
+    /// the `ip_address` metadata field of a `system-info` network-config event.
+    /// `None` for every event that carries no such binding.
+    fn interface_ip(&self) -> Option<String> {
+        let meta: serde_json::Value = serde_json::from_str(self.metadata.as_deref()?).ok()?;
+        meta.get("ip_address")
+            .and_then(serde_json::Value::as_str)
+            .map(ToString::to_string)
+    }
+
+    fn evidence_source(&self) -> Option<&str> {
+        Some(&self.evidence_source)
+    }
 }
 
 /// A bounded query over the timeline for correlation candidate retrieval.

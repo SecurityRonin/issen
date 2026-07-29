@@ -99,6 +99,16 @@ impl RunEvent {
         out.entity_refs = vec![join];
         out
     }
+
+    /// Project a source logon into the `RdpLogon` shape the lateral-move rule
+    /// matches: re-type it and give it the supplied entity refs (its account,
+    /// its own source IP, and its host's interface inventory).
+    fn rdp_projection<E: EventView>(ev: &E, entity_refs: Vec<EntityRef>) -> Self {
+        let mut out = Self::from_view(ev);
+        out.event_type = "RdpLogon".to_string();
+        out.entity_refs = entity_refs;
+        out
+    }
 }
 
 impl EventView for RunEvent {
@@ -480,20 +490,87 @@ fn run_regconfirm<E: EventView>(events: &[E]) -> Vec<Correlation> {
 
 // ── Tier D ───────────────────────────────────────────────────────────────────
 
-/// `CORR-LATERAL-MOVE`: an `RdpLogon` into host A against `RdpLogon`s into other
-/// hosts, joined on the account; the guard reads the IP entities the ingest
-/// carries, so the events keep their own entity refs.
+/// `CORR-LATERAL-MOVE`: a remote-interactive (4624 type-10) logon into host A
+/// against type-10 logons into other hosts, joined on the account; the guard
+/// tests host-B's source IP against host-A's own address inventory.
+///
+/// Real ingest emits a type-10 logon as `event_type = "LogonSuccess"` with
+/// `logon_type() == Some(10)` — it never synthesizes an `RdpLogon` type — so
+/// this projects each such logon into the `RdpLogon` shape the rule matches.
+/// The anchor must carry host A's OWN interface addresses (not the source IP it
+/// logged in *from*); those come from the SYSTEM-hive registry interface events,
+/// which carry no hostname, so the inventory is keyed by **evidence source**
+/// (one image == one host) rather than by hostname.
 fn run_lateral_move<E: EventView>(events: &[E]) -> Vec<Correlation> {
-    let logons = of_type(events, "RdpLogon");
-    let index = build_entity_index(&logons);
+    // Host interface-IP inventory, keyed by evidence source. A registry
+    // network-config event surfaces each bound interface address via
+    // `interface_ip()`; parsing metadata is gated on the Registry leg so the
+    // whole timeline is not re-parsed.
+    let mut iface_by_src: HashMap<&str, Vec<String>> = HashMap::new();
+    for e in events {
+        if e.source() != EventSource::Registry {
+            continue;
+        }
+        if let (Some(src), Some(ip)) = (e.evidence_source(), e.interface_ip()) {
+            iface_by_src.entry(src).or_default().push(ip);
+        }
+    }
+
+    // Each type-10 logon yields two role-specific projections sharing its
+    // id/timestamp/host, kept parallel so a logon's anchor and consequent forms
+    // sit at the same index. The ANCHOR (host A) carries only its account and
+    // host A's OWN interface inventory — the addresses a host-B logon must be
+    // sourced from. The CONSEQUENT (host B) carries only its account and its own
+    // source IP. Separating the roles stops a logon's source IP (the address it
+    // was reached *from*) from masquerading as its host's own address, which
+    // would let a host-B logon anchor a spurious reverse pivot.
+    let type10: Vec<&E> = events
+        .iter()
+        .filter(|e| e.event_type() == "LogonSuccess" && e.logon_type() == Some(10))
+        .collect();
+
+    let anchors: Vec<RunEvent> = type10
+        .iter()
+        .map(|e| {
+            let mut refs: Vec<EntityRef> = e
+                .entity_refs()
+                .iter()
+                .filter(|r| matches!(r, EntityRef::User(_)))
+                .cloned()
+                .collect();
+            if let Some(ips) = e.evidence_source().and_then(|s| iface_by_src.get(s)) {
+                for ip in ips {
+                    let ent = EntityRef::Ip(ip.clone());
+                    if !refs.contains(&ent) {
+                        refs.push(ent);
+                    }
+                }
+            }
+            RunEvent::rdp_projection(*e, refs)
+        })
+        .collect();
+
+    let consequents: Vec<RunEvent> = type10
+        .iter()
+        .map(|e| {
+            let refs: Vec<EntityRef> = e
+                .entity_refs()
+                .iter()
+                .filter(|r| matches!(r, EntityRef::User(_) | EntityRef::Ip(_)))
+                .cloned()
+                .collect();
+            RunEvent::rdp_projection(*e, refs)
+        })
+        .collect();
+
+    let index = build_entity_index(&consequents);
 
     let mut out = Vec::new();
-    for (i, anchor) in logons.iter().enumerate() {
-        // Self-join on the account join entity; exclude the anchor's own
-        // position (the prior j != i self-exclusion). RdpLogon slices are tiny,
-        // so this is behavior-identical to the full scan — it just shares the
-        // same index helper as the hot rules.
-        let candidates = reduced_candidates(anchor, &index, &logons, Some(i));
+    for (i, anchor) in anchors.iter().enumerate() {
+        // Match host A's anchor against every other logon's consequent form;
+        // exclude position `i` (the logon cannot pivot to itself). The account
+        // join reaches only the shared-account consequents via the index.
+        let candidates = reduced_candidates(anchor, &index, &consequents, Some(i));
         if let Some(corr) = evaluate_lateral_move(anchor, &candidates) {
             out.push(corr);
         }
@@ -807,6 +884,9 @@ mod tests {
         host: Option<String>,
         source: EventSource,
         path: String,
+        logon_type: Option<u64>,
+        interface_ip: Option<String>,
+        evidence_source: Option<String>,
     }
 
     impl Ev {
@@ -819,6 +899,9 @@ mod tests {
                 host: Some(host.to_string()),
                 source,
                 path: String::new(),
+                logon_type: None,
+                interface_ip: None,
+                evidence_source: None,
             }
         }
         fn ent(mut self, e: EntityRef) -> Self {
@@ -831,6 +914,18 @@ mod tests {
         }
         fn at(mut self, p: &str) -> Self {
             self.path = p.to_string();
+            self
+        }
+        fn with_logon_type(mut self, lt: u64) -> Self {
+            self.logon_type = Some(lt);
+            self
+        }
+        fn with_interface_ip(mut self, ip: &str) -> Self {
+            self.interface_ip = Some(ip.to_string());
+            self
+        }
+        fn with_evidence(mut self, src: &str) -> Self {
+            self.evidence_source = Some(src.to_string());
             self
         }
     }
@@ -857,6 +952,15 @@ mod tests {
         fn artifact_path(&self) -> &str {
             &self.path
         }
+        fn logon_type(&self) -> Option<u64> {
+            self.logon_type
+        }
+        fn interface_ip(&self) -> Option<String> {
+            self.interface_ip.clone()
+        }
+        fn evidence_source(&self) -> Option<&str> {
+            self.evidence_source.as_deref()
+        }
     }
 
     fn codes(corrs: &[Correlation]) -> Vec<String> {
@@ -865,6 +969,191 @@ mod tests {
 
     fn has_code(corrs: &[Correlation], code: &str) -> bool {
         corrs.iter().any(|c| c.code == code)
+    }
+
+    /// Regression for the circular-validation bug: the rule fired on synthetic
+    /// `RdpLogon` events but real ingest never emits that type — a 4624 type-10
+    /// logon is stored as `event_type="LogonSuccess"` with `logon_type == 10`,
+    /// the account as `EntityRef::User`, and the source IP as `EntityRef::Ip`.
+    /// Host A's OWN interface address comes from the SYSTEM-hive registry
+    /// interface event (`interface_ip`), which carries **no hostname**, so the
+    /// per-host key is the evidence source. `run_lateral_move` must recognise
+    /// this real shape and fire `CORR-LATERAL-MOVE`, tying host A's logon to the
+    /// host-B logon sourced from host A's own IP.
+    #[test]
+    fn lateral_move_fires_for_real_shaped_type10_logon_pivot() {
+        let events = vec![
+            // Host A (the DC) interface inventory: a registry network-config
+            // event — no hostname, evidence source = the DC image.
+            Ev::new(
+                10,
+                1_000,
+                "Other(\"system-info\")",
+                "?",
+                EventSource::Registry,
+            )
+            .host_none()
+            .with_interface_ip("10.42.85.10")
+            .with_evidence("dc01.E01"),
+            // Host-A logon (into the DC): earlier, attacker-sourced.
+            Ev::new(1, 2_000, "LogonSuccess", "CITADEL-DC01", EventSource::Evtx)
+                .with_logon_type(10)
+                .with_evidence("dc01.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("203.0.113.9".to_string())),
+            // Host-B logon (into the desktop): later, sourced from the DC's IP.
+            Ev::new(
+                2,
+                3_000,
+                "LogonSuccess",
+                "DESKTOP-SDN1RPT",
+                EventSource::Evtx,
+            )
+            .with_logon_type(10)
+            .with_evidence("desktop.E01")
+            .ent(EntityRef::User("Administrator".to_string()))
+            .ent(EntityRef::Ip("10.42.85.10".to_string())),
+        ];
+        let corrs = run_correlations(&events);
+        assert!(
+            has_code(&corrs, "CORR-LATERAL-MOVE"),
+            "a type-10 LogonSuccess pivot sourced from host A's own interface IP \
+             must fire CORR-LATERAL-MOVE; got {:?}",
+            codes(&corrs)
+        );
+        let lm = corrs
+            .iter()
+            .find(|c| c.code == "CORR-LATERAL-MOVE")
+            .expect("the lateral-move firing");
+        assert_eq!(
+            lm.members[0].timeline_id, 1,
+            "anchor is the host-A (DC) logon"
+        );
+        assert_eq!(
+            lm.members[1].timeline_id, 2,
+            "consequent is the host-B (desktop) logon"
+        );
+    }
+
+    /// The projection selects only remote-interactive (type-10) logons: a
+    /// type-2 (console) `LogonSuccess` pivot is not lateral movement and must
+    /// stay silent even when every other condition holds.
+    #[test]
+    fn lateral_move_ignores_non_type10_logons() {
+        let events = vec![
+            Ev::new(
+                10,
+                1_000,
+                "Other(\"system-info\")",
+                "?",
+                EventSource::Registry,
+            )
+            .host_none()
+            .with_interface_ip("10.42.85.10")
+            .with_evidence("dc01.E01"),
+            Ev::new(1, 2_000, "LogonSuccess", "CITADEL-DC01", EventSource::Evtx)
+                .with_logon_type(2) // console, not RDP
+                .with_evidence("dc01.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("203.0.113.9".to_string())),
+            Ev::new(
+                2,
+                3_000,
+                "LogonSuccess",
+                "DESKTOP-SDN1RPT",
+                EventSource::Evtx,
+            )
+            .with_logon_type(2)
+            .with_evidence("desktop.E01")
+            .ent(EntityRef::User("Administrator".to_string()))
+            .ent(EntityRef::Ip("10.42.85.10".to_string())),
+        ];
+        assert!(!has_code(&run_correlations(&events), "CORR-LATERAL-MOVE"));
+    }
+
+    /// The interface inventory is de-duplicated against the logon's own refs: a
+    /// logon into host A whose recorded source IP already *is* host A's own
+    /// interface address must not carry that IP twice, and the pivot still fires.
+    #[test]
+    fn lateral_move_dedups_interface_ip_already_on_the_logon() {
+        let events = vec![
+            Ev::new(
+                10,
+                1_000,
+                "Other(\"system-info\")",
+                "?",
+                EventSource::Registry,
+            )
+            .host_none()
+            .with_interface_ip("10.42.85.10")
+            .with_evidence("dc01.E01"),
+            // Anchor's own recorded source IP equals host A's interface IP.
+            Ev::new(1, 2_000, "LogonSuccess", "CITADEL-DC01", EventSource::Evtx)
+                .with_logon_type(10)
+                .with_evidence("dc01.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("10.42.85.10".to_string())),
+            Ev::new(
+                2,
+                3_000,
+                "LogonSuccess",
+                "DESKTOP-SDN1RPT",
+                EventSource::Evtx,
+            )
+            .with_logon_type(10)
+            .with_evidence("desktop.E01")
+            .ent(EntityRef::User("Administrator".to_string()))
+            .ent(EntityRef::Ip("10.42.85.10".to_string())),
+        ];
+        assert!(has_code(&run_correlations(&events), "CORR-LATERAL-MOVE"));
+    }
+
+    /// The pivot must not invert: the source address a host was reached *from*
+    /// is not that host's own address, so host B (reached from host A's IP) must
+    /// never anchor a firing back into host A on a later, unrelated logon. Only
+    /// host A's OWN interface inventory forms its anchor address set.
+    #[test]
+    fn lateral_move_does_not_invert_the_pivot_direction() {
+        let events = vec![
+            Ev::new(100, 1, "Other(\"system-info\")", "?", EventSource::Registry)
+                .host_none()
+                .with_interface_ip("10.0.0.1")
+                .with_evidence("dc.E01"),
+            Ev::new(101, 1, "Other(\"system-info\")", "?", EventSource::Registry)
+                .host_none()
+                .with_interface_ip("10.0.0.2")
+                .with_evidence("ws.E01"),
+            // Host A (DC) logon, attacker-sourced, earliest.
+            Ev::new(1, 1_000, "LogonSuccess", "DC", EventSource::Evtx)
+                .with_logon_type(10)
+                .with_evidence("dc.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("203.0.113.9".to_string())),
+            // Host B (WS) logon, sourced from the DC's own IP — the real pivot.
+            Ev::new(2, 2_000, "LogonSuccess", "WS", EventSource::Evtx)
+                .with_logon_type(10)
+                .with_evidence("ws.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("10.0.0.1".to_string())),
+            // Later host A logon, attacker-sourced again.
+            Ev::new(3, 3_000, "LogonSuccess", "DC", EventSource::Evtx)
+                .with_logon_type(10)
+                .with_evidence("dc.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("203.0.113.9".to_string())),
+        ];
+        let corrs = run_correlations(&events);
+        let lm: Vec<_> = corrs
+            .iter()
+            .filter(|c| c.code == "CORR-LATERAL-MOVE")
+            .collect();
+        assert!(!lm.is_empty(), "the real DC->WS pivot must still fire");
+        for c in &lm {
+            assert_eq!(
+                c.members[0].timeline_id, 1,
+                "every firing must anchor on the DC (host A), never invert to a WS anchor"
+            );
+        }
     }
 
     /// A destination contacted at a regular cadence over time fires
