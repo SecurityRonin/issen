@@ -109,6 +109,34 @@ pub trait EventView {
     fn burst_summary(&self) -> Option<(usize, i64, i64)> {
         None
     }
+
+    /// The Windows 4624 logon type (RDP = 10, network = 3, interactive = 2, …)
+    /// for a `LogonSuccess` event, surfaced by the storage layer from its
+    /// metadata. `None` for every non-logon event and any implementation that
+    /// does not carry it (the default). A typed semantic accessor like
+    /// [`burst_summary`](Self::burst_summary): the pure engine classifies a
+    /// remote-interactive logon without parsing storage metadata itself.
+    fn logon_type(&self) -> Option<u64> {
+        None
+    }
+
+    /// The host's own bound interface address, surfaced from a network-config
+    /// (`system-info`) event's metadata. `None` for every event that carries no
+    /// interface binding (the default). This is the host's *own* address
+    /// inventory — distinct from the source IP a logon carries — and is what
+    /// lets the lateral-move guard test host-B's source IP ∈ host-A's inventory.
+    fn interface_ip(&self) -> Option<String> {
+        None
+    }
+
+    /// The evidence-source (image/dump) identifier this event was ingested
+    /// from — the per-host scope key, since one image is one host. Registry
+    /// interface events carry **no hostname**, so the evidence source (not the
+    /// hostname) is the reliable key that ties a host's interface inventory to
+    /// its logons. `None` for synthetic/test events without source attribution.
+    fn evidence_source(&self) -> Option<&str> {
+        None
+    }
 }
 
 /// An optional per-pair guard predicate for a [`RuleSpec`]: a candidate

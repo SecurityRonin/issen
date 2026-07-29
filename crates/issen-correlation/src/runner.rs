@@ -807,6 +807,9 @@ mod tests {
         host: Option<String>,
         source: EventSource,
         path: String,
+        logon_type: Option<u64>,
+        interface_ip: Option<String>,
+        evidence_source: Option<String>,
     }
 
     impl Ev {
@@ -819,6 +822,9 @@ mod tests {
                 host: Some(host.to_string()),
                 source,
                 path: String::new(),
+                logon_type: None,
+                interface_ip: None,
+                evidence_source: None,
             }
         }
         fn ent(mut self, e: EntityRef) -> Self {
@@ -831,6 +837,18 @@ mod tests {
         }
         fn at(mut self, p: &str) -> Self {
             self.path = p.to_string();
+            self
+        }
+        fn with_logon_type(mut self, lt: u64) -> Self {
+            self.logon_type = Some(lt);
+            self
+        }
+        fn with_interface_ip(mut self, ip: &str) -> Self {
+            self.interface_ip = Some(ip.to_string());
+            self
+        }
+        fn with_evidence(mut self, src: &str) -> Self {
+            self.evidence_source = Some(src.to_string());
             self
         }
     }
@@ -857,6 +875,15 @@ mod tests {
         fn artifact_path(&self) -> &str {
             &self.path
         }
+        fn logon_type(&self) -> Option<u64> {
+            self.logon_type
+        }
+        fn interface_ip(&self) -> Option<String> {
+            self.interface_ip.clone()
+        }
+        fn evidence_source(&self) -> Option<&str> {
+            self.evidence_source.as_deref()
+        }
     }
 
     fn codes(corrs: &[Correlation]) -> Vec<String> {
@@ -865,6 +892,70 @@ mod tests {
 
     fn has_code(corrs: &[Correlation], code: &str) -> bool {
         corrs.iter().any(|c| c.code == code)
+    }
+
+    /// Regression for the circular-validation bug: the rule fired on synthetic
+    /// `RdpLogon` events but real ingest never emits that type — a 4624 type-10
+    /// logon is stored as `event_type="LogonSuccess"` with `logon_type == 10`,
+    /// the account as `EntityRef::User`, and the source IP as `EntityRef::Ip`.
+    /// Host A's OWN interface address comes from the SYSTEM-hive registry
+    /// interface event (`interface_ip`), which carries **no hostname**, so the
+    /// per-host key is the evidence source. `run_lateral_move` must recognise
+    /// this real shape and fire `CORR-LATERAL-MOVE`, tying host A's logon to the
+    /// host-B logon sourced from host A's own IP.
+    #[test]
+    fn lateral_move_fires_for_real_shaped_type10_logon_pivot() {
+        let events = vec![
+            // Host A (the DC) interface inventory: a registry network-config
+            // event — no hostname, evidence source = the DC image.
+            Ev::new(
+                10,
+                1_000,
+                "Other(\"system-info\")",
+                "?",
+                EventSource::Registry,
+            )
+            .host_none()
+            .with_interface_ip("10.42.85.10")
+            .with_evidence("dc01.E01"),
+            // Host-A logon (into the DC): earlier, attacker-sourced.
+            Ev::new(1, 2_000, "LogonSuccess", "CITADEL-DC01", EventSource::Evtx)
+                .with_logon_type(10)
+                .with_evidence("dc01.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("203.0.113.9".to_string())),
+            // Host-B logon (into the desktop): later, sourced from the DC's IP.
+            Ev::new(
+                2,
+                3_000,
+                "LogonSuccess",
+                "DESKTOP-SDN1RPT",
+                EventSource::Evtx,
+            )
+            .with_logon_type(10)
+            .with_evidence("desktop.E01")
+            .ent(EntityRef::User("Administrator".to_string()))
+            .ent(EntityRef::Ip("10.42.85.10".to_string())),
+        ];
+        let corrs = run_correlations(&events);
+        assert!(
+            has_code(&corrs, "CORR-LATERAL-MOVE"),
+            "a type-10 LogonSuccess pivot sourced from host A's own interface IP \
+             must fire CORR-LATERAL-MOVE; got {:?}",
+            codes(&corrs)
+        );
+        let lm = corrs
+            .iter()
+            .find(|c| c.code == "CORR-LATERAL-MOVE")
+            .expect("the lateral-move firing");
+        assert_eq!(
+            lm.members[0].timeline_id, 1,
+            "anchor is the host-A (DC) logon"
+        );
+        assert_eq!(
+            lm.members[1].timeline_id, 2,
+            "consequent is the host-B (desktop) logon"
+        );
     }
 
     /// A destination contacted at a regular cadence over time fires
