@@ -516,17 +516,26 @@ fn run_lateral_move<E: EventView>(events: &[E]) -> Vec<Correlation> {
         }
     }
 
-    // Project every type-10 LogonSuccess into the `RdpLogon` shape: keep its
-    // account and its own source IP, and add its host's interface inventory so
-    // it can serve as a host-A anchor (host-B's source IP ∈ host-A inventory).
-    let logons: Vec<RunEvent> = events
+    // Each type-10 logon yields two role-specific projections sharing its
+    // id/timestamp/host, kept parallel so a logon's anchor and consequent forms
+    // sit at the same index. The ANCHOR (host A) carries only its account and
+    // host A's OWN interface inventory — the addresses a host-B logon must be
+    // sourced from. The CONSEQUENT (host B) carries only its account and its own
+    // source IP. Separating the roles stops a logon's source IP (the address it
+    // was reached *from*) from masquerading as its host's own address, which
+    // would let a host-B logon anchor a spurious reverse pivot.
+    let type10: Vec<&E> = events
         .iter()
         .filter(|e| e.event_type() == "LogonSuccess" && e.logon_type() == Some(10))
+        .collect();
+
+    let anchors: Vec<RunEvent> = type10
+        .iter()
         .map(|e| {
             let mut refs: Vec<EntityRef> = e
                 .entity_refs()
                 .iter()
-                .filter(|r| matches!(r, EntityRef::User(_) | EntityRef::Ip(_)))
+                .filter(|r| matches!(r, EntityRef::User(_)))
                 .cloned()
                 .collect();
             if let Some(ips) = e.evidence_source().and_then(|s| iface_by_src.get(s)) {
@@ -537,18 +546,31 @@ fn run_lateral_move<E: EventView>(events: &[E]) -> Vec<Correlation> {
                     }
                 }
             }
-            RunEvent::rdp_projection(e, refs)
+            RunEvent::rdp_projection(*e, refs)
         })
         .collect();
-    let index = build_entity_index(&logons);
+
+    let consequents: Vec<RunEvent> = type10
+        .iter()
+        .map(|e| {
+            let refs: Vec<EntityRef> = e
+                .entity_refs()
+                .iter()
+                .filter(|r| matches!(r, EntityRef::User(_) | EntityRef::Ip(_)))
+                .cloned()
+                .collect();
+            RunEvent::rdp_projection(*e, refs)
+        })
+        .collect();
+
+    let index = build_entity_index(&consequents);
 
     let mut out = Vec::new();
-    for (i, anchor) in logons.iter().enumerate() {
-        // Self-join on the account join entity; exclude the anchor's own
-        // position (the prior j != i self-exclusion). Type-10 logon slices are
-        // tiny, so this is behavior-identical to the full scan — it just shares
-        // the same index helper as the hot rules.
-        let candidates = reduced_candidates(anchor, &index, &logons, Some(i));
+    for (i, anchor) in anchors.iter().enumerate() {
+        // Match host A's anchor against every other logon's consequent form;
+        // exclude position `i` (the logon cannot pivot to itself). The account
+        // join reaches only the shared-account consequents via the index.
+        let candidates = reduced_candidates(anchor, &index, &consequents, Some(i));
         if let Some(corr) = evaluate_lateral_move(anchor, &candidates) {
             out.push(corr);
         }
