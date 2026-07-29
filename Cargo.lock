@@ -3419,7 +3419,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "285cbb38f775a1c3c476e7e20bffea29eea6a62f73e0721957c04cb3867d1fa6"
 dependencies = [
- "forensicnomicon-core",
+ "forensicnomicon-core 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "state-history-forensic",
  "thiserror 2.0.18",
 ]
@@ -3430,10 +3430,14 @@ version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "feb4755bb43fc9c85fbf91bf37399f2f3ca958f35a7e90ca6a4f6f25a6664604"
 dependencies = [
- "forensicnomicon-core",
+ "forensicnomicon-core 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "forensicnomicon-data",
  "serde",
 ]
+
+[[package]]
+name = "forensicnomicon-core"
+version = "1.4.0"
 
 [[package]]
 name = "forensicnomicon-core"
@@ -3450,7 +3454,7 @@ version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "826351faee29aabf7561d741e4fabb56b2b237be6c8d483c4df181e93b5f8b67"
 dependencies = [
- "forensicnomicon-core",
+ "forensicnomicon-core 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
 ]
 
@@ -7665,9 +7669,9 @@ checksum = "1316fa0c02e9625af9583e4cffa9a60fc8bdce759434637614dab561e29e1c38"
 [[package]]
 name = "peripheral-core"
 version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d58c400f53d03f090a534d9e9f3095886c2d12fea5c8392684c1a7a84d9c7fb2"
 dependencies = [
+ "forensicnomicon-core 1.4.0",
+ "shellitem",
  "winreg-core 0.2.0",
 ]
 
@@ -11571,7 +11575,7 @@ dependencies = [
 
 [[package]]
 name = "usb-forensic"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "disk-forensic 0.9.0",
  "evtx",
