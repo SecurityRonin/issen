@@ -5053,7 +5053,7 @@ dependencies = [
  "jiff",
  "memf-core",
  "memf-correlate",
- "memf-format 0.2.1",
+ "memf-format 0.3.0",
  "memf-linux",
  "memf-strings",
  "memf-symbols",
@@ -6666,16 +6666,16 @@ dependencies = [
 
 [[package]]
 name = "memf-linux"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57c055ce423e7cf8ec6822304e4cfc71a85f26d68793ab958dfe8a038f11cabd"
+checksum = "59aeb191bc3fb60fd429c1b1a7ff36a2dc7b862d0efa4f85fee28b3d320edfb7"
 dependencies = [
  "forensicnomicon",
  "goblin 0.9.3",
  "inventory",
  "memf-core",
  "memf-correlate",
- "memf-format 0.2.1",
+ "memf-format 0.3.0",
  "memf-symbols",
  "serde",
  "thiserror 2.0.18",
