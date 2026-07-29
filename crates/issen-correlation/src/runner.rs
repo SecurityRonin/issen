@@ -1086,6 +1086,54 @@ mod tests {
         assert!(has_code(&run_correlations(&events), "CORR-LATERAL-MOVE"));
     }
 
+    /// The pivot must not invert: the source address a host was reached *from*
+    /// is not that host's own address, so host B (reached from host A's IP) must
+    /// never anchor a firing back into host A on a later, unrelated logon. Only
+    /// host A's OWN interface inventory forms its anchor address set.
+    #[test]
+    fn lateral_move_does_not_invert_the_pivot_direction() {
+        let events = vec![
+            Ev::new(100, 1, "Other(\"system-info\")", "?", EventSource::Registry)
+                .host_none()
+                .with_interface_ip("10.0.0.1")
+                .with_evidence("dc.E01"),
+            Ev::new(101, 1, "Other(\"system-info\")", "?", EventSource::Registry)
+                .host_none()
+                .with_interface_ip("10.0.0.2")
+                .with_evidence("ws.E01"),
+            // Host A (DC) logon, attacker-sourced, earliest.
+            Ev::new(1, 1_000, "LogonSuccess", "DC", EventSource::Evtx)
+                .with_logon_type(10)
+                .with_evidence("dc.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("203.0.113.9".to_string())),
+            // Host B (WS) logon, sourced from the DC's own IP — the real pivot.
+            Ev::new(2, 2_000, "LogonSuccess", "WS", EventSource::Evtx)
+                .with_logon_type(10)
+                .with_evidence("ws.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("10.0.0.1".to_string())),
+            // Later host A logon, attacker-sourced again.
+            Ev::new(3, 3_000, "LogonSuccess", "DC", EventSource::Evtx)
+                .with_logon_type(10)
+                .with_evidence("dc.E01")
+                .ent(EntityRef::User("Administrator".to_string()))
+                .ent(EntityRef::Ip("203.0.113.9".to_string())),
+        ];
+        let corrs = run_correlations(&events);
+        let lm: Vec<_> = corrs
+            .iter()
+            .filter(|c| c.code == "CORR-LATERAL-MOVE")
+            .collect();
+        assert!(!lm.is_empty(), "the real DC->WS pivot must still fire");
+        for c in &lm {
+            assert_eq!(
+                c.members[0].timeline_id, 1,
+                "every firing must anchor on the DC (host A), never invert to a WS anchor"
+            );
+        }
+    }
+
     /// A destination contacted at a regular cadence over time fires
     /// NET-BEACON-PERIODIC (grouped per host, source-agnostic via EntityRef::Ip).
     #[test]
