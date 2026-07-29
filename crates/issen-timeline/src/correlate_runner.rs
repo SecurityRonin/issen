@@ -332,6 +332,17 @@ impl TimelineStore {
             inputs.push(RunInput::Burst(anchor));
         }
 
+        // Host-identity facts (interface bindings, computer name, …) are
+        // recorded with no timestamp, so they fall outside the positive-time
+        // correlation window above. The lateral-move rule needs each host's own
+        // interface-address inventory, so fetch the zero-timestamp rows and feed
+        // the disk-leg pass the ones that carry an interface binding.
+        for e in self.fetch_events(&EventQuery::within(0, 0).limit(u64::MAX))? {
+            if e.interface_ip().is_some() {
+                inputs.push(RunInput::Stored(e));
+            }
+        }
+
         let correlations = run_correlations_with_memory_progress(&inputs, &memory, start_rule);
         for corr in &correlations {
             let members: Vec<(u64, &str)> = corr
