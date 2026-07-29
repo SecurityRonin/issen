@@ -133,6 +133,24 @@ impl EventView for RunInput {
             Self::Burst(e) => e.burst_summary(),
         }
     }
+    fn logon_type(&self) -> Option<u64> {
+        match self {
+            Self::Stored(e) => e.logon_type(),
+            Self::Burst(e) => e.logon_type(),
+        }
+    }
+    fn interface_ip(&self) -> Option<String> {
+        match self {
+            Self::Stored(e) => e.interface_ip(),
+            Self::Burst(e) => e.interface_ip(),
+        }
+    }
+    fn evidence_source(&self) -> Option<&str> {
+        match self {
+            Self::Stored(e) => e.evidence_source(),
+            Self::Burst(e) => e.evidence_source(),
+        }
+    }
 }
 
 /// Project a stored *memory* event into the richer [`MemEvent`] the Tier-C
