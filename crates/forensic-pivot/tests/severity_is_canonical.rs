@@ -27,7 +27,7 @@ fn rule_yaml_still_deserializes_every_severity_word() {
     // enum uses the same five words, so existing YAML keeps parsing.
     for word in ["Critical", "High", "Medium", "Low", "Info"] {
         let yaml = format!(
-            r#"
+            r"
 id: R-1
 name: test rule
 description: d
@@ -35,7 +35,7 @@ severity: {word}
 assertion_level: Observed
 default_confidence: 50
 clauses: []
-"#
+"
         );
         let rule: PivotRule =
             serde_yaml::from_str(&yaml).unwrap_or_else(|e| panic!("`{word}` must parse: {e}"));

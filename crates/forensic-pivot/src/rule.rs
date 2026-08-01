@@ -1,16 +1,15 @@
-// RED: stub — types declared but no real logic
 use crate::evidence::{EvidenceKind, EvidenceSource};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum Severity {
-    Critical,
-    High,
-    Medium,
-    Low,
-    Info,
-}
+/// Rule severity — the canonical fleet scale.
+///
+/// This was a local `Critical/High/Medium/Low/Info` clone: the exact variant set
+/// of [`forensicnomicon::report::Severity`], declared highest-first and deriving
+/// only `PartialEq`, so pivot findings could not be ranked or thresholded at
+/// all. Adopting the canonical type brings `Ord` and `Display` with it; the
+/// five variant names are unchanged, so bundled rule YAML keeps parsing.
+pub use forensicnomicon::report::Severity;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AssertionLevel {

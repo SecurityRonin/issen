@@ -247,7 +247,10 @@ fn draw_file_list(frame: &mut Frame, area: Rect, app: &mut App) {
             let marker = match app.anomaly_index.max_severity(idx) {
                 Some(Severity::Critical | Severity::High) => "\u{1f6a8} ", // 🚨
                 Some(Severity::Medium) => "\u{1f7e1} ",                    // 🟡
-                Some(Severity::Low | Severity::Informational) => "\u{1f535} ", // 🔵
+                Some(Severity::Low | Severity::Info) => "\u{1f535} ",      // 🔵
+                // `Severity` is `#[non_exhaustive]`; an unknown future tier is
+                // marked as noteworthy rather than silently unmarked.
+                Some(_) => "\u{1f6a8} ", // cov:unreachable: five known variants today
                 None => "",
             };
 
@@ -517,7 +520,9 @@ fn draw_detail_panel(frame: &mut Frame, area: Rect, app: &mut App) {
                 Severity::High => Color::LightRed,
                 Severity::Medium => Color::Yellow,
                 Severity::Low => Color::Blue,
-                Severity::Informational => Color::DarkGray,
+                Severity::Info => Color::DarkGray,
+                // `Severity` is `#[non_exhaustive]`.
+                _ => Color::Red, // cov:unreachable: five known variants today
             };
 
             lines.push(Line::from(vec![

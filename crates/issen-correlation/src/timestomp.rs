@@ -25,9 +25,25 @@ use forensicnomicon::report::{Category, Finding, Severity, Source};
 use issen_core::timeline::event::{EventType, TimelineEvent};
 use jiff::Timestamp;
 
-/// Stable, scheme-prefixed finding code (published contract — never change).
-/// Matches the Case 001 capability-gaps sub-plan (Workstream C2).
-pub const TIMESTOMP_CODE: &str = "NTFS-TIMESTOMP-SI-FN-MISMATCH";
+/// Stable, scheme-prefixed finding code.
+///
+/// `HEUR-` is issen's own detection-layer prefix (timestomping, location,
+/// entropy, size, magic, USN). It is deliberately **not** `NTFS-`: that scheme
+/// belongs to `ntfs-forensic`, which already ships `NTFS-TIMESTOMP` for the
+/// filesystem-layer `$SI`/`$FN` check. The previous code here,
+/// `NTFS-TIMESTOMP-SI-FN-MISMATCH`, was a string prefix-extension of it, so a
+/// consumer grouping by code prefix conflated this correlation-layer Info lead
+/// with that analyzer's flat `High` anomaly.
+///
+/// The two remain **distinct detections**, not one duplicated under two names:
+/// `ntfs-forensic` reads parsed `$STANDARD_INFORMATION`/`$FILE_NAME` attributes
+/// and fires on a strict `$SI.created < $FN.created` *or* any whole-second `$SI`
+/// stamp, always grading `High`; this one reads `TimelineEvent` metadata, adds
+/// the `$SI.modified` ordering signal and a clock-skew tolerance, requires the
+/// *contrast* form of the sub-second tell (`$SI` zeroed **while** `$FN` retains
+/// 100 ns precision), and downgrades on benign-context modifiers — capping at
+/// `Medium` by design.
+pub const TIMESTOMP_CODE: &str = "HEUR-TIMESTOMP-SI-FN";
 
 /// Detect `$SI`/`$FN` birth-time inconsistency on a single `FileCreate` event.
 ///

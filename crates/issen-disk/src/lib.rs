@@ -1936,6 +1936,21 @@ fn parse_boot_at(source: &dyn DataSource, offset: u64) -> Result<ntfs_core::Boot
         .map_err(|e| DiskError::Ntfs(format!("boot sector at offset {offset}: {e}")))
 }
 
+/// Stable finding code for a `$Boot`/backup divergence.
+///
+/// `HEUR-` is issen's own detection-layer prefix, deliberately **not** `NTFS-`:
+/// that scheme belongs to `ntfs-forensic`, which already ships an
+/// `ArtifactAnomaly` family for exactly this class of whole-artifact integrity
+/// check (`NTFS-MFTMIRR-MISMATCH`, `NTFS-LOGFILE-CLEARED`). issen consumes those
+/// codes, which makes it precisely the crate that must not also mint into the
+/// namespace — an `ntfs-forensic` `$Boot` check added later would collide.
+///
+/// The check itself belongs upstream in `ntfs-forensic` alongside the
+/// `$MFTMirr` one (ADR-0016 puts filesystem-structure checks in the FILESYSTEM
+/// layer); moving it there is a cross-repo follow-up, and once there the crate
+/// legitimately owns an `NTFS-`-prefixed code for it.
+pub const BOOT_BACKUP_CODE: &str = "HEUR-BOOT-BACKUP-MISMATCH";
+
 /// Compare the primary `$Boot` against its backup copy at the last sector of the
 /// volume and surface any geometry divergence as an Integrity event. A mismatch
 /// is consistent with boot-record tampering OR ordinary corruption / a partially
@@ -1977,12 +1992,12 @@ pub fn boot_backup_integrity_events(
         EventType::Other("integrity".into()),
         issen_core::artifacts::ArtifactType::Mft,
         r"\$Boot".to_string(),
-        format!("$Boot integrity: NTFS-BOOT-BACKUP-MISMATCH — {note}"),
+        format!("$Boot integrity: {BOOT_BACKUP_CODE} — {note}"),
         source_id.to_string(),
     )
     .with_activity_category(issen_core::ActivityCategory::Integrity)
     .with_tag("integrity")
-    .with_metadata("code", serde_json::json!("NTFS-BOOT-BACKUP-MISMATCH"))
+    .with_metadata("code", serde_json::json!(BOOT_BACKUP_CODE))
     .with_metadata("severity", serde_json::json!("High"))
     .with_metadata("diverging_fields", serde_json::json!(diverging))
     .with_metadata("backup_offset", serde_json::json!(primary.backup_offset()));
@@ -2092,7 +2107,7 @@ mod tests {
             "a $Boot backup mismatch is an Integrity observation"
         );
         assert!(
-            e.description.contains("NTFS-BOOT-BACKUP-MISMATCH"),
+            e.description.contains(BOOT_BACKUP_CODE),
             "got: {}",
             e.description
         );

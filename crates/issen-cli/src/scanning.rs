@@ -1295,7 +1295,10 @@ detection:
             .iter()
             .find(|f| f.engine == "Timestomp")
             .expect("scan phase must emit a Timestomp FindingRow for an $SI<$FN FileCreate");
-        assert_eq!(timestomp.rule_name, "NTFS-TIMESTOMP-SI-FN-MISMATCH");
+        assert_eq!(
+            timestomp.rule_name,
+            issen_correlation::timestomp::TIMESTOMP_CODE
+        );
         assert!(
             timestomp.tags.contains("attack.t1070.006"),
             "timestomp finding must carry the MITRE T1070.006 tag: {}",
@@ -1339,8 +1342,8 @@ detection:
         let rows = issen_timeline::findings::query_findings(store.connection(), None)
             .expect("query findings");
         assert!(
-            rows.iter()
-                .any(|r| r.engine == "Timestomp" && r.rule_name == "NTFS-TIMESTOMP-SI-FN-MISMATCH"),
+            rows.iter().any(|r| r.engine == "Timestomp"
+                && r.rule_name == issen_correlation::timestomp::TIMESTOMP_CODE),
             "the timestomp finding must be persisted to scan_findings, got {} rows",
             rows.len()
         );

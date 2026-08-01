@@ -11,6 +11,7 @@
 //! `correlation_members` tables, keyed on `timeline.id`.
 
 use forensicnomicon::report::Severity;
+use issen_core::severity::SeverityExt;
 
 /// The host/dump scope a correlation's members share.
 ///
@@ -186,29 +187,16 @@ impl Correlation {
     /// The stable lowercase severity token persisted in the `severity` column.
     #[must_use]
     pub fn severity_str(&self) -> &'static str {
-        match self.severity {
-            Severity::Info => "info",
-            Severity::Low => "low",
-            Severity::Medium => "medium",
-            Severity::High => "high",
-            Severity::Critical => "critical",
-            // `forensicnomicon::report::Severity` is `#[non_exhaustive]`; a future
-            // variant maps to a distinct sentinel rather than masquerading as info.
-            _ => "unknown", // cov:unreachable: Severity has exactly five known variants today
-        }
+        self.severity.token()
     }
 
     /// Parse a persisted severity token back into a [`Severity`].
+    ///
+    /// Case-insensitive: `issen-disk` writes a capitalised `"High"` into event
+    /// metadata, which the previous case-sensitive copy silently dropped.
     #[must_use]
     pub fn severity_from_str(s: &str) -> Option<Severity> {
-        match s {
-            "info" => Some(Severity::Info),
-            "low" => Some(Severity::Low),
-            "medium" => Some(Severity::Medium),
-            "high" => Some(Severity::High),
-            "critical" => Some(Severity::Critical),
-            _ => None,
-        }
+        issen_core::severity::parse(s)
     }
 }
 

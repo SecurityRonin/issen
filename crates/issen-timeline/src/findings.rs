@@ -5,6 +5,7 @@
 // is created lazily alongside the timeline schema.
 
 use duckdb::Connection;
+use issen_core::severity::SeverityExt;
 
 use crate::store::TimelineStoreError;
 
@@ -100,22 +101,25 @@ pub fn insert_findings(
 
 /// Query findings, optionally filtered by minimum severity.
 ///
-/// Severity ordering: critical > high > medium > low > informational.
+/// Severity ordering: critical > high > medium > low > info.
+///
+/// `min_severity` is parsed through the shared vocabulary, so both the canonical
+/// `"info"` and the pre-consolidation `"informational"` spelling resolve to the
+/// same floor. Rows written before the consolidation carry `"informational"`, so
+/// the bottom tier matches either token.
 pub fn query_findings(
     conn: &Connection,
     min_severity: Option<&str>,
 ) -> Result<Vec<FindingRow>, TimelineStoreError> {
-    let severity_levels = ["informational", "low", "medium", "high", "critical"];
-
     let sql = if let Some(min_sev) = min_severity {
-        let min_idx = severity_levels
+        let min_idx = usize::from(issen_core::severity::parse_lossy(min_sev).rank());
+        let mut allowed: Vec<String> = issen_core::severity::TOKENS[min_idx..]
             .iter()
-            .position(|&s| s == min_sev.to_lowercase())
-            .unwrap_or(0);
-        let allowed: Vec<String> = severity_levels[min_idx..]
-            .iter()
-            .map(|s| format!("'{}'", s))
+            .map(|s| format!("'{s}'"))
             .collect();
+        if min_idx == 0 {
+            allowed.push("'informational'".to_string());
+        }
         format!(
             "SELECT evidence_source_id, artifact_path, engine, severity,
                     rule_name, description, matched_indicator, tags

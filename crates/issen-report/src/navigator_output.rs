@@ -37,14 +37,11 @@ pub fn technique_ids(tags: &[String]) -> Vec<String> {
 }
 
 /// Map an issen severity string to a `forensicnomicon` [`Severity`].
+///
+/// A persisted token is free text as far as this layer is concerned, so an
+/// unrecognized one floors to `Info` rather than dropping the finding.
 fn severity_of(s: &str) -> Severity {
-    match s.to_lowercase().as_str() {
-        "critical" => Severity::Critical,
-        "high" => Severity::High,
-        "medium" => Severity::Medium,
-        "low" => Severity::Low,
-        _ => Severity::Info,
-    }
+    issen_core::severity::parse_lossy(s)
 }
 
 /// Convert a [`FindingRow`] into a `forensicnomicon` [`Finding`] carrying its

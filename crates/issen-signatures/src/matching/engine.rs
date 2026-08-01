@@ -204,7 +204,9 @@ impl ScanEngine {
             for m in sigma.evaluate(event) {
                 findings.push(ScanFinding {
                     source: MatchSource::Sigma,
-                    severity: Severity::from_str_lossy(&m.level),
+                    // A Sigma `level` is free text and may be absent or
+                    // non-standard, so it degrades to the lowest tier.
+                    severity: issen_core::severity::parse_lossy(&m.level),
                     rule_name: m.rule_title.clone(),
                     description: m
                         .description

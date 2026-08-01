@@ -8,12 +8,12 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use tracing::info;
 
+use issen_core::severity::SeverityExt;
 use issen_signatures::engines::ioc_hash::HashFeed;
 use issen_signatures::engines::ioc_network::NetworkIocStore;
 use issen_signatures::engines::stix::StixParser;
 use issen_signatures::engines::yara::YaraEngine;
 use issen_signatures::matching::engine::ScanEngine;
-use issen_signatures::matching::results::Severity;
 
 /// Run the scan subcommand.
 #[allow(clippy::too_many_arguments)]
@@ -28,7 +28,7 @@ pub fn run(
     format: &str,
     auto_feeds: bool,
 ) -> Result<()> {
-    let threshold = Severity::from_str_lossy(min_severity);
+    let threshold = issen_core::severity::parse_lossy(min_severity);
 
     // Build the scan engine — optionally pre-loaded from cached feeds.
     let mut engine = if auto_feeds {
@@ -271,7 +271,7 @@ fn print_text_report(
             .unwrap_or_default();
         println!(
             "  [{severity}] ({source}) {rule}{indicator}",
-            severity = f.severity,
+            severity = f.severity.token(),
             source = f.source,
             rule = f.rule_name,
             indicator = indicator_str,
@@ -298,7 +298,7 @@ fn print_json_reports(
                 "findings": findings.iter().map(|f| {
                     serde_json::json!({
                         "source": format!("{}", f.source),
-                        "severity": format!("{}", f.severity),
+                        "severity": f.severity.token(),
                         "rule_name": f.rule_name,
                         "description": f.description,
                         "matched_indicator": f.matched_indicator,

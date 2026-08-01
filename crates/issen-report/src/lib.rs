@@ -32,6 +32,7 @@ pub use mermaid::{
 };
 
 use forensicnomicon::report::Severity;
+use issen_core::severity::SeverityExt;
 use issen_correlation::correlation::Correlation;
 
 // ---------------------------------------------------------------------------
@@ -477,47 +478,26 @@ pub struct RuleGroup {
     pub instances: Vec<Correlation>,
 }
 
+// The severity rank/token/parse vocabulary is defined once, in
+// `issen_core::severity`. These are call-site aliases over it, not a second
+// definition — the bodies below must stay one-liners.
+
 /// Total ordering rank for a severity (`Info` lowest, `Critical` highest).
 #[must_use]
 fn severity_rank(s: Severity) -> u8 {
-    match s {
-        Severity::Info => 0,
-        Severity::Low => 1,
-        Severity::Medium => 2,
-        Severity::High => 3,
-        Severity::Critical => 4,
-        // `Severity` is `#[non_exhaustive]`; an unknown future variant ranks
-        // above the known set rather than masquerading as Info.
-        _ => 5, // cov:unreachable: Severity has exactly five known variants today
-    }
+    s.rank()
 }
 
 /// Lowercase severity token for CSS classes / display.
 #[must_use]
 fn severity_token(s: Severity) -> &'static str {
-    match s {
-        Severity::Info => "info",
-        Severity::Low => "low",
-        Severity::Medium => "medium",
-        Severity::High => "high",
-        Severity::Critical => "critical",
-        // `Severity` is `#[non_exhaustive]`; an unknown future variant gets a
-        // distinct sentinel rather than masquerading as a known severity.
-        _ => "unknown", // cov:unreachable: Severity has exactly five known variants today
-    }
+    s.token()
 }
 
 /// Parse a `scan_findings.severity` token into a [`Severity`].
 #[must_use]
 fn severity_from_finding_str(s: &str) -> Option<Severity> {
-    match s.to_ascii_lowercase().as_str() {
-        "critical" => Some(Severity::Critical),
-        "high" => Some(Severity::High),
-        "medium" => Some(Severity::Medium),
-        "low" => Some(Severity::Low),
-        "info" | "informational" => Some(Severity::Info),
-        _ => None,
-    }
+    issen_core::severity::parse(s)
 }
 
 /// Format a nanoseconds-since-epoch instant as a readable UTC string.
@@ -902,7 +882,7 @@ td {{ font-family: "SF Mono", "Fira Code", "Consolas", monospace; word-break: br
 .severity-high {{ color: var(--severity-high); font-weight: bold; }}
 .severity-medium {{ color: var(--severity-medium); }}
 .severity-low {{ color: var(--severity-low); }}
-.severity-informational {{ color: var(--severity-info); }}
+.severity-info {{ color: var(--severity-info); }}
 .attack-note {{ color: #8899aa; font-size: 0.82rem; margin-bottom: 12px; }}
 .attack-chain {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }}
 .attack-node {{ padding: 10px 14px; border-radius: 6px; color: #fff; font-weight: bold; font-size: 0.85rem; white-space: nowrap; }}
@@ -2581,7 +2561,7 @@ mod tests {
     fn render_html_appendix_surfaces_medium_findings_and_collapses_info_low() {
         let mut findings = vec![FindingRow {
             engine: "Timestomp".to_string(),
-            rule_name: "NTFS-TIMESTOMP-SI-FN-MISMATCH".to_string(),
+            rule_name: "HEUR-TIMESTOMP-SI-FN".to_string(),
             severity: "medium".to_string(),
             target: "FileShare/Secret/Beth_Secret.txt".to_string(),
             description: "SI<FN timestamp mismatch".to_string(),
@@ -2591,7 +2571,7 @@ mod tests {
         for i in 0..500 {
             findings.push(FindingRow {
                 engine: "Timestomp".to_string(),
-                rule_name: "NTFS-TIMESTOMP-SI-FN-MISMATCH".to_string(),
+                rule_name: "HEUR-TIMESTOMP-SI-FN".to_string(),
                 severity: "info".to_string(),
                 target: format!("C:/win/file{i}.sys"),
                 description: "lead".to_string(),
