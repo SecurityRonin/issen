@@ -2110,6 +2110,37 @@ mod tests {
     }
 
     #[test]
+    fn boot_backup_code_is_not_in_the_ntfs_forensic_namespace() {
+        // `ntfs-forensic` owns the `NTFS-` scheme and already publishes an
+        // `ArtifactAnomaly` family for exactly this class of whole-artifact
+        // integrity check (`NTFS-MFTMIRR-MISMATCH`, `NTFS-LOGFILE-CLEARED`).
+        // issen consumes those codes, so it must not also mint into them —
+        // a later ntfs-forensic `$Boot` check would collide outright.
+        let (src, window) = disk_with_backup_boot(Some(0x0102_0304_0506_0708));
+        let events = boot_backup_integrity_events(&src, window, "ev").expect("read boot");
+        let code = events[0]
+            .metadata
+            .get("code")
+            .and_then(|v| v.as_str())
+            .expect("integrity event carries a `code`")
+            .to_string();
+
+        assert!(
+            !code.starts_with("NTFS-"),
+            "`NTFS-` is ntfs-forensic's scheme; issen must mint under a prefix \
+             it owns (got `{code}`)"
+        );
+        assert!(
+            code.starts_with("HEUR-") || code.starts_with("CORR-"),
+            "expected an issen-owned prefix, got `{code}`"
+        );
+        assert!(
+            events[0].description.contains(&code),
+            "the description must quote the same code it tags"
+        );
+    }
+
+    #[test]
     fn boot_backup_unreadable_is_not_a_mismatch() {
         // Primary present, but the backup sector falls outside the data we have
         // (sparse acquisition). That must degrade loud — NOT be reported as a
