@@ -94,7 +94,10 @@ pub fn anomalies_to_alerts(index: &AnomalyIndex, tree: &FileTree) -> Vec<Alert> 
             let severity = match anomaly.severity {
                 Severity::Critical => AlertSeverity::Critical,
                 Severity::High | Severity::Medium => AlertSeverity::Warning,
-                Severity::Low | Severity::Informational => AlertSeverity::Info,
+                Severity::Low | Severity::Info => AlertSeverity::Info,
+                // `Severity` is `#[non_exhaustive]`; an unknown future tier
+                // escalates rather than being downgraded to Info.
+                _ => AlertSeverity::Critical, // cov:unreachable: five known variants today
             };
 
             alerts.push(Alert {

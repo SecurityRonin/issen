@@ -11,6 +11,9 @@ repository.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 flate2 = { workspace = true }
+# The canonical `report::Severity` (ADR-0007). `serde` because pivot rules and
+# findings are (de)serialized YAML/JSON.
+forensicnomicon = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }

@@ -233,8 +233,8 @@ pub enum Commands {
         #[arg(long)]
         flagged: bool,
 
-        /// Minimum severity for --flagged output (informational, low, medium, high, critical).
-        #[arg(long, default_value = "informational")]
+        /// Minimum severity for --flagged output (info, low, medium, high, critical).
+        #[arg(long, default_value = "info")]
         min_severity: String,
 
         /// Output format: text or json (json is jsonguard-sanitized).
@@ -405,8 +405,8 @@ pub enum Commands {
         #[arg(long)]
         stix_bundle: Option<Vec<PathBuf>>,
 
-        /// Minimum severity to report (informational, low, medium, high, critical).
-        #[arg(long, default_value = "informational")]
+        /// Minimum severity to report (info, low, medium, high, critical).
+        #[arg(long, default_value = "info")]
         min_severity: String,
 
         /// Output format: text, json.

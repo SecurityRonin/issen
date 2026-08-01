@@ -171,6 +171,9 @@ fn fmt_severity(s: &Severity) -> &'static str {
         Severity::Medium => "Medium",
         Severity::Low => "Low",
         Severity::Info => "Info",
+        // `Severity` is `#[non_exhaustive]`; a future variant gets a distinct
+        // sentinel rather than masquerading as a known tier.
+        _ => "Unknown", // cov:unreachable: five known variants today
     }
 }
 

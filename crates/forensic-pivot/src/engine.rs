@@ -88,7 +88,7 @@ impl PivotEngine {
         Some(Finding {
             rule_id: rule.id.clone(),
             rule_name: rule.name.clone(),
-            severity: rule.severity.clone(),
+            severity: rule.severity,
             assertion_level: rule.assertion_level.clone(),
             confidence: rule.default_confidence,
             matched_evidence: matched_ids,

@@ -8,6 +8,7 @@ pub mod container;
 pub mod coverage;
 pub mod error;
 pub mod plugin;
+pub mod severity;
 pub mod timeline;
 
 /// CADET forensic-semantic category, re-exported from `forensicnomicon` for

@@ -2,6 +2,7 @@ use std::io;
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
+use forensicnomicon::report::Severity;
 use issen_core::timeline::event::TimelineEvent;
 use issen_correlation::temporal_rule::{
     bundled_temporal_rules, evaluate_temporal, TemporalFinding,
@@ -188,7 +189,9 @@ fn show_flagged(store: &TimelineStore, min_severity: &str, format: &str) -> Resu
     // Ensure the table exists (it may not if no scanning was done).
     findings::create_findings_table(conn).context("Failed to access findings table")?;
 
-    let severity_filter = if min_severity == "informational" {
+    // The bottom tier means "no floor" — parse rather than string-compare, so
+    // both `info` and the legacy `informational` spelling are recognised.
+    let severity_filter = if issen_core::severity::parse_lossy(min_severity) == Severity::Info {
         None
     } else {
         Some(min_severity)

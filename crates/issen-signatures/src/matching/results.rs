@@ -31,40 +31,18 @@ impl fmt::Display for MatchSource {
     }
 }
 
-/// Severity level for a scan finding.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Severity {
-    Informational,
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
-impl Severity {
-    /// Parse a severity string (case-insensitive).
-    pub fn from_str_lossy(s: &str) -> Self {
-        match s.to_lowercase().as_str() {
-            "critical" => Self::Critical,
-            "high" => Self::High,
-            "medium" => Self::Medium,
-            "low" => Self::Low,
-            _ => Self::Informational,
-        }
-    }
-}
-
-impl fmt::Display for Severity {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Informational => write!(f, "informational"),
-            Self::Low => write!(f, "low"),
-            Self::Medium => write!(f, "medium"),
-            Self::High => write!(f, "high"),
-            Self::Critical => write!(f, "critical"),
-        }
-    }
-}
+/// Severity level for a scan finding — the canonical fleet scale.
+///
+/// This was a local `Informational/Low/Medium/High/Critical` clone with its own
+/// `from_str_lossy` and lowercase `Display`. It is the same five-tier scale as
+/// [`forensicnomicon::report::Severity`] (spelling the bottom tier
+/// `Informational` rather than `Info`), not a distinct native scale, so it is
+/// the canonical type rather than something normalized at a boundary.
+///
+/// Parse with [`issen_core::severity::parse_lossy`]; the persisted lowercase
+/// token is [`issen_core::severity::SeverityExt::token`] (the canonical
+/// `Display` is uppercase).
+pub use forensicnomicon::report::Severity;
 
 /// A single scan finding from any engine.
 #[derive(Debug, Clone)]
@@ -141,6 +119,7 @@ impl ScanReport {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use issen_core::severity::{self, SeverityExt};
 
     fn sample_finding(source: MatchSource, severity: Severity, name: &str) -> ScanFinding {
         ScanFinding {
@@ -199,11 +178,7 @@ mod tests {
     #[test]
     fn test_findings_at_or_above() {
         let mut report = ScanReport::new("test");
-        report.add_finding(sample_finding(
-            MatchSource::Yara,
-            Severity::Informational,
-            "r1",
-        ));
+        report.add_finding(sample_finding(MatchSource::Yara, Severity::Info, "r1"));
         report.add_finding(sample_finding(MatchSource::Sigma, Severity::High, "r2"));
         report.add_finding(sample_finding(
             MatchSource::HashIoc,
@@ -216,7 +191,7 @@ mod tests {
         let high_plus = report.findings_at_or_above(Severity::High);
         assert_eq!(high_plus.len(), 2); // High + Critical
 
-        let all = report.findings_at_or_above(Severity::Informational);
+        let all = report.findings_at_or_above(Severity::Info);
         assert_eq!(all.len(), 5);
     }
 
@@ -225,26 +200,29 @@ mod tests {
         assert!(Severity::Critical > Severity::High);
         assert!(Severity::High > Severity::Medium);
         assert!(Severity::Medium > Severity::Low);
-        assert!(Severity::Low > Severity::Informational);
+        assert!(Severity::Low > Severity::Info);
     }
 
     #[test]
-    fn test_severity_from_str_lossy() {
-        assert_eq!(Severity::from_str_lossy("critical"), Severity::Critical);
-        assert_eq!(Severity::from_str_lossy("HIGH"), Severity::High);
-        assert_eq!(Severity::from_str_lossy("Medium"), Severity::Medium);
-        assert_eq!(Severity::from_str_lossy("low"), Severity::Low);
-        assert_eq!(
-            Severity::from_str_lossy("informational"),
-            Severity::Informational
-        );
-        assert_eq!(Severity::from_str_lossy("unknown"), Severity::Informational);
+    fn test_severity_parse_lossy() {
+        // The parse half now lives in the shared vocabulary; `"informational"`
+        // stays accepted so pre-migration `--min-severity` invocations and
+        // persisted rows keep resolving.
+        assert_eq!(severity::parse_lossy("critical"), Severity::Critical);
+        assert_eq!(severity::parse_lossy("HIGH"), Severity::High);
+        assert_eq!(severity::parse_lossy("Medium"), Severity::Medium);
+        assert_eq!(severity::parse_lossy("low"), Severity::Low);
+        assert_eq!(severity::parse_lossy("informational"), Severity::Info);
+        assert_eq!(severity::parse_lossy("unknown"), Severity::Info);
     }
 
     #[test]
-    fn test_severity_display() {
-        assert_eq!(format!("{}", Severity::Critical), "critical");
-        assert_eq!(format!("{}", Severity::Informational), "informational");
+    fn test_severity_token_is_the_persisted_form() {
+        // The canonical `Display` is uppercase; the persisted/CSS token is
+        // lowercase and comes from the shared vocabulary.
+        assert_eq!(format!("{}", Severity::Critical), "CRITICAL");
+        assert_eq!(Severity::Critical.token(), "critical");
+        assert_eq!(Severity::Info.token(), "info");
     }
 
     #[test]
