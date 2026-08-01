@@ -106,6 +106,28 @@ mod tests {
     }
 
     #[test]
+    fn filetime_zero_saturates_to_i64_min_not_max() {
+        // FILETIME 0 is the Windows "not set" sentinel (1601-01-01). Its Unix
+        // nanosecond value (-11_644_473_600_000_000_000) is below i64::MIN, so
+        // it must clamp to the NEAR end of the timeline, never the far end —
+        // otherwise an absent timestamp sorts as a year-2262 instant.
+        assert_eq!(filetime_to_unix_ns(0), i64::MIN);
+    }
+
+    #[test]
+    fn filetime_before_1677_saturates_to_i64_min() {
+        // 1e15 ticks = 1e8 s after 1601 ≈ 1604 — before the ~1677-09-21 floor
+        // that i64 nanoseconds can represent, so it underflows negatively.
+        assert_eq!(filetime_to_unix_ns(1_000_000_000_000_000), i64::MIN);
+    }
+
+    #[test]
+    fn filetime_far_future_saturates_to_i64_max() {
+        // The opposite direction still clamps to the far end.
+        assert_eq!(filetime_to_unix_ns(u64::MAX), i64::MAX);
+    }
+
+    #[test]
     fn install_date_to_ns_converts_seconds() {
         assert_eq!(install_date_to_ns(1), 1_000_000_000i64);
         assert_eq!(install_date_to_ns(0), 0i64);
