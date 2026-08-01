@@ -33,7 +33,16 @@ pub fn filetime_to_unix_ns(filetime: u64) -> i64 {
     const EPOCH_DIFF_100NS: i128 = 116_444_736_000_000_000;
     let saturating = || {
         let unix_100ns = i128::from(filetime) - EPOCH_DIFF_100NS;
-        i64::try_from(unix_100ns * 100).unwrap_or(i64::MAX)
+        let nanos = unix_100ns * 100;
+        // Saturate toward the end of the range the value actually overflowed:
+        // FILETIME 0 ("not set") and anything before ~1677-09-21 underflow
+        // negatively, so they must clamp to i64::MIN. Clamping them to i64::MAX
+        // would sort an absent timestamp as a year-2262 instant.
+        i64::try_from(nanos).unwrap_or(if nanos.is_negative() {
+            i64::MIN
+        } else {
+            i64::MAX
+        })
     };
     match i64::try_from(filetime) {
         Ok(ft) => timeglyph::format("filetime")
