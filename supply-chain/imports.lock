@@ -83,12 +83,110 @@ user-id = 696
 user-login = "fitzgen"
 user-name = "Nick Fitzgerald"
 
+[[publisher.disk-forensic]]
+version = "0.9.0"
+when = "2026-06-28"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.disk-forensic]]
+version = "0.11.0"
+when = "2026-07-16"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
 [[publisher.encoding_rs]]
 version = "0.8.35"
 when = "2024-10-24"
 user-id = 4484
 user-login = "hsivonen"
 user-name = "Henri Sivonen"
+
+[[publisher.gpt-partition-core]]
+version = "0.6.2"
+when = "2026-07-16"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.gpt-partition-forensic]]
+version = "0.6.2"
+when = "2026-07-16"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.mbr-partition-core]]
+version = "0.6.3"
+when = "2026-07-16"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.mbr-partition-forensic]]
+version = "0.6.3"
+when = "2026-07-16"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.memf-core]]
+version = "0.2.3"
+when = "2026-07-23"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.memf-format]]
+version = "0.2.1"
+when = "2026-06-19"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.memf-format]]
+version = "0.3.0"
+when = "2026-07-19"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.memf-linux]]
+version = "0.3.1"
+when = "2026-07-24"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.memf-symbols]]
+version = "0.2.3"
+when = "2026-07-23"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.memf-windows]]
+version = "0.4.0"
+when = "2026-07-29"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.peripheral-core]]
+version = "0.1.0"
+when = "2026-06-13"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.peripheral-core]]
+version = "0.8.1"
+when = "2026-07-16"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
 
 [[publisher.pulley-interpreter]]
 version = "26.0.1"
@@ -137,6 +235,13 @@ when = "2024-09-19"
 user-id = 1139
 user-login = "Manishearth"
 user-name = "Manish Goregaokar"
+
+[[publisher.usb-forensic]]
+version = "0.2.0"
+when = "2026-07-25"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
 
 [[publisher.utf8_iter]]
 version = "1.0.4"
@@ -235,6 +340,20 @@ version = "26.0.1"
 when = "2024-11-05"
 user-id = 73222
 user-login = "wasmtime-publish"
+
+[[publisher.winevt-extract]]
+version = "0.2.0"
+when = "2026-06-28"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
+
+[[publisher.winevt-extract]]
+version = "0.4.0"
+when = "2026-07-11"
+user-id = 347968
+user-login = "h4x0r"
+user-name = "Albert Hui"
 
 [[publisher.wit-bindgen]]
 version = "0.57.1"
