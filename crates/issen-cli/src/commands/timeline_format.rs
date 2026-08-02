@@ -4,6 +4,19 @@ use anyhow::Result;
 use issen_timeline::query::TimelineRow;
 use issen_timeline::temporal::{render_at, TimeRenderConfig};
 
+/// Render one CSV record, guarding every field.
+///
+/// `jsonguard::csv_field` applies the RFC 4180 quoting *and* the `= + - @`
+/// spreadsheet formula guard that a plain CSV writer does not. Applied to every
+/// field, so a column added later cannot reach the file unguarded.
+pub(crate) fn csv_record<'a>(fields: impl IntoIterator<Item = &'a str>) -> String {
+    fields
+        .into_iter()
+        .map(|f| jsonguard::csv_field(f).value)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 /// Write timeline events in CSV format.
 ///
 /// The `timestamp` column is rendered through `render_cfg` (timezone / format /
@@ -15,26 +28,34 @@ pub fn write_csv(
     render_cfg: &TimeRenderConfig,
     out: &mut impl Write,
 ) -> Result<()> {
-    let mut wtr = csv::Writer::from_writer(out);
-    wtr.write_record([
-        "timestamp",
-        "event_type",
-        "source",
-        "path",
-        "description",
-        "evidence_source",
-    ])?;
+    writeln!(
+        out,
+        "{}",
+        csv_record([
+            "timestamp",
+            "event_type",
+            "source",
+            "path",
+            "description",
+            "evidence_source",
+        ])
+    )?;
     for row in events {
-        wtr.write_record([
-            &render_at(row.timestamp_ns, render_cfg),
-            &row.event_type,
-            &row.source,
-            &row.artifact_path,
-            &row.description,
-            &row.evidence_source,
-        ])?;
+        let timestamp = render_at(row.timestamp_ns, render_cfg);
+        writeln!(
+            out,
+            "{}",
+            csv_record([
+                timestamp.as_str(),
+                row.event_type.as_str(),
+                row.source.as_str(),
+                row.artifact_path.as_str(),
+                row.description.as_str(),
+                row.evidence_source.as_str(),
+            ])
+        )?;
     }
-    wtr.flush()?;
+    out.flush()?;
     Ok(())
 }
 

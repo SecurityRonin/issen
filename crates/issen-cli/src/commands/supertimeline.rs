@@ -17,6 +17,8 @@ use issen_correlation::temporal_rule::{bundled_temporal_rules, evaluate_temporal
 use issen_fswalker::orchestrator::run_auto;
 use issen_fswalker::progress::ProgressReporter;
 
+use crate::commands::timeline_format::csv_record;
+
 /// Run the supertimeline command.
 ///
 /// # Errors
@@ -80,24 +82,23 @@ const CSV_HEADER: &str = "timestamp,event_type,source,description,tags";
 ///
 /// Every field is attacker-influenced: `description` and `tags` are built from
 /// evidence bytes, and `event_type` carries a parser-supplied string in its
-/// `Other(..)` variant. So every field goes through `jsonguard::csv_field`,
-/// which applies the RFC 4180 quoting *and* the spreadsheet formula guard —
-/// no field is exempt, so a new column cannot be added unguarded.
+/// `Other(..)` variant. So the row is built by [`csv_record`], which guards
+/// every field — none is exempt, so a column added later cannot reach the file
+/// unguarded.
 ///
 /// CSV is a machine view: values are emitted whole, never truncated.
 fn csv_row(ev: &TimelineEvent) -> String {
-    let fields = [
-        ev.timestamp_ns.to_string(),
-        format!("{:?}", ev.event_type),
-        ev.source.to_string(),
-        ev.description.clone(),
-        ev.tags.join("|"),
-    ];
-    fields
-        .iter()
-        .map(|f| jsonguard::csv_field(f).value)
-        .collect::<Vec<_>>()
-        .join(",")
+    let ts = ev.timestamp_ns.to_string();
+    let event_type = format!("{:?}", ev.event_type);
+    let source = ev.source.to_string();
+    let tags = ev.tags.join("|");
+    csv_record([
+        ts.as_str(),
+        event_type.as_str(),
+        source.as_str(),
+        ev.description.as_str(),
+        tags.as_str(),
+    ])
 }
 
 fn emit_csv(events: &[TimelineEvent]) {
