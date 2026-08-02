@@ -14,9 +14,7 @@ license.workspace = true
 
 [dependencies]
 issen-core = { path = "../issen-core" }
-# usb-forensic 0.2 is unpublished — path dep is the in-flight bridge; switch to the
-# registry version once published (Dependency-Preference / ADR-0006 bottom-up).
-usb-forensic = { version = "0.2", path = "../../../../parser/usb-forensic" }
+usb-forensic = { version = "0.2" }
 jiff = { workspace = true }
 
 [lints]
