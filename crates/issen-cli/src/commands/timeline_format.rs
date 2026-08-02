@@ -148,6 +148,60 @@ mod tests {
         );
     }
 
+    /// `path` and `description` are built from evidence bytes, so a value
+    /// beginning with `=`, `+`, `-` or `@` is chosen by whoever wrote the
+    /// artifact — and becomes a live formula the moment the examiner opens the
+    /// CSV in Excel or LibreOffice. `csv::Writer` quotes correctly but applies
+    /// no formula guard.
+    #[test]
+    fn csv_formula_prefixed_field_is_guarded() {
+        for payload in [
+            "=cmd|'/C calc'!A0",
+            "+1+1",
+            "-2+3",
+            "@SUM(1+1)*cmd|'/C calc'!A0",
+        ] {
+            let mut row = make_row("FileCreate", 1_705_314_225_000_000_000, payload);
+            row.description = payload.to_string();
+            let mut out = Vec::new();
+            write_csv(&[row], &TimeRenderConfig::default(), &mut out).unwrap();
+            let text = String::from_utf8(out).unwrap();
+            let mut rdr = csv::ReaderBuilder::new()
+                .has_headers(true)
+                .from_reader(text.as_bytes());
+            let rec = rdr.records().next().expect("a data row").unwrap();
+            assert_eq!(rec.len(), 6, "row must have 6 columns: {text}");
+            assert!(
+                rec[3].starts_with('\''),
+                "path beginning with a formula character must be guarded; got {:?}",
+                &rec[3]
+            );
+            assert!(
+                rec[4].starts_with('\''),
+                "description beginning with a formula character must be guarded; got {:?}",
+                &rec[4]
+            );
+        }
+    }
+
+    /// Replacing the writer must not cost the RFC 4180 escaping it did do:
+    /// commas, quotes and newlines still have to survive a round-trip.
+    #[test]
+    fn csv_separators_in_values_round_trip() {
+        let mut row = make_row("FileCreate", 1_705_314_225_000_000_000, r"C:\a,b\c.exe");
+        row.description = "said \"hi\", then\nleft".to_string();
+        let mut out = Vec::new();
+        write_csv(&[row], &TimeRenderConfig::default(), &mut out).unwrap();
+        let text = String::from_utf8(out).unwrap();
+        let mut rdr = csv::ReaderBuilder::new()
+            .has_headers(true)
+            .from_reader(text.as_bytes());
+        let rec = rdr.records().next().expect("a data row").unwrap();
+        assert_eq!(rec.len(), 6, "row must have 6 columns: {text}");
+        assert_eq!(&rec[3], r"C:\a,b\c.exe");
+        assert_eq!(&rec[4], "said \"hi\", then\nleft");
+    }
+
     // ---- Bodyfile tests ----
 
     #[test]
