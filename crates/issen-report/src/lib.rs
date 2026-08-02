@@ -5,6 +5,8 @@
 //! includes summary statistics, a sortable events table, and a findings
 //! section for scan results.
 
+// Tests opt out of the panic lints (fleet standard) — unwrap/expect in test code.
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 use std::fmt::Write as FmtWrite;
 use std::path::Path;
 

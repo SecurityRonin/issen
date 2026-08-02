@@ -8,6 +8,9 @@
 //! Run:  cargo run --release --example measure_load_rss -- /tmp/case001.duckdb
 //! For the true peak, wrap it:  /usr/bin/time -l cargo run ... (macOS)
 
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use issen_timeline::events::EventQuery;
 use issen_timeline::store::TimelineStore;
 

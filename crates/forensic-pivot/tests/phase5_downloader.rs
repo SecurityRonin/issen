@@ -1,3 +1,6 @@
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use forensic_pivot::{downloader::download_feed, loader::default_feeds, FeedKind, FeedSpec};
 use tempfile::TempDir;
 

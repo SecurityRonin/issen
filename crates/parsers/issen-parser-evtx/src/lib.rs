@@ -40,6 +40,8 @@
 //! Wraps the `evtx` crate to parse `.evtx` files and emit [`TimelineEvent`]s
 //! via the [`ForensicParser`] trait.
 
+// Tests opt out of the panic lints (fleet standard) — unwrap/expect in test code.
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 use evtx::err::{ChunkError, DeserializationError, EvtxError};
 use evtx::EvtxParser as EvtxCrateParser;
 use issen_core::artifacts::ArtifactType;

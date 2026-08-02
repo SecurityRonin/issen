@@ -16,6 +16,9 @@
 //! cross-product (proc_disk_match) resident separately — that set is the dump's
 //! processes, bounded and small. This probe measures the relational-rule window.
 
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use std::collections::VecDeque;
 
 use issen_timeline::events::{EventQuery, StoredEvent};

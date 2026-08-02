@@ -4,6 +4,8 @@
 //! it directly through [`std::fs::File`] (which is `Read + Seek`) to provide a
 //! [`DataSource`] for random-access reads over `.dd`, `.img`, `.raw`, `.bin`.
 
+// Tests opt out of the panic lints (fleet standard) — unwrap/expect in test code.
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 use std::fs::File;
 use std::io::Read;
 use std::io::{Seek, SeekFrom};
@@ -92,7 +94,12 @@ impl DataSource for DdDataSource {
     }
 
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> Result<usize, RtError> {
-        let mut guard = self.reader.lock().expect("DdDataSource mutex poisoned");
+        // A poisoned lock means an earlier read panicked while holding it, so
+        // the reader's position is unknown. `read_at` has an error channel —
+        // use it, rather than cascading the panic into every later read.
+        let mut guard = self.reader.lock().map_err(|_| {
+            RtError::Io(std::io::Error::other("DdDataSource: reader mutex poisoned"))
+        })?;
         guard.seek(SeekFrom::Start(offset)).map_err(RtError::Io)?;
         let mut total = 0;
         while total < buf.len() {

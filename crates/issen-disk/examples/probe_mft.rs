@@ -4,6 +4,9 @@
 //!
 //! Usage: cargo run --release -p issen-disk --example probe_mft -- <image.E01>
 
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use issen_disk::{find_ntfs_partitions, DataSourceReader};
 use issen_ewf::EwfDataSource;
 use ntfs_core::{NtfsFs, OffsetReader};

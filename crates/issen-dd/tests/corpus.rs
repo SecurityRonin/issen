@@ -1,3 +1,7 @@
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 /// Corpus integration tests for DdDataSource against a real raw disk image.
 ///
 /// ext4.raw is from the log2timeline/dfvfs project (Apache-2.0):

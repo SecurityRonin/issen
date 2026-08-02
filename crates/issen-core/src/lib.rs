@@ -1,5 +1,6 @@
 #![allow(clippy::doc_markdown, clippy::missing_errors_doc)]
-
+// Tests opt out of the panic lints (fleet standard) — unwrap/expect in test code.
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 pub mod artifacts;
 pub mod carve;
 pub mod classify;

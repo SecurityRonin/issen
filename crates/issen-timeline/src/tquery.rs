@@ -56,6 +56,18 @@ pub struct Field {
 /// `metadata.$.X` JSON path into a first-class, discoverable name.
 pub struct FieldRegistry;
 
+/// The `logon-type` field, named on its own so a preset that filters on it
+/// references the definition rather than looking the name up at runtime. It is
+/// an entry of [`FIELDS`] below, so the registry and the presets cannot
+/// disagree about it — and `presets::logons` needs no fallible lookup.
+const LOGON_TYPE: Field = Field {
+    name: "logon-type",
+    aliases: &["logontype", "logon_type"],
+    json_key: "LogonType",
+    ftype: FieldType::LogonType,
+    populated_by: "LogonSuccess (EventLog 4624)",
+};
+
 const FIELDS: &[Field] = &[
     Field {
         name: "ip",
@@ -71,13 +83,7 @@ const FIELDS: &[Field] = &[
         ftype: FieldType::Text,
         populated_by: "LogonSuccess/Logoff (EventLog)",
     },
-    Field {
-        name: "logon-type",
-        aliases: &["logontype", "logon_type"],
-        json_key: "LogonType",
-        ftype: FieldType::LogonType,
-        populated_by: "LogonSuccess (EventLog 4624)",
-    },
+    LOGON_TYPE,
     Field {
         name: "service",
         aliases: &["service-name", "servicename"],
@@ -903,7 +909,7 @@ impl TypedQuery {
 /// special case. All values are constants here; analyst input still binds as a
 /// parameter when it reaches [`TypedQuery::run`].
 pub mod presets {
-    use super::{FieldInFilter, FieldRegistry, Mode, TypedQuery};
+    use super::{FieldInFilter, Mode, TypedQuery};
 
     fn ev(types: &[&str]) -> Vec<String> {
         types.iter().map(|s| (*s).to_string()).collect()
@@ -917,8 +923,7 @@ pub mod presets {
         TypedQuery {
             event_types: ev(&["LogonSuccess"]),
             in_filters: vec![FieldInFilter {
-                field: FieldRegistry::resolve("logon-type")
-                    .expect("logon-type is a registry field"),
+                field: &super::LOGON_TYPE,
                 values: ev(&["2", "10", "11"]),
             }],
             exclude_machine_accounts: true,

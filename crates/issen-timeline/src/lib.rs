@@ -35,6 +35,8 @@
     clippy::manual_contains,
     clippy::unnecessary_literal_bound
 )]
+// Tests opt out of the panic lints (fleet standard) — unwrap/expect in test code.
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 pub mod correlate_runner;
 pub mod correlations;
 pub mod epoch;
