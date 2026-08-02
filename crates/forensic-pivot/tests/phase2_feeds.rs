@@ -1,3 +1,6 @@
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use forensic_pivot::{cache_path_for_feed, is_stale, FeedKind, FeedSpec, SyncManifest};
 use std::path::Path;
 

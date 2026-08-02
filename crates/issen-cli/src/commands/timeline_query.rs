@@ -110,14 +110,26 @@ fn parse_field(spec: &str) -> Result<FieldFilter> {
 }
 
 /// Build a sugar filter (`--ip`, `--user`, `--service`) as an exact-match field.
-fn sugar(name: &str, value: &str) -> FieldFilter {
-    FieldFilter {
-        // Sugar names are registry constants, so resolve cannot fail here; if it
-        // ever did, that is a programmer error and panicking is correct.
-        field: FieldRegistry::resolve(name).expect("sugar name is a registry field"),
+///
+/// # Errors
+///
+/// Returns an error if `name` is not in the field registry. Every caller passes
+/// a registry name, so this reports a flag wired to a field that no longer
+/// exists — dropping the filter instead would silently widen the analyst's
+/// result set.
+fn sugar(name: &str, value: &str) -> Result<FieldFilter> {
+    let field = FieldRegistry::resolve(name).ok_or_else(|| {
+        anyhow::anyhow!(
+            "internal: sugar flag is wired to '{name}', which is not a registry field. \
+             Valid fields: {}",
+            FieldRegistry::valid_names()
+        )
+    })?;
+    Ok(FieldFilter {
+        field,
         op: FieldOp::Eq,
         value: value.to_string(),
-    }
+    })
 }
 
 /// Translate validated args into a [`TypedQuery`]. Fails loud on conflicting
@@ -128,13 +140,13 @@ fn build_query(args: &QueryArgs) -> Result<(TypedQuery, Vec<String>)> {
         fields.push(parse_field(spec)?);
     }
     if let Some(ip) = &args.ip {
-        fields.push(sugar("ip", ip));
+        fields.push(sugar("ip", ip)?);
     }
     if let Some(user) = &args.user {
-        fields.push(sugar("user", user));
+        fields.push(sugar("user", user)?);
     }
     if let Some(service) = &args.service {
-        fields.push(sugar("service", service));
+        fields.push(sugar("service", service)?);
     }
     // --logon-type N,N,N is OR semantics; Phase 1 supports a single value via
     // exact match (the deck's multi-value B4/B5 case is the intent-verb's job).
@@ -147,7 +159,7 @@ fn build_query(args: &QueryArgs) -> Result<(TypedQuery, Vec<String>)> {
                  Phase 1 accepts a single logon type"
             );
         }
-        fields.push(sugar("logon-type", lt));
+        fields.push(sugar("logon-type", lt)?);
     }
 
     // Aggregation modes are mutually exclusive.

@@ -57,7 +57,9 @@ impl FileTree {
             ProgressStyle::with_template(
                 "  Parsing MFT [{bar:40.cyan/dim}] {pos}/{len} entries ({percent}%)",
             )
-            .expect("valid template")
+            // The bar is cosmetic; a malformed template must not take the MFT
+            // parse down with it. Fall back to indicatif's default styling.
+            .unwrap_or_else(|_| ProgressStyle::default_bar())
             .progress_chars("##-"),
         );
 
@@ -221,7 +223,8 @@ impl FileTree {
         let pb2 = ProgressBar::new_spinner();
         pb2.set_style(
             ProgressStyle::with_template("  {spinner:.cyan} Building directory tree...")
-                .expect("valid template"),
+                // Cosmetic, as above.
+                .unwrap_or_else(|_| ProgressStyle::default_spinner()),
         );
         pb2.enable_steady_tick(std::time::Duration::from_millis(80));
 

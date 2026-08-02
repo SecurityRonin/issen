@@ -10,6 +10,9 @@
 //!
 //! The default path is the Windows `hosts` file; override with NTFS_FORENSIC_PATH.
 
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use std::path::Path;
 
 use issen_disk::{extract_files, find_ntfs_partitions};

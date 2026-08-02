@@ -38,7 +38,7 @@ pub fn run(
     anomalies.sort_by_key(|a| a.count);
 
     if json {
-        print_json(&anomalies, total_analyzed);
+        print_json(&anomalies, total_analyzed)?;
     } else {
         print_summary(&anomalies, total_analyzed);
     }
@@ -46,7 +46,7 @@ pub fn run(
     Ok(())
 }
 
-fn print_json(anomalies: &[FrequencyAnomaly], total_analyzed: usize) {
+fn print_json(anomalies: &[FrequencyAnomaly], total_analyzed: usize) -> anyhow::Result<()> {
     let arr: Vec<serde_json::Value> = anomalies
         .iter()
         .map(|a| {
@@ -62,12 +62,10 @@ fn print_json(anomalies: &[FrequencyAnomaly], total_analyzed: usize) {
         "anomalies": arr,
         "total_analyzed": total_analyzed,
     });
-    // Serializing an in-memory `json!` value is infallible; `expect` documents
-    // that and satisfies the `unwrap_used = deny` lint.
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&out).expect("serialize JSON value")
-    );
+    // Serializing an in-memory `json!` value cannot fail today; report it rather
+    // than panic if that ever stops holding, so `--json` never dies mid-pipe.
+    println!("{}", serde_json::to_string_pretty(&out)?);
+    Ok(())
 }
 
 fn print_summary(anomalies: &[FrequencyAnomaly], total_analyzed: usize) {

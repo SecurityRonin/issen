@@ -13,7 +13,8 @@
     clippy::missing_panics_doc,
     clippy::must_use_candidate
 )]
-
+// Tests opt out of the panic lints (fleet standard) — unwrap/expect in test code.
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 use issen_core::artifacts::ArtifactType;
 use issen_core::classify;
 use issen_core::error::RtError;

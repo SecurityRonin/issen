@@ -1,5 +1,8 @@
 //! RED tests for WslSession — correlating EVTX events into WSL sessions.
 
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use issen_wsl::session::{build_sessions, SessionEvent, SessionEventKind};
 
 fn make_event(kind: SessionEventKind, ts_ns: i64, pid: u32, distro: Option<&str>) -> SessionEvent {

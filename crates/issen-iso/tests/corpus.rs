@@ -1,3 +1,7 @@
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 /// Corpus integration tests for IsoDataSource against a real Ubuntu ISO.
 ///
 /// The Ubuntu 20.04 (Focal) netboot mini.iso is created by Canonical using

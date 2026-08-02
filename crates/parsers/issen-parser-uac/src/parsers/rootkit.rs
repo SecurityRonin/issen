@@ -236,13 +236,21 @@ pub fn check_kernel_taint(content: &str) -> Vec<RootkitFinding> {
     findings
 }
 
-/// Returns the compiled PAM credential staging regex (lazily initialised).
-fn pam_cred_regex() -> &'static regex::Regex {
-    static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    // The pattern is a compile-time-constant literal, so it cannot fail to
-    // compile — `expect` documents that, matching the fleet regex convention
-    // (issen-signatures) and satisfying the `unwrap_used = deny` lint.
-    RE.get_or_init(|| regex::Regex::new(r"^\d+:\d+:\w+:[^\n]+").expect("valid regex"))
+/// The PAM credential-staging pattern: `UID:counter:fieldname:value`.
+const PAM_CRED_PATTERN: &str = r"^\d+:\d+:\w+:[^\n]+";
+
+/// Returns the compiled PAM credential staging regex (lazily initialised), or
+/// `None` if [`PAM_CRED_PATTERN`] failed to compile.
+///
+/// The pattern is a literal, so `None` would mean the detector itself is
+/// broken, not that the evidence is unusual. That distinction is why this
+/// returns `Option` rather than panicking: a detector that cannot run must be
+/// reported, and [`scan_pam_credential_staging`] reports it as a finding rather
+/// than returning an empty scan an examiner would read as "nothing staged".
+fn pam_cred_regex() -> Option<&'static regex::Regex> {
+    static RE: std::sync::OnceLock<Option<regex::Regex>> = std::sync::OnceLock::new();
+    RE.get_or_init(|| regex::Regex::new(PAM_CRED_PATTERN).ok())
+        .as_ref()
 }
 
 /// Scan temp-like directories for PAM hook credential staging files.
@@ -263,8 +271,22 @@ pub fn scan_pam_credential_staging(root: &std::path::Path) -> Vec<RootkitFinding
         "run",
     ];
 
-    let re = pam_cred_regex();
     let mut findings = Vec::new();
+
+    let Some(re) = pam_cred_regex() else {
+        // Bootstrap failure, not an artifact miss. Returning an empty Vec here
+        // would read as "no credential staging found" — the opposite of what
+        // happened. cov:unreachable: PAM_CRED_PATTERN is a literal that compiles.
+        findings.push(RootkitFinding {
+            severity: RootkitSeverity::Warning,
+            check: "pam_cred_staging".to_string(),
+            description:
+                "PAM credential-staging scan did not run: its detection pattern failed to compile"
+                    .to_string(),
+            evidence: PAM_CRED_PATTERN.to_string(),
+        });
+        return findings;
+    };
 
     for dir_rel in SCAN_DIRS {
         let dir_path = root.join(dir_rel);

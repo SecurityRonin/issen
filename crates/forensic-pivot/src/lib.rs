@@ -1,3 +1,5 @@
+// Tests opt out of the panic lints (fleet standard) — unwrap/expect in test code.
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 pub mod adapters;
 pub mod downloader;
 pub mod engine;

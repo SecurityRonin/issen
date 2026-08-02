@@ -11,8 +11,9 @@ use std::env;
 use std::fs;
 use std::path::Path;
 
-fn main() {
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR set by cargo");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR")
+        .map_err(|e| format!("CARGO_MANIFEST_DIR (set by cargo): {e}"))?;
     let manifest_path = Path::new(&manifest_dir).join("Cargo.toml");
     println!("cargo:rerun-if-changed=Cargo.toml");
 
@@ -41,7 +42,7 @@ fn main() {
         out.push_str(" as _;\n");
     }
 
-    let out_dir = env::var("OUT_DIR").expect("OUT_DIR set by cargo");
+    let out_dir = env::var("OUT_DIR").map_err(|e| format!("OUT_DIR (set by cargo): {e}"))?;
     let anchors_path = Path::new(&out_dir).join("anchors.rs");
     fs::write(&anchors_path, out)
         .unwrap_or_else(|e| panic!("write {}: {e}", anchors_path.display()));
@@ -51,4 +52,6 @@ fn main() {
     let manifest_list_path = Path::new(&out_dir).join("anchored_crates.txt");
     fs::write(&manifest_list_path, deps.join("\n"))
         .unwrap_or_else(|e| panic!("write {}: {e}", manifest_list_path.display()));
+
+    Ok(())
 }

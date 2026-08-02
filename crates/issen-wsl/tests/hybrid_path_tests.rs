@@ -4,6 +4,9 @@
 //! Native WSL paths (/home/..., /etc/...) have no Windows equivalent.
 //! Native Windows paths (C:\...) have no WSL equivalent.
 
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use issen_wsl::hybrid_path::HybridPath;
 
 // ── Test 1: /mnt/c/... is recognized as DrvFs ────────────────────────────────

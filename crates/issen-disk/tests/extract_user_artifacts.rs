@@ -16,6 +16,9 @@
 //! env var or the in-repo corpus path and skips cleanly when absent (CI), like
 //! `parity_read.rs`.
 
+// Integration tests are their own crate, so the workspace `cfg_attr(test, ..)`
+// opt-out in the library root does not reach here.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use std::path::PathBuf;
 
 use issen_disk::{extract_subdir_sweep, find_ntfs_partitions};

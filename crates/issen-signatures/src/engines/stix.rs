@@ -5,6 +5,7 @@
 // domain names, and URLs from STIX patterns.
 
 use std::path::Path;
+use std::sync::OnceLock;
 
 use regex::Regex;
 use serde::Deserialize;
@@ -41,6 +42,74 @@ pub enum ExtractedIoc {
     Ipv6(String),
     Domain(String),
     Url(String),
+}
+
+/// One IOC class: the STIX pattern that locates it, and the variant it yields.
+struct IocPattern {
+    /// Regex source, compiled once by [`ioc_extractors`].
+    source: &'static str,
+    /// Constructor for the [`ExtractedIoc`] variant this pattern produces.
+    make: fn(String) -> ExtractedIoc,
+}
+
+/// Every IOC class `extract_iocs_from_pattern` recognises, in output order.
+///
+/// One table rather than seven hand-written blocks: adding a class is a row, and
+/// no class can be given different quoting or capture handling than its peers.
+const IOC_PATTERNS: &[IocPattern] = &[
+    // file:hashes.'SHA-256' = '...' or file:hashes.SHA-256 = '...'
+    IocPattern {
+        source: r"(?i)file:hashes\.'?SHA-?256'?\s*=\s*'([^']+)'",
+        make: ExtractedIoc::Sha256,
+    },
+    // file:hashes.'SHA-1' = '...'
+    IocPattern {
+        source: r"(?i)file:hashes\.'?SHA-?1'?\s*=\s*'([^']+)'",
+        make: ExtractedIoc::Sha1,
+    },
+    // file:hashes.MD5 = '...' or file:hashes.'MD5' = '...'
+    IocPattern {
+        source: r"(?i)file:hashes\.'?MD5'?\s*=\s*'([^']+)'",
+        make: ExtractedIoc::Md5,
+    },
+    IocPattern {
+        source: r"ipv4-addr:value\s*=\s*'([^']+)'",
+        make: ExtractedIoc::Ipv4,
+    },
+    IocPattern {
+        source: r"ipv6-addr:value\s*=\s*'([^']+)'",
+        make: ExtractedIoc::Ipv6,
+    },
+    IocPattern {
+        source: r"domain-name:value\s*=\s*'([^']+)'",
+        make: ExtractedIoc::Domain,
+    },
+    IocPattern {
+        source: r"url:value\s*=\s*'([^']+)'",
+        make: ExtractedIoc::Url,
+    },
+];
+
+/// A compiled [`IocPattern`]: its regex paired with the variant it builds.
+type IocExtractor = (Regex, fn(String) -> ExtractedIoc);
+
+/// [`IOC_PATTERNS`] compiled once, in declaration order.
+///
+/// A pattern that fails to compile is dropped rather than panicking, so a STIX
+/// bundle can never take the process down. That silence is only safe because
+/// `every_ioc_pattern_compiles` fails the build if the table ever shrinks —
+/// the guarantee lives in the test rather than in a runtime `expect`.
+///
+/// Compiling once also stops the seven regexes being rebuilt for every pattern
+/// in a bundle.
+fn ioc_extractors() -> &'static [IocExtractor] {
+    static COMPILED: OnceLock<Vec<IocExtractor>> = OnceLock::new();
+    COMPILED.get_or_init(|| {
+        IOC_PATTERNS
+            .iter()
+            .filter_map(|p| Regex::new(p.source).ok().map(|re| (re, p.make)))
+            .collect()
+    })
 }
 
 /// A parsed STIX 2.1 indicator with extracted IOCs.
@@ -154,65 +223,13 @@ impl StixParser {
     #[must_use]
     pub fn extract_iocs_from_pattern(pattern: &str) -> Vec<ExtractedIoc> {
         let mut iocs = Vec::new();
-
-        // SHA-256: file:hashes.'SHA-256' = '...' or file:hashes.SHA-256 = '...'
-        let sha256_re =
-            Regex::new(r"(?i)file:hashes\.'?SHA-?256'?\s*=\s*'([^']+)'").expect("valid regex");
-        for cap in sha256_re.captures_iter(pattern) {
-            if let Some(val) = cap.get(1) {
-                iocs.push(ExtractedIoc::Sha256(val.as_str().to_string()));
+        for (re, make) in ioc_extractors() {
+            for cap in re.captures_iter(pattern) {
+                if let Some(val) = cap.get(1) {
+                    iocs.push(make(val.as_str().to_string()));
+                }
             }
         }
-
-        // SHA-1: file:hashes.'SHA-1' = '...'
-        let sha1_re =
-            Regex::new(r"(?i)file:hashes\.'?SHA-?1'?\s*=\s*'([^']+)'").expect("valid regex");
-        for cap in sha1_re.captures_iter(pattern) {
-            if let Some(val) = cap.get(1) {
-                iocs.push(ExtractedIoc::Sha1(val.as_str().to_string()));
-            }
-        }
-
-        // MD5: file:hashes.MD5 = '...' or file:hashes.'MD5' = '...'
-        let md5_re = Regex::new(r"(?i)file:hashes\.'?MD5'?\s*=\s*'([^']+)'").expect("valid regex");
-        for cap in md5_re.captures_iter(pattern) {
-            if let Some(val) = cap.get(1) {
-                iocs.push(ExtractedIoc::Md5(val.as_str().to_string()));
-            }
-        }
-
-        // IPv4: ipv4-addr:value = '...'
-        let ipv4_re = Regex::new(r"ipv4-addr:value\s*=\s*'([^']+)'").expect("valid regex");
-        for cap in ipv4_re.captures_iter(pattern) {
-            if let Some(val) = cap.get(1) {
-                iocs.push(ExtractedIoc::Ipv4(val.as_str().to_string()));
-            }
-        }
-
-        // IPv6: ipv6-addr:value = '...'
-        let ipv6_re = Regex::new(r"ipv6-addr:value\s*=\s*'([^']+)'").expect("valid regex");
-        for cap in ipv6_re.captures_iter(pattern) {
-            if let Some(val) = cap.get(1) {
-                iocs.push(ExtractedIoc::Ipv6(val.as_str().to_string()));
-            }
-        }
-
-        // Domain: domain-name:value = '...'
-        let domain_re = Regex::new(r"domain-name:value\s*=\s*'([^']+)'").expect("valid regex");
-        for cap in domain_re.captures_iter(pattern) {
-            if let Some(val) = cap.get(1) {
-                iocs.push(ExtractedIoc::Domain(val.as_str().to_string()));
-            }
-        }
-
-        // URL: url:value = '...'
-        let url_re = Regex::new(r"url:value\s*=\s*'([^']+)'").expect("valid regex");
-        for cap in url_re.captures_iter(pattern) {
-            if let Some(val) = cap.get(1) {
-                iocs.push(ExtractedIoc::Url(val.as_str().to_string()));
-            }
-        }
-
         iocs
     }
 }
@@ -224,6 +241,20 @@ impl StixParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `ioc_extractors` drops a pattern that fails to compile instead of
+    /// panicking, so a malformed one would cost that IOC class silently — a
+    /// bundle's SHA-256 indicators would simply stop being extracted, with no
+    /// error anywhere. This is the check that makes the drop safe: it fails
+    /// here, at build time, rather than in a case.
+    #[test]
+    fn every_ioc_pattern_compiles() {
+        assert_eq!(
+            ioc_extractors().len(),
+            IOC_PATTERNS.len(),
+            "an IOC pattern failed to compile; its class would be dropped silently"
+        );
+    }
 
     /// Helper: build a minimal STIX bundle JSON string with the given objects.
     fn bundle_json(objects_json: &str) -> String {
