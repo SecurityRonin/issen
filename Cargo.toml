@@ -283,17 +283,29 @@ unsafe_code = "deny"
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
+correctness = "deny"
+suspicious = "deny"
+# Both halves of the panic pair, always together. Denying `unwrap_used` alone
+# leaves `.expect(..)` a sanctioned way to panic in a crate contracted never to
+# — the gap that let a bare `.expect("4 bytes")` through review in a sibling
+# repo. See ADR-0012 (Paranoid Gatekeeper).
 unwrap_used = "deny"
+expect_used = "deny"
 # Pragmatic allows (fleet standard — see ~/.claude/CLAUDE.md Paranoid Gatekeeper):
 # pedantic lints that are noise for application/orchestration code and were
 # missing from this workspace, so the pedantic warn-set drifted far above the
 # documented baseline.
-module_name_repetitions = "allow"
-must_use_candidate = "allow"
-missing_errors_doc = "allow"
-missing_panics_doc = "allow"
-doc_markdown = "allow"
-cast_possible_truncation = "allow"
-cast_possible_wrap = "allow"
-cast_sign_loss = "allow"
-cast_precision_loss = "allow"
+#
+# `priority = 1` is load-bearing, not decoration: these must outrank the
+# `correctness`/`suspicious` group denials above. Cargo ignores table order, so
+# a group and a lint that share a priority are a hard error, not a silent
+# precedence choice.
+module_name_repetitions = { level = "allow", priority = 1 }
+must_use_candidate = { level = "allow", priority = 1 }
+missing_errors_doc = { level = "allow", priority = 1 }
+missing_panics_doc = { level = "allow", priority = 1 }
+doc_markdown = { level = "allow", priority = 1 }
+cast_possible_truncation = { level = "allow", priority = 1 }
+cast_possible_wrap = { level = "allow", priority = 1 }
+cast_sign_loss = { level = "allow", priority = 1 }
+cast_precision_loss = { level = "allow", priority = 1 }
