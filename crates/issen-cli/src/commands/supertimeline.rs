@@ -80,14 +80,24 @@ const CSV_HEADER: &str = "timestamp,event_type,source,description,tags";
 ///
 /// Every field is attacker-influenced: `description` and `tags` are built from
 /// evidence bytes, and `event_type` carries a parser-supplied string in its
-/// `Other(..)` variant.
+/// `Other(..)` variant. So every field goes through `jsonguard::csv_field`,
+/// which applies the RFC 4180 quoting *and* the spreadsheet formula guard —
+/// no field is exempt, so a new column cannot be added unguarded.
+///
+/// CSV is a machine view: values are emitted whole, never truncated.
 fn csv_row(ev: &TimelineEvent) -> String {
-    let ts = ev.timestamp_ns;
-    let et = format!("{:?}", ev.event_type);
-    let src = format!("{}", ev.source);
-    let desc = ev.description.replace('"', "\"\"");
-    let tags = ev.tags.join("|");
-    format!("{ts},{et},{src},\"{desc}\",{tags}")
+    let fields = [
+        ev.timestamp_ns.to_string(),
+        format!("{:?}", ev.event_type),
+        ev.source.to_string(),
+        ev.description.clone(),
+        ev.tags.join("|"),
+    ];
+    fields
+        .iter()
+        .map(|f| jsonguard::csv_field(f).value)
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 fn emit_csv(events: &[TimelineEvent]) {
