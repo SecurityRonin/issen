@@ -133,8 +133,8 @@ user-login = "h4x0r"
 user-name = "Albert Hui"
 
 [[publisher.memf-core]]
-version = "0.2.3"
-when = "2026-07-23"
+version = "0.2.4"
+when = "2026-08-04"
 user-id = 347968
 user-login = "h4x0r"
 user-name = "Albert Hui"

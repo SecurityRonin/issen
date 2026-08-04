@@ -6597,9 +6597,9 @@ checksum = "88904434abc2901f197fe8cc55f0445e7ded921dba5911dad2e2b39b48e663c4"
 
 [[package]]
 name = "memf-core"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0436ef3d5853012a75454f7c7e97315125d37e936d3d45adf590ca86941f4756"
+checksum = "02d30d44a05a224e3f4a1a8c45ce99470eb24f58fa68396a3bb7c16694cdeba3"
 dependencies = [
  "bytemuck",
  "lru 0.16.4",
