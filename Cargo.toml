@@ -172,7 +172,7 @@ winevt-analysis = "0.3"
 winevt-carver   = "0.1"
 
 # Memory forensic crates (path dependencies into sibling workspace)
-memf-core      = "0.2.3"
+memf-core      = "0.2.4"
 memf-format    = "0.3"
 memf-symbols   = "0.2.3"
 memf-linux     = "0.3.1"

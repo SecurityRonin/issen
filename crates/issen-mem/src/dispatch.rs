@@ -1905,29 +1905,6 @@ mod tests {
         let _ = dispatch_windows_modules(&reader);
     }
 
-    /// `SyntheticPhysMem` reports no physical ranges, and the trait derives
-    /// `total_size()` by summing them — so it is zero, and any physical scan
-    /// traverses `(0, 0)` and sees nothing. A provider that advertises its extent
-    /// is therefore required to exercise a scan path at all. memf-windows carries
-    /// an identical private wrapper for its own tests; memf-core exporting one
-    /// would let both drop it.
-    struct RangedMem {
-        inner: memf_core::test_builders::SyntheticPhysMem,
-        ranges: Vec<memf_format::PhysicalRange>,
-    }
-
-    impl memf_format::PhysicalMemoryProvider for RangedMem {
-        fn read_phys(&self, addr: u64, buf: &mut [u8]) -> memf_format::Result<usize> {
-            self.inner.read_phys(addr, buf)
-        }
-        fn ranges(&self) -> &[memf_format::PhysicalRange] {
-            &self.ranges
-        }
-        fn format_name(&self) -> &str {
-            "Synthetic(ranged)"
-        }
-    }
-
     /// A reader whose build number *is* resolvable, with no TCP endpoints in it.
     ///
     /// `memf_windows::network::nt_build_number` falls back to scanning raw memory
@@ -1947,13 +1924,13 @@ mod tests {
         let (cr3, mem) = PageTableBuilder::new()
             .write_phys(0x0004_0000, &page)
             .build();
-        let ranged = RangedMem {
-            inner: mem,
-            ranges: vec![memf_format::PhysicalRange {
+        let ranged = memf_core::test_builders::RangedPhysMem::with_ranges(
+            mem,
+            vec![memf_format::PhysicalRange {
                 start: 0,
                 end: 1024 * 1024,
             }],
-        };
+        );
         let provider: Box<dyn PhysicalMemoryProvider> = Box::new(ranged);
         let vas = VirtualAddressSpace::new(provider, cr3, TranslationMode::X86_64FourLevel);
 
