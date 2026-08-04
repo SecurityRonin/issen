@@ -1905,15 +1905,100 @@ mod tests {
         let _ = dispatch_windows_modules(&reader);
     }
 
+    /// `SyntheticPhysMem` reports no physical ranges, and the trait derives
+    /// `total_size()` by summing them — so it is zero, and any physical scan
+    /// traverses `(0, 0)` and sees nothing. A provider that advertises its extent
+    /// is therefore required to exercise a scan path at all. memf-windows carries
+    /// an identical private wrapper for its own tests; memf-core exporting one
+    /// would let both drop it.
+    struct RangedMem {
+        inner: memf_core::test_builders::SyntheticPhysMem,
+        ranges: Vec<memf_format::PhysicalRange>,
+    }
+
+    impl memf_format::PhysicalMemoryProvider for RangedMem {
+        fn read_phys(&self, addr: u64, buf: &mut [u8]) -> memf_format::Result<usize> {
+            self.inner.read_phys(addr, buf)
+        }
+        fn ranges(&self) -> &[memf_format::PhysicalRange] {
+            &self.ranges
+        }
+        fn format_name(&self) -> &str {
+            "Synthetic(ranged)"
+        }
+    }
+
+    /// A reader whose build number *is* resolvable, with no TCP endpoints in it.
+    ///
+    /// `memf_windows::network::nt_build_number` falls back to scanning raw memory
+    /// for an `NtBuildLab` fragment when no kernel symbol resolves, so writing one
+    /// into the synthetic image is enough to get past bootstrap without an ISF.
+    /// 19041 has a maintained `_TCP_ENDPOINT` overlay, so the scan runs properly
+    /// and simply finds nothing — which is the case that must NOT be an error.
+    fn make_reader_with_build() -> ObjectReader<Box<dyn PhysicalMemoryProvider>> {
+        use memf_core::test_builders::PageTableBuilder;
+        use memf_symbols::isf::IsfResolver;
+
+        // Mirrors memf-windows' own `ranged_mem_with` fixture: a whole page
+        // containing the NtBuildLab fragment, written through the builder.
+        let mut page = vec![0u8; 0x1000];
+        let lab = b"19041.1.amd64fre.vb_release.191206-1406\0";
+        page[..lab.len()].copy_from_slice(lab);
+        let (cr3, mem) = PageTableBuilder::new()
+            .write_phys(0x0004_0000, &page)
+            .build();
+        let ranged = RangedMem {
+            inner: mem,
+            ranges: vec![memf_format::PhysicalRange {
+                start: 0,
+                end: 1024 * 1024,
+            }],
+        };
+        let provider: Box<dyn PhysicalMemoryProvider> = Box::new(ranged);
+        let vas = VirtualAddressSpace::new(provider, cr3, TranslationMode::X86_64FourLevel);
+
+        let isf_json = br#"{"base_types":{},"user_types":{},"symbols":{},"enums":{}}"#;
+        let resolver = IsfResolver::from_bytes(isf_json).expect("minimal ISF should parse");
+        let symbols: Box<dyn memf_symbols::SymbolResolver> = Box::new(resolver);
+
+        ObjectReader::new(vas, symbols)
+    }
+
+    /// "Could not look" must not be reported as "nothing there".
+    ///
+    /// The stub reader has an empty ISF over a blank image, so the build number
+    /// cannot be determined at all and no `_TCP_ENDPOINT` overlay can be chosen.
+    /// memf-windows refuses rather than reading at guessed offsets, and that
+    /// refusal has to reach the caller: an examiner handed an empty connection
+    /// table may reasonably conclude the machine had no connections, which is a
+    /// false finding when the truth is that the scan never ran.
     #[test]
-    fn dispatch_windows_netstat_returns_ok() {
+    fn netstat_surfaces_a_failed_bootstrap_as_an_error() {
         let reader = make_stub_reader();
-        // Symbol-absent branch returns a placeholder Ok row.
-        let result = dispatch_windows_netstat(&reader);
-        assert!(result.is_ok(), "dispatch_windows_netstat must return Ok");
-        let (headers, rows) = result.unwrap();
+        let err = dispatch_windows_netstat(&reader)
+            .expect_err("an undeterminable build must not yield an empty connection table");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("netscan"),
+            "the error should name the stage that could not run: {msg}"
+        );
+    }
+
+    /// The other half of the same contract: a scan that *does* run and finds
+    /// nothing is a legitimate empty result, and must stay distinguishable from
+    /// the failure above — an informational row, not an error.
+    #[test]
+    fn netstat_reports_a_completed_but_empty_scan_as_a_row() {
+        let reader = make_reader_with_build();
+        let (headers, rows) = dispatch_windows_netstat(&reader)
+            .expect("a completed scan finding nothing is not an error");
         assert!(!headers.is_empty());
-        assert!(!rows.is_empty());
+        assert_eq!(rows.len(), 1, "expected the informational placeholder row");
+        assert!(
+            rows[0].iter().any(|c| c.contains("unavailable")),
+            "the row must say why it is empty, not just be empty: {:?}",
+            rows[0]
+        );
     }
 
     #[test]
