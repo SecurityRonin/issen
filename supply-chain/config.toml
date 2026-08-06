@@ -2462,12 +2462,20 @@ criteria = "safe-to-deploy"
 version = "0.8.16"
 criteria = "safe-to-deploy"
 
+[[exemptions.rkyv]]
+version = "0.8.18"
+criteria = "safe-to-deploy"
+
 [[exemptions.rkyv_derive]]
 version = "0.7.46"
 criteria = "safe-to-deploy"
 
 [[exemptions.rkyv_derive]]
 version = "0.8.16"
+criteria = "safe-to-deploy"
+
+[[exemptions.rkyv_derive]]
+version = "0.8.18"
 criteria = "safe-to-deploy"
 
 [[exemptions.rowan]]
@@ -2964,14 +2972,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.suppaftp]]
 version = "6.3.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.syn]]
-version = "1.0.109"
-criteria = "safe-to-deploy"
-
-[[exemptions.syn]]
-version = "2.0.118"
 criteria = "safe-to-deploy"
 
 [[exemptions.sync_wrapper]]
