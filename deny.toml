@@ -50,6 +50,12 @@ ignore = [
     # user interaction. issen never executes untrusted WASM; wasmtime is present
     # only because yara-x compiles YARA rules to WASM internally.
     # REMOVE WHEN: yara-x depends on wasmtime >= 46.0.2 (or >= 47.0.3).
+    # rkyv 0.7.46 is an OPTIONAL rust_decimal dependency; issen enables only
+    # default/serde/std, so it is in Cargo.lock but never compiled (cargo tree -i
+    # finds it on no target). The 0.8 line was genuinely fixed (0.8.16 -> 0.8.18);
+    # 0.7.x has no patch and rust_decimal 1.42.1 (latest) still pins "0.7.46".
+    # REMOVE WHEN: rust_decimal moves its optional rkyv dep to >= 0.8.17.
+    { id = "RUSTSEC-2026-0235", reason = "rkyv 0.7 via rust_decimal; optional feature not enabled, never compiled" },
     { id = "RUSTSEC-2026-0222", reason = "wasmtime via yara-x; no yara-x release resolves to a patched wasmtime line (latest 1.19.0 needs ^43.0.2; patched lines are 24.0.12+/36.0.13+/46.0.2+/47.0.3+)" },
     # rustls-webpki 0.101.7 pinned by the old rustls 0.21 stack (tonic 0.10 ->
     # tikv-client -> opendal -> issen-remote-io); cannot bump without an opendal/
