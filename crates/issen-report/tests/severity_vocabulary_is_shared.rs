@@ -1,3 +1,8 @@
+// An integration test is its own crate, so the workspace's `cfg(test)`-scoped
+// allow does not reach it and the attribute has to be repeated here. In these
+// tests the unwrap/expect IS the assertion.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 //! The HTML report's severity vocabulary must come from the one shared source.
 //!
 //! `severity_rank`/`severity_token` in `issen-report` were copies of the pair in

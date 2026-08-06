@@ -833,10 +833,6 @@ version = "0.8.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.dialoguer]]
-version = "0.10.4"
-criteria = "safe-to-deploy"
-
-[[exemptions.dialoguer]]
 version = "0.12.0"
 criteria = "safe-to-deploy"
 
@@ -988,18 +984,6 @@ criteria = "safe-to-deploy"
 version = "0.11.2"
 criteria = "safe-to-deploy"
 
-[[exemptions.ewf]]
-version = "0.2.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.ewf]]
-version = "0.3.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.ewf]]
-version = "0.4.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.ext4fs-core]]
 version = "0.2.6"
 criteria = "safe-to-deploy"
@@ -1066,18 +1050,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.forensic-vfs]]
 version = "0.7.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.forensicnomicon]]
-version = "1.8.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.forensicnomicon-core]]
-version = "1.4.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.forensicnomicon-data]]
-version = "1.3.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.fs4]]
@@ -1194,10 +1166,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.gl-context-loader]]
 version = "0.1.10"
-criteria = "safe-to-deploy"
-
-[[exemptions.glob]]
-version = "0.3.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.globset]]
@@ -1398,10 +1366,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.indexmap]]
 version = "1.9.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.indexmap]]
-version = "2.14.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.indicatif]]
@@ -1661,10 +1625,6 @@ version = "0.39.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.lru]]
-version = "0.9.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.lru]]
 version = "0.12.5"
 criteria = "safe-to-deploy"
 
@@ -1785,7 +1745,7 @@ version = "0.1.32"
 criteria = "safe-to-deploy"
 
 [[exemptions.mft]]
-version = "0.6.1"
+version = "0.7.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.miette]]
@@ -2113,10 +2073,6 @@ version = "0.2.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.plist]]
-version = "1.9.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.plist]]
 version = "1.10.0"
 criteria = "safe-to-deploy"
 notes = "Third-party, outrunning the audits (ADR-0018 mechanism 4). Published under the trustpub identity github:ebarnard/rust-plist, which none of the imported aggregate audit sets vouches for, so mechanism 3 (trust a publisher an aggregate auditor already trusts) does not apply. Reached via usb-forensic and browser-forensic-safari for macOS property-list parsing; 1.9.0 is already exempted here on the same basis. Remove when an imported audit set covers the publisher, or when someone audits the 1.9.0 -> 1.10.0 diff."
@@ -2283,10 +2239,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.quick-xml]]
 version = "0.38.4"
-criteria = "safe-to-deploy"
-
-[[exemptions.quick-xml]]
-version = "0.39.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.quick-xml]]
@@ -2459,19 +2411,11 @@ version = "0.7.46"
 criteria = "safe-to-deploy"
 
 [[exemptions.rkyv]]
-version = "0.8.16"
-criteria = "safe-to-deploy"
-
-[[exemptions.rkyv]]
 version = "0.8.18"
 criteria = "safe-to-deploy"
 
 [[exemptions.rkyv_derive]]
 version = "0.7.46"
-criteria = "safe-to-deploy"
-
-[[exemptions.rkyv_derive]]
-version = "0.8.16"
 criteria = "safe-to-deploy"
 
 [[exemptions.rkyv_derive]]
@@ -2582,10 +2526,6 @@ criteria = "safe-to-deploy"
 version = "1.0.23"
 criteria = "safe-to-deploy"
 
-[[exemptions.safe-read]]
-version = "0.1.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.salsa20]]
 version = "0.10.2"
 criteria = "safe-to-deploy"
@@ -2656,10 +2596,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.segb-forensic]]
 version = "0.2.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.semver]]
-version = "1.0.28"
 criteria = "safe-to-deploy"
 
 [[exemptions.serde]]
@@ -2924,10 +2860,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.stable_deref_trait]]
 version = "1.2.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.state-history-forensic]]
-version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.stem-branch]]
@@ -3800,10 +3732,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.zlib-rs]]
 version = "0.6.4"
-criteria = "safe-to-deploy"
-
-[[exemptions.zmij]]
-version = "1.0.21"
 criteria = "safe-to-deploy"
 
 [[exemptions.zopfli]]

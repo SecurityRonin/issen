@@ -252,7 +252,7 @@ iso9660-forensic = "0.7"
 dmg-core     = "0.1"
 aff4         = "0.2.0"
 evtx         = { version = "0.11", default-features = false }
-mft          = "0.6"
+mft          = "0.7"
 
 # Registry — our own winreg-forensic fleet crates (notatin fully removed)
 winreg-core      = "0.2.0"
