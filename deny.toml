@@ -20,12 +20,9 @@ ignore = [
     # All transitive via yara-x / evtx / mft — we cannot upgrade independently.
     { id = "RUSTSEC-2026-0021", reason = "wasmtime via yara-x; awaiting yara-x update" },
     { id = "RUSTSEC-2026-0020", reason = "wasmtime via yara-x; awaiting yara-x update" },
-    { id = "RUSTSEC-2025-0141", reason = "bincode via yara-x; awaiting yara-x update" },
     { id = "RUSTSEC-2025-0118", reason = "wasmtime via yara-x; awaiting yara-x update" },
     { id = "RUSTSEC-2025-0046", reason = "wasmtime via yara-x; awaiting yara-x update" },
-    { id = "RUSTSEC-2024-0436", reason = "paste via wasmtime via yara-x; awaiting yara-x update" },
     { id = "RUSTSEC-2023-0071", reason = "rsa via yara-x; awaiting yara-x update" },
-    { id = "RUSTSEC-2021-0153", reason = "encoding via evtx/mft; awaiting upstream update" },
     # wasmtime 26.x advisory batch (transitive via yara-x) — awaiting yara-x bump.
     { id = "RUSTSEC-2026-0085", reason = "wasmtime via yara-x; awaiting yara-x update" },
     { id = "RUSTSEC-2026-0086", reason = "wasmtime via yara-x; awaiting yara-x update" },
@@ -38,6 +35,22 @@ ignore = [
     { id = "RUSTSEC-2026-0094", reason = "wasmtime via yara-x; awaiting yara-x update" },
     { id = "RUSTSEC-2026-0095", reason = "wasmtime via yara-x; awaiting yara-x update" },
     { id = "RUSTSEC-2026-0096", reason = "wasmtime via yara-x; awaiting yara-x update" },
+    # RUSTSEC-2026-0222 (wasmtime, "Stores can mix up type indices between
+    # engines"). Same yara-x chain as the batch above, but recorded separately
+    # because "awaiting yara-x update" would be the wrong reason here: as of
+    # 2026-08-05 NO yara-x release resolves to a patched wasmtime.
+    #
+    #   resolved:     wasmtime 26.0.1  <- yara-x 0.12.0
+    #   patched:      >=24.0.12,<25 | >=36.0.13,<37 | >=46.0.2,<47 | >=47.0.3
+    #   latest yara-x 1.19.0 requires wasmtime ^43.0.2 — 43.x is NOT a patched line
+    #
+    # Only the maintained 24/36/46/47 lines were patched, and none is reachable
+    # through any yara-x release, so bumping yara-x does not clear this.
+    # CVSS AV:L/AC:H/PR:H/UI:R — local, high attack complexity, high privileges,
+    # user interaction. issen never executes untrusted WASM; wasmtime is present
+    # only because yara-x compiles YARA rules to WASM internally.
+    # REMOVE WHEN: yara-x depends on wasmtime >= 46.0.2 (or >= 47.0.3).
+    { id = "RUSTSEC-2026-0222", reason = "wasmtime via yara-x; no yara-x release resolves to a patched wasmtime line (latest 1.19.0 needs ^43.0.2; patched lines are 24.0.12+/36.0.13+/46.0.2+/47.0.3+)" },
     # rustls-webpki 0.101.7 pinned by the old rustls 0.21 stack (tonic 0.10 ->
     # tikv-client -> opendal -> issen-remote-io); cannot bump without an opendal/
     # tonic update. Affects only the remote-IO TLS path.
