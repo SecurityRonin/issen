@@ -14,7 +14,7 @@ license.workspace = true
 
 [dependencies]
 issen-core = { path = "../issen-core" }
-usb-forensic = { version = "0.2" }
+usb-forensic = { version = "0.3" }
 jiff = { workspace = true }
 
 [lints]

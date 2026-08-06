@@ -7,12 +7,18 @@
 criteria = "safe-to-deploy"
 user-id = 347968 # Albert Hui (h4x0r)
 start = "2026-06-05"
-end = "2027-08-02"
+end = "2027-08-06"
 
 [[trusted.ewf]]
 criteria = "safe-to-deploy"
 user-id = 347968 # Albert Hui (h4x0r)
 start = "2026-03-05"
+end = "2027-08-06"
+
+[[trusted.ext4fs-core]]
+criteria = "safe-to-deploy"
+user-id = 347968 # Albert Hui (h4x0r)
+start = "2026-06-16"
 end = "2027-08-06"
 
 [[trusted.forensicnomicon]]
@@ -91,7 +97,7 @@ end = "2027-08-02"
 criteria = "safe-to-deploy"
 user-id = 347968 # Albert Hui (h4x0r)
 start = "2026-06-13"
-end = "2027-08-02"
+end = "2027-08-06"
 
 [[trusted.safe-read]]
 criteria = "safe-to-deploy"
@@ -115,7 +121,13 @@ end = "2027-08-06"
 criteria = "safe-to-deploy"
 user-id = 347968 # Albert Hui (h4x0r)
 start = "2026-07-13"
-end = "2027-08-02"
+end = "2027-08-06"
+
+[[trusted.winevt-carver]]
+criteria = "safe-to-deploy"
+user-id = 347968 # Albert Hui (h4x0r)
+start = "2026-06-15"
+end = "2027-08-06"
 
 [[trusted.winevt-extract]]
 criteria = "safe-to-deploy"
