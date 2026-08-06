@@ -267,7 +267,7 @@ quick-xml    = "0.37"
 shrinkpath   = "0.1"
 
 # TUI
-ratatui      = "0.29"
+ratatui      = "0.30"
 crossterm    = "0.28"
 indicatif    = "0.17"
 ctrlc        = "3"
