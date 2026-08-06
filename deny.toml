@@ -56,6 +56,15 @@ ignore = [
     # 0.7.x has no patch and rust_decimal 1.42.1 (latest) still pins "0.7.46".
     # REMOVE WHEN: rust_decimal moves its optional rkyv dep to >= 0.8.17.
     { id = "RUSTSEC-2026-0235", reason = "rkyv 0.7 via rust_decimal; optional feature not enabled, never compiled" },
+    # NOT EXPOSED: the advisory says the bug "is not triggerable by guest
+    # WebAssembly programs. It requires the embedder to create two `Engine`s
+    # and mix objects between them." issen is not the embedder — yara-x is,
+    # and it holds one process-wide engine (0.12.0/src/wasm/mod.rs:726:
+    # `pub(crate) static ref ENGINE: Engine = Engine::new(&CONFIG).unwrap();`).
+    # With a single lazy_static Engine there is no second Engine to confuse
+    # type indices with, so the precondition is structurally unreachable.
+    # ALSO REMOVE WHEN: yara-x ever gains a second Engine, which would make
+    # the precondition reachable and void this reason.
     { id = "RUSTSEC-2026-0222", reason = "wasmtime via yara-x; no yara-x release resolves to a patched wasmtime line (latest 1.19.0 needs ^43.0.2; patched lines are 24.0.12+/36.0.13+/46.0.2+/47.0.3+)" },
     # rustls-webpki 0.101.7 pinned by the old rustls 0.21 stack (tonic 0.10 ->
     # tikv-client -> opendal -> issen-remote-io); cannot bump without an opendal/

@@ -34,6 +34,8 @@ ignore = [
     # No yara-x release resolves to a patched wasmtime line: latest 1.19.0
     # needs ^43.0.2, patches are 24.0.12+/36.0.13+/46.0.2+/47.0.3+.
     # REMOVE WHEN: yara-x depends on wasmtime >= 46.0.2.
+    # NOT EXPOSED: needs two wasmtime Engines mixed; yara-x holds one
+    # lazy_static singleton, so the precondition cannot occur.
     "RUSTSEC-2026-0222", # wasmtime; via yara-x; no patched line reachable
     # rkyv 0.7.46 is an OPTIONAL dependency of rust_decimal. Issen enables only
     # rust_decimal's default/serde/std features, never "rkyv", so this crate is
