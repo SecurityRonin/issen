@@ -31,4 +31,17 @@ ignore = [
     "RUSTSEC-2026-0187", # lopdf stack-overflow on nested-PDF *parse*; via printpdf (report generation only, no PDF parsing); printpdf 0.9 pins lopdf ^0.39 so cannot bump independently
     "RUSTSEC-2026-0194", # quick-xml 0.39 quadratic-attr DoS; via plist (pins ^0.39) via browser-forensic-safari; needs quick-xml >=0.41 (plist release)
     "RUSTSEC-2026-0195", # quick-xml 0.39 namespace-alloc DoS; via plist (pins ^0.39) via browser-forensic-safari; needs quick-xml >=0.41 (plist release)
+    # No yara-x release resolves to a patched wasmtime line: latest 1.19.0
+    # needs ^43.0.2, patches are 24.0.12+/36.0.13+/46.0.2+/47.0.3+.
+    # REMOVE WHEN: yara-x depends on wasmtime >= 46.0.2.
+    "RUSTSEC-2026-0222", # wasmtime; via yara-x; no patched line reachable
+    # rkyv 0.7.46 is an OPTIONAL dependency of rust_decimal. Issen enables only
+    # rust_decimal's default/serde/std features, never "rkyv", so this crate is
+    # present in Cargo.lock but NEVER COMPILED — `cargo tree -i rkyv@0.7.46`
+    # returns nothing for any target. cargo-audit scans the lockfile, so this is
+    # a lockfile-presence finding, not reachable code. The 0.8 line was fixed for
+    # real (0.8.16 -> 0.8.18); 0.7.x has no patch (patched = >= 0.8.17) and
+    # rust_decimal 1.42.1 is the latest and still pins "0.7.46".
+    # REMOVE WHEN: rust_decimal moves its optional rkyv dep to >= 0.8.17.
+    "RUSTSEC-2026-0235", # rkyv 0.7 via rust_decimal; optional feature not enabled
 ]
