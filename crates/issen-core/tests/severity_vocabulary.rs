@@ -1,3 +1,9 @@
+// An integration test is its own crate, so the workspace's `cfg(test)`-scoped
+// allow does not reach it and the top-level attribute has to be repeated here.
+// The expect below IS the assertion — every TOKENS entry must parse — and
+// rewriting it as a match would only obscure which entry failed.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 //! The severity rank/token vocabulary must have exactly ONE definition.
 //!
 //! `severity_rank` / `severity_token` were copy-pasted into `issen-report` and

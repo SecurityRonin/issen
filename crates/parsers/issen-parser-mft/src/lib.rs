@@ -88,11 +88,17 @@ struct FnTimestamps {
 
 impl From<&FileNameAttr> for FnTimestamps {
     fn from(f: &FileNameAttr) -> Self {
+        // Since mft 0.7 these are already `jiff::Timestamp` — the same type this
+        // struct stores — so they are taken directly. The old
+        // chrono -> nanoseconds -> Timestamp round-trip collapsed an
+        // out-of-range value to UNIX_EPOCH, which in a timeline reads as
+        // "1970-01-01" rather than as a decode failure. Dropping the conversion
+        // removes that lossy path instead of porting it.
         Self {
-            created: ns_to_ts(f.created.timestamp_nanos_opt()),
-            modified: ns_to_ts(f.modified.timestamp_nanos_opt()),
-            accessed: ns_to_ts(f.accessed.timestamp_nanos_opt()),
-            mft_modified: ns_to_ts(f.mft_modified.timestamp_nanos_opt()),
+            created: f.created,
+            modified: f.modified,
+            accessed: f.accessed,
+            mft_modified: f.mft_modified,
         }
     }
 }
@@ -443,27 +449,27 @@ impl ForensicParser for MftFileParser {
             let pe = precise.as_ref().and_then(|d| d.get_by_entry(ondisk_entry));
 
             // Full-precision $FN MACE (fall back to the mft crate per field).
+            // Only ntfs-core's value needs converting now: since mft 0.7 the
+            // fallback is already a `jiff::Timestamp`. The per-field preference
+            // is unchanged — ntfs-core's full-precision FILETIME wins when it
+            // has one for that field.
             let fn_ts = FnTimestamps {
-                created: ns_to_ts(
-                    pe.and_then(|e| e.fn_created)
-                        .unwrap_or(file_name.created)
-                        .timestamp_nanos_opt(),
-                ),
-                modified: ns_to_ts(
-                    pe.and_then(|e| e.fn_modified)
-                        .unwrap_or(file_name.modified)
-                        .timestamp_nanos_opt(),
-                ),
-                accessed: ns_to_ts(
-                    pe.and_then(|e| e.fn_accessed)
-                        .unwrap_or(file_name.accessed)
-                        .timestamp_nanos_opt(),
-                ),
-                mft_modified: ns_to_ts(
-                    pe.and_then(|e| e.fn_mft_modified)
-                        .unwrap_or(file_name.mft_modified)
-                        .timestamp_nanos_opt(),
-                ),
+                created: pe
+                    .and_then(|e| e.fn_created)
+                    .and_then(|d| d.timestamp_nanos_opt())
+                    .map_or(file_name.created, |n| ns_to_ts(Some(n))),
+                modified: pe
+                    .and_then(|e| e.fn_modified)
+                    .and_then(|d| d.timestamp_nanos_opt())
+                    .map_or(file_name.modified, |n| ns_to_ts(Some(n))),
+                accessed: pe
+                    .and_then(|e| e.fn_accessed)
+                    .and_then(|d| d.timestamp_nanos_opt())
+                    .map_or(file_name.accessed, |n| ns_to_ts(Some(n))),
+                mft_modified: pe
+                    .and_then(|e| e.fn_mft_modified)
+                    .and_then(|d| d.timestamp_nanos_opt())
+                    .map_or(file_name.mft_modified, |n| ns_to_ts(Some(n))),
             };
 
             // Prefer $STANDARD_INFORMATION timestamps; fall back to $FILE_NAME.
@@ -474,26 +480,25 @@ impl ForensicParser for MftFileParser {
             // metadata on FileCreate for timestomp detection) PLUS the 4 $FN
             // MACE rows. When $SI is absent, only the $FN quad is emitted.
             if let Some(si) = extract_standard_info(&entry) {
-                let si_modified = ns_to_ts(
-                    pe.and_then(|e| e.si_modified)
-                        .unwrap_or(si.modified)
-                        .timestamp_nanos_opt(),
-                );
-                let si_accessed = ns_to_ts(
-                    pe.and_then(|e| e.si_accessed)
-                        .unwrap_or(si.accessed)
-                        .timestamp_nanos_opt(),
-                );
-                let si_created = ns_to_ts(
-                    pe.and_then(|e| e.si_created)
-                        .unwrap_or(si.created)
-                        .timestamp_nanos_opt(),
-                );
-                let si_mft_modified = ns_to_ts(
-                    pe.and_then(|e| e.si_mft_modified)
-                        .unwrap_or(si.mft_modified)
-                        .timestamp_nanos_opt(),
-                );
+                // Same shape as the $FN quad above: convert ntfs-core's chrono
+                // value when present, otherwise take mft's, which is already a
+                // jiff::Timestamp since 0.7.
+                let si_modified = pe
+                    .and_then(|e| e.si_modified)
+                    .and_then(|d| d.timestamp_nanos_opt())
+                    .map_or(si.modified, |n| ns_to_ts(Some(n)));
+                let si_accessed = pe
+                    .and_then(|e| e.si_accessed)
+                    .and_then(|d| d.timestamp_nanos_opt())
+                    .map_or(si.accessed, |n| ns_to_ts(Some(n)));
+                let si_created = pe
+                    .and_then(|e| e.si_created)
+                    .and_then(|d| d.timestamp_nanos_opt())
+                    .map_or(si.created, |n| ns_to_ts(Some(n)));
+                let si_mft_modified = pe
+                    .and_then(|e| e.si_mft_modified)
+                    .and_then(|d| d.timestamp_nanos_opt())
+                    .map_or(si.mft_modified, |n| ns_to_ts(Some(n)));
                 emit_mace_timestamps(
                     &mut batch,
                     &si_modified,

@@ -2616,18 +2616,6 @@ dependencies = [
 
 [[package]]
 name = "dialoguer"
-version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59c6f2989294b9a498d3ad5491a79c6deb604617378e1cdc4bfc1c1361fe2f87"
-dependencies = [
- "console 0.15.11",
- "shell-words",
- "tempfile",
- "zeroize",
-]
-
-[[package]]
-name = "dialoguer"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25f104b501bf2364e78d0d3974cbc774f738f5865306ed128e1e0d7499c0ad96"
@@ -3116,7 +3104,7 @@ dependencies = [
  "byteorder",
  "clap",
  "crc32fast",
- "dialoguer 0.12.0",
+ "dialoguer",
  "encoding",
  "glob",
  "goblin 0.10.7",
@@ -3936,15 +3924,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 dependencies = [
  "ahash 0.7.8",
-]
-
-[[package]]
-name = "hashbrown"
-version = "0.13.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
-dependencies = [
- "ahash 0.8.12",
 ]
 
 [[package]]
@@ -6327,15 +6306,6 @@ dependencies = [
 
 [[package]]
 name = "lru"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71e7d46de488603ffdd5f30afbc64fbba2378214a2c3a2fb83abf3d33126df17"
-dependencies = [
- "hashbrown 0.13.2",
-]
-
-[[package]]
-name = "lru"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "234cf4f4a04dc1f57e24b96cc0cd600cf2af460d4161ac5ecdd0af8e1f3b2a38"
@@ -6780,30 +6750,30 @@ dependencies = [
 
 [[package]]
 name = "mft"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52cf53faa705fc7f6574f99a34fae16ffa12b6391eabd9f7269377738e583e99"
+checksum = "8100af83e59845118eb3912ab6b1228380bab82c3535eba0050944d90c7eb4be"
 dependencies = [
  "anyhow",
- "bitflags 1.3.2",
+ "bitflags 2.13.0",
  "byteorder",
- "chrono",
  "clap",
  "csv",
- "dialoguer 0.10.4",
+ "dialoguer",
  "encoding",
  "indoc",
- "itertools 0.10.5",
+ "itertools 0.14.0",
+ "jiff",
  "log",
- "lru 0.9.0",
- "num-derive 0.3.3",
+ "lru 0.16.4",
+ "num-derive 0.4.2",
  "num-traits",
- "rand 0.8.6",
+ "rand 0.9.4",
  "serde",
  "serde_json",
  "simplelog",
- "skeptic",
- "thiserror 1.0.69",
+ "sonic-rs",
+ "thiserror 2.0.18",
  "winstructs",
 ]
 
@@ -10720,7 +10690,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.4",
  "windows-sys 0.61.2",
