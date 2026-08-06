@@ -69,6 +69,12 @@ user-id = 347968 # Albert Hui (h4x0r)
 start = "2026-06-13"
 end = "2027-08-02"
 
+[[trusted.syn]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-03-01"
+end = "2027-08-06"
+
 [[trusted.usb-forensic]]
 criteria = "safe-to-deploy"
 user-id = 347968 # Albert Hui (h4x0r)
