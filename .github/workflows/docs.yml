@@ -38,7 +38,9 @@ jobs:
           git clone --depth 1 https://github.com/SecurityRonin/usnjrnl-forensic.git usnjrnl-forensic
 
       - name: Install system dependencies
-        run: sudo apt-get install -y protobuf-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
