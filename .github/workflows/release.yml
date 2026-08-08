@@ -204,7 +204,9 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       # arm64: DuckDB's C++ needs the aarch64 g++ cross-compiler (not just gcc),
       # plus the matching cargo linker + CC/CXX for any C/C++ build scripts.
