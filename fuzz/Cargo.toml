@@ -22,6 +22,23 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 
+# Pins for an UPSTREAM SEMVER BREAK, not dependencies this crate uses.
+#
+# yara-x 1.7.1 declares its companions as `^1.7.1`, which permits 1.19 — and
+# 1.19's yara-x-proto REMOVED `ModuleOptions.rust_module`, which 1.7.1's
+# build.rs still reads. Any fresh resolution therefore fails to compile.
+#
+# This workspace is standalone and its Cargo.lock is gitignored (fleet
+# convention), so CI resolves it from scratch on every run and there is no lock
+# in which to record the pin. Declaring the companions here is the only
+# version-controlled place that constrains this resolution.
+#
+# REMOVE WHEN: yara-x's own companion requirements are correct, or yara-x moves
+# to a wasmtime range that lets us leave the ~1.7 line.
+yara-x-proto = "~1.7"
+yara-x-parser = "~1.7"
+yara-x-macros = "~1.7"
+
 # The fuzzed surfaces are issen's OWN untrusted-byte wrapper parsers. The
 # underlying *-core readers (ntfs-core, winreg-core, lnk-core, segb-core,
 # prefetch-core, …) are already fleet-fuzzed in their own repos — these targets
