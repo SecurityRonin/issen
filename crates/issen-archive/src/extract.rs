@@ -256,7 +256,7 @@ pub fn extract_7z_capped(
     // sevenz-rust hands us each entry's name + a reader; we resolve and validate
     // the path against dest ourselves (its `dest` arg is just dest.join(name)),
     // so a `..`/absolute entry is refused and never written.
-    sevenz_rust::decompress_file_with_extract_fn(
+    sevenz_rust2::decompress_file_with_extract_fn(
         archive_path,
         &dest,
         |entry, reader, _suggested| {
@@ -278,7 +278,7 @@ pub fn extract_7z_capped(
             write_capped(reader, &path, &mut total, cap)
                 // Funnel our error through 7z's Error so the cap message
                 // survives the callback boundary (re-extracted below).
-                .map_err(|e| sevenz_rust::Error::Other(e.to_string().into()))?;
+                .map_err(|e| sevenz_rust2::Error::Other(e.to_string().into()))?;
             report.written += 1;
             Ok(true)
         },
@@ -286,7 +286,7 @@ pub fn extract_7z_capped(
     .map_err(|e| match e {
         // Surface a triggered bomb-cap as our own InvalidData, not a generic
         // 7z error, so the bound is named.
-        sevenz_rust::Error::Other(msg) if msg.contains("decompression bomb") => {
+        sevenz_rust2::Error::Other(msg) if msg.contains("decompression bomb") => {
             RtError::InvalidData(msg.to_string())
         }
         other => RtError::InvalidData(format!("failed to extract 7z: {other}")),

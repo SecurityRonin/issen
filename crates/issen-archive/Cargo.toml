@@ -19,7 +19,7 @@ inventory    = { workspace = true }
 zip          = { workspace = true }
 tar          = { workspace = true }
 flate2       = { workspace = true }
-sevenz-rust  = { workspace = true }
+sevenz-rust2 = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

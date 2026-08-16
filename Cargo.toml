@@ -176,7 +176,7 @@ memf-core      = "0.2.4"
 memf-format    = "0.3"
 memf-symbols   = "0.2.3"
 memf-linux     = "0.3.1"
-memf-windows   = "0.4"
+memf-windows   = "0.5"
 memf-strings   = "0.2.1"
 memf-correlate = "0.3.0"
 forensic-hashdb = "0.2"
@@ -215,7 +215,11 @@ colored      = "2"
 is-terminal  = "0.4"
 
 # Signature scanning engines
-yara-x      = "0.12"
+# Tilde, not caret: yara-x 1.8+ moves to wasmtime 43.x and NO 43.x release is
+# patched for GHSA-hgjw-h833-99q9 or its five siblings (fixed ranges are
+# 24.0.12, 36.0.13, 46.0.2+, 47.0.3+). The 1.7 line resolves wasmtime ^36.0.2
+# -> 36.0.13, which is patched. Remove once yara-x depends on a patched range.
+yara-x      = "~1.7"
 tau-engine   = "1"
 
 # HTTP client for feed downloads
@@ -233,7 +237,7 @@ zip-forensic-core = "0.1"
 percent-encoding = "2"
 flate2       = "1"
 tar          = "0.4"
-sevenz-rust  = "0.6"
+sevenz-rust2 = "0.21"
 
 # Forensic artifact parsers
 srum-parser      = "0.3.0"
