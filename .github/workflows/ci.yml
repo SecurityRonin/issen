@@ -52,6 +52,8 @@ jobs:
           toolchain: "1.96.0"
           components: clippy
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+        with:
+          cache-on-failure: true
       - run: cargo clippy --workspace --lib --bins -- -D warnings
 
   test:
@@ -79,6 +81,8 @@ jobs:
           # fmt/clippy drift the pin exists to prevent.
           toolchain: "1.96.0"
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+        with:
+          cache-on-failure: true
       - run: cargo test --workspace
 
   deny:
